@@ -1,0 +1,498 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import { apiClient } from '@/lib/api';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  ArrowLeft, 
+  Save, 
+  User, 
+  Calendar,
+  GraduationCap,
+  Building,
+  School,
+  AlertCircle
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { toast } from '@/hooks/use-toast';
+
+interface StudentFormData {
+  fullName: string;
+  dateOfBirth: string;
+  gender: string;
+  grade: string;
+  motherTongue: string;
+  syllabus: string;
+  schoolId?: string;
+  parentFullName: string;
+  parentPhone: string;
+  parentEmail?: string;
+  parentAddress?: string;
+  relationship: string;
+}
+
+export default function NewStudentPage() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<StudentFormData>({
+    fullName: '',
+    dateOfBirth: '',
+    gender: '',
+    grade: '',
+    motherTongue: '',
+    syllabus: '',
+    schoolId: '',
+    parentFullName: '',
+    parentPhone: '',
+    parentEmail: '',
+    parentAddress: '',
+    relationship: '',
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const calculateAge = (dateOfBirth: string): number => {
+    if (!dateOfBirth) return 0;
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Required field validation
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
+    }
+
+    if (!formData.dateOfBirth) {
+      newErrors.dateOfBirth = 'Date of birth is required';
+    } else {
+      const age = calculateAge(formData.dateOfBirth);
+      if (age < 2 || age > 20) {
+        newErrors.dateOfBirth = 'Age must be between 2 and 20 years';
+      }
+    }
+
+    if (!formData.gender) {
+      newErrors.gender = 'Gender is required';
+    }
+
+    if (!formData.grade.trim()) {
+      newErrors.grade = 'Grade/Standard is required';
+    }
+
+    // Syllabus is optional now
+    // if (!formData.syllabus) {
+    //   newErrors.syllabus = 'Syllabus is required';
+    // }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: keyof StudentFormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors in the form before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Create student data
+      const studentData = {
+        fullName: formData.fullName,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        grade: formData.grade,
+        motherTongue: formData.motherTongue || '',
+        syllabus: formData.syllabus || '',
+        schoolId: formData.schoolId || null,
+        centerId: user?.centerId || '', // Auto-filled from educator's center
+      };
+
+      const response = await apiClient.createStudent(studentData);
+      
+      toast({
+        title: "Success",
+        description: "Student registered successfully!",
+      });
+
+      // Redirect to student profile or list
+      router.push(`/educator/students/${response.id}`);
+      
+    } catch (error: any) {
+      console.error('Error creating student:', error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.error || "Failed to register student. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="p-6 max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Link href="/educator/students">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Students
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Register New Student</h1>
+            <p className="text-gray-600">Add a new student with basic details</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Student Basic Information */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Student Information
+                </CardTitle>
+                <CardDescription>
+                  Basic details about the student
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name *</Label>
+                    <Input
+                      id="fullName"
+                      value={formData.fullName}
+                      onChange={(e) => handleInputChange('fullName', e.target.value)}
+                      placeholder="Enter student's full name"
+                      className={errors.fullName ? 'border-red-500' : ''}
+                    />
+                    {errors.fullName && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.fullName}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                    <Input
+                      id="dateOfBirth"
+                      type="date"
+                      value={formData.dateOfBirth}
+                      onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                      className={errors.dateOfBirth ? 'border-red-500' : ''}
+                    />
+                    {formData.dateOfBirth && (
+                      <p className="text-sm text-gray-500">
+                        Age: {calculateAge(formData.dateOfBirth)} years
+                      </p>
+                    )}
+                    {errors.dateOfBirth && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.dateOfBirth}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender *</Label>
+                    <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
+                      <SelectTrigger className={errors.gender ? 'border-red-500' : ''}>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MALE">Male</SelectItem>
+                        <SelectItem value="FEMALE">Female</SelectItem>
+                        <SelectItem value="OTHER">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.gender && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.gender}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="grade">Grade/Standard *</Label>
+                    <Input
+                      id="grade"
+                      value={formData.grade}
+                      onChange={(e) => handleInputChange('grade', e.target.value)}
+                      placeholder="e.g., Grade 2, Class 5"
+                      className={errors.grade ? 'border-red-500' : ''}
+                    />
+                    {errors.grade && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.grade}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="motherTongue">Mother Tongue</Label>
+                    <Input
+                      id="motherTongue"
+                      value={formData.motherTongue}
+                      onChange={(e) => handleInputChange('motherTongue', e.target.value)}
+                      placeholder="e.g., Hindi, English, Tamil"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="syllabus">Syllabus *</Label>
+                    <Select value={formData.syllabus} onValueChange={(value) => handleInputChange('syllabus', value)}>
+                      <SelectTrigger className={errors.syllabus ? 'border-red-500' : ''}>
+                        <SelectValue placeholder="Select syllabus" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CBSE">CBSE</SelectItem>
+                        <SelectItem value="ICSE">ICSE</SelectItem>
+                        <SelectItem value="STATE_BOARD">State Board</SelectItem>
+                        <SelectItem value="OTHERS">Others</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.syllabus && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.syllabus}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Parent/Guardian Information */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Parent/Guardian Information
+                </CardTitle>
+                <CardDescription>
+                  Contact details for the student's parent or guardian
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="parentFullName">Full Name *</Label>
+                    <Input
+                      id="parentFullName"
+                      value={formData.parentFullName}
+                      onChange={(e) => handleInputChange('parentFullName', e.target.value)}
+                      placeholder="Enter parent/guardian name"
+                      className={errors.parentFullName ? 'border-red-500' : ''}
+                    />
+                    {errors.parentFullName && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.parentFullName}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="relationship">Relationship *</Label>
+                    <Select value={formData.relationship} onValueChange={(value) => handleInputChange('relationship', value)}>
+                      <SelectTrigger className={errors.relationship ? 'border-red-500' : ''}>
+                        <SelectValue placeholder="Select relationship" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Parent">Parent</SelectItem>
+                        <SelectItem value="Father">Father</SelectItem>
+                        <SelectItem value="Mother">Mother</SelectItem>
+                        <SelectItem value="Guardian">Guardian</SelectItem>
+                        <SelectItem value="Grandparent">Grandparent</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.relationship && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.relationship}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="parentPhone">Phone Number *</Label>
+                    <Input
+                      id="parentPhone"
+                      value={formData.parentPhone}
+                      onChange={(e) => handleInputChange('parentPhone', e.target.value)}
+                      placeholder="Enter 10-digit phone number"
+                      className={errors.parentPhone ? 'border-red-500' : ''}
+                    />
+                    {errors.parentPhone && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.parentPhone}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="parentEmail">Email Address</Label>
+                    <Input
+                      id="parentEmail"
+                      type="email"
+                      value={formData.parentEmail}
+                      onChange={(e) => handleInputChange('parentEmail', e.target.value)}
+                      placeholder="Enter email address (optional)"
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="parentAddress">Address</Label>
+                    <Textarea
+                      id="parentAddress"
+                      value={formData.parentAddress}
+                      onChange={(e) => handleInputChange('parentAddress', e.target.value)}
+                      placeholder="Enter complete address (optional)"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Center Information */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="h-5 w-5" />
+                  Assignment Information
+                </CardTitle>
+                <CardDescription>
+                  Center and school assignment details
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Assigned Center</Label>
+                    <div className="p-3 bg-gray-50 rounded-md">
+                      <p className="font-medium">{user?.centerProfile?.centerName || 'Current Center'}</p>
+                      <p className="text-sm text-gray-600">Auto-assigned based on your login</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Assigned Educator</Label>
+                    <div className="p-3 bg-gray-50 rounded-md">
+                      <p className="font-medium">{user?.specialEducatorProfile?.fullName || 'You'}</p>
+                      <p className="text-sm text-gray-600">Auto-assigned to you</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schoolId">School Name (Optional)</Label>
+                  <Input
+                    id="schoolId"
+                    value={formData.schoolId}
+                    onChange={(e) => handleInputChange('schoolId', e.target.value)}
+                    placeholder="Enter school name if applicable"
+                  />
+                  <p className="text-sm text-gray-500">
+                    Leave blank if the student is not enrolled in a specific school
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Action Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex items-center justify-end gap-4 pt-6"
+          >
+            <Link href="/educator/students">
+              <Button variant="outline" disabled={isSubmitting}>
+                Cancel
+              </Button>
+            </Link>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Registering...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Register Student
+                </>
+              )}
+            </Button>
+          </motion.div>
+        </form>
+      </div>
+    </>
+  );
+}

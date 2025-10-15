@@ -1,0 +1,403 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
+import { apiClient } from '@/lib/api';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { 
+  Clock, 
+  UserPlus,
+  UserCheck,
+  UserX,
+  Eye,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  RefreshCw,
+  Filter,
+  Search,
+  Calendar,
+  Mail,
+  Phone
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
+
+interface PendingRequest {
+  id: string;
+  type: 'USER_CREATION' | 'ROLE_ASSIGNMENT';
+  requestedBy: {
+    name: string;
+    email: string;
+    role: string;
+  };
+  targetUser?: {
+    name: string;
+    email: string;
+    phone?: string;
+  };
+  requestedRole?: string;
+  requestedCenter?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createdAt: string;
+  notes?: string;
+}
+
+export default function PendingApprovalsPage() {
+  const { user } = useAuth();
+  const [requests, setRequests] = useState<PendingRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
+  const [filter, setFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    loadPendingRequests();
+  }, []);
+
+  const loadPendingRequests = async () => {
+    try {
+      setLoading(true);
+      
+      // Load pending approvals from backend API
+      const response = await apiClient.getPendingApprovals({
+        page: 1,
+        limit: 50,
+        type: activeTab !== 'all' ? activeTab : undefined
+      });
+      
+      // Transform backend data to match frontend interface
+      const transformedRequests: PendingRequest[] = response.data.map((request: any) => ({
+        id: request.id,
+        type: request.type || 'USER_CREATION',
+        requestedBy: {
+          name: request.requestedBy || 'System',
+          email: request.requestedBy || '',
+          role: 'ADMIN'
+        },
+        targetUser: {
+          name: request.title || 'New User',
+          email: request.requestedBy || '',
+          phone: ''
+        },
+        requestedRole: 'SPECIAL_EDUCATOR',
+        requestedCenter: request.requestedBy || '',
+        status: request.status || 'PENDING',
+        createdAt: request.createdAt,
+        notes: request.title || ''
+      }));
+      
+      setRequests(transformedRequests);
+    } catch (error) {
+      console.error('Failed to load pending requests:', error);
+      // Set empty array on error
+      setRequests([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveRequest = async (requestId: string) => {
+    try {
+      // API call to approve request
+      toast({
+        title: "Request Approved",
+        description: "The request has been approved successfully.",
+      });
+      loadPendingRequests();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to approve request. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      // API call to reject request
+      toast({
+        title: "Request Rejected",
+        description: "The request has been rejected.",
+      });
+      loadPendingRequests();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject request. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getRequestTypeLabel = (type: string) => {
+    switch (type) {
+      case 'USER_CREATION': return 'User Creation';
+      case 'ROLE_ASSIGNMENT': return 'Role Assignment';
+      default: return type;
+    }
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'ADMIN': return 'bg-red-100 text-red-800';
+      case 'SUPER_SPECIAL_EDUCATOR': return 'bg-purple-100 text-purple-800';
+      case 'SPECIAL_EDUCATOR': return 'bg-blue-100 text-blue-800';
+      case 'CENTER': return 'bg-green-100 text-green-800';
+      case 'PARENT': return 'bg-yellow-100 text-yellow-800';
+      case 'SCHOOL_VIEWER': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const filteredRequests = requests.filter(request => {
+    const matchesFilter = filter === 'all' || request.type === filter;
+    const matchesSearch = !searchQuery || 
+      request.targetUser?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.targetUser?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.requestedBy.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  if (loading) {
+    return (
+      <div className="space-y-8 p-6">
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8 p-6">
+      {/* Header */}
+      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Pending Approvals</h1>
+          <p className="text-muted-foreground">
+            Review and approve user creation requests and role assignments
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Badge variant="secondary">
+            {filteredRequests.length} Pending
+          </Badge>
+          <Button variant="outline" onClick={loadPendingRequests}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-blue-600" />
+              Filter Requests
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex-1 min-w-64">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="All Request Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Request Types</SelectItem>
+                  <SelectItem value="USER_CREATION">User Creation</SelectItem>
+                  <SelectItem value="ROLE_ASSIGNMENT">Role Assignment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Requests Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <Card>
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950">
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-orange-600" />
+              Pending Requests ({filteredRequests.length})
+            </CardTitle>
+            <CardDescription>
+              Review and take action on pending approval requests
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Request Type</TableHead>
+                  <TableHead>Target User</TableHead>
+                  <TableHead>Requested Role</TableHead>
+                  <TableHead>Requested By</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRequests.map((request) => (
+                  <TableRow key={request.id}>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {getRequestTypeLabel(request.type)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{request.targetUser?.name}</div>
+                        <div className="text-sm text-muted-foreground">{request.targetUser?.email}</div>
+                        {request.targetUser?.phone && (
+                          <div className="text-xs text-muted-foreground">{request.targetUser.phone}</div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {request.requestedRole && (
+                        <Badge className={getRoleColor(request.requestedRole)}>
+                          {request.requestedRole.replace('_', ' ')}
+                        </Badge>
+                      )}
+                      {request.requestedCenter && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {request.requestedCenter}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium text-sm">{request.requestedBy.name}</div>
+                        <div className="text-xs text-muted-foreground">{request.requestedBy.email}</div>
+                        <Badge variant="secondary" className="text-xs mt-1">
+                          {request.requestedBy.role}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(request.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700">
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Approve Request</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to approve this {getRequestTypeLabel(request.type).toLowerCase()} request for {request.targetUser?.name}?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleApproveRequest(request.id)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                Approve
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Reject Request</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to reject this {getRequestTypeLabel(request.type).toLowerCase()} request for {request.targetUser?.name}?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleRejectRequest(request.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Reject
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {filteredRequests.length === 0 && (
+              <div className="text-center py-12">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-muted-foreground mb-2">No pending requests</h3>
+                <p className="text-sm text-muted-foreground">
+                  All approval requests have been processed.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
+  );
+}

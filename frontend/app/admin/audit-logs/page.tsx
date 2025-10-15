@@ -1,0 +1,400 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Shield,
+  Search,
+  Filter,
+  Download,
+  RefreshCw,
+  Calendar,
+  User,
+  Activity,
+  Database,
+  Eye,
+  Edit,
+  Trash2,
+  Plus,
+  LogIn,
+  LogOut,
+  Settings,
+  FileText,
+  Users,
+  Building,
+  School
+} from 'lucide-react';
+import { apiClient } from '@/lib/api';
+
+interface AuditLog {
+  id: string;
+  action: string;
+  resource: string;
+  resourceId?: string;
+  details?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
+interface AuditLogsData {
+  logs: AuditLog[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export default function AdminAuditLogsPage() {
+  const { user } = useAuth();
+  const [logsData, setLogsData] = useState<AuditLogsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAction, setSelectedAction] = useState('');
+  const [selectedResource, setSelectedResource] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  useEffect(() => {
+    loadAuditLogs();
+  }, [currentPage, searchQuery, selectedAction, selectedResource, selectedUserId, startDate, endDate]);
+
+  const loadAuditLogs = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        page: currentPage,
+        limit: 20,
+        ...(selectedAction && { action: selectedAction }),
+        ...(selectedResource && { resource: selectedResource }),
+        ...(selectedUserId && { userId: selectedUserId }),
+        ...(startDate && { startDate }),
+        ...(endDate && { endDate })
+      };
+
+      // Since the audit logs endpoint is not implemented, show an error message
+      setLogsData(null);
+      console.warn('Audit logs endpoint not implemented in backend');
+    } catch (error) {
+      console.error('Failed to load audit logs:', error);
+      setLogsData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case 'LOGIN': return <LogIn className="h-4 w-4 text-green-600" />;
+      case 'LOGOUT': return <LogOut className="h-4 w-4 text-gray-600" />;
+      case 'CREATE': return <Plus className="h-4 w-4 text-blue-600" />;
+      case 'UPDATE': return <Edit className="h-4 w-4 text-yellow-600" />;
+      case 'DELETE': return <Trash2 className="h-4 w-4 text-red-600" />;
+      case 'VIEW': return <Eye className="h-4 w-4 text-purple-600" />;
+      default: return <Activity className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const getResourceIcon = (resource: string) => {
+    switch (resource) {
+      case 'User': return <Users className="h-4 w-4" />;
+      case 'Student': return <User className="h-4 w-4" />;
+      case 'Center': return <Building className="h-4 w-4" />;
+      case 'School': return <School className="h-4 w-4" />;
+      case 'Assessment': return <FileText className="h-4 w-4" />;
+      case 'Report': return <FileText className="h-4 w-4" />;
+      case 'IEPGoal': return <FileText className="h-4 w-4" />;
+      default: return <Database className="h-4 w-4" />;
+    }
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'ADMIN': return 'bg-red-100 text-red-800';
+      case 'SUPER_SPECIAL_EDUCATOR': return 'bg-purple-100 text-purple-800';
+      case 'SPECIAL_EDUCATOR': return 'bg-blue-100 text-blue-800';
+      case 'CENTER': return 'bg-green-100 text-green-800';
+      case 'PARENT': return 'bg-yellow-100 text-yellow-800';
+      case 'SCHOOL_VIEWER': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const exportLogs = async () => {
+    try {
+      const params = {
+        type: 'audit_logs',
+        format: 'csv',
+        filters: {
+          action: selectedAction,
+          resource: selectedResource,
+          userId: selectedUserId,
+          startDate,
+          endDate
+        }
+      };
+      
+      await apiClient.exportData(params);
+      alert('Export started. You will receive a download link shortly.');
+    } catch (error) {
+      console.error('Failed to export logs:', error);
+      alert('Failed to export logs. Please try again.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading audit logs...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!logsData) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-6">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
+                <p className="text-gray-600">Monitor system activities and user actions</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center">
+                <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Audit Logs Not Available</h3>
+                <p className="text-gray-600 mb-4">
+                  The audit logs feature is currently under development. 
+                  The backend API endpoints for audit log management are not yet implemented.
+                </p>
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
+              <p className="text-gray-600">Monitor system activities and user actions</p>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={loadAuditLogs}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <Button variant="outline" onClick={exportLogs}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              {/* Action Filter */}
+              <select
+                value={selectedAction}
+                onChange={(e) => setSelectedAction(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Actions</option>
+                <option value="LOGIN">Login</option>
+                <option value="LOGOUT">Logout</option>
+                <option value="CREATE">Create</option>
+                <option value="UPDATE">Update</option>
+                <option value="DELETE">Delete</option>
+                <option value="VIEW">View</option>
+              </select>
+
+              {/* Resource Filter */}
+              <select
+                value={selectedResource}
+                onChange={(e) => setSelectedResource(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Resources</option>
+                <option value="User">User</option>
+                <option value="Student">Student</option>
+                <option value="Center">Center</option>
+                <option value="School">School</option>
+                <option value="Assessment">Assessment</option>
+                <option value="Report">Report</option>
+                <option value="IEPGoal">IEP Goal</option>
+              </select>
+
+              {/* Start Date */}
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+
+              {/* End Date */}
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Search by user email, details, or IP address..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Audit Logs Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Audit Logs ({logsData?.total || 0})
+            </CardTitle>
+            <CardDescription>
+              System activity logs and user actions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 font-semibold">Action</th>
+                    <th className="text-left py-3 px-4 font-semibold">Resource</th>
+                    <th className="text-left py-3 px-4 font-semibold">User</th>
+                    <th className="text-left py-3 px-4 font-semibold">Details</th>
+                    <th className="text-left py-3 px-4 font-semibold">IP Address</th>
+                    <th className="text-left py-3 px-4 font-semibold">Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logsData?.logs.map((log) => (
+                    <tr key={log.id} className="border-b hover:bg-gray-50">
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-2">
+                          {getActionIcon(log.action)}
+                          <span className="font-medium">{log.action}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-2">
+                          {getResourceIcon(log.resource)}
+                          <span>{log.resource}</span>
+                          {log.resourceId && (
+                            <Badge variant="outline" className="text-xs">
+                              {log.resourceId.slice(0, 8)}...
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div>
+                          <div className="font-medium text-gray-900">{log.user.email}</div>
+                          <Badge className={`text-xs ${getRoleColor(log.user.role)}`}>
+                            {log.user.role.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-sm text-gray-600 max-w-xs truncate">
+                          {log.details || 'No details available'}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-sm text-gray-600 font-mono">
+                          {log.ipAddress || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-sm text-gray-600">
+                          <div>{new Date(log.createdAt).toLocaleDateString()}</div>
+                          <div className="text-xs text-gray-400">
+                            {new Date(log.createdAt).toLocaleTimeString()}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {logsData && logsData.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-gray-600">
+                  Showing {((logsData.page - 1) * 20) + 1} to {Math.min(logsData.page * 20, logsData.total)} of {logsData.total} logs
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={logsData.page === 1}
+                    onClick={() => setCurrentPage(logsData.page - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={logsData.page === logsData.totalPages}
+                    onClick={() => setCurrentPage(logsData.page + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
