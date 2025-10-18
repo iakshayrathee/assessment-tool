@@ -1,13 +1,17 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient, UserRole as PrismaUserRole } from '@prisma/client';
 import { UserRepository } from '../repositories/UserRepository';
 import { AuthUtils } from '../utils/auth';
-import { LoginRequest, LoginResponse, UserProfile, AdminProfileData, EducatorProfileData, CenterProfileData, ParentProfileData, SchoolViewerProfileData } from '../models';
+import { LoginRequest, LoginResponse, UserProfile, UserRole, AdminProfileData, EducatorProfileData, CenterProfileData, ParentProfileData, SchoolViewerProfileData } from '../models';
 
 export class AuthService {
   private userRepository: UserRepository;
 
   constructor(prisma: PrismaClient) {
     this.userRepository = new UserRepository(prisma);
+  }
+
+  private convertPrismaUserRole(prismaRole: PrismaUserRole): UserRole {
+    return prismaRole as unknown as UserRole;
   }
 
   async login(loginData: LoginRequest): Promise<LoginResponse> {
@@ -41,7 +45,7 @@ export class AuthService {
       id: user.id,
       userId: user.id,
       email: user.email,
-      role: user.role,
+      role: this.convertPrismaUserRole(user.role),
       profileId
     });
 
@@ -49,10 +53,10 @@ export class AuthService {
     const userProfile: UserProfile = {
       id: user.id,
       email: user.email,
-      role: user.role,
+      role: this.convertPrismaUserRole(user.role),
       isActive: user.isActive,
       profile: this.getUserProfileData(user),
-      lastLogin: user.lastLogin
+      lastLogin: user.lastLogin || undefined
     };
 
     return {
@@ -87,10 +91,10 @@ export class AuthService {
     return {
       id: completeUser.id,
       email: completeUser.email,
-      role: completeUser.role,
+      role: this.convertPrismaUserRole(completeUser.role),
       isActive: completeUser.isActive,
       profile: this.getUserProfileData(completeUser),
-      lastLogin: completeUser.lastLogin
+      lastLogin: completeUser.lastLogin || undefined
     };
   }
 
@@ -139,10 +143,10 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
-      role: user.role,
+      role: this.convertPrismaUserRole(user.role),
       isActive: user.isActive,
       profile: this.getUserProfileData(user),
-      lastLogin: user.lastLogin
+      lastLogin: user.lastLogin || undefined
     };
   }
 
@@ -153,7 +157,7 @@ export class AuthService {
     }
 
     // Update role-specific profile
-    await this.updateRoleProfile(userId, user.role, profileData);
+    await this.updateRoleProfile(userId, this.convertPrismaUserRole(user.role), profileData);
 
     // Fetch updated user data
     const updatedUser = await this.userRepository.findById(userId);
@@ -164,10 +168,10 @@ export class AuthService {
     return {
       id: updatedUser.id,
       email: updatedUser.email,
-      role: updatedUser.role,
+      role: this.convertPrismaUserRole(updatedUser.role),
       isActive: updatedUser.isActive,
       profile: this.getUserProfileData(updatedUser),
-      lastLogin: updatedUser.lastLogin
+      lastLogin: updatedUser.lastLogin || undefined
     };
   }
 
@@ -282,10 +286,10 @@ export class AuthService {
     const userProfiles = users.map(user => ({
       id: user.id,
       email: user.email,
-      role: user.role,
+      role: this.convertPrismaUserRole(user.role),
       isActive: user.isActive,
       profile: this.getUserProfileData(user),
-      lastLogin: user.lastLogin
+      lastLogin: user.lastLogin || undefined
     }));
 
     return { users: userProfiles, total };
@@ -297,10 +301,10 @@ export class AuthService {
     const userProfiles = users.map(user => ({
       id: user.id,
       email: user.email,
-      role: user.role,
+      role: this.convertPrismaUserRole(user.role),
       isActive: user.isActive,
       profile: this.getUserProfileData(user),
-      lastLogin: user.lastLogin
+      lastLogin: user.lastLogin || undefined
     }));
 
     return { users: userProfiles, total };

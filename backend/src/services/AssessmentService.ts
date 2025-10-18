@@ -288,12 +288,12 @@ export class AssessmentService {
       throw new Error('Report not found');
     }
 
-    if (existingReport.status !== AssessmentStatus.COMPLETED) {
-      throw new Error('Only submitted reports can be reviewed');
-    }
-
     if (existingReport.status === AssessmentStatus.REVIEWED) {
       throw new Error('Report is already reviewed');
+    }
+
+    if (existingReport.status !== AssessmentStatus.COMPLETED) {
+      throw new Error('Only submitted reports can be reviewed');
     }
 
     return await this.assessmentRepository.reviewReport(id, superSpecialEducatorId);
@@ -428,7 +428,7 @@ export class AssessmentService {
         assessmentType: assessment.assessmentType || 'Initial',
         status: assessment.status,
         createdAt: assessment.createdAt,
-        completedAt: assessment.completedAt
+        completedAt: assessment.completedAt || undefined
       }))
     };
   }

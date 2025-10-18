@@ -137,30 +137,8 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user }: EditUser
       }
     };
 
-    // Get the appropriate profile based on user role from the backend response structure
-    const getProfile = () => {
-      switch (user.role) {
-        case 'SPECIAL_EDUCATOR':
-          return user.specialEducatorProfile;
-        case 'SUPER_SPECIAL_EDUCATOR':
-          return user.superSpecialEducatorProfile;
-        case 'CENTER':
-          return user.centerProfile;
-        case 'PARENT':
-          return user.parentProfile;
-        case 'SCHOOL_VIEWER':
-          return user.schoolViewerProfile;
-        case 'ADMIN':
-          return user.adminProfile;
-        default:
-          return null;
-      }
-    };
-
-    const profile = getProfile();
-
     if (user.role === 'SPECIAL_EDUCATOR' || user.role === 'SUPER_SPECIAL_EDUCATOR') {
-      const educatorProfile = profile as EducatorProfile;
+      const educatorProfile = (user.role === 'SPECIAL_EDUCATOR' ? user.specialEducatorProfile : user.superSpecialEducatorProfile) as EducatorProfile;
       setUserData({
         email: user.email || '',
         isActive: user.isActive ?? true,
@@ -197,7 +175,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user }: EditUser
         }
       });
     } else if (user.role === 'CENTER') {
-      const centerProfile = profile as CenterProfile;
+      const centerProfile = user.centerProfile as CenterProfile;
       setUserData({
         email: user.email || '',
         isActive: user.isActive ?? true,
@@ -235,7 +213,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user }: EditUser
         }
       });
     } else if (user.role === 'PARENT') {
-      const parentProfile = profile as ParentProfile;
+      const parentProfile = user.parentProfile as ParentProfile;
       setUserData({
         email: user.email || '',
         isActive: user.isActive ?? true,
@@ -258,7 +236,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user }: EditUser
         }
       });
     } else if (user.role === 'SCHOOL_VIEWER') {
-      const schoolViewerProfile = profile as SchoolViewerProfile;
+      const schoolViewerProfile = user.schoolViewerProfile as SchoolViewerProfile;
       setUserData({
         email: user.email || '',
         isActive: user.isActive ?? true,
@@ -275,7 +253,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user }: EditUser
         }
       });
     } else if (user.role === 'ADMIN') {
-      const adminProfile = profile as AdminProfile;
+      const adminProfile = user.adminProfile as AdminProfile;
       setUserData({
         email: user.email || '',
         isActive: user.isActive ?? true,

@@ -92,7 +92,7 @@ export class StudentService {
     }
 
     // Create student with the parentId (can be null if no parent info provided)
-    const finalStudentData = {
+    const finalStudentData: StudentData = {
       ...studentData,
       parentId: parentId || null
     };

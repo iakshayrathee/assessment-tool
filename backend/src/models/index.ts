@@ -132,13 +132,14 @@ export interface StudentData {
   motherTongue?: string;
   syllabus?: string;
   centerId: string;
-  schoolId?: string;
-  parentId?: string; // Optional for new registrations
+  schoolId?: string | null;
+  parentId?: string | null; // Optional for new registrations
   // Parent information for new registrations (all optional)
   parentName?: string;
   parentPhone?: string;
   parentEmail?: string;
   parentAddress?: string;
+  address?: string; // Student address
   emergencyContact?: string;
   relationship?: string;
   // Additional student fields

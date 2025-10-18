@@ -1,7 +1,8 @@
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '../models';
+import { StringValue } from 'ms';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -32,13 +33,20 @@ export class AuthUtils {
   }
 
   static generateToken(payload: JWTPayload): string {
-    return jwt.sign(payload, this.JWT_SECRET, {
-      expiresIn: this.JWT_EXPIRES_IN,
-    });
+    const secret = this.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET is not defined');
+    }
+    const options: jwt.SignOptions = { expiresIn: this.JWT_EXPIRES_IN as StringValue };
+    return jwt.sign(payload, secret, options);
   }
 
   static verifyToken(token: string): JWTPayload {
-    return jwt.verify(token, this.JWT_SECRET) as JWTPayload;
+    const secret = this.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET is not defined');
+    }
+    return jwt.verify(token, secret) as JWTPayload;
   }
 
   static authenticateToken(req: AuthenticatedRequest, res: Response, next: NextFunction) {

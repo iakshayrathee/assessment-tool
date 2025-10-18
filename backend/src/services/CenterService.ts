@@ -865,19 +865,19 @@ export class CenterService {
     const transformedEducators = educators.map(educator => ({
       id: educator.id,
       email: educator.email,
-      fullName: educator.fullName,
-      phoneNumber: educator.phoneNumber,
+      fullName: educator.specialEducatorProfile?.fullName || '',
+      phoneNumber: educator.specialEducatorProfile?.phone || '',
       isActive: educator.isActive,
       createdAt: educator.createdAt,
       specialEducatorProfile: educator.specialEducatorProfile ? {
         id: educator.specialEducatorProfile.id,
-        specialization: educator.specialEducatorProfile.specialization,
-        experience: educator.specialEducatorProfile.experience,
-        qualifications: educator.specialEducatorProfile.qualifications,
-        bio: educator.specialEducatorProfile.bio,
+        specialization: educator.specialEducatorProfile.specializationAreas,
+        experience: educator.specialEducatorProfile.yearsOfExperience,
+        qualifications: educator.specialEducatorProfile.highestQualification,
+        bio: educator.specialEducatorProfile.personalStatement,
         assignedCenters: educator.specialEducatorProfile.centerAssignments?.map(assignment => ({
           id: assignment.center.id,
-          name: assignment.center.name,
+          name: assignment.center.centerName,
           address: assignment.center.address,
           assignedAt: assignment.createdAt
         })) || [],

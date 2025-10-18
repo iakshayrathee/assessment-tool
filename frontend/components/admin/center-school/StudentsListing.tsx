@@ -838,12 +838,12 @@ export default function StudentsListing({ centerId, students, schools, onUpdate 
   }
   
   if (viewingStudent) {
-    const student = students.find(s => s.id === viewingStudent);
-    if (!student) {
+    const foundStudent = students.find(s => s.id === viewingStudent);
+    if (!foundStudent) {
       return null;
     }
-    // TypeScript assertion: student is guaranteed to exist after the null check above
-    const studentData = student!;
+    // TypeScript assertion: foundStudent is guaranteed to exist after the null check above
+    const studentData: Student = foundStudent!;
     return (
         <div className="space-y-6">
           <Card>

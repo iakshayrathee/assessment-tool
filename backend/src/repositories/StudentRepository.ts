@@ -40,8 +40,6 @@ export class StudentRepository {
       centerId,
       schoolId,
       parentId,
-      parent, // Explicitly extract parent field to exclude it
-      parentProfile, // Explicitly extract parentProfile field to exclude it
       ...studentFields
     } = studentData;
     
