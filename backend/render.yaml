@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: knowled-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build && npx prisma generate
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        generateValue: true
+    autoDeploy: true
