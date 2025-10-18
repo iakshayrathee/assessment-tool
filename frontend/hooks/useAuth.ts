@@ -43,13 +43,13 @@ export function useAuth() {
     onSuccess: () => {
       queryClient.clear();
       toast.success('Logged out successfully');
-      router.push('/login');
+      router.push('/');
     },
     onError: () => {
       // Clear local data even if API call fails
       queryClient.clear();
       // Auth store will be cleared by the API client
-      router.push('/login');
+      router.push('/');
     },
   });
 

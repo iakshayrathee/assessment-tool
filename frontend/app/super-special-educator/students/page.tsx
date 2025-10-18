@@ -460,7 +460,7 @@ export default function StudentsPage() {
                       </td>
                       <td className="p-4">
                         <Badge className={getProgressColor(student.progressStatus)}>
-                          {student.progressStatus.replace('_', ' ')}
+                          {student.progressStatus?.replace('_', ' ')}
                         </Badge>
                       </td>
                       <td className="p-4">

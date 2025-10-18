@@ -64,9 +64,9 @@ class ApiClient {
               // Clear auth state from Zustand store
               useAuthStore.getState().clearAuth();
               
-              // Redirect to login if not already there
-              if (!window.location.pathname.includes('/login')) {
-                window.location.href = '/login';
+              // Redirect to home page if not already there
+              if (!window.location.pathname.includes('/login') && window.location.pathname !== '/') {
+                window.location.href = '/';
               }
             }
           }
@@ -146,18 +146,17 @@ class ApiClient {
   }
 
   async logout(): Promise<void> {
+    // Clear auth state immediately to prevent UI delay
+    useAuthStore.getState().clearAuth();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('knowled-auth-storage');
+    
     try {
       await this.client.post('/auth/logout');
     } catch (error) {
       // Continue with logout even if API call fails
-    } finally {
-      // Clear auth state from Zustand store
-      useAuthStore.getState().clearAuth();
-      
-      // Also clear localStorage directly
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('knowled-auth-storage');
+      console.warn('Logout API call failed:', error);
     }
   }
 
@@ -463,7 +462,7 @@ class ApiClient {
   }
 
   async updateSpecialEducatorProfile(profileData: any): Promise<any> {
-    const response = await this.client.put<ApiResponse<any>>('/auth/special-educator/profile', profileData);
+    const response = await this.client.put<ApiResponse<any>>('/special-educators/profile', profileData);
     return response.data.data;
   }
 
@@ -478,17 +477,13 @@ class ApiClient {
   }
 
   async getSpecialEducatorProfile(): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>('/auth/special-educator/profile');
+    const response = await this.client.get<ApiResponse<any>>('/special-educators/profile');
     return response.data.data;
   }
 
-  async checkSpecialEducatorToken(): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>('/auth/special-educator/verify-token');
-    return response.data.data;
-  }
 
   async getSpecialEducatorDashboard(): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>('/special-educator/dashboard');
+    const response = await this.client.get<ApiResponse<any>>('/special-educators/dashboard');
     return response.data.data;
   }
 
@@ -914,29 +909,29 @@ class ApiClient {
   }
 
   async getStudentDetailsForEducator(studentId: string): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>(`/special-educator/students/${studentId}`);
+    const response = await this.client.get<ApiResponse<any>>(`/special-educators/students/${studentId}`);
     return response.data.data;
   }
 
   async getEducatorRecentActivities(limit?: number): Promise<any[]> {
-    const response = await this.client.get<ApiResponse<any[]>>('/special-educator/activities', {
+    const response = await this.client.get<ApiResponse<any[]>>('/special-educators/activities', {
       params: { limit }
     });
     return response.data.data!;
   }
 
   async getEducatorStatistics(): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>('/special-educator/statistics');
+    const response = await this.client.get<ApiResponse<any>>('/special-educators/statistics');
     return response.data.data;
   }
 
   async getTodaysSchedule(): Promise<any[]> {
-    const response = await this.client.get<ApiResponse<any[]>>('/special-educator/schedule/today');
+    const response = await this.client.get<ApiResponse<any[]>>('/special-educators/schedule/today');
     return response.data.data!;
   }
 
   async createEducatorSessionNote(sessionData: any): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>('/special-educator/session-notes', sessionData);
+    const response = await this.client.post<ApiResponse<any>>('/special-educators/session-notes', sessionData);
     return response.data.data;
   }
 
@@ -944,7 +939,7 @@ class ApiClient {
     page?: number;
     limit?: number;
   }): Promise<PaginatedResponse<any>> {
-    const response = await this.client.get<PaginatedResponse<any>>(`/special-educator/session-notes/${studentId}`, { params });
+    const response = await this.client.get<PaginatedResponse<any>>(`/special-educators/students/${studentId}/session-notes`, { params });
     return response.data;
   }
 
@@ -1130,8 +1125,8 @@ class ApiClient {
     week?: string;
     month?: string;
   }): Promise<any[]> {
-    const response = await this.client.get('/special-educator/schedule', { params });
-    return response.data;
+    const response = await this.client.get('/special-educators/schedule/today', { params });
+    return response.data.data;
   }
 
   async getSpecialEducatorSessionNotes(studentId: string, params?: {
@@ -1424,7 +1419,7 @@ class ApiClient {
     search?: string;
     status?: string;
   }): Promise<PaginatedResponse<any>> {
-    const response = await this.client.get('/educator/students', { params });
+    const response = await this.client.get('/special-educators/students', { params });
     return response.data;
   }
 

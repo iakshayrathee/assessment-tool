@@ -170,7 +170,6 @@ export const queryKeys = {
   // Special Educator related queries
   specialEducator: {
     all: ['specialEducator'] as const,
-    token: () => [...queryKeys.specialEducator.all, 'token'] as const,
     dashboard: () => [...queryKeys.specialEducator.all, 'dashboard'] as const,
     profile: () => [...queryKeys.specialEducator.all, 'profile'] as const,
     assignedStudents: (params?: any) => 

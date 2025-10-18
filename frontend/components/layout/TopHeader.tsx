@@ -46,7 +46,6 @@ export function TopHeader({ className, userRole, onMenuClick }: TopHeaderProps) 
 
   const handleLogout = async () => {
     await logout();
-    router.push('/login');
   };
 
   const getUserInitials = (name?: string) => {

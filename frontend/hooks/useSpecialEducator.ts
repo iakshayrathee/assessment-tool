@@ -3,29 +3,6 @@ import { toast } from 'react-hot-toast';
 import { apiClient } from '@/lib/api';
 import { queryKeys, invalidationPatterns } from '@/lib/queryKeys';
 
-export function useCheckSpecialEducatorToken() {
-  // Check token
-  const tokenQuery = useQuery({
-    queryKey: queryKeys.specialEducator.token(),
-    queryFn: () => apiClient.checkSpecialEducatorToken(),
-    staleTime: 1 * 60 * 1000, // 1 minute
-    gcTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  return {
-    // Data
-    tokenData: tokenQuery.data,
-    
-    // Loading states
-    isLoading: tokenQuery.isLoading,
-    
-    // Error states
-    error: tokenQuery.error,
-    
-    // Refetch
-    refetch: tokenQuery.refetch,
-  };
-}
 
 export function useSpecialEducatorDashboard() {
   // Get dashboard data

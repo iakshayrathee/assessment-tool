@@ -4,8 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { 
   useSpecialEducatorDashboard, 
   useSpecialEducatorActivities, 
-  useSpecialEducatorSchedule,
-  useCheckSpecialEducatorToken
+  useSpecialEducatorSchedule
 } from '@/hooks/useSpecialEducator';
 import { useEducatorStudents } from '@/hooks/useEducator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,9 +30,6 @@ import Link from 'next/link';
 export default function EducatorDashboard() {
   const { user } = useAuth();
   
-  // Check token first
-  const { isLoading: isTokenLoading, error: tokenError } = useCheckSpecialEducatorToken();
-  
   // Use the new hooks for real data
   const { dashboard, isLoading: isDashboardLoading } = useSpecialEducatorDashboard();
   
@@ -43,7 +39,7 @@ export default function EducatorDashboard() {
   
   const { schedule, isLoading: isScheduleLoading } = useSpecialEducatorSchedule();
 
-  const isLoading = isTokenLoading || isDashboardLoading || isStudentsLoading;
+  const isLoading = isDashboardLoading || isStudentsLoading;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -75,21 +71,6 @@ export default function EducatorDashboard() {
     );
   }
   
-  if (tokenError) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="bg-red-100 text-red-800 p-4 rounded-lg mb-4">
-            <h2 className="text-lg font-semibold">Token Error</h2>
-            <p>{tokenError.message}</p>
-          </div>
-          <pre className="bg-gray-100 p-4 rounded-lg overflow-auto max-w-2xl text-left">
-            {JSON.stringify(tokenError, null, 2)}
-          </pre>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -300,23 +281,30 @@ export default function EducatorDashboard() {
                       <p>No scheduled activities for today</p>
                     </div>
                   ) : (
-                    schedule.map((item: any) => (
-                      <div key={item.id} className="flex items-center space-x-4 p-3 border rounded-lg">
-                        <Clock className={`h-5 w-5 ${
-                          item.type === 'assessment' ? 'text-blue-600' :
-                          item.type === 'iep_review' ? 'text-green-600' :
-                          'text-purple-600'
-                        }`} />
-                        <div className="flex-1">
-                          <h4 className="font-medium">{item.title}</h4>
-                          <p className="text-sm text-gray-600">{item.description}</p>
+                    Array.isArray(schedule) && schedule.length > 0 ? (
+                      schedule.map((item: any) => (
+                        <div key={item.id} className="flex items-center space-x-4 p-3 border rounded-lg">
+                          <Clock className={`h-5 w-5 ${
+                            item.type === 'assessment' ? 'text-blue-600' :
+                            item.type === 'iep_review' ? 'text-green-600' :
+                            'text-purple-600'
+                          }`} />
+                          <div className="flex-1">
+                            <h4 className="font-medium">{item.title}</h4>
+                            <p className="text-sm text-gray-600">{item.description}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium">{item.time}</p>
+                            <p className="text-xs text-gray-500">{item.duration}</p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">{item.time}</p>
-                          <p className="text-xs text-gray-500">{item.duration}</p>
-                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>No scheduled activities for today</p>
                       </div>
-                    ))
+                    )
                   )}
                 </div>
               </CardContent>
