@@ -28,6 +28,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { School as SchoolType } from '../../../app/admin/centers-schools/[id]/page';
+import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { toast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
 
@@ -243,13 +244,13 @@ export default function StudentsListing({ centerId, students, schools, onUpdate 
         </div>
         
         <div>
-          <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-          <Input
-            id="dateOfBirth"
-            type="date"
-            value={studentFormData.dateOfBirth}
-            onChange={(e) => setStudentFormData({...studentFormData, dateOfBirth: e.target.value})}
-            required
+          <ProfessionalDatePicker
+            label="Date of Birth"
+            value={studentFormData.dateOfBirth ? new Date(studentFormData.dateOfBirth) : null}
+            onChange={(date) => setStudentFormData({...studentFormData, dateOfBirth: date ? date.toISOString().split('T')[0] : ''})}
+            required={true}
+            placeholder="Select date of birth"
+            toYear={new Date().getFullYear()}
           />
         </div>
         
@@ -709,7 +710,11 @@ export default function StudentsListing({ centerId, students, schools, onUpdate 
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction 
-                                onClick={() => student && handleDeleteStudent(student.id)}
+                                onClick={() => {
+                                  if (student) {
+                                    handleDeleteStudent(student.id);
+                                  }
+                                }}
                                 className="bg-red-600 hover:bg-red-700"
                               >
                                 Delete Student
@@ -815,7 +820,11 @@ export default function StudentsListing({ centerId, students, schools, onUpdate 
                   Cancel
                 </Button>
                 <Button 
-                  onClick={() => student && handleUpdateStudent(student.id)}
+                  onClick={() => {
+                    if (student) {
+                      handleUpdateStudent(student.id);
+                    }
+                  }}
                   disabled={loading || !validateForm()}
                 >
                   <Save className="h-4 w-4 mr-2" />
@@ -826,13 +835,16 @@ export default function StudentsListing({ centerId, students, schools, onUpdate 
           </Card>
         </div>
       );
-    }
   }
   
   if (viewingStudent) {
     const student = students.find(s => s.id === viewingStudent);
-    if (student) {
-      return (
+    if (!student) {
+      return null;
+    }
+    // TypeScript assertion: student is guaranteed to exist after the null check above
+    const studentData = student!;
+    return (
         <div className="space-y-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -842,7 +854,7 @@ export default function StudentsListing({ centerId, students, schools, onUpdate 
                   Student Details
                 </CardTitle>
                 <CardDescription>
-                  Viewing detailed information for {student.fullName}
+                  Viewing detailed information for {studentData.fullName}
                 </CardDescription>
               </div>
               <Button 
@@ -861,23 +873,23 @@ export default function StudentsListing({ centerId, students, schools, onUpdate 
                     <div className="mt-2 space-y-2">
                       <div className="flex justify-between">
                         <span className="font-medium">Full Name:</span>
-                        <span>{student?.fullName}</span>
+                        <span>{studentData.fullName}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-medium">Date of Birth:</span>
-                        <span>{student?.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : ''}</span>
+                        <span>{studentData.dateOfBirth ? new Date(studentData.dateOfBirth).toLocaleDateString() : ''}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-medium">Age:</span>
-                        <span>{student?.age} years</span>
+                        <span>{studentData.age} years</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-medium">Gender:</span>
-                        <span>{student?.gender}</span>
+                        <span>{studentData.gender}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-medium">Mother Tongue:</span>
-                        <span>{student?.motherTongue || 'Not specified'}</span>
+                        <span>{studentData.motherTongue || 'Not specified'}</span>
                       </div>
                     </div>
                   </div>
@@ -887,15 +899,15 @@ export default function StudentsListing({ centerId, students, schools, onUpdate 
                     <div className="mt-2 space-y-2">
                       <div className="flex justify-between">
                         <span className="font-medium">Status:</span>
-                        {student?.status && (
-                          <Badge variant={getStatusColor(student.status)}>
-                            {getStatusText(student.status)}
+                        {studentData.status && (
+                          <Badge variant={getStatusColor(studentData.status)}>
+                            {getStatusText(studentData.status)}
                           </Badge>
                         )}
                       </div>
                       <div className="flex justify-between">
                         <span className="font-medium">Registration Date:</span>
-                        <span>{student?.registrationDate ? new Date(student.registrationDate).toLocaleDateString() : ''}</span>
+                        <span>{studentData.registrationDate ? new Date(studentData.registrationDate).toLocaleDateString() : ''}</span>
                       </div>
                     </div>
                   </div>
@@ -907,15 +919,15 @@ export default function StudentsListing({ centerId, students, schools, onUpdate 
                     <div className="mt-2 space-y-2">
                       <div className="flex justify-between">
                         <span className="font-medium">Grade:</span>
-                        <span>{student?.grade}</span>
+                        <span>{studentData.grade}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-medium">Syllabus:</span>
-                        <span>{student?.syllabus || 'Not specified'}</span>
+                        <span>{studentData.syllabus || 'Not specified'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-medium">School:</span>
-                        <span>{student?.school?.name || 'Not assigned to any school'}</span>
+                        <span>{studentData.school?.name || 'Not assigned to any school'}</span>
                       </div>
                     </div>
                   </div>
@@ -928,7 +940,7 @@ export default function StudentsListing({ centerId, students, schools, onUpdate 
                         size="sm"
                         onClick={() => {
                           setViewingStudent(null);
-                          if (student) handleEditStudent(student);
+                          handleEditStudent(studentData);
                         }}
                       >
                         <Edit className="h-4 w-4 mr-2" />
@@ -949,17 +961,15 @@ export default function StudentsListing({ centerId, students, schools, onUpdate 
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Student</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete {student.fullName}? This action cannot be undone.
+                              Are you sure you want to delete {studentData.fullName}? This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction 
                               onClick={() => {
-                                if (student) {
-                                  handleDeleteStudent(student.id);
-                                  setViewingStudent(null);
-                                }
+                                handleDeleteStudent(studentData.id);
+                                setViewingStudent(null);
                               }}
                               className="bg-red-600 hover:bg-red-700"
                             >

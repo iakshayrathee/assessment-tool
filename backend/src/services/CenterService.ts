@@ -293,67 +293,130 @@ export class CenterService {
   /**
    * Get all educators assigned to a center
    */
-  async getCenterEducators(centerId: string) {
-    const assignments = await this.prisma.centerAssignment.findMany({
-      where: {
-        centerId,
-        isActive: true
-      },
-      include: {
-        specialEducator: {
-          include: {
+  async getCenterEducators(centerId: string, options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }) {
+    const { page = 1, limit = 50, search } = options || {};
+    const skip = (page - 1) * limit;
+
+    // Build where clause for search - only for special educators
+    const searchWhere = search ? {
+      OR: [
+        {
+          specialEducator: {
+            fullName: {
+              contains: search,
+              mode: 'insensitive' as const
+            }
+          }
+        },
+        {
+          specialEducator: {
             user: {
-              select: { id: true, email: true, isActive: true, lastLogin: true }
-            },
-            assignedStudents: {
-              where: { isActive: true },
-              include: {
-                student: {
-                  select: { id: true, fullName: true, status: true }
+              email: {
+                contains: search,
+                mode: 'insensitive' as const
+              }
+            }
+          }
+        }
+      ]
+    } : {};
+
+    const whereClause = {
+      centerId,
+      isActive: true,
+      specialEducatorId: { not: null }, // Only get assignments with special educators
+      ...searchWhere
+    };
+
+    const [assignments, total] = await Promise.all([
+      this.prisma.centerAssignment.findMany({
+        where: whereClause,
+        include: {
+          specialEducator: {
+            include: {
+              user: {
+                select: { id: true, email: true, isActive: true, lastLogin: true }
+              },
+              assignedStudents: {
+                where: { isActive: true },
+                include: {
+                  student: {
+                    select: { 
+                      id: true, 
+                      fullName: true, 
+                      status: true,
+                      grade: true,
+                      school: {
+                        select: {
+                          id: true,
+                          name: true
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
           }
         },
-        superSpecialEducator: {
-          include: {
-            user: {
-              select: { id: true, email: true, isActive: true, lastLogin: true }
-            },
-            assignedCenters: {
-              where: { isActive: true },
-              select: { centerId: true }
-            }
-          }
-        }
-      },
-      orderBy: { assignedDate: 'desc' }
-    });
+        orderBy: { assignedDate: 'desc' },
+        skip,
+        take: limit
+      }),
+      this.prisma.centerAssignment.count({
+        where: whereClause
+      })
+    ]);
 
-    return assignments.map(assignment => {
-      const educator = assignment.specialEducator || assignment.superSpecialEducator;
-      const isSpecialEducator = !!assignment.specialEducator;
+    const educators = assignments.map(assignment => {
+      const educator = assignment.specialEducator!; // We know it exists due to our filter
+
+      // Get unique schools from assigned students
+      const assignedStudents = educator.assignedStudents || [];
+      const schools = Array.from(new Set(
+        assignedStudents
+          .map(as => as.student.school)
+          .filter(school => school)
+          .map(school => ({ id: school!.id, name: school!.name }))
+      ));
 
       return {
         assignmentId: assignment.id,
-        educatorId: educator?.id,
-        type: isSpecialEducator ? 'Special Educator' : 'Super Special Educator',
-        fullName: educator?.fullName,
-        email: educator?.user.email,
-        phone: educator?.phone,
-        yearsOfExperience: educator?.yearsOfExperience,
-        specializationAreas: educator?.specializationAreas,
-        isActive: educator?.user.isActive,
-        lastLogin: educator?.user.lastLogin,
+        educatorId: educator.id,
+        type: 'Special Educator',
+        fullName: educator.fullName,
+        email: educator.user.email,
+        phone: educator.phone,
+        yearsOfExperience: educator.yearsOfExperience,
+        specializationAreas: educator.specializationAreas,
+        isActive: educator.user.isActive,
+        lastLogin: educator.user.lastLogin,
         assignedDate: assignment.assignedDate,
-        assignedStudentCount: isSpecialEducator 
-          ? assignment.specialEducator?.assignedStudents.length || 0
-          : 0,
-        assignedCenterCount: !isSpecialEducator
-          ? assignment.superSpecialEducator?.assignedCenters.length || 0
-          : 0
+        assignedStudentCount: assignedStudents.length,
+        assignedStudents: assignedStudents.map(as => ({
+          id: as.student.id,
+          fullName: as.student.fullName,
+          status: as.student.status,
+          grade: as.student.grade,
+          schoolName: as.student.school?.name || 'Unknown School'
+        })),
+        assignedSchools: schools
       };
     });
+
+    return {
+      educators,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   /**
@@ -745,12 +808,19 @@ export class CenterService {
     const { page, limit } = options;
     const skip = (page - 1) * limit;
 
-    // Get all special educators with their assignment status
+    // Get special educators that are NOT assigned to any center
     const [educators, total] = await Promise.all([
       this.prisma.user.findMany({
         where: {
           role: 'SPECIAL_EDUCATOR',
-          isActive: true
+          isActive: true,
+          specialEducatorProfile: {
+            centerAssignments: {
+              none: {
+                isActive: true
+              }
+            }
+          }
         },
         include: {
           specialEducatorProfile: {
@@ -779,7 +849,14 @@ export class CenterService {
       this.prisma.user.count({
         where: {
           role: 'SPECIAL_EDUCATOR',
-          isActive: true
+          isActive: true,
+          specialEducatorProfile: {
+            centerAssignments: {
+              none: {
+                isActive: true
+              }
+            }
+          }
         }
       })
     ]);
@@ -804,7 +881,7 @@ export class CenterService {
           address: assignment.center.address,
           assignedAt: assignment.createdAt
         })) || [],
-        isAssigned: (educator.specialEducatorProfile.centerAssignments?.length || 0) > 0
+        isAssigned: false // These educators are guaranteed to be unassigned
       } : null
     }));
 

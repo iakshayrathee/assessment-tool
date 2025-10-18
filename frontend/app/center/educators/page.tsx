@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useCenterEducators } from '@/hooks/useCenter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,24 +10,38 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Input } from '@/components/ui/input';
+import { DataTable, Column } from '@/components/ui/data-table';
+import { PageHeader } from '@/components/ui/page-header';
 import { 
   GraduationCap, 
   Plus,
-  Minus,
   Users,
   Phone,
   Mail,
   RefreshCw,
   UserMinus,
-  ChevronDown,
-  ChevronRight,
   School,
   Eye,
-  Building
+  Building,
+  Search,
+  MapPin,
+  Calendar,
+  Award,
+  BookOpen,
+  UserCheck,
+  X,
+  MoreHorizontal,
+  Edit,
+  Trash2
 } from 'lucide-react';
-import { apiClient } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface Educator {
   assignmentId: string;
@@ -42,13 +57,18 @@ interface Educator {
   assignedDate: string;
   assignedStudentCount: number;
   assignedCenterCount: number;
+  assignedStudents?: AssignedStudent[];
+  assignedSchools?: Array<{
+    id: string;
+    name: string;
+  }>;
 }
 
 interface AvailableEducator {
   id: string;
   fullName: string;
   email: string;
-  phone?: string;
+  phoneNumber?: string;
   yearsOfExperience?: number;
   specializationAreas: string[];
   isActive: boolean;
@@ -63,6 +83,28 @@ interface AvailableEducator {
   bio?: string;
   specialization?: string;
   assignedStudentCount?: number;
+  specialEducatorProfile?: {
+    id: string;
+    specialization?: string;
+    experience?: number;
+    qualifications?: string[];
+    bio?: string;
+    assignedCenters: Array<{
+      id: string;
+      name: string;
+      address: string;
+      assignedAt: string;
+    }>;
+    isAssigned: boolean;
+  };
+}
+
+interface AssignedStudent {
+  id: string;
+  fullName: string;
+  status: string;
+  grade: string;
+  schoolName?: string;
 }
 
 interface Student {
@@ -73,6 +115,15 @@ interface Student {
   schoolName: string;
   status: string;
   assignedDate: string;
+  totalReports?: number;
+  completedAssessments?: number;
+  totalAssessments?: number;
+  overallProgress?: number;
+  parent?: {
+    fullName: string;
+    phone?: string;
+    email?: string;
+  };
 }
 
 interface School {
@@ -81,72 +132,70 @@ interface School {
   studentCount: number;
 }
 
-
-
 export default function CenterEducators() {
   const { user } = useAuth();
-  const [educators, setEducators] = useState<Educator[]>([]);
-  const [loading, setLoading] = useState(true);
+  const centerId = user?.profile?.id;
+  
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Modal states
   const [availableEducators, setAvailableEducators] = useState<AvailableEducator[]>([]);
-  const [allEducators, setAllEducators] = useState<AvailableEducator[]>([]);
-  const [activeTab, setActiveTab] = useState<'assigned' | 'unassigned'>('unassigned');
-  const [linkModalTab, setLinkModalTab] = useState<'unassigned' | 'assigned'>('unassigned');
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const [selectedEducatorStudents, setSelectedEducatorStudents] = useState<Student[]>([]);
+  const [selectedEducatorStudents, setSelectedEducatorStudents] = useState<AssignedStudent[]>([]);
   const [selectedEducatorSchools, setSelectedEducatorSchools] = useState<School[]>([]);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
-  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [showSchoolsModal, setShowSchoolsModal] = useState(false);
   const [loadingAvailable, setLoadingAvailable] = useState(false);
-  const [expandedEducator, setExpandedEducator] = useState<string | null>(null);
+  const [selectedEducatorForSchools, setSelectedEducatorForSchools] = useState<Educator | null>(null);
+  const [availableSearchTerm, setAvailableSearchTerm] = useState('');
+  const [showSpecializationsModal, setShowSpecializationsModal] = useState(false);
+  const [selectedEducatorSpecializations, setSelectedEducatorSpecializations] = useState<{name: string, specializations: string[]}>({name: '', specializations: []});
 
+  // Use React Query hooks for data fetching with pagination
+  const { 
+    educators: educatorsData, 
+    isLoading: loading, 
+    error: educatorsError,
+    refetch: refetchEducators,
+    removeEducator,
+    isRemoving,
+    assignEducator,
+    isAssigning,
+    pagination: educatorsPagination
+  } = useCenterEducators(centerId, { page, limit, search: searchTerm });
 
-  useEffect(() => {
-    loadEducators();
-  }, []);
+  // Transform backend data to match frontend interface
+  const educators: Educator[] = (educatorsData || [])
+    .filter((educator: any) => educator.type === 'Special Educator')
+    .map((educator: any) => ({
+      assignmentId: educator.assignmentId,
+      educatorId: educator.educatorId,
+      type: educator.type,
+      fullName: educator.fullName,
+      email: educator.email,
+      phone: educator.phone,
+      yearsOfExperience: educator.yearsOfExperience || 0,
+      specializationAreas: educator.specializationAreas || [],
+      isActive: educator.isActive || true,
+      lastLogin: educator.lastLogin,
+      assignedDate: educator.assignedDate,
+      assignedStudentCount: educator.assignedStudentCount || 0,
+      assignedCenterCount: educator.assignedCenterCount || 0,
+      assignedStudents: educator.assignedStudents || [],
+      assignedSchools: educator.assignedSchools || []
+    }));
 
-  const loadEducators = async () => {
-    try {
-      setLoading(true);
-      const centerId = user?.profile?.id;
-      if (!centerId) return;
-
-      const educatorsData = await apiClient.getCenterEducators(centerId);
-      
-      // Filter only Special Educators
-      const specialEducators = educatorsData.filter((educator: any) => 
-        educator.type === 'Special Educator'
-      );
-      
-      // Transform backend data to match frontend interface
-      const transformedEducators: Educator[] = specialEducators.map((educator: any) => ({
-        assignmentId: educator.assignmentId,
-        educatorId: educator.educatorId,
-        type: educator.type,
-        fullName: educator.fullName,
-        email: educator.email,
-        phone: educator.phone,
-        yearsOfExperience: educator.yearsOfExperience || 0,
-        specializationAreas: educator.specializationAreas || [],
-        isActive: educator.isActive || true,
-        lastLogin: educator.lastLogin,
-        assignedDate: educator.assignedDate,
-        assignedStudentCount: educator.assignedStudentCount || 0,
-        assignedCenterCount: educator.assignedCenterCount || 0
-      }));
-      
-      setEducators(transformedEducators);
-    } catch (error) {
-      console.error('Failed to load educators:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load educators",
-        variant: "destructive"
-      });
-      setEducators([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Handle errors
+  if (educatorsError) {
+    toast({
+      title: "Error",
+      description: "Failed to load educators",
+      variant: "destructive"
+    });
+  }
 
   const loadAvailableEducators = async () => {
     try {
@@ -154,7 +203,7 @@ export default function CenterEducators() {
       const centerId = user?.profile?.id;
       if (!centerId) return;
 
-      // Use the centers API to get all educators with detailed information
+      // Use the updated available-educators API that only returns unassigned educators
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/centers/available-educators?page=1&limit=1000`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -167,59 +216,11 @@ export default function CenterEducators() {
       }
       
       const data = await response.json();
-      const allSpecialEducators = data.data || [];
+      const unassignedEducators = data.data || [];
       
-      // Get currently assigned educator IDs for this center
-      const assignedEducatorIds = educators.map(e => e.educatorId);
+      console.log('Available (unassigned) educators:', unassignedEducators.length);
       
-      // Transform all educators with detailed information
-      const transformedEducators: AvailableEducator[] = allSpecialEducators.map((educator: any) => {
-        const profile = educator.specialEducatorProfile;
-        
-        // Check if educator is assigned to current center
-        const isAssignedToCurrentCenter = profile?.assignedCenters?.some((center: any) => center.id === centerId) || false;
-        
-        // Get assigned centers with proper structure
-        const assignedCenters = profile?.assignedCenters?.map((center: any) => ({
-          id: center.id,
-          name: center.name,
-          address: center.address,
-          assignedAt: center.assignedAt
-        })) || [];
-        
-        return {
-          id: educator.id,
-          fullName: profile?.fullName || educator.fullName || educator.email,
-          email: educator.email,
-          phone: profile?.phone || educator.phoneNumber,
-          yearsOfExperience: profile?.experience || 0,
-          specializationAreas: profile?.specialization ? [profile.specialization] : [],
-          isActive: educator.isActive || true,
-          assignedCenters: assignedCenters,
-          isAssigned: profile?.isAssigned || false,
-          qualifications: profile?.qualifications ? (Array.isArray(profile.qualifications) ? profile.qualifications : [profile.qualifications]) : [],
-          bio: profile?.bio,
-          specialization: profile?.specialization,
-          assignedStudentCount: 0 // Will be calculated from assignments
-        };
-      });
-      
-      // Separate into assigned and unassigned educators
-      // Assigned: educators who have any center assignments
-      // Unassigned: educators who have no center assignments
-      const assigned = transformedEducators.filter(educator => 
-        educator.isAssigned && educator.assignedCenters.length > 0
-      );
-      const unassigned = transformedEducators.filter(educator => 
-        !educator.isAssigned || educator.assignedCenters.length === 0
-      );
-      
-      console.log('All educators:', transformedEducators.length);
-      console.log('Assigned educators:', assigned.length);
-      console.log('Unassigned educators:', unassigned.length);
-      
-      setAllEducators(transformedEducators);
-      setAvailableEducators(unassigned); // Keep this for backward compatibility
+      setAvailableEducators(unassignedEducators);
     } catch (error) {
       console.error('Failed to load available educators:', error);
       toast({
@@ -232,96 +233,33 @@ export default function CenterEducators() {
     }
   };
 
-  const loadEducatorStudents = async (educatorId: string) => {
+  const handleAssignEducator = async (educatorId: string) => {
     try {
-      setLoadingStudents(true);
-      const centerId = user?.profile?.id;
-      if (!centerId) return;
-
-      // Get all center students and filter by educator
-      const studentsResponse = await apiClient.getCenterStudents(centerId, {
-        page: 1,
-        limit: 1000, // Get all students
-        hasAssignment: true
+      await assignEducator({ educatorId, role: 'SPECIAL_EDUCATOR' });
+      toast({
+        title: "Success",
+        description: "Educator assigned successfully",
       });
-      
-      // Filter students assigned to this educator
-      // Based on the API response, students have an assignments array
-      const educatorStudents = studentsResponse.data.filter((student: any) => {
-        return student.assignments && student.assignments.some((assignment: any) => 
-          assignment.specialEducatorId === educatorId && assignment.isActive
-        );
-      });
-      
-      console.log('Filtered educator students:', educatorStudents);
-      console.log('Total students from API:', studentsResponse.data.length);
-      console.log('Looking for educator ID:', educatorId);
-      
-      // Get center schools for school information
-      const schoolsResponse = await apiClient.getCenterSchools(centerId);
-      
-      // Transform student data to include additional fields needed by the modal
-      const transformedStudents = educatorStudents.map((student: any) => {
-        const activeAssignment = student.assignments?.find((assignment: any) => 
-          assignment.specialEducatorId === educatorId && assignment.isActive
-        );
-        
-        return {
-          ...student,
-          schoolName: student.school?.name || 'Not assigned',
-          assignedDate: activeAssignment?.assignedDate || student.createdAt,
-          // Ensure all required fields are present
-          totalReports: student.totalReports || 0,
-          totalAssessments: student.totalAssessments || 0,
-          completedAssessments: student.completedAssessments || 0,
-          overallProgress: student.overallProgress || 0,
-          pendingReports: student.pendingReports || 0
-        };
-      });
-      
-      // Create school summary based on students
-      const schoolMap = new Map();
-      transformedStudents.forEach((student: any) => {
-        if (student.schoolId) {
-          const school = schoolsResponse.find((s: any) => s.id === student.schoolId);
-          if (school) {
-            const existing = schoolMap.get(school.id) || { 
-              ...school, 
-              schoolName: school.name,
-              studentCount: 0 
-            };
-            existing.studentCount += 1;
-            schoolMap.set(school.id, existing);
-          }
-        }
-      });
-      
-      setSelectedEducatorStudents(transformedStudents);
-      setSelectedEducatorSchools(Array.from(schoolMap.values()));
-      setShowStudentsModal(true);
+      setShowLinkModal(false);
+      refetchEducators();
     } catch (error) {
-      console.error('Failed to load educator students:', error);
+      console.error('Failed to assign educator:', error);
       toast({
         title: "Error",
-        description: "Failed to load educator students",
+        description: "Failed to assign educator",
         variant: "destructive"
       });
-    } finally {
-      setLoadingStudents(false);
     }
   };
 
-  const handleRemoveEducator = async (assignmentId: string, educatorName: string) => {
+  const handleRemoveEducator = async (assignmentId: string) => {
     try {
-      const centerId = user?.profile?.id;
-      if (!centerId) return;
-
-      await apiClient.removeEducatorFromCenter(centerId, assignmentId);
+      await removeEducator(assignmentId);
       toast({
         title: "Success",
-        description: `${educatorName} has been removed from the center`
+        description: "Educator removed successfully",
       });
-      await loadEducators(); // Reload the list
+      refetchEducators();
     } catch (error) {
       console.error('Failed to remove educator:', error);
       toast({
@@ -332,716 +270,509 @@ export default function CenterEducators() {
     }
   };
 
-  const handleLinkEducator = async (educatorId: string, educatorName: string) => {
-    try {
-      const centerId = user?.profile?.id;
-      if (!centerId) return;
+  const handleViewStudents = (educator: Educator) => {
+    // Use the students data already available in the educator object
+    const educatorStudents = educator.assignedStudents || [];
+    setSelectedEducatorStudents(educatorStudents);
+    setShowStudentsModal(true);
+  };
 
-      await apiClient.assignEducatorToCenter(centerId, educatorId, 'SPECIAL_EDUCATOR');
-      toast({
-        title: "Success",
-        description: `${educatorName} has been linked to the center`
-      });
-      setShowLinkModal(false);
-      await loadEducators(); // Reload the list
-      await loadAvailableEducators(); // Reload available educators
-    } catch (error) {
-      console.error('Failed to link educator:', error);
-      toast({
-        title: "Error",
-        description: "Failed to link educator",
-        variant: "destructive"
-      });
+  const handleViewSchools = (educator: Educator) => {
+    // Use the schools data already available in the educator object
+    // Transform to match the expected School interface
+    const transformedSchools = (educator.assignedSchools || []).map((school: any) => ({
+      id: school.id,
+      schoolName: school.name,
+      studentCount: educator.assignedStudents?.filter(student => 
+        student.schoolName === school.name
+      ).length || 0
+    }));
+    
+    setSelectedEducatorSchools(transformedSchools);
+    setSelectedEducatorForSchools(educator);
+    setShowSchoolsModal(true);
+  };
+
+  // Filter available educators based on search
+  const filteredAvailableEducators = availableEducators.filter(educator =>
+    educator.fullName?.toLowerCase().includes(availableSearchTerm.toLowerCase()) ||
+    educator.email?.toLowerCase().includes(availableSearchTerm.toLowerCase()) ||
+    educator?.specializationAreas.some(area => 
+      area.toLowerCase().includes(availableSearchTerm.toLowerCase())
+    )
+  );
+
+  // Define table columns
+  const columns: Column<Educator>[] = [
+    {
+      key: 'fullName',
+      header: 'Name',
+      sortable: true,
+      render: (value, row) => (
+        <div className="flex flex-col">
+          <span className="font-medium text-gray-900">{value}</span>
+          <span className="text-sm text-gray-500">{row.email}</span>
+        </div>
+      ),
+      width: 'w-64'
+    },
+    {
+      key: 'phone',
+      header: 'Contact',
+      sortable: false,
+      render: (value, row) => (
+        <div className="flex flex-col space-y-1">
+          {value && (
+            <div className="flex items-center text-sm text-gray-600">
+              <Phone className="h-3 w-3 mr-1" />
+              {value}
+            </div>
+          )}
+          <div className="flex items-center text-sm text-gray-600">
+            <Mail className="h-3 w-3 mr-1" />
+            {row.email}
+          </div>
+        </div>
+      ),
+      width: 'w-48'
+    },
+    {
+      key: 'yearsOfExperience',
+      header: 'Experience',
+      sortable: true,
+      render: (value) => (
+        <div className="flex items-center">
+          <Award className="h-4 w-4 mr-1 text-blue-500" />
+          <span>{value || 0} years</span>
+        </div>
+      ),
+      width: 'w-32'
+    },
+    {
+      key: 'specializationAreas',
+      header: 'Specializations',
+      sortable: false,
+      render: (value, row) => (
+        <div className="flex flex-wrap gap-1">
+          {(value || []).slice(0, 2).map((area: string, index: number) => (
+            <Badge key={index} variant="secondary" className="text-xs">
+              {area}
+            </Badge>
+          ))}
+          {(value || []).length > 2 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+              onClick={() => {
+                setSelectedEducatorSpecializations({
+                  name: row.fullName,
+                  specializations: value || []
+                });
+                setShowSpecializationsModal(true);
+              }}
+            >
+              +{(value || []).length - 2} more
+            </Button>
+          )}
+          {(value || []).length === 0 && (
+            <span className="text-gray-400 text-xs italic">No specializations</span>
+          )}
+        </div>
+      ),
+      width: 'w-48'
+    },
+    {
+      key: 'assignedStudentCount',
+      header: 'Students',
+      sortable: true,
+      render: (value) => (
+        <div className="flex items-center">
+          <Users className="h-4 w-4 mr-1 text-green-500" />
+          <span>{value || 0}</span>
+        </div>
+      ),
+      width: 'w-24'
+    },
+    {
+      key: 'assignedDate',
+      header: 'Assigned Date',
+      sortable: true,
+      render: (value) => (
+        <div className="flex items-center text-sm text-gray-600">
+          <Calendar className="h-3 w-3 mr-1" />
+          {new Date(value).toLocaleDateString()}
+        </div>
+      ),
+      width: 'w-32'
+    },
+    {
+      key: 'isActive',
+      header: 'Status',
+      sortable: true,
+      render: (value) => (
+        <Badge variant={value ? "default" : "secondary"}>
+          {value ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+      width: 'w-24'
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      sortable: false,
+      render: (_, row) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleViewStudents(row)}>
+              <Eye className="mr-2 h-4 w-4" />
+              View Students
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleViewSchools(row)}>
+              <School className="mr-2 h-4 w-4" />
+              View Schools
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => handleRemoveEducator(row.assignmentId)}
+              className="text-red-600"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Remove Educator
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+      width: 'w-16'
     }
+  ];
+
+  // Handle pagination changes
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
   };
 
-  const handleUnlinkEducator = async (educatorId: string, educatorName: string) => {
-    try {
-      const centerId = user?.profile?.id;
-      if (!centerId) return;
-
-      // Find the assignment ID for this educator
-      const assignment = educators.find(e => e.educatorId === educatorId);
-      if (!assignment) {
-        toast({
-          title: "Error",
-          description: "Assignment not found",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      await apiClient.removeEducatorFromCenter(centerId, assignment.assignmentId);
-      toast({
-        title: "Success",
-        description: `${educatorName} has been unlinked from the center`
-      });
-      await loadEducators(); // Reload the list
-      await loadAvailableEducators(); // Reload available educators
-    } catch (error) {
-      console.error('Failed to unlink educator:', error);
-      toast({
-        title: "Error",
-        description: "Failed to unlink educator",
-        variant: "destructive"
-      });
-    }
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setPage(1); // Reset to first page when changing limit
   };
 
-  const handleOpenLinkModal = () => {
-    setShowLinkModal(true);
-    loadAvailableEducators();
+  const handleSearch = (searchValue: string) => {
+    setSearchTerm(searchValue);
+    setPage(1); // Reset to first page when searching
   };
-
-
-
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"
-          />
-          <p className="text-muted-foreground">Loading educators...</p>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      >
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <motion.div
-              whileHover={{ rotate: 5, scale: 1.1 }}
-              className="p-2 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900 dark:to-indigo-900 rounded-xl"
-            >
-              <GraduationCap className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-            </motion.div>
-            Special Educators Management
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Manage special educators linked to your center
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={loadEducators} className="group">
-            <RefreshCw className="h-4 w-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
-            Refresh
-          </Button>
+    <div className="">
+      <PageHeader
+        title="Center Educators"
+        description="Manage special educators assigned to your center"
+        badge={{
+          text: `${educators.length} Educators`,
+          variant: 'secondary'
+        }}
+        actions={[
+          {
+            label: 'Refresh',
+            onClick: () => refetchEducators(),
+            icon: RefreshCw,
+            variant: 'outline',
+            disabled: loading
+          },
+          {
+            label: 'Add Educator',
+            onClick: () => {
+              loadAvailableEducators();
+              setShowLinkModal(true);
+            },
+            icon: UserCheck
+          }
+        ]}
+      />
 
-          <Button onClick={handleOpenLinkModal} className="group">
-            <Plus className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform" />
-            Link Special Educator
-          </Button>
-        </div>
-      </motion.div>
+      <div className="p-6 space-y-6">
 
-      {/* Educators Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Special Educators ({educators.length})
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Educators</CardTitle>
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {educators.length === 0 ? (
-              <div className="text-center py-12">
-                <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Special Educators</h3>
-                <p className="text-muted-foreground mb-4">
-                  No special educators are currently linked to this center.
-                </p>
-                <Button onClick={handleOpenLinkModal}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Link First Educator
-                </Button>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Educator</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Students</TableHead>
-                    <TableHead>Schools</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {educators.map((educator) => (
-                    <Collapsible key={educator.assignmentId} asChild>
-                      <>
-                        <CollapsibleTrigger asChild>
-                          <TableRow 
-                            className="cursor-pointer hover:bg-muted/50"
-                            onClick={() => setExpandedEducator(
-                              expandedEducator === educator.assignmentId ? null : educator.assignmentId
-                            )}
-                          >
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900 dark:to-blue-900 rounded-full flex items-center justify-center">
-                                  <span className="text-purple-600 dark:text-purple-400 font-semibold text-sm">
-                                    {educator.fullName.split(' ').map(n => n[0]).join('')}
-                                  </span>
-                                </div>
-                                <div>
-                                  <div className="font-medium">{educator.fullName}</div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {educator.yearsOfExperience} years experience
-                                  </div>
-                                </div>
-                                {expandedEducator === educator.assignmentId ? (
-                                  <ChevronDown className="h-4 w-4 ml-auto" />
-                                ) : (
-                                  <ChevronRight className="h-4 w-4 ml-auto" />
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Mail className="h-3 w-3" />
-                                  {educator.email}
-                                </div>
-                                {educator.phone && (
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Phone className="h-3 w-3" />
-                                    {educator.phone}
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary">
-                                {educator.assignedStudentCount} students
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <School className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm">Multiple schools</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    loadEducatorStudents(educator.educatorId);
-                                  }}
-                                  disabled={loadingStudents}
-                                >
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  View Students
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRemoveEducator(educator.assignmentId, educator.fullName);
-                                  }}
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <UserMinus className="h-4 w-4 mr-1" />
-                                  Remove
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent asChild>
-                          <TableRow>
-                            <TableCell colSpan={5} className="bg-muted/20">
-                              <div className="p-4 space-y-3">
-                                <h4 className="font-medium">Educator Details</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div>
-                                    <p className="text-sm font-medium">Specialization Areas</p>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {educator.specializationAreas.map((area, index) => (
-                                        <Badge key={index} variant="outline" className="text-xs">
-                                          {area}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium">Assignment Date</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {new Date(educator.assignedDate).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        </CollapsibleContent>
-                      </>
-                    </Collapsible>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <div className="text-2xl font-bold">{educators.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Special educators assigned
+            </p>
           </CardContent>
         </Card>
-      </motion.div>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {educators.reduce((sum, educator) => sum + educator.assignedStudentCount, 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Students under care
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Assignments</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {educators.filter(educator => educator.isActive).length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Currently active
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Link Special Educator Modal */}
+      {/* Data Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Assigned Educators</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            data={educators}
+            columns={columns}
+            loading={loading}
+            pagination={{
+              page,
+              limit,
+              total: educatorsPagination?.total || 0,
+              onPageChange: handlePageChange,
+              onLimitChange: handleLimitChange
+            }}
+            searchable={true}
+            onSearch={handleSearch}
+            emptyMessage="No educators assigned to this center"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Add Educator Modal */}
       <Dialog open={showLinkModal} onOpenChange={setShowLinkModal}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Special Educators Management</DialogTitle>
+            <DialogTitle>Add Special Educator</DialogTitle>
           </DialogHeader>
           
-          <Tabs value={linkModalTab} onValueChange={(value) => setLinkModalTab(value as 'unassigned' | 'assigned')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="unassigned">Unassigned Educators</TabsTrigger>
-              <TabsTrigger value="assigned">Assigned Educators</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="unassigned" className="space-y-4">
-              {loadingAvailable ? (
-                <div className="flex items-center justify-center py-8">
-                  <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                  Loading educators...
-                </div>
-              ) : availableEducators.length === 0 ? (
-                <div className="text-center py-8">
-                  <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Unassigned Educators</h3>
-                  <p className="text-muted-foreground">
-                    All special educators are already linked to centers.
-                  </p>
-                </div>
-              ) : (
-                <div className="border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Educator</TableHead>
-                        <TableHead>Contact</TableHead>
-                        <TableHead>Experience</TableHead>
-                        <TableHead>Specialization</TableHead>
-                        <TableHead>Qualifications</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {availableEducators.map((educator) => (
-                        <TableRow key={educator.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-blue-100 dark:from-green-900 dark:to-blue-900 rounded-full flex items-center justify-center">
-                                <span className="text-green-600 dark:text-green-400 font-semibold text-sm">
-                                  {educator.fullName.split(' ').map(n => n[0]).join('')}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="font-medium">{educator.fullName}</p>
-                                {educator.bio && (
-                                  <p className="text-xs text-muted-foreground truncate max-w-[200px]" title={educator.bio}>
-                                    {educator.bio}
-                                  </p>
-                                )}
-                              </div>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search educators by name, email, or specialization..."
+                value={availableSearchTerm}
+                onChange={(e) => setAvailableSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {loadingAvailable ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2">Loading available educators...</span>
+              </div>
+            ) : filteredAvailableEducators.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No available educators found
+              </div>
+            ) : (
+              <div className="grid gap-4 max-h-96 overflow-y-auto">
+                {filteredAvailableEducators.map((educator) => (
+                  <div key={educator.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="font-semibold text-lg">{educator.fullName}</h3>
+                          <Badge variant="outline">{educator.specialization || 'Special Educator'}</Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
+                          <div className="flex items-center">
+                            <Mail className="h-4 w-4 mr-2" />
+                            {educator.email}
+                          </div>
+                          {educator.phoneNumber && (
+                            <div className="flex items-center">
+                              <Phone className="h-4 w-4 mr-2" />
+                              {educator.phoneNumber}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1 text-sm">
-                                <Mail className="h-3 w-3 text-muted-foreground" />
-                                <span className="truncate max-w-[150px]" title={educator.email}>
-                                  {educator.email}
-                                </span>
-                              </div>
-                              {educator.phone && (
-                                <div className="flex items-center gap-1 text-sm">
-                                  <Phone className="h-3 w-3 text-muted-foreground" />
-                                  {educator.phone}
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-medium">{educator.yearsOfExperience}</span> years
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1 max-w-[200px]">
-                              {educator.specializationAreas.length > 0 ? (
-                                educator.specializationAreas.slice(0, 2).map((area, index) => (
-                                  <Badge key={index} variant="outline" className="text-xs">
-                                    {area}
-                                  </Badge>
-                                ))
-                              ) : (
-                                <span className="text-muted-foreground text-sm">No specialization</span>
-                              )}
-                              {educator.specializationAreas.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{educator.specializationAreas.length - 2}
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="max-w-[150px]">
-                              {educator.qualifications && educator.qualifications.length > 0 ? (
-                                <div className="space-y-1">
-                                  {educator.qualifications.slice(0, 2).map((qual, index) => (
-                                    <Badge key={index} variant="secondary" className="text-xs block w-fit">
-                                      {qual}
-                                    </Badge>
-                                  ))}
-                                  {educator.qualifications.length > 2 && (
-                                    <span className="text-xs text-muted-foreground">
-                                      +{educator.qualifications.length - 2} more
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground text-sm">Not specified</span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={educator.isActive ? "default" : "secondary"} className="text-xs">
-                              {educator.isActive ? "Active" : "Inactive"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              onClick={() => handleLinkEducator(educator.id, educator.fullName)}
-                              disabled={!educator.isActive}
-                              size="sm"
-                            >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Link
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="assigned" className="space-y-4">
-              {loadingAvailable ? (
-                <div className="flex items-center justify-center py-8">
-                  <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                  Loading educators...
-                </div>
-              ) : allEducators.filter(e => e.isAssigned && e.assignedCenters.length > 0).length === 0 ? (
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Assigned Educators</h3>
-                  <p className="text-muted-foreground">
-                    No special educators are currently assigned to any centers.
-                  </p>
-                </div>
-              ) : (
-                <div className="border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Educator</TableHead>
-                        <TableHead>Contact</TableHead>
-                        <TableHead>Experience</TableHead>
-                        <TableHead>Specialization</TableHead>
-                        <TableHead>Assigned Centers</TableHead>
-                        <TableHead>Assignment Date</TableHead>
-                        <TableHead>Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {allEducators
-                        .filter(educator => educator.isAssigned && educator.assignedCenters.length > 0)
-                        .map((educator) => (
-                          <TableRow key={educator.id}>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center">
-                                  <span className="text-blue-600 dark:text-blue-400 font-semibold text-sm">
-                                    {educator.fullName.split(' ').map(n => n[0]).join('')}
-                                  </span>
-                                </div>
-                                <div>
-                                  <p className="font-medium">{educator.fullName}</p>
-                                  {educator.bio && (
-                                    <p className="text-xs text-muted-foreground truncate max-w-[200px]" title={educator.bio}>
-                                      {educator.bio}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-1 text-sm">
-                                  <Mail className="h-3 w-3 text-muted-foreground" />
-                                  <span className="truncate max-w-[150px]" title={educator.email}>
-                                    {educator.email}
-                                  </span>
-                                </div>
-                                {educator.phone && (
-                                  <div className="flex items-center gap-1 text-sm">
-                                    <Phone className="h-3 w-3 text-muted-foreground" />
-                                    {educator.phone}
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-medium">{educator.yearsOfExperience}</span> years
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1 max-w-[200px]">
-                                {educator.specializationAreas.length > 0 ? (
-                                  educator.specializationAreas.slice(0, 2).map((area, index) => (
-                                    <Badge key={index} variant="outline" className="text-xs">
-                                      {area}
-                                    </Badge>
-                                  ))
-                                ) : (
-                                  <span className="text-muted-foreground text-sm">No specialization</span>
-                                )}
-                                {educator.specializationAreas.length > 2 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{educator.specializationAreas.length - 2}
-                                  </Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-1 max-w-[250px]">
-                                {educator.assignedCenters.map((center, index) => (
-                                  <div key={center.id} className="flex items-start gap-2 p-2 bg-muted/30 rounded text-xs">
-                                    <Building className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0 flex-1">
-                                      <p className="font-medium truncate" title={center.name}>
-                                        {center.name}
-                                      </p>
-                                      <p className="text-muted-foreground truncate" title={center.address}>
-                                        {center.address}
-                                      </p>
-                                      <p className="text-muted-foreground">
-                                        Since: {new Date(center.assignedAt).toLocaleDateString()}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <span className="text-sm">
-                                {educator.assignedCenters.length > 0 ? 
-                                  new Date(educator.assignedCenters[0].assignedAt).toLocaleDateString() : 
-                                  'N/A'
-                                }
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-1">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedEducatorStudents([]);
-                                    setSelectedEducatorSchools([]);
-                                    loadEducatorStudents(educator.id);
-                                    setShowStudentsModal(true);
-                                  }}
-                                >
-                                  <Users className="h-4 w-4 mr-1" />
-                                  View Students
-                                </Button>
-                                {educator.assignedCenters.some(center => center.id === user?.profile?.id) && (
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => handleUnlinkEducator(educator.id, educator.fullName)}
-                                  >
-                                    <Minus className="h-4 w-4 mr-1" />
-                                    Unlink
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+                          )}
+                          <div className="flex items-center">
+                            <Award className="h-4 w-4 mr-2" />
+                            {educator.yearsOfExperience || 0} years experience
+                          </div>
+                          <div className="flex items-center">
+                            <BookOpen className="h-4 w-4 mr-2" />
+                            {educator.qualifications?.length || 0} qualifications
+                          </div>
+                        </div>
+
+                        {educator.specializationAreas && educator.specializationAreas.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {educator.specializationAreas.map((area, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {area}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        {educator.bio && (
+                          <p className="text-sm text-gray-600 mt-2">{educator.bio}</p>
+                        )}
+                      </div>
+                      
+                      <Button
+                        onClick={() => handleAssignEducator(educator.id)}
+                        disabled={isAssigning}
+                        className="ml-4"
+                      >
+                        {isAssigning ? 'Assigning...' : 'Assign'}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Students Modal */}
       <Dialog open={showStudentsModal} onOpenChange={setShowStudentsModal}>
-        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Assigned Students</DialogTitle>
           </DialogHeader>
-          <div className="space-y-6">
-            {/* Schools Summary */}
-            {selectedEducatorSchools.length > 0 && (
-              <div>
-                <h4 className="font-medium mb-3">Schools ({selectedEducatorSchools.length})</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {selectedEducatorSchools.map((school) => (
-                    <Card key={school.id} className="p-3">
-                      <div className="flex items-center gap-2">
-                        <School className="h-4 w-4 text-blue-500" />
-                        <div>
-                          <p className="font-medium text-sm">{school.schoolName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {school.studentCount} students
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
+          
+          <div className="space-y-4">
+            {selectedEducatorStudents.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No students assigned to this educator
               </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student Name</TableHead>
+                    <TableHead>Grade</TableHead>
+                    <TableHead>School</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedEducatorStudents.map((student) => (
+                    <TableRow key={student.id}>
+                      <TableCell className="font-medium">{student.fullName}</TableCell>
+                      <TableCell>{student.grade}</TableCell>
+                      <TableCell>{student.schoolName}</TableCell>
+                      <TableCell>
+                        <Badge variant={student.status === 'Active' ? 'default' : 'secondary'}>
+                          {student.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
-
-            {/* Students List */}
-            <div>
-              <h4 className="font-medium mb-3">Students ({selectedEducatorStudents.length})</h4>
-              {selectedEducatorStudents.length === 0 ? (
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No students assigned to this educator.</p>
-                </div>
-              ) : (
-                <div className="border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Student Name</TableHead>
-                        <TableHead>Grade</TableHead>
-                        <TableHead>School</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Assigned Date</TableHead>
-                        <TableHead>Parent Contact</TableHead>
-                        <TableHead>Progress</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedEducatorStudents.map((student) => (
-                        <TableRow key={student.id} className="hover:bg-muted/50">
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center">
-                                <span className="text-blue-600 dark:text-blue-400 font-semibold text-xs">
-                                  {student.fullName.split(' ').map(n => n[0]).join('')}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="font-medium">{student.fullName}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  DOB: {new Date(student.dateOfBirth).toLocaleDateString()}
-                                </p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{student.grade}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="max-w-[150px]">
-                              <p className="text-sm truncate" title={student.schoolName || 'Not assigned'}>
-                                {student.schoolName || 'Not assigned'}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={student.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                              {student.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <p className="text-sm">
-                              {new Date(student.assignedDate).toLocaleDateString()}
-                            </p>
-                          </TableCell>
-                          <TableCell>
-                            {student.parent ? (
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium">{student.parent.fullName}</p>
-                                {student.parent.phone && (
-                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <Phone className="h-3 w-3" />
-                                    {student.parent.phone}
-                                  </p>
-                                )}
-                                {student.parent.email && (
-                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <Mail className="h-3 w-3" />
-                                    {student.parent.email}
-                                  </p>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="text-sm text-muted-foreground">No contact info</p>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-xs">
-                                <span className="text-blue-600 font-medium">{student.totalReports || 0}</span>
-                                <span className="text-muted-foreground">Reports</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-xs">
-                                <span className="text-green-600 font-medium">{student.completedAssessments || 0}/{student.totalAssessments || 0}</span>
-                                <span className="text-muted-foreground">Assessments</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-xs">
-                                <span className="text-purple-600 font-medium">{student.overallProgress || 0}%</span>
-                                <span className="text-muted-foreground">Overall</span>
-                              </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </div>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Schools Modal */}
+      <Dialog open={showSchoolsModal} onOpenChange={setShowSchoolsModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Associated Schools</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedEducatorSchools.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No schools associated with this educator
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {selectedEducatorSchools.map((school) => (
+                  <div key={school.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold">{school.schoolName}</h3>
+                        <p className="text-sm text-gray-600">{school.studentCount} students</p>
+                      </div>
+                      <Building className="h-5 w-5 text-gray-400" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
+      {/* Specializations Modal */}
+      <Dialog open={showSpecializationsModal} onOpenChange={setShowSpecializationsModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-blue-600" />
+              Specializations - {selectedEducatorSpecializations.name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedEducatorSpecializations.specializations.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Award className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                <p>No specializations listed for this educator</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600 mb-4">
+                  This educator specializes in the following areas:
+                </p>
+                <div className="grid gap-2">
+                  {selectedEducatorSpecializations.specializations.map((specialization, index) => (
+                    <div 
+                      key={index} 
+                      className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      <BookOpen className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                      <span className="text-sm font-medium text-blue-900">{specialization}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 text-center">
+                    Total: {selectedEducatorSpecializations.specializations.length} specialization{selectedEducatorSpecializations.specializations.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      </div> {/* Close container div */}
     </div>
   );
 }

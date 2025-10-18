@@ -36,7 +36,9 @@ import {
   Star,
   TrendingUp,
   Clock,
-  BookOpen
+  BookOpen,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
@@ -83,6 +85,9 @@ export default function EducatorManagementPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [centers, setCenters] = useState<Center[]>([]);
+  const [centersCurrentPage, setCentersCurrentPage] = useState(1);
+  const [centersTotalPages, setCentersTotalPages] = useState(1);
+  const [centersLoading, setCentersLoading] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedEducator, setSelectedEducator] = useState<Educator | null>(null);
   const [selectedCenterId, setSelectedCenterId] = useState('');
@@ -91,7 +96,7 @@ export default function EducatorManagementPage() {
 
   useEffect(() => {
     loadEducators();
-    loadCenters();
+    loadCenters(1);
   }, [currentPage, searchQuery, roleFilter, centerFilter, statusFilter]);
 
   const loadEducators = async () => {
@@ -263,7 +268,7 @@ export default function EducatorManagementPage() {
       }
 
       setEducators(transformedEducators);
-      setTotalPages(response.pagination?.totalPages || response.pagination?.pages || 1);
+      setTotalPages(response.pagination?.totalPages || 1);
     } catch (error) {
       console.error('Failed to load educators:', error);
       toast({
@@ -277,17 +282,18 @@ export default function EducatorManagementPage() {
     }
   };
 
-  const loadCenters = async () => {
+  const loadCenters = async (page: number = 1) => {
     try {
+      setCentersLoading(true);
       console.log('Loading centers...');
-      const response = await apiClient.getAllCenters({ page: 1, limit: 100 });
+      const response = await apiClient.getAllCenters({ page, limit: 10 });
       console.log('Centers API response:', response);
       
       // Extract center data from the response
       let centerData: Center[] = [];
       if (response && response.data) {
         // Map the data to extract center information from centerProfile
-        centerData = response.data.map(item => ({
+        centerData = response.data.map((item: any) => ({
           id: item.centerProfile?.id || item.id,
           name: item.centerProfile?.centerName || 'Unknown Center',
           address: item.centerProfile?.address || '',
@@ -297,6 +303,8 @@ export default function EducatorManagementPage() {
       
       console.log('Processed center data:', centerData);
       setCenters(centerData);
+      setCentersTotalPages(response?.pagination?.totalPages || 1);
+      setCentersCurrentPage(page);
     } catch (error) {
       console.error('Failed to load centers:', error);
       // If API fails, provide some demo centers
@@ -306,6 +314,8 @@ export default function EducatorManagementPage() {
         { id: 'center-3', name: 'Knowled Learning Center - Bangalore Branch', address: '78, Brigade Road', email: 'bangalore@knowled.com' },
         { id: 'center-4', name: 'Knowled Learning Center - Chennai Branch', address: '23, Anna Salai', email: 'chennai@knowled.com' }
       ]);
+    } finally {
+      setCentersLoading(false);
     }
   };
 
@@ -390,11 +400,7 @@ export default function EducatorManagementPage() {
         }
       } else {
         // For real educators, make the API call
-        await apiClient.assignEducatorToCenterAsAdmin({
-          centerId,
-          educatorId,
-          educatorType: educator.role
-        });
+        await apiClient.assignEducatorToCenter(centerId, educatorId, educator.role);
         
         toast({
           title: "Educator Assigned",
@@ -773,6 +779,20 @@ export default function EducatorManagementPage() {
                           onClick={() => {
                             setSelectedEducator(educator);
                             setSelectedCenterId(educator.centerId || '');
+                            
+                            // Show current assignment in toast
+                            if (educator.centerName && educator.centerId) {
+                              toast({
+                                title: "Current Assignment",
+                                description: `${educator.name} is currently assigned to ${educator.centerName}`,
+                              });
+                            } else {
+                              toast({
+                                title: "No Current Assignment",
+                                description: `${educator.name} is not currently assigned to any center`,
+                              });
+                            }
+                            
                             setAssignDialogOpen(true);
                           }}
                         >
@@ -859,29 +879,14 @@ export default function EducatorManagementPage() {
 
       {/* Center Assignment Dialog */}
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Assign Educator to Center</DialogTitle>
             <DialogDescription>
               Assign {selectedEducator?.name} to a center for management and oversight.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Select Center</label>
-              <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
-                <SelectTrigger className="w-full mt-1">
-                  <SelectValue placeholder="Choose a center" />
-                </SelectTrigger>
-                <SelectContent>
-                  {centers.map((center) => (
-                    <SelectItem key={center.id} value={center.id}>
-                      {center.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="flex-1 space-y-4 overflow-hidden">
             {selectedEducator && (
               <div className="p-3 bg-muted rounded-lg">
                 <div className="text-sm font-medium">{selectedEducator.name}</div>
@@ -891,6 +896,63 @@ export default function EducatorManagementPage() {
                 </Badge>
               </div>
             )}
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block">Select Center</label>
+              <div className="border rounded-lg overflow-hidden">
+                <div className="max-h-64 overflow-y-auto">
+                  {centersLoading ? (
+                    <div className="p-4 space-y-2">
+                      {[...Array(3)].map((_, i) => (
+                        <Skeleton key={i} className="h-16 w-full" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-1 p-2">
+                      {centers.map((center) => (
+                        <div
+                          key={center.id}
+                          className={cn(
+                            "p-3 rounded-md cursor-pointer transition-colors hover:bg-muted",
+                            selectedCenterId === center.id ? "bg-primary/10 border border-primary" : "border border-transparent"
+                          )}
+                          onClick={() => setSelectedCenterId(center.id)}
+                        >
+                          <div className="font-medium text-sm">{center.name}</div>
+                          <div className="text-xs text-muted-foreground">{center.address}</div>
+                          <div className="text-xs text-muted-foreground">{center.email}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Pagination Controls */}
+                <div className="border-t p-2 flex items-center justify-between bg-muted/50">
+                  <div className="text-xs text-muted-foreground">
+                    Page {centersCurrentPage} of {centersTotalPages}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => loadCenters(centersCurrentPage - 1)}
+                      disabled={centersCurrentPage <= 1 || centersLoading}
+                    >
+                      <ChevronLeft className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => loadCenters(centersCurrentPage + 1)}
+                      disabled={centersCurrentPage >= centersTotalPages || centersLoading}
+                    >
+                      <ChevronRight className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>

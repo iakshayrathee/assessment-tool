@@ -156,7 +156,7 @@ export default function CompliancePage() {
   }
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="">
       <PageHeader
         title="Compliance Monitoring"
         description="Monitor regulatory compliance and track overdue items"

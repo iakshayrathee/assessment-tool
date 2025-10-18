@@ -147,15 +147,15 @@ export function EducatorSidebar({ className }: SidebarProps) {
             >
               <div className="flex items-center space-x-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="" alt={user?.profile?.fullName} />
+                  <AvatarImage src="" alt={user?.specialEducatorProfile?.fullName || user?.superSpecialEducatorProfile?.fullName} />
                   <AvatarFallback className="bg-blue-100 text-blue-600">
-                    {user?.profile?.fullName ? getInitials(user.profile.fullName) : 'SE'}
+                    {(user?.specialEducatorProfile?.fullName || user?.superSpecialEducatorProfile?.fullName) ? getInitials(user?.specialEducatorProfile?.fullName || user?.superSpecialEducatorProfile?.fullName || '') : 'SE'}
                   </AvatarFallback>
                 </Avatar>
                 {!isCollapsed && (
                   <div className="flex-1 text-left">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {user?.profile?.fullName || 'Special Educator'}
+                      {user?.specialEducatorProfile?.fullName || user?.superSpecialEducatorProfile?.fullName || 'Special Educator'}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
                       {user?.email}

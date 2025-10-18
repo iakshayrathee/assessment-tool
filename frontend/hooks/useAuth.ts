@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { apiClient } from '@/lib/api';
 import { LoginRequest, User } from '@/types';
 import { useAuthStore } from '@/lib/store/authStore';
+import { queryKeys, invalidationPatterns } from '@/lib/queryKeys';
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -18,7 +19,13 @@ export function useAuth() {
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginRequest) => apiClient.login(credentials),
     onSuccess: (data) => {
-      queryClient.setQueryData(['user'], data.user);
+      // Clear all existing queries and set new user data
+      queryClient.clear();
+      queryClient.setQueryData(queryKeys.auth.user(), data.user);
+      queryClient.setQueryData(queryKeys.auth.profile(), data.user);
+      if (data.token) {
+        queryClient.setQueryData(queryKeys.auth.token(), data.token);
+      }
       toast.success('Login successful!');
       
       // Redirect based on user role
@@ -48,19 +55,40 @@ export function useAuth() {
 
   // Profile query
   const profileQuery = useQuery({
-    queryKey: ['user'],
+    queryKey: queryKeys.auth.profile(),
     queryFn: () => apiClient.getProfile(),
     initialData: getCurrentUser,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: false,
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    retry: (failureCount, error: any) => {
+      // Don't retry on 401 (unauthorized) - user needs to login
+      if (error?.response?.status === 401) return false;
+      return failureCount < 2;
+    },
   });
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: (profileData: any) => apiClient.updateProfile(profileData),
     onSuccess: (updatedUser) => {
-      queryClient.setQueryData(['user'], updatedUser);
+      queryClient.setQueryData(queryKeys.auth.user(), updatedUser);
+      queryClient.setQueryData(queryKeys.auth.profile(), updatedUser);
       useAuthStore.getState().updateUser(updatedUser);
+      
+      // Invalidate role-specific profile queries
+      const userRole = updatedUser.role;
+      if (userRole === 'ADMIN') {
+        queryClient.invalidateQueries({ queryKey: queryKeys.admin.dashboard() });
+      } else if (userRole === 'SPECIAL_EDUCATOR') {
+        queryClient.invalidateQueries({ queryKey: queryKeys.specialEducator.profile() });
+      } else if (userRole === 'SUPER_SPECIAL_EDUCATOR') {
+        queryClient.invalidateQueries({ queryKey: queryKeys.superSpecialEducator.profile() });
+      } else if (userRole === 'PARENT') {
+        queryClient.invalidateQueries({ queryKey: queryKeys.parent.profile() });
+      } else if (userRole === 'CENTER' || userRole === 'SCHOOL_VIEWER') {
+        queryClient.invalidateQueries({ queryKey: queryKeys.centers.dashboard() });
+      }
+      
       toast.success('Profile updated successfully!');
     },
     onError: (error: any) => {

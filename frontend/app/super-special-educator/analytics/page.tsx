@@ -124,8 +124,8 @@ export default function AnalyticsPage() {
     try {
       setLoading(true);
       const [crossCenter, performance] = await Promise.all([
-        apiClient.getCrossCenterComparison({ timeframe: selectedTimeframe }),
-        apiClient.getPerformanceAnalytics({ timeframe: selectedTimeframe })
+        apiClient.getCrossCenterComparison(selectedTimeframe),
+        apiClient.getPerformanceAnalytics(selectedTimeframe)
       ]);
       setCrossCenterData(Array.isArray(crossCenter) ? crossCenter : []);
       setPerformanceData(performance || null);

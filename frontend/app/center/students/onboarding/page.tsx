@@ -6,9 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PageHeader } from '@/components/ui/page-header';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { 
   User, 
   ArrowLeft,
@@ -19,15 +23,17 @@ import {
   GraduationCap,
   UserPlus,
   FileText,
-  CheckCircle
+  CheckCircle,
+  Award,
+  Search
 } from 'lucide-react';
-import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
+import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { apiClient } from '@/lib/api';
 import { useAuthStore } from '@/lib/store/authStore';
+import { GRADE_LIST, SYLLABUS_LIST } from '@/lib/staticData';
 
 interface StudentOnboardingData {
-  // Student basic info
   fullName: string;
   dateOfBirth: string;
   gender: string;
@@ -35,16 +41,12 @@ interface StudentOnboardingData {
   motherTongue: string;
   syllabus: string;
   schoolId: string;
-  
-  // Parent info
   parentName: string;
   parentPhone: string;
   parentEmail: string;
   parentAddress: string;
   emergencyContact: string;
   relationship: string;
-  
-  // Additional onboarding info
   previousSchool: string;
   medicalConditions: string;
   specialNeeds: string;
@@ -58,9 +60,17 @@ interface School {
 }
 
 interface SpecialEducator {
-  id: string;
+  educatorId: string;
   fullName: string;
+  email?: string;
+  phone?: string;
+  yearsOfExperience?: number;
   specializationAreas: string[];
+  assignedStudentCount?: number;
+}
+
+interface ApiError {
+  message: string;
 }
 
 export default function StudentOnboarding() {
@@ -69,9 +79,11 @@ export default function StudentOnboarding() {
   const [submitting, setSubmitting] = useState(false);
   const [schools, setSchools] = useState<School[]>([]);
   const [educators, setEducators] = useState<SpecialEducator[]>([]);
-  const [activeTab, setActiveTab] = useState('student');
+  const [activeTab, setActiveTab] = useState<'student' | 'assignment'>('student');
   const [selectedEducatorId, setSelectedEducatorId] = useState<string>('');
-  
+  const [showEducatorModal, setShowEducatorModal] = useState(false);
+  const [educatorSearchTerm, setEducatorSearchTerm] = useState('');
+
   const [formData, setFormData] = useState<StudentOnboardingData>({
     fullName: '',
     dateOfBirth: '',
@@ -97,41 +109,30 @@ export default function StudentOnboarding() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
-        // Get current user's center ID from auth store
         const user = useAuthStore.getState().user;
-        console.log('Current user:', user);
-        const centerId = user?.centerId;
-        console.log('Center ID:', centerId);
-        
+        const centerId = user?.profile?.id;
+
         if (!centerId) {
-          console.error('Center ID not found in user data');
           toast({
-            title: "Error",
-            description: "Center ID not found. Please ensure you're logged in properly.",
-            variant: "destructive",
+            title: 'Error',
+            description: 'Center ID not found. Please ensure you are logged in.',
+            variant: 'destructive',
           });
           return;
         }
-        
-        console.log('Fetching schools for center:', centerId);
-        // Fetch schools using apiClient method
-        const schoolsData = await apiClient.getCenterSchools(centerId);
-        console.log('Schools data received:', schoolsData);
+
+        const [schoolsData, educatorsData] = await Promise.all([
+          apiClient.getCenterSchools(centerId) as Promise<School[]>,
+          apiClient.getCenterEducators(centerId) as Promise<{ data: SpecialEducator[] }>,
+        ]);
+
         setSchools(schoolsData || []);
-        
-        console.log('Fetching educators for center:', centerId);
-        // Fetch educators using apiClient method
-        const educatorsData = await apiClient.getCenterEducators(centerId);
-        console.log('Educators data received:', educatorsData);
-        setEducators(educatorsData || []);
-        
+        setEducators(educatorsData?.data || []);
       } catch (error) {
-        console.error('Error fetching data:', error);
         toast({
-          title: "Error",
-          description: `Failed to load schools and educators: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          variant: "destructive",
+          title: 'Error',
+          description: `Failed to load data: ${(error as ApiError).message || 'Unknown error'}`,
+          variant: 'destructive',
         });
       } finally {
         setLoading(false);
@@ -142,526 +143,477 @@ export default function StudentOnboarding() {
   }, []);
 
   const handleInputChange = (field: keyof StudentOnboardingData, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const calculateAge = (dateOfBirth: string): number => {
+    if (!dateOfBirth) return 0;
     const today = new Date();
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    
+
     return age;
   };
 
   const validateForm = (): boolean => {
-    const requiredFields = [
-      'fullName', 'dateOfBirth', 'gender', 'grade', 
-      'parentName', 'parentPhone', 'parentAddress'
+    const requiredFields: (keyof StudentOnboardingData)[] = [
+      'fullName',
+      'dateOfBirth',
+      'gender',
+      'grade',
     ];
-    
+
     for (const field of requiredFields) {
-      if (!formData[field as keyof StudentOnboardingData]) {
+      if (!formData[field]) {
         toast({
-          title: "Validation Error",
+          title: 'Validation Error',
           description: `Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`,
-          variant: "destructive",
+          variant: 'destructive',
         });
         return false;
       }
     }
-    
+
     if (!selectedEducatorId) {
       toast({
-        title: "Validation Error",
-        description: "Please assign a Special Educator",
-        variant: "destructive",
+        title: 'Validation Error',
+        description: 'Please assign a Special Educator',
+        variant: 'destructive',
       });
       return false;
     }
-    
+
     return true;
+  };
+
+  const filteredEducators = educators.filter(
+    (educator) =>
+      educator.fullName.toLowerCase().includes(educatorSearchTerm.toLowerCase()) ||
+      (educator.email?.toLowerCase().includes(educatorSearchTerm.toLowerCase()) ?? false) ||
+      educator.specializationAreas.some((area) =>
+        area.toLowerCase().includes(educatorSearchTerm.toLowerCase())
+      )
+  );
+
+  const handleEducatorSelect = (educatorId: string) => {
+    if (!educatorId || !educators.some((educator) => educator.educatorId === educatorId)) {
+      toast({
+        title: 'Error',
+        description: 'Invalid educator selected. Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setSelectedEducatorId(educatorId);
+    setShowEducatorModal(false);
+    setEducatorSearchTerm('');
   };
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    
+
     setSubmitting(true);
     try {
-      const age = calculateAge(formData.dateOfBirth);
-      
-      // Get current user's center ID
       const user = useAuthStore.getState().user;
-      const centerId = user?.centerId;
+      const centerId = user?.profile?.id;
 
       if (!centerId) {
         toast({
-          title: "Error",
-          description: "Center ID not found",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Center ID not found',
+          variant: 'destructive',
         });
         return;
       }
-      
+
       const studentData = {
-        // Required fields based on backend validation
         fullName: formData.fullName,
         dateOfBirth: formData.dateOfBirth,
-        age,
+        age: calculateAge(formData.dateOfBirth),
         gender: formData.gender,
         grade: formData.grade,
-        centerId: centerId,
-        
-        // Parent info - will be created as part of student creation
-        parentProfile: {
-          fullName: formData.parentName,
-          phone: formData.parentPhone,
-          email: formData.parentEmail,
-          address: formData.parentAddress,
-          emergencyContact: formData.emergencyContact,
-          relationship: formData.relationship
-        },
-        
-        // Optional fields
+        centerId,
         motherTongue: formData.motherTongue,
         syllabus: formData.syllabus,
         schoolId: formData.schoolId || null,
         specialEducatorId: selectedEducatorId || null,
-        
-        // Additional onboarding info
         previousSchool: formData.previousSchool,
         medicalConditions: formData.medicalConditions,
         specialNeeds: formData.specialNeeds,
         learningConcerns: formData.learningConcerns,
         parentExpectations: formData.parentExpectations,
-        
-        status: 'ACTIVE'
+        status: 'ACTIVE',
       };
 
-      const response = await apiClient.createStudent(studentData);
-      
+      await apiClient.createStudent(studentData);
+
       toast({
-        title: "Success",
-        description: "Student onboarded successfully!",
+        title: 'Success',
+        description: 'Student onboarded successfully!',
       });
-      router.push(`/center/students/${response.data.id}`);
+      router.push('/center/students');
     } catch (error: any) {
-      console.error('Error onboarding student:', error);
       toast({
-        title: "Error",
+        title: 'Error',
         description: error.response?.data?.message || 'Failed to onboard student',
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setSubmitting(false);
     }
   };
 
+  const renderEducatorDisplay = () => {
+    if (loading) {
+      return 'Loading educators...';
+    }
+
+    if (selectedEducatorId) {
+      const selectedEducator = educators.find((educator) => educator.educatorId === selectedEducatorId);
+      if (selectedEducator) {
+        const primarySpecialization = selectedEducator.specializationAreas?.[0] || '';
+        const additionalCount = (selectedEducator.specializationAreas?.length || 0) - 1;
+        return (
+          <div className="flex flex-col gap-1 w-full text-left">
+            <span className="font-medium">{selectedEducator.fullName}</span>
+            <span className="text-sm text-gray-500">
+              {primarySpecialization}
+              {additionalCount > 0 && ` +${additionalCount} more`}
+              {selectedEducator.yearsOfExperience && ` • ${selectedEducator.yearsOfExperience} yrs exp`}
+            </span>
+          </div>
+        );
+      }
+      return 'Educator not found';
+    }
+
+    return 'Select a Special Educator';
+  };
+
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center gap-4">
-        <Link href="/center/students">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Students
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold">Student Onboarding</h1>
-          <p className="text-muted-foreground">
-            Complete student registration and assignment process
-          </p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Student Onboarding"
+        description="Complete student registration and assignment process"
+        actions={[
+          {
+            label: 'Back to Students',
+            onClick: () => router.back(),
+            icon: ArrowLeft,
+            variant: 'outline'
+          }
+        ]}
+      />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="student" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Student Info
-          </TabsTrigger>
-          <TabsTrigger value="parent" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Parent Info
-          </TabsTrigger>
-          <TabsTrigger value="additional" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Additional Info
-          </TabsTrigger>
-          <TabsTrigger value="assignment" className="flex items-center gap-2">
-            <GraduationCap className="h-4 w-4" />
-            Assignment
-          </TabsTrigger>
-        </TabsList>
+      <div className="p-6 space-y-6">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'student' | 'assignment')} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="student" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Student Info
+            </TabsTrigger>
+            <TabsTrigger value="assignment" className="flex items-center gap-2">
+              <GraduationCap className="h-4 w-4" />
+              Assign Educators
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="student">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Student Information
-              </CardTitle>
-              <CardDescription>
-                Basic information about the student
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name *</Label>
-                  <Input
-                    id="fullName"
-                    value={formData.fullName}
-                    onChange={(e) => handleInputChange('fullName', e.target.value)}
-                    placeholder="Enter student's full name"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-                  <Input
-                    id="dateOfBirth"
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="gender">Gender *</Label>
-                  <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MALE">Male</SelectItem>
-                      <SelectItem value="FEMALE">Female</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="grade">Grade *</Label>
-                  <Input
-                    id="grade"
-                    value={formData.grade}
-                    onChange={(e) => handleInputChange('grade', e.target.value)}
-                    placeholder="e.g., Grade 5, Class X"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="motherTongue">Mother Tongue</Label>
-                  <Input
-                    id="motherTongue"
-                    value={formData.motherTongue}
-                    onChange={(e) => handleInputChange('motherTongue', e.target.value)}
-                    placeholder="Primary language"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="syllabus">Syllabus</Label>
-                  <Input
-                    id="syllabus"
-                    value={formData.syllabus}
-                    onChange={(e) => handleInputChange('syllabus', e.target.value)}
-                    placeholder="e.g., CBSE, ICSE, State Board"
-                  />
-                </div>
-                
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="schoolId">School</Label>
-                  <Select value={formData.schoolId} onValueChange={(value) => handleInputChange('schoolId', value)} disabled={loading}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={loading ? "Loading schools..." : "Select school (optional)"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {loading ? (
-                        <SelectItem value="loading" disabled>Loading schools...</SelectItem>
-                      ) : schools.length === 0 ? (
-                        <SelectItem value="no-schools" disabled>No schools available</SelectItem>
-                      ) : (
-                        schools.map((school) => (
-                          <SelectItem key={school.id} value={school.id}>
-                            {school.name}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="parent">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Parent/Guardian Information
-              </CardTitle>
-              <CardDescription>
-                Contact and emergency information
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="parentName">Parent/Guardian Name *</Label>
-                  <Input
-                    id="parentName"
-                    value={formData.parentName}
-                    onChange={(e) => handleInputChange('parentName', e.target.value)}
-                    placeholder="Full name"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="relationship">Relationship</Label>
-                  <Select value={formData.relationship} onValueChange={(value) => handleInputChange('relationship', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select relationship" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Parent">Parent</SelectItem>
-                      <SelectItem value="Guardian">Guardian</SelectItem>
-                      <SelectItem value="Grandparent">Grandparent</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="parentPhone">Phone Number *</Label>
-                  <Input
-                    id="parentPhone"
-                    value={formData.parentPhone}
-                    onChange={(e) => handleInputChange('parentPhone', e.target.value)}
-                    placeholder="Primary contact number"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="parentEmail">Email Address</Label>
-                  <Input
-                    id="parentEmail"
-                    type="email"
-                    value={formData.parentEmail}
-                    onChange={(e) => handleInputChange('parentEmail', e.target.value)}
-                    placeholder="Email address"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyContact">Emergency Contact</Label>
-                  <Input
-                    id="emergencyContact"
-                    value={formData.emergencyContact}
-                    onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-                    placeholder="Alternative contact number"
-                  />
-                </div>
-                
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="parentAddress">Address *</Label>
-                  <Textarea
-                    id="parentAddress"
-                    value={formData.parentAddress}
-                    onChange={(e) => handleInputChange('parentAddress', e.target.value)}
-                    placeholder="Complete address"
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="additional">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Additional Information
-              </CardTitle>
-              <CardDescription>
-                Background and special considerations
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="previousSchool">Previous School</Label>
-                  <Input
-                    id="previousSchool"
-                    value={formData.previousSchool}
-                    onChange={(e) => handleInputChange('previousSchool', e.target.value)}
-                    placeholder="Name of previous school (if any)"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="medicalConditions">Medical Conditions</Label>
-                  <Textarea
-                    id="medicalConditions"
-                    value={formData.medicalConditions}
-                    onChange={(e) => handleInputChange('medicalConditions', e.target.value)}
-                    placeholder="Any medical conditions or medications"
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="specialNeeds">Special Needs</Label>
-                  <Textarea
-                    id="specialNeeds"
-                    value={formData.specialNeeds}
-                    onChange={(e) => handleInputChange('specialNeeds', e.target.value)}
-                    placeholder="Any special accommodations needed"
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="learningConcerns">Learning Concerns</Label>
-                  <Textarea
-                    id="learningConcerns"
-                    value={formData.learningConcerns}
-                    onChange={(e) => handleInputChange('learningConcerns', e.target.value)}
-                    placeholder="Any specific learning difficulties or concerns"
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="parentExpectations">Parent Expectations</Label>
-                  <Textarea
-                    id="parentExpectations"
-                    value={formData.parentExpectations}
-                    onChange={(e) => handleInputChange('parentExpectations', e.target.value)}
-                    placeholder="What do you hope to achieve through this program?"
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="assignment">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5" />
-                Educator Assignment
-              </CardTitle>
-              <CardDescription>
-                Assign a Special Educator to the student
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="educator">Special Educator *</Label>
-                <Select value={selectedEducatorId} onValueChange={setSelectedEducatorId} disabled={loading}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={loading ? "Loading educators..." : "Select a Special Educator"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {loading ? (
-                      <SelectItem value="loading" disabled>Loading educators...</SelectItem>
-                    ) : educators.length === 0 ? (
-                      <SelectItem value="no-educators" disabled>No educators available</SelectItem>
-                    ) : (
-                      educators.map((educator) => (
-                        <SelectItem key={educator.id} value={educator.id}>
-                          <div className="flex flex-col">
-                            <span>{educator.fullName}</span>
-                            {educator.specializationAreas.length > 0 && (
-                              <span className="text-sm text-muted-foreground">
-                                {educator.specializationAreas.join(', ')}
-                              </span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {selectedEducatorId && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-green-700">
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="font-medium">Educator Selected</span>
+          <TabsContent value="student">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Student Information
+                </CardTitle>
+                <CardDescription>Basic information about the student</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name *</Label>
+                    <Input
+                      id="fullName"
+                      value={formData.fullName}
+                      onChange={(e) => handleInputChange('fullName', e.target.value)}
+                      placeholder="Enter student's full name"
+                      required
+                    />
                   </div>
-                  <p className="text-sm text-green-600 mt-1">
-                    The student will be assigned to the selected Special Educator upon completion.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
 
-      <div className="flex justify-between">
-        <div className="flex gap-2">
-          {activeTab !== 'student' && (
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                const tabs = ['student', 'parent', 'additional', 'assignment'];
-                const currentIndex = tabs.indexOf(activeTab);
-                if (currentIndex > 0) {
-                  setActiveTab(tabs[currentIndex - 1]);
-                }
-              }}
-            >
-              Previous
-            </Button>
-          )}
-        </div>
-        
-        <div className="flex gap-2">
-          {activeTab !== 'assignment' ? (
-            <Button 
-              onClick={() => {
-                const tabs = ['student', 'parent', 'additional', 'assignment'];
-                const currentIndex = tabs.indexOf(activeTab);
-                if (currentIndex < tabs.length - 1) {
-                  setActiveTab(tabs[currentIndex + 1]);
-                }
-              }}
-            >
-              Next
-            </Button>
-          ) : (
-            <Button onClick={handleSubmit} disabled={loading}>
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Onboarding...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Complete Onboarding
-                </>
-              )}
-            </Button>
-          )}
+                  <div className="space-y-2">
+                    <ProfessionalDatePicker
+                      label="Date of Birth"
+                      value={formData.dateOfBirth ? new Date(formData.dateOfBirth) : null}
+                      onChange={(date) => handleInputChange('dateOfBirth', date ? date.toISOString().split('T')[0] : '')}
+                      required
+                      placeholder="Select date of birth"
+                      toYear={new Date().getFullYear()}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender *</Label>
+                    <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)} required>
+                      <SelectTrigger id="gender">
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MALE">Male</SelectItem>
+                        <SelectItem value="FEMALE">Female</SelectItem>
+                        <SelectItem value="OTHER">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="grade">Grade *</Label>
+                    <Select value={formData.grade} onValueChange={(value) => handleInputChange('grade', value)} required>
+                      <SelectTrigger id="grade">
+                        <SelectValue placeholder="Select grade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GRADE_LIST.map((grade) => (
+                          <SelectItem key={grade} value={grade}>
+                            {grade}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="motherTongue">Primary Language</Label>
+                    <Input
+                      id="motherTongue"
+                      value={formData.motherTongue}
+                      onChange={(e) => handleInputChange('motherTongue', e.target.value)}
+                      placeholder="e.g., Hindi, English, Tamil"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="syllabus">Syllabus</Label>
+                    <Select value={formData.syllabus} onValueChange={(value) => handleInputChange('syllabus', value)}>
+                      <SelectTrigger id="syllabus">
+                        <SelectValue placeholder="Select syllabus" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SYLLABUS_LIST.map((syllabus) => (
+                          <SelectItem key={syllabus} value={syllabus}>
+                            {syllabus}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="schoolId">School</Label>
+                    <Select
+                      value={formData.schoolId}
+                      onValueChange={(value) => handleInputChange('schoolId', value)}
+                      disabled={loading}
+                    >
+                      <SelectTrigger id="schoolId">
+                        <SelectValue placeholder={loading ? 'Loading schools...' : 'Select school (optional)'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {loading ? (
+                          <SelectItem value="loading" disabled>
+                            Loading schools...
+                          </SelectItem>
+                        ) : schools.length === 0 ? (
+                          <SelectItem value="no-schools" disabled>
+                            No schools available
+                          </SelectItem>
+                        ) : (
+                          schools.map((school) => (
+                            <SelectItem key={school.id} value={school.id}>
+                              {school.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="assignment">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5" />
+                  Assign Educators
+                </CardTitle>
+                <CardDescription>Assign a Special Educator to the student</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="educator">Special Educator *</Label>
+                  <Dialog open={showEducatorModal} onOpenChange={setShowEducatorModal}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start h-auto py-3" disabled={loading}>
+                        <Users className="h-4 w-4 mr-2" />
+                        {renderEducatorDisplay()}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                          <GraduationCap className="h-5 w-5" />
+                          Select Special Educator
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <Input
+                            id="educatorSearch"
+                            placeholder="Search educators by name, email, or specialization..."
+                            value={educatorSearchTerm}
+                            onChange={(e) => setEducatorSearchTerm(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+
+                        <div className="border rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Experience</TableHead>
+                                <TableHead>Specializations</TableHead>
+                                <TableHead>Students</TableHead>
+                                <TableHead>Action</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {loading ? (
+                                <TableRow>
+                                  <TableCell colSpan={5} className="text-center py-8">
+                                    Loading educators...
+                                  </TableCell>
+                                </TableRow>
+                              ) : filteredEducators.length === 0 ? (
+                                <TableRow>
+                                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                                    {educatorSearchTerm ? 'No educators found matching your search' : 'No educators available'}
+                                  </TableCell>
+                                </TableRow>
+                              ) : (
+                                filteredEducators.map((educator) => (
+                                  <TableRow key={educator.educatorId} className="hover:bg-gray-50">
+                                    <TableCell>
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{educator.fullName}</span>
+                                        {educator.email && (
+                                          <span className="text-sm text-gray-500">{educator.email}</span>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center">
+                                        <Award className="h-4 w-4 mr-1 text-blue-500" />
+                                        <span>{educator.yearsOfExperience || 0} years</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex flex-wrap gap-1">
+                                        {educator.specializationAreas.slice(0, 2).map((area, index) => (
+                                          <Badge key={index} variant="secondary" className="text-xs">
+                                            {area}
+                                          </Badge>
+                                        ))}
+                                        {educator.specializationAreas.length > 2 && (
+                                          <Badge variant="outline" className="text-xs">
+                                            +{educator.specializationAreas.length - 2} more
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center">
+                                        <Users className="h-4 w-4 mr-1 text-green-500" />
+                                        <span>{educator.assignedStudentCount || 0}</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleEducatorSelect(educator.educatorId)}
+                                        variant={selectedEducatorId === educator.educatorId ? 'default' : 'outline'}
+                                      >
+                                        {selectedEducatorId === educator.educatorId ? 'Selected' : 'Select'}
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {selectedEducatorId && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-green-700">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="font-medium">Educator Selected</span>
+                    </div>
+                    <p className="text-sm text-green-600 mt-1">
+                      {educators.find((educator) => educator.educatorId === selectedEducatorId)?.fullName || 'Educator'} will be assigned to this student upon completion.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex justify-between">
+          <div className="flex gap-2">
+            {activeTab === 'assignment' && (
+              <Button variant="outline" onClick={() => setActiveTab('student')}>
+                Previous
+              </Button>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            {activeTab === 'student' ? (
+              <Button onClick={() => setActiveTab('assignment')}>
+                Next
+              </Button>
+            ) : (
+              <Button onClick={handleSubmit} disabled={loading || submitting}>
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Onboarding...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Complete Onboarding
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

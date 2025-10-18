@@ -187,7 +187,7 @@ export default function SchoolStudentsPage() {
   };
 
   const getUniqueGrades = () => {
-    const grades = [...new Set(students.map(s => s.grade))];
+    const grades = Array.from(new Set(students.map(s => s.grade)));
     return grades.sort();
   };
 
@@ -226,7 +226,7 @@ export default function SchoolStudentsPage() {
   }
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="">
       <PageHeader
         title={`Students from ${school.name}`}
         description={`${filteredStudents.length} of ${students.length} students • Manage student assignments and progress`}

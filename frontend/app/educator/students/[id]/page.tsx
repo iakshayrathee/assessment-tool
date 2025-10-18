@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useEducatorStudentDetails } from '@/hooks/useSpecialEducator';
+import { useSpecialEducatorStudentDetails } from '@/hooks/useSpecialEducator';
 import { useIntakeForm, useAssessments, useIEPGoals, useSessionNotes, useReports } from '@/hooks/useAssessments';
 // Use route-level UnifiedLayout; remove page-level EducatorLayout
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,7 +37,7 @@ export default function StudentDetailPage() {
   const params = useParams();
   const studentId = params.id as string;
 
-  const { student, isLoading } = useEducatorStudentDetails(studentId);
+  const { student, isLoading } = useSpecialEducatorStudentDetails(studentId);
   const { intakeForm } = useIntakeForm(studentId);
   const { assessments } = useAssessments(studentId);
   const { iepGoals } = useIEPGoals(studentId);

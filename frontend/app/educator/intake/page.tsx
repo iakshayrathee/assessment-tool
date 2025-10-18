@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useIntakeForm } from '@/hooks/useAssessments';
-import { useEducatorStudents } from '@/hooks/useSpecialEducator';
+import { useEducatorStudents } from '@/hooks/useEducator';
 import { useStudent } from '@/hooks/useStudents';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -129,6 +129,8 @@ const TABS: Tab[] = [
   { id: 'educational', title: 'Educational History', icon: GraduationCap, description: 'Academic background' },
   { id: 'review', title: 'Review', icon: CheckCircle, description: 'Review and submit' }
 ];
+
+export const dynamic = 'force-dynamic';
 
 export default function IntakeFormPage() {
   const searchParams = useSearchParams();
@@ -470,20 +472,20 @@ export default function IntakeFormPage() {
   const progress = calculateProgress();
 
   // Function to check if a tab section is completed
-  const isTabCompleted = (tabId: string) => {
+  const isTabCompleted = (tabId: string): boolean => {
     switch (tabId) {
       case 'demographics':
-        return formData.name && formData.age && formData.gender && formData.schoolCenter && formData.class;
+        return !!(formData.name && formData.age && formData.gender && formData.schoolCenter && formData.class);
       case 'family':
-        return formData.fatherName && formData.motherName && formData.familyIncome && formData.familyType;
+        return !!(formData.fatherName && formData.motherName && formData.familyIncome && formData.familyType);
       case 'prenatal':
-        return formData.fullTermOrPremature && formData.deliveryType;
+        return !!(formData.fullTermOrPremature && formData.deliveryType);
       case 'postnatal':
-        return formData.birthCry && formData.ageOfWalking && formData.ageOfTwoWordSpeech;
+        return !!(formData.birthCry && formData.ageOfWalking && formData.ageOfTwoWordSpeech);
       case 'medical':
-        return formData.healthConcerns;
+        return !!formData.healthConcerns;
       case 'educational':
-        return formData.dominantWritingHand;
+        return !!formData.dominantWritingHand;
       case 'review':
         return TABS.slice(0, -1).every(tab => isTabCompleted(tab.id));
       default:

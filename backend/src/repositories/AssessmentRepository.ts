@@ -194,11 +194,33 @@ export class AssessmentRepository {
     return { assessments, total };
   }
 
+  // Helper method to convert date fields from strings to Date objects
+  private convertDateFields(data: any): any {
+    const convertedData = { ...data };
+    
+    // Convert sessionDate if it exists and is a string
+    if (convertedData.sessionDate && typeof convertedData.sessionDate === 'string') {
+      convertedData.sessionDate = new Date(convertedData.sessionDate);
+    }
+    
+    // Convert other date fields that might be present
+    const dateFields = ['startDate', 'targetDate', 'registrationDate'];
+    dateFields.forEach(field => {
+      if (convertedData[field] && typeof convertedData[field] === 'string') {
+        convertedData[field] = new Date(convertedData[field]);
+      }
+    });
+    
+    return convertedData;
+  }
+
   // IEP Goal methods
   async createIEPGoal(specialEducatorId: string, goalData: IEPGoalData): Promise<IEPGoal> {
+    const convertedData = this.convertDateFields(goalData);
+    
     return this.prisma.iEPGoal.create({
       data: {
-        ...goalData,
+        ...convertedData,
         specialEducatorId,
         status: IEPGoalStatus.NOT_STARTED
       },
@@ -217,9 +239,11 @@ export class AssessmentRepository {
   }
 
   async updateIEPGoal(id: string, goalData: Partial<IEPGoalData & { progressPercent?: number; status?: IEPGoalStatus; notes?: string }>): Promise<IEPGoal> {
+    const convertedData = this.convertDateFields(goalData);
+    
     return this.prisma.iEPGoal.update({
       where: { id },
-      data: goalData,
+      data: convertedData,
       include: {
         student: true,
         specialEducator: {
@@ -319,9 +343,11 @@ export class AssessmentRepository {
 
   // Session Note methods
   async createSessionNote(specialEducatorId: string, sessionData: SessionNoteData): Promise<SessionNote> {
+    const convertedData = this.convertDateFields(sessionData);
+    
     return this.prisma.sessionNote.create({
       data: {
-        ...sessionData,
+        ...convertedData,
         specialEducatorId
       },
       include: {
@@ -336,9 +362,11 @@ export class AssessmentRepository {
   }
 
   async updateSessionNote(id: string, sessionData: Partial<SessionNoteData>): Promise<SessionNote> {
+    const convertedData = this.convertDateFields(sessionData);
+    
     return this.prisma.sessionNote.update({
       where: { id },
-      data: sessionData,
+      data: convertedData,
       include: {
         student: true,
         specialEducator: {

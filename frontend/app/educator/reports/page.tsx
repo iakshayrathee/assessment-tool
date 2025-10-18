@@ -44,6 +44,8 @@ const REPORT_STATUS_CONFIG = {
   'REVIEWED': { color: 'bg-purple-100 text-purple-800', icon: CheckCircle }
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function ReportsPage() {
   const searchParams = useSearchParams();
   const studentId = searchParams.get('studentId');
@@ -59,7 +61,7 @@ export default function ReportsPage() {
     recommendations: ''
   });
 
-  const { reports, createReport, submitReport, isCreating, isSubmitting } = useReports(studentId);
+  const { reports, createReport, submitReport, isCreating, isSubmitting } = useReports(studentId || undefined);
 
   const handleCreateReport = () => {
     createReport(newReport);
@@ -80,13 +82,13 @@ export default function ReportsPage() {
   };
 
   const getStatusIcon = (status: string) => {
-    const config = REPORT_STATUS_CONFIG[status] || REPORT_STATUS_CONFIG['PENDING'];
+    const config = (REPORT_STATUS_CONFIG as any)[status] || REPORT_STATUS_CONFIG['PENDING'];
     const Icon = config.icon;
     return <Icon className="h-4 w-4" />;
   };
 
   const getStatusColor = (status: string) => {
-    return REPORT_STATUS_CONFIG[status]?.color || REPORT_STATUS_CONFIG['PENDING'].color;
+    return (REPORT_STATUS_CONFIG as any)[status]?.color || REPORT_STATUS_CONFIG['PENDING'].color;
   };
 
   const filteredReports = reports.filter((report: any) => {

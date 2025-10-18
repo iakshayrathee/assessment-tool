@@ -1,14 +1,17 @@
+'use client';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { apiClient } from '@/lib/api';
+import { queryKeys, invalidationPatterns } from '@/lib/queryKeys';
 
 // Center Dashboard Hook
 export function useCenterDashboard(centerId?: string) {
   return useQuery({
-    queryKey: ['center', 'dashboard', centerId],
+    queryKey: queryKeys.centers.dashboard(centerId),
     queryFn: () => apiClient.getCenterDashboard(centerId),
     enabled: !!centerId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 3 * 60 * 1000, // 3 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 }
@@ -25,45 +28,94 @@ export function useCenterStudents(centerId?: string, params?: {
   const queryClient = useQueryClient();
 
   const studentsQuery = useQuery({
-    queryKey: ['center', 'students', centerId, params],
+    queryKey: queryKeys.centers.students(centerId, params),
     queryFn: () => apiClient.getCenterStudents(centerId!, params),
     enabled: !!centerId,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Assign student mutation
+  // Assign student to educator
   const assignStudentMutation = useMutation({
     mutationFn: ({ studentId, educatorId }: { studentId: string; educatorId: string }) =>
       apiClient.assignStudentToEducator(studentId, educatorId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['center', 'students'] });
-      queryClient.invalidateQueries({ queryKey: ['center', 'dashboard'] });
-      toast.success('Student assigned successfully!');
+    onSuccess: (_, { studentId, educatorId }) => {
+      // Use invalidation patterns for comprehensive cache updates
+      invalidationPatterns.student(studentId).forEach(queryKey => {
+        queryClient.invalidateQueries({ queryKey });
+      });
+      invalidationPatterns.user().forEach(queryKey => {
+        queryClient.invalidateQueries({ queryKey });
+      });
+      if (centerId) {
+        invalidationPatterns.center(centerId).forEach(queryKey => {
+          queryClient.invalidateQueries({ queryKey });
+        });
+      }
+      toast.success('Student assigned to educator successfully!');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error || 'Failed to assign student');
     },
   });
 
+  // Remove student from educator
+  const removeStudentMutation = useMutation({
+    mutationFn: ({ studentId, educatorId }: { studentId: string; educatorId: string }) =>
+      apiClient.unassignStudentFromEducator(studentId, educatorId),
+    onSuccess: (_, { studentId, educatorId }) => {
+      // Use invalidation patterns for comprehensive cache updates
+      invalidationPatterns.student(studentId).forEach(queryKey => {
+        queryClient.invalidateQueries({ queryKey });
+      });
+      invalidationPatterns.user().forEach(queryKey => {
+        queryClient.invalidateQueries({ queryKey });
+      });
+      if (centerId) {
+        invalidationPatterns.center(centerId).forEach(queryKey => {
+          queryClient.invalidateQueries({ queryKey });
+        });
+      }
+      toast.success('Student removed from educator successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to remove student');
+    },
+  });
+
   return {
+    // Data
     students: studentsQuery.data?.data || [],
     pagination: studentsQuery.data?.pagination,
+    
+    // Loading states
     isLoading: studentsQuery.isLoading,
-    error: studentsQuery.error,
-    refetch: studentsQuery.refetch,
-    assignStudent: assignStudentMutation.mutate,
     isAssigning: assignStudentMutation.isPending,
+    isRemoving: removeStudentMutation.isPending,
+    
+    // Actions
+    assignStudent: assignStudentMutation.mutate,
+    removeStudent: removeStudentMutation.mutate,
+    
+    // Error states
+    error: studentsQuery.error,
+    
+    // Refetch
+    refetch: studentsQuery.refetch,
   };
 }
 
 // Center Educators Hook
-export function useCenterEducators(centerId?: string) {
+export function useCenterEducators(centerId?: string, params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}) {
   const queryClient = useQueryClient();
 
   const educatorsQuery = useQuery({
-    queryKey: ['center', 'educators', centerId],
-    queryFn: () => apiClient.getCenterEducators(centerId!),
+    queryKey: queryKeys.centers.educators(centerId, params),
+    queryFn: () => apiClient.getCenterEducators(centerId!, params),
     enabled: !!centerId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -74,8 +126,11 @@ export function useCenterEducators(centerId?: string) {
     mutationFn: (assignmentId: string) => 
       apiClient.removeEducatorFromCenter(centerId!, assignmentId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['center', 'educators'] });
-      queryClient.invalidateQueries({ queryKey: ['center', 'dashboard'] });
+      if (centerId) {
+        invalidationPatterns.center(centerId).forEach(queryKey => {
+          queryClient.invalidateQueries({ queryKey });
+        });
+      }
       toast.success('Educator removed successfully!');
     },
     onError: (error: any) => {
@@ -83,13 +138,33 @@ export function useCenterEducators(centerId?: string) {
     },
   });
 
+  // Assign educator mutation
+  const assignEducatorMutation = useMutation({
+    mutationFn: ({ educatorId, role }: { educatorId: string; role: string }) => 
+      apiClient.assignEducatorToCenter(centerId!, educatorId, role),
+    onSuccess: () => {
+      if (centerId) {
+        invalidationPatterns.center(centerId).forEach(queryKey => {
+          queryClient.invalidateQueries({ queryKey });
+        });
+      }
+      toast.success('Educator assigned successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to assign educator');
+    },
+  });
+
   return {
-    educators: educatorsQuery.data || [],
+    educators: educatorsQuery.data?.data || [],
+    pagination: educatorsQuery.data?.pagination,
     isLoading: educatorsQuery.isLoading,
     error: educatorsQuery.error,
     refetch: educatorsQuery.refetch,
     removeEducator: removeEducatorMutation.mutate,
     isRemoving: removeEducatorMutation.isPending,
+    assignEducator: assignEducatorMutation.mutate,
+    isAssigning: assignEducatorMutation.isPending,
   };
 }
 
@@ -98,7 +173,7 @@ export function useCenterSchools(centerId?: string) {
   const queryClient = useQueryClient();
 
   const schoolsQuery = useQuery({
-    queryKey: ['center', 'schools', centerId],
+    queryKey: queryKeys.centers.schools(centerId),
     queryFn: () => apiClient.getCenterSchools(centerId!),
     enabled: !!centerId,
     staleTime: 10 * 60 * 1000, // 10 minutes (schools change less frequently)
@@ -110,8 +185,11 @@ export function useCenterSchools(centerId?: string) {
     mutationFn: (schoolData: any) => 
       apiClient.linkSchoolToCenter(centerId!, schoolData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['center', 'schools'] });
-      queryClient.invalidateQueries({ queryKey: ['center', 'dashboard'] });
+      if (centerId) {
+        invalidationPatterns.center(centerId).forEach(queryKey => {
+          queryClient.invalidateQueries({ queryKey });
+        });
+      }
       toast.success('School linked successfully!');
     },
     onError: (error: any) => {
@@ -137,7 +215,7 @@ export function useCenterReports(centerId?: string, params?: {
   status?: string;
 }) {
   return useQuery({
-    queryKey: ['center', 'reports', centerId, params],
+    queryKey: queryKeys.centers.reports(centerId, params),
     queryFn: () => apiClient.getCenterReports(centerId!, params),
     enabled: !!centerId,
     staleTime: 3 * 60 * 1000, // 3 minutes
@@ -148,7 +226,7 @@ export function useCenterReports(centerId?: string, params?: {
 // Center Compliance Hook
 export function useCenterCompliance(centerId?: string) {
   const complianceQuery = useQuery({
-    queryKey: ['center', 'compliance', centerId],
+    queryKey: queryKeys.centers.compliance(centerId),
     queryFn: () => apiClient.getCenterCompliance(centerId!),
     enabled: !!centerId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -156,7 +234,7 @@ export function useCenterCompliance(centerId?: string) {
   });
 
   const overdueReportsQuery = useQuery({
-    queryKey: ['center', 'overdue-reports', centerId],
+    queryKey: queryKeys.centers.overdueReports(centerId),
     queryFn: () => apiClient.getCenterOverdueReports(centerId!, { page: 1, limit: 10 }),
     enabled: !!centerId,
     staleTime: 2 * 60 * 1000, // 2 minutes

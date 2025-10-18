@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAssessments } from '@/hooks/useAssessments';
-import { useEducatorStudents } from '@/hooks/useSpecialEducator';
+import { useEducatorStudents } from '@/hooks/useEducator';
 
 // Type definitions for assessment data
 interface AssessmentFormData {
@@ -132,6 +132,8 @@ const SKILL_DOMAINS: SkillDomain[] = [
     description: 'Focus, concentration, task persistence'
   }
 ];
+
+export const dynamic = 'force-dynamic';
 
 export default function AssessmentsPage() {
   const searchParams = useSearchParams();

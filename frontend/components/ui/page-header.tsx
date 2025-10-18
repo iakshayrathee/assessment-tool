@@ -48,7 +48,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className={cn(
-          "bg-white border-b border-gray-200 sticky top-16 z-30",
+          "bg-white border-b border-gray-200 sticky top-0 z-30 ",
           className
         )}
         ref={ref}

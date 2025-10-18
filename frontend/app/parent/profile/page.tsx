@@ -60,7 +60,7 @@ export default function ParentProfile() {
           phone: user.profile.phone || '',
           address: user.profile.address || '',
           emergencyContact: user.profile.emergencyContact || '',
-          relationship: user.profile.relationship || 'Parent',
+          relationship: user.profile.relationshipToChild || 'Parent',
           user: {
             email: user.email
           }

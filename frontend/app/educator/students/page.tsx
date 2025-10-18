@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useEducatorStudents, useSpecialEducatorProfile } from '@/hooks/useSpecialEducator';
+import { useEducatorStudents } from '@/hooks/useEducator';
+import { useSpecialEducatorProfile } from '@/hooks/useSpecialEducator';
 import { useStudents } from '@/hooks/useStudents';
 // Use route-level UnifiedLayout; remove page-level EducatorLayout
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { apiClient } from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
+import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 
 // Student Registration Modal Component
 function StudentRegistrationModal({ onStudentRegistered }: { onStudentRegistered: (studentId: string) => void }) {
@@ -179,17 +181,15 @@ function StudentRegistrationModal({ onStudentRegistered }: { onStudentRegistered
                 )}
               </div>
               <div>
-                <label className="text-sm font-medium">Date of Birth *</label>
-                <Input
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                  required
-                  className={fieldErrors.dateOfBirth ? 'border-red-500' : ''}
+                <ProfessionalDatePicker
+                  label="Date of Birth"
+                  value={formData.dateOfBirth ? new Date(formData.dateOfBirth) : null}
+                  onChange={(date) => handleInputChange('dateOfBirth', date ? date.toISOString().split('T')[0] : '')}
+                  required={true}
+                  placeholder="Select date of birth"
+                  error={fieldErrors.dateOfBirth}
+                  toYear={new Date().getFullYear()}
                 />
-                {fieldErrors.dateOfBirth && (
-                  <p className="text-sm text-red-500 mt-1">{fieldErrors.dateOfBirth}</p>
-                )}
                 {!fieldErrors.dateOfBirth && (
                   <p className="text-xs text-gray-500 mt-1">Select the student's birth date (used to calculate age automatically)</p>
                 )}

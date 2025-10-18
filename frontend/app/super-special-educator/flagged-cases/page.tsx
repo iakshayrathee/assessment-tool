@@ -48,6 +48,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
+import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { useToast } from '@/hooks/use-toast';
 
 interface FlaggedCase {
@@ -223,6 +224,7 @@ export default function FlaggedCasesPage() {
   const openUpdateDialog = (caseItem: FlaggedCase) => {
     setSelectedCase(caseItem);
     setCaseUpdate({
+      caseId: caseItem.id,
       action: '',
       notes: '',
       status: caseItem.status,
@@ -687,11 +689,13 @@ export default function FlaggedCasesPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Next Follow-up Date</label>
-                <Input
-                  type="date"
-                  value={caseUpdate.nextFollowUpDate}
-                  onChange={(e) => setCaseUpdate(prev => ({ ...prev, nextFollowUpDate: e.target.value }))}
+                <ProfessionalDatePicker
+                  label="Next Follow-up Date"
+                  value={caseUpdate.nextFollowUpDate ? new Date(caseUpdate.nextFollowUpDate) : null}
+                  onChange={(date) => setCaseUpdate(prev => ({ ...prev, nextFollowUpDate: date ? date.toISOString().split('T')[0] : '' }))}
+                  placeholder="Select follow-up date"
+                  fromYear={new Date().getFullYear()}
+                  toYear={new Date().getFullYear() + 2}
                 />
               </div>
             </div>
@@ -758,15 +762,15 @@ export default function FlaggedCasesPage() {
                         </Badge>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Priority:</span>
-                        <Badge variant={selectedCaseForDetails.priority === 'HIGH' ? 'destructive' : 
-                                      selectedCaseForDetails.priority === 'MEDIUM' ? 'default' : 'secondary'}>
-                          {selectedCaseForDetails.priority}
+                        <span className="text-gray-600">Severity:</span>
+                        <Badge variant={selectedCaseForDetails.severity === 'HIGH' ? 'destructive' : 
+                                      selectedCaseForDetails.severity === 'MEDIUM' ? 'default' : 'secondary'}>
+                          {selectedCaseForDetails.severity}
                         </Badge>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Category:</span>
-                        <span className="font-medium">{selectedCaseForDetails.category}</span>
+                        <span className="text-gray-600">Flag Type:</span>
+                        <span className="font-medium">{selectedCaseForDetails.flagType}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Flagged Date:</span>
@@ -787,7 +791,7 @@ export default function FlaggedCasesPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Center:</span>
-                        <span className="font-medium">{selectedCaseForDetails.center}</span>
+                        <span className="font-medium">{selectedCaseForDetails.centerName}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Related Incidents:</span>

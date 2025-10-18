@@ -28,6 +28,7 @@ import {
   CheckCircle,
   X
 } from 'lucide-react';
+import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -563,12 +564,14 @@ export default function CentersPage() {
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Visit Date *</label>
-              <Input
-                type="date"
-                value={visitDate}
-                onChange={(e) => setVisitDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
+              <ProfessionalDatePicker
+                label="Visit Date"
+                value={visitDate ? new Date(visitDate) : null}
+                onChange={(date) => setVisitDate(date ? date.toISOString().split('T')[0] : '')}
+                placeholder="Select visit date"
+                required={true}
+                fromYear={new Date().getFullYear()}
+                toYear={new Date().getFullYear() + 2}
               />
             </div>
             

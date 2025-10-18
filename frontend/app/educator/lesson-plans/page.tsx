@@ -13,9 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ArrowLeft, Plus, Calendar, Target, TrendingUp, User, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { useIEPGoals } from '@/hooks/useAssessments';
-import { useEducatorStudents } from '@/hooks/useSpecialEducator';
+import { useEducatorStudents } from '@/hooks/useEducator';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'react-hot-toast';
+import { Student } from '@/types';
+import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 
 const DOMAINS = [
   'Reading', 'Writing', 'Math', 'Visual Perception', 'Motor Skills', 'Attention', 'Communication', 'Social Skills'
@@ -27,6 +29,8 @@ const GOAL_STATUS_CONFIG = {
   'ACHIEVED': { color: 'bg-green-100 text-green-800', icon: CheckCircle },
   'DISCONTINUED': { color: 'bg-red-100 text-red-800', icon: AlertCircle }
 };
+
+export const dynamic = 'force-dynamic';
 
 export default function LessonPlansPage() {
   const router = useRouter();
@@ -120,8 +124,8 @@ export default function LessonPlansPage() {
   };
 
   const getStudentName = (studentId: string) => {
-    const student = students?.find(s => s.id === studentId);
-    return student?.fullName || 'Unknown Student';
+    const student = students?.find((s: Student) => s.id === studentId);
+    return student ? student.fullName : 'Unknown Student';
   };
 
   const getGoalStatusDisplay = (status: string) => {
@@ -191,12 +195,11 @@ export default function LessonPlansPage() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="startDate">Start Date</Label>
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={newGoal.startDate}
-                        onChange={(e) => setNewGoal(prev => ({ ...prev, startDate: e.target.value }))}
+                      <ProfessionalDatePicker
+                        label="Start Date"
+                        value={newGoal.startDate ? new Date(newGoal.startDate) : null}
+                        onChange={(date) => setNewGoal(prev => ({ ...prev, startDate: date ? date.toISOString().split('T')[0] : '' }))}
+                        placeholder="Select start date"
                       />
                     </div>
                   </div>
@@ -235,12 +238,11 @@ export default function LessonPlansPage() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="targetDate">Target Date</Label>
-                    <Input
-                      id="targetDate"
-                      type="date"
-                      value={newGoal.targetDate}
-                      onChange={(e) => setNewGoal(prev => ({ ...prev, targetDate: e.target.value }))}
+                    <ProfessionalDatePicker
+                      label="Target Date"
+                      value={newGoal.targetDate ? new Date(newGoal.targetDate) : null}
+                      onChange={(date) => setNewGoal(prev => ({ ...prev, targetDate: date ? date.toISOString().split('T')[0] : '' }))}
+                      placeholder="Select target date"
                     />
                   </div>
                   
@@ -269,7 +271,7 @@ export default function LessonPlansPage() {
                 <SelectValue placeholder="Choose a student to view their IEP goals" />
               </SelectTrigger>
               <SelectContent>
-                {students?.map(student => (
+                {students?.map((student: Student) => (
                   <SelectItem key={student.id} value={student.id}>
                     {student.fullName}
                   </SelectItem>

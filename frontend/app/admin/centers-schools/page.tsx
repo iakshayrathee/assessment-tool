@@ -163,12 +163,30 @@ export default function CentersSchoolsPage() {
     }
   };
 
-  const filterData = (data: (Center | School)[]) => {
+  const filterCenters = (data: Center[]) => {
     return data.filter(item => {
       const matchesSearch = !searchQuery || 
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ('contactPerson' in item ? item.contactPerson : item.principalName).toLowerCase().includes(searchQuery.toLowerCase());
+        item.contactPerson.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesLocation = !locationFilter || 
+        item.location.toLowerCase().includes(locationFilter.toLowerCase());
+      
+      const matchesStatus = !statusFilter || 
+        (statusFilter === 'active' && item.isActive) ||
+        (statusFilter === 'inactive' && !item.isActive);
+      
+      return matchesSearch && matchesLocation && matchesStatus;
+    });
+  };
+
+  const filterSchools = (data: School[]) => {
+    return data.filter(item => {
+      const matchesSearch = !searchQuery || 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.principalName.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesLocation = !locationFilter || 
         item.location.toLowerCase().includes(locationFilter.toLowerCase());
@@ -507,14 +525,14 @@ export default function CentersSchoolsPage() {
               <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
                 <CardTitle className="flex items-center gap-2">
                   <Building className="h-5 w-5 text-blue-600" />
-                  Learning Centers ({filterData(centers).length})
+                  Learning Centers ({filterCenters(centers).length})
                 </CardTitle>
                 <CardDescription>
                   Manage learning centers and their linked users and students
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <CentersTable data={filterData(centers)} />
+                <CentersTable data={filterCenters(centers)} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -524,14 +542,14 @@ export default function CentersSchoolsPage() {
               <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
                 <CardTitle className="flex items-center gap-2">
                   <School className="h-5 w-5 text-green-600" />
-                  Partner Schools ({filterData(schools).length})
+                  Partner Schools ({filterSchools(schools).length})
                 </CardTitle>
                 <CardDescription>
                   Manage partner schools and their linked users and students
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <SchoolsTable data={filterData(schools)} />
+                <SchoolsTable data={filterSchools(schools)} />
               </CardContent>
             </Card>
           </TabsContent>

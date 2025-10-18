@@ -3,11 +3,11 @@
 import { useAuth } from '@/hooks/useAuth';
 import { 
   useSpecialEducatorDashboard, 
-  useEducatorStudents, 
-  useEducatorActivities, 
-  useTodaysSchedule,
+  useSpecialEducatorActivities, 
+  useSpecialEducatorSchedule,
   useCheckSpecialEducatorToken
 } from '@/hooks/useSpecialEducator';
+import { useEducatorStudents } from '@/hooks/useEducator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,9 +39,9 @@ export default function EducatorDashboard() {
   
   const { students, isLoading: isStudentsLoading } = useEducatorStudents({ limit: 5 });
   
-  const { activities, isLoading: isActivitiesLoading } = useEducatorActivities(5);
+  const { activities, isLoading: isActivitiesLoading } = useSpecialEducatorActivities(5);
   
-  const { schedule, isLoading: isScheduleLoading } = useTodaysSchedule();
+  const { schedule, isLoading: isScheduleLoading } = useSpecialEducatorSchedule();
 
   const isLoading = isTokenLoading || isDashboardLoading || isStudentsLoading;
 

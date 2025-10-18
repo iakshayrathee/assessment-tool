@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 
 interface SuperSpecialEducatorProfile {
   id: string;
@@ -235,13 +236,13 @@ export default function SuperSpecialEducatorProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                  <Input
-                    id="dateOfBirth"
-                    type="date"
-                    value={profile.dateOfBirth || ''}
-                    onChange={(e) => updateProfile('dateOfBirth', e.target.value)}
+                  <ProfessionalDatePicker
+                    label="Date of Birth"
+                    value={profile.dateOfBirth ? new Date(profile.dateOfBirth) : null}
+                    onChange={(date) => updateProfile('dateOfBirth', date ? date.toISOString().split('T')[0] : '')}
+                    placeholder="Select date of birth"
                     disabled={!isEditing}
+                    toYear={new Date().getFullYear()}
                   />
                 </div>
                 <div className="space-y-2">
@@ -381,13 +382,14 @@ export default function SuperSpecialEducatorProfilePage() {
                 
                 {profile.rciCertified && (
                   <div className="space-y-2">
-                    <Label htmlFor="rciValidityDate">RCI Validity Date</Label>
-                    <Input
-                      id="rciValidityDate"
-                      type="date"
-                      value={profile.rciValidityDate || ''}
-                      onChange={(e) => updateProfile('rciValidityDate', e.target.value)}
+                    <ProfessionalDatePicker
+                      label="RCI Validity Date"
+                      value={profile.rciValidityDate ? new Date(profile.rciValidityDate) : null}
+                      onChange={(date) => updateProfile('rciValidityDate', date ? date.toISOString().split('T')[0] : '')}
+                      placeholder="Select RCI validity date"
                       disabled={!isEditing}
+                      fromYear={new Date().getFullYear()}
+                      toYear={new Date().getFullYear() + 10}
                     />
                   </div>
                 )}

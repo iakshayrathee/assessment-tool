@@ -8,6 +8,22 @@ export class UserRepository {
     this.prisma = prisma;
   }
 
+  private convertDateFields(data: any): any {
+    const converted = { ...data };
+    
+    // Convert date string fields to Date objects
+    const dateFields = ['dateOfBirth', 'rciValidityDate', 'startDate', 'targetDate', 'sessionDate', 'registrationDate'];
+    
+    dateFields.forEach(field => {
+      if (converted[field] && typeof converted[field] === 'string') {
+        // Convert date string to Date object
+        converted[field] = new Date(converted[field]);
+      }
+    });
+    
+    return converted;
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return this.prisma.user.findUnique({
       where: { email },
@@ -84,98 +100,110 @@ export class UserRepository {
 
   // Profile management methods
   async createAdminProfile(userId: string, profileData: AdminProfileData): Promise<void> {
+    const convertedData = this.convertDateFields(profileData);
     await this.prisma.adminProfile.create({
       data: {
         userId,
-        ...profileData
+        ...convertedData
       }
     });
   }
 
   async updateAdminProfile(userId: string, profileData: Partial<AdminProfileData>): Promise<void> {
+    const convertedData = this.convertDateFields(profileData);
     await this.prisma.adminProfile.update({
       where: { userId },
-      data: profileData
+      data: convertedData
     });
   }
 
   async createSpecialEducatorProfile(userId: string, profileData: EducatorProfileData): Promise<void> {
+    const convertedData = this.convertDateFields(profileData);
     await this.prisma.specialEducatorProfile.create({
       data: {
         userId,
-        ...profileData
+        ...convertedData
       }
     });
   }
 
   async updateSpecialEducatorProfile(userId: string, profileData: Partial<EducatorProfileData>): Promise<void> {
+    const convertedData = this.convertDateFields(profileData);
     await this.prisma.specialEducatorProfile.update({
       where: { userId },
-      data: profileData
+      data: convertedData
     });
   }
 
   async createSuperSpecialEducatorProfile(userId: string, profileData: EducatorProfileData): Promise<void> {
+    const convertedData = this.convertDateFields(profileData);
     await this.prisma.superSpecialEducatorProfile.create({
       data: {
         userId,
-        ...profileData
+        ...convertedData
       }
     });
   }
 
   async updateSuperSpecialEducatorProfile(userId: string, profileData: Partial<EducatorProfileData>): Promise<void> {
+    const convertedData = this.convertDateFields(profileData);
     await this.prisma.superSpecialEducatorProfile.update({
       where: { userId },
-      data: profileData
+      data: convertedData
     });
   }
 
   async createCenterProfile(userId: string, profileData: CenterProfileData): Promise<void> {
+    const convertedData = this.convertDateFields(profileData);
     await this.prisma.centerProfile.create({
       data: {
         userId,
-        ...profileData
+        ...convertedData
       }
     });
   }
 
   async updateCenterProfile(userId: string, profileData: Partial<CenterProfileData>): Promise<void> {
+    const convertedData = this.convertDateFields(profileData);
     await this.prisma.centerProfile.update({
       where: { userId },
-      data: profileData
+      data: convertedData
     });
   }
 
   async createParentProfile(userId: string, profileData: ParentProfileData): Promise<void> {
+    const convertedData = this.convertDateFields(profileData);
     await this.prisma.parentProfile.create({
       data: {
         userId,
-        ...profileData
+        ...convertedData
       }
     });
   }
 
   async updateParentProfile(userId: string, profileData: Partial<ParentProfileData>): Promise<void> {
+    const convertedData = this.convertDateFields(profileData);
     await this.prisma.parentProfile.update({
       where: { userId },
-      data: profileData
+      data: convertedData
     });
   }
 
   async createSchoolViewerProfile(userId: string, profileData: SchoolViewerProfileData): Promise<void> {
+    const convertedData = this.convertDateFields(profileData);
     await this.prisma.schoolViewerProfile.create({
       data: {
         userId,
-        ...profileData
+        ...convertedData
       }
     });
   }
 
   async updateSchoolViewerProfile(userId: string, profileData: Partial<SchoolViewerProfileData>): Promise<void> {
+    const convertedData = this.convertDateFields(profileData);
     await this.prisma.schoolViewerProfile.update({
       where: { userId },
-      data: profileData
+      data: convertedData
     });
   }
 

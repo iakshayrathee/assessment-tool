@@ -373,6 +373,26 @@ export class StudentService {
   async assignStudentToEducator(studentId: string, specialEducatorId: string): Promise<void> {
     console.log('🎯 assignStudentToEducator called with:', { studentId, specialEducatorId });
     
+    // Validate that student exists
+    const student = await this.studentRepository.prismaClient.student.findUnique({
+      where: { id: studentId }
+    });
+    
+    if (!student) {
+      throw new Error(`Student with ID ${studentId} not found`);
+    }
+    
+    // Validate that special educator exists
+    const specialEducator = await this.studentRepository.prismaClient.specialEducatorProfile.findUnique({
+      where: { id: specialEducatorId }
+    });
+    
+    if (!specialEducator) {
+      throw new Error(`Special educator with ID ${specialEducatorId} not found`);
+    }
+    
+    console.log('✅ Student and educator validation passed');
+    
     // Check if assignment already exists
     const existingAssignment = await this.studentRepository.prismaClient.studentAssignment.findUnique({
       where: {

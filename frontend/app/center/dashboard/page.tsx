@@ -123,7 +123,7 @@ export default function CenterDashboard() {
   }
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="">
       <PageHeader
         title={`${user?.profile?.centerName || 'Center'} Dashboard`}
         description="Manage your center operations and track progress"

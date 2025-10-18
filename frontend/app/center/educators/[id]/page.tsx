@@ -107,7 +107,8 @@ export default function EducatorDetailPage() {
       }
 
       // Get educator details from center educators
-      const educators = await apiClient.getCenterEducators(centerId);
+      const response = await apiClient.getCenterEducators(centerId);
+      const educators = response.data || [];
       const educatorDetail = educators.find(e => e.educatorId === educatorId);
       
       if (!educatorDetail) {
@@ -234,7 +235,7 @@ export default function EducatorDetailPage() {
   const experienceLevel = getExperienceLevel(educator.yearsOfExperience);
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="">
       <PageHeader
         title={educator.fullName}
         description={`${educator.type} • ${educator.yearsOfExperience} years experience • ${educator.assignedStudentCount} students assigned`}
@@ -258,7 +259,7 @@ export default function EducatorDetailPage() {
             label: 'Remove from Center',
             onClick: handleRemoveEducator,
             icon: UserMinus,
-            variant: 'destructive',
+            variant: 'secondary',
             disabled: removing
           }
         ]}

@@ -2,6 +2,9 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '../models';
+import dotenv from 'dotenv';
+dotenv.config();
+
 
 export interface JWTPayload {
   id: string;

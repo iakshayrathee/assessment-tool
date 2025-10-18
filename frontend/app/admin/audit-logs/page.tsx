@@ -28,6 +28,7 @@ import {
   School
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
+import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 
 interface AuditLog {
   id: string;
@@ -61,8 +62,8 @@ export default function AdminAuditLogsPage() {
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedResource, setSelectedResource] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   useEffect(() => {
     loadAuditLogs();
@@ -77,8 +78,8 @@ export default function AdminAuditLogsPage() {
         ...(selectedAction && { action: selectedAction }),
         ...(selectedResource && { resource: selectedResource }),
         ...(selectedUserId && { userId: selectedUserId }),
-        ...(startDate && { startDate }),
-        ...(endDate && { endDate })
+        ...(startDate && { startDate: startDate.toISOString().split('T')[0] }),
+        ...(endDate && { endDate: endDate.toISOString().split('T')[0] })
       };
 
       // Since the audit logs endpoint is not implemented, show an error message
@@ -260,19 +261,19 @@ export default function AdminAuditLogsPage() {
               </select>
 
               {/* Start Date */}
-              <input
-                type="date"
+              <ProfessionalDatePicker
+                label="Start Date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={setStartDate}
+                placeholder="Select start date"
               />
 
               {/* End Date */}
-              <input
-                type="date"
+              <ProfessionalDatePicker
+                label="End Date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={setEndDate}
+                placeholder="Select end date"
               />
             </div>
 

@@ -6,6 +6,13 @@ export interface User {
   isActive: boolean;
   profile: any;
   lastLogin?: string;
+  // Role-specific profiles
+  adminProfile?: AdminProfile;
+  specialEducatorProfile?: EducatorProfile;
+  superSpecialEducatorProfile?: EducatorProfile;
+  centerProfile?: CenterProfile;
+  parentProfile?: ParentProfile;
+  schoolViewerProfile?: SchoolViewerProfile;
 }
 
 export enum UserRole {
@@ -14,7 +21,8 @@ export enum UserRole {
   SPECIAL_EDUCATOR = 'SPECIAL_EDUCATOR',
   CENTER = 'CENTER',
   PARENT = 'PARENT',
-  SCHOOL_VIEWER = 'SCHOOL_VIEWER'
+  SCHOOL_VIEWER = 'SCHOOL_VIEWER',
+  STUDENT = 'STUDENT'
 }
 
 export enum Gender {
@@ -75,6 +83,12 @@ export interface AdminProfile {
   id: string;
   fullName: string;
   phone?: string;
+  department?: string;
+  position?: string;
+  accessLevel?: string;
+  permissions?: string[];
+  lastLoginDate?: string;
+  notes?: string;
 }
 
 export interface EducatorProfile {
@@ -94,9 +108,11 @@ export interface EducatorProfile {
   rciValidityDate?: string;
   specialEdQualification?: string;
   specializationAreas?: string[];
+  additionalCertifications?: string[];
   yearsOfExperience?: number;
   experienceTypes?: string[];
   maxGroupSize?: number;
+  totalYearsOfExperience?: number;
   currentWorkLocations?: string[];
   ldTypesHandled?: string[];
   gradeLevelsServed?: string[];
@@ -117,15 +133,48 @@ export interface CenterProfile {
   contactPerson?: string;
   operatingHours?: string;
   description?: string;
+  capacity?: number;
+  establishedDate?: string;
+  licenseNumber?: string;
+  accreditation?: string[];
+  servicesOffered?: string[];
+  ageGroupsServed?: string[];
+  specializations?: string[];
+  facilities?: string[];
+  staffCount?: number;
+  website?: string;
+  socialMedia?: Record<string, string>;
+  emergencyContact?: string;
+  insuranceInfo?: string;
+  transportationAvailable?: boolean;
+  mealsProvided?: boolean;
+  extracurricularActivities?: string[];
+  parentInvolvementPrograms?: string[];
+  communityPartnerships?: string[];
+  qualityRating?: number;
+  lastInspectionDate?: string;
+  nextInspectionDate?: string;
+  complianceStatus?: string;
+  notes?: string;
 }
 
 export interface ParentProfile {
   id: string;
   fullName: string;
   phone?: string;
+  dateOfBirth?: string;
+  gender?: Gender;
   address?: string;
+  occupation?: string;
+  education?: string;
+  maritalStatus?: string;
   emergencyContact?: string;
-  relationship?: string;
+  preferredLanguage?: string;
+  communicationPreferences?: string[];
+  relationshipToChild?: string;
+  guardianshipStatus?: string;
+  consentToShare?: boolean;
+  agreementToPolicies?: boolean;
 }
 
 export interface SchoolViewerProfile {
@@ -133,7 +182,12 @@ export interface SchoolViewerProfile {
   fullName: string;
   position?: string;
   phone?: string;
+  department?: string;
   schoolId: string;
+  accessLevel?: string;
+  permissions?: string[];
+  lastAccessDate?: string;
+  notes?: string;
   school?: School;
 }
 
@@ -411,6 +465,7 @@ export interface PaginatedResponse<T = any> {
     total: number;
     totalPages: number;
   };
+  unreadCount?: number;
 }
 
 // Backend-specific response types that match the actual API

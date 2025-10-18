@@ -239,6 +239,10 @@ class ApiClient {
     await this.client.post(`/students/${studentId}/assign`, { specialEducatorId });
   }
 
+  async unassignStudentFromEducator(studentId: string, specialEducatorId: string): Promise<void> {
+    await this.client.post(`/students/${studentId}/unassign`, { specialEducatorId });
+  }
+
   async getStudentStats(centerId?: string, schoolId?: string): Promise<any> {
     try {
       const response = await this.client.get<ApiResponse<any>>('/students/stats', {
@@ -390,6 +394,104 @@ class ApiClient {
     return response.data.data;
   }
 
+  async assignEducators(assignmentData: {
+    educatorIds: string[];
+    centerIds?: string[];
+    schoolIds?: string[];
+  }): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>('/auth/users/assign-educators', assignmentData);
+    return response.data.data;
+  }
+
+  async updateUser(userId: string, userData: {
+    email?: string;
+    isActive?: boolean;
+    profileData?: any;
+  }): Promise<any> {
+    const response = await this.client.put<ApiResponse<any>>(`/auth/users/${userId}`, userData);
+    return response.data.data;
+  }
+
+  async deleteUser(userId: string): Promise<any> {
+    const response = await this.client.delete<ApiResponse<any>>(`/auth/users/${userId}`);
+    return response.data.data;
+  }
+
+  async deactivateUser(userId: string): Promise<any> {
+    const response = await this.client.patch<ApiResponse<any>>(`/auth/users/${userId}/deactivate`);
+    return response.data.data;
+  }
+
+  async activateUser(userId: string): Promise<any> {
+    const response = await this.client.patch<ApiResponse<any>>(`/auth/users/${userId}/activate`);
+    return response.data.data;
+  }
+
+  async createUser(userData: {
+    email: string;
+    password: string;
+    role: string;
+    profileData: any;
+  }): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>('/auth/users', userData);
+    return response.data.data;
+  }
+
+  async getAllCenters(filters?: any): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/centers/all', { params: filters });
+    return response.data.data;
+  }
+
+  async getAllSchools(filters?: any): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/schools/all', { params: filters });
+    return response.data.data;
+  }
+
+  async getAllUsers(filters?: any): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/auth/users/all', { params: filters });
+    return response.data.data;
+  }
+
+  async getSystemConfig(): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/system/config');
+    return response.data.data;
+  }
+
+  async updateSystemConfig(configData: any): Promise<any> {
+    const response = await this.client.put<ApiResponse<any>>('/system/config', configData);
+    return response.data.data;
+  }
+
+  async updateSpecialEducatorProfile(profileData: any): Promise<any> {
+    const response = await this.client.put<ApiResponse<any>>('/auth/special-educator/profile', profileData);
+    return response.data.data;
+  }
+
+  async updateEducatorProfile(profileData: any): Promise<any> {
+    const response = await this.client.put<ApiResponse<any>>('/auth/educator/profile', profileData);
+    return response.data.data;
+  }
+
+  async getAllReportsAsAdmin(params?: any): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/admin/reports/all', { params });
+    return response.data.data;
+  }
+
+  async getSpecialEducatorProfile(): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/auth/special-educator/profile');
+    return response.data.data;
+  }
+
+  async checkSpecialEducatorToken(): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/auth/special-educator/verify-token');
+    return response.data.data;
+  }
+
+  async getSpecialEducatorDashboard(): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/special-educator/dashboard');
+    return response.data.data;
+  }
+
   // Center endpoints
   async getCenters(params?: {
     page?: number;
@@ -426,6 +528,10 @@ class ApiClient {
     return response.data.data;
   }
 
+  async deleteCenter(id: string): Promise<void> {
+    await this.client.delete(`/centers/${id}`);
+  }
+
   async linkSchoolToCenter(centerId: string, schoolData: any): Promise<any> {
     const response = await this.client.post<ApiResponse<any>>(`/centers/${centerId}/schools`, schoolData);
     return response.data.data;
@@ -456,9 +562,13 @@ class ApiClient {
     return response.data.data!;
   }
 
-  async getCenterEducators(centerId: string): Promise<any[]> {
-    const response = await this.client.get<ApiResponse<any[]>>(`/centers/${centerId}/educators`);
-    return response.data.data!;
+  async getCenterEducators(centerId: string, params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get<PaginatedResponse<any>>(`/centers/${centerId}/educators`, { params });
+    return response.data;
   }
 
   async removeEducatorFromCenter(centerId: string, assignmentId: string): Promise<void> {
@@ -529,14 +639,38 @@ class ApiClient {
     return response.data;
   }
 
-  async getChildReports(childId: string): Promise<any[]> {
-    const response = await this.client.get<ApiResponse<any[]>>(`/parents/children/${childId}/reports`);
-    return response.data.data!;
+  async getParentConsentForms(params?: {
+    page?: number;
+    limit?: number;
+    childId?: string;
+    status?: string;
+  }): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/parents/consent-forms', { params });
+    return response.data.data;
   }
 
-  async getChildIEPGoals(childId: string): Promise<any[]> {
-    const response = await this.client.get<ApiResponse<any[]>>(`/parents/children/${childId}/iep-goals`);
-    return response.data.data!;
+  async submitParentConsentForm(formId: string, formData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/parents/consent-forms/${formId}/submit`, formData);
+    return response.data.data;
+  }
+
+  async getChildReports(childId: string, params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    status?: string;
+  }): Promise<any[]> {
+    const response = await this.client.get(`/children/${childId}/reports`, { params });
+    return response.data.data;
+  }
+
+  async getChildIEPGoals(childId: string, params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<any[]> {
+    const response = await this.client.get(`/children/${childId}/iep-goals`, { params });
+    return response.data.data;
   }
 
   async updateParentProfile(profileData: any): Promise<any> {
@@ -546,442 +680,263 @@ class ApiClient {
 
   async getChildDetails(childId: string): Promise<any> {
     const response = await this.client.get<ApiResponse<any>>(`/parents/children/${childId}`);
+    return response.data.data;
+  }
+
+  async getParentNotifications(params?: {
+    page?: number;
+    limit?: number;
+    read?: boolean;
+    type?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get<ApiResponse<PaginatedResponse<any>>>('/parents/notifications', { params });
     return response.data.data!;
   }
 
-  // File upload endpoints
-  async uploadSingleFile(file: File): Promise<any> {
+  async markParentNotificationAsRead(notificationId: string): Promise<void> {
+    await this.client.put(`/parents/notifications/${notificationId}/read`);
+  }
+
+  async markAllParentNotificationsAsRead(): Promise<void> {
+    await this.client.put('/parents/notifications/read-all');
+  }
+
+  async getParentProfile(): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/parents/profile');
+    return response.data.data;
+  }
+
+  async rescheduleAppointment(appointmentId: string, newDateTime: string): Promise<any> {
+    const response = await this.client.patch(`/appointments/${appointmentId}/reschedule`, {
+      newDateTime
+    });
+    return response.data.data;
+  }
+
+  async getParentAppointments(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    childId?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/parent/appointments', { params });
+    return response.data;
+  }
+
+  async requestAppointment(appointmentData: {
+    childId: string;
+    educatorId: string;
+    preferredDate: string;
+    preferredTime: string;
+    reason: string;
+    notes?: string;
+  }): Promise<any> {
+    const response = await this.client.post('/parent/appointments/request', appointmentData);
+    return response.data.data;
+  }
+
+  async cancelAppointment(appointmentId: string, reason?: string): Promise<any> {
+    const response = await this.client.patch(`/appointments/${appointmentId}/cancel`, {
+      reason
+    });
+    return response.data.data;
+  }
+
+  async getParentCommunications(params?: {
+    page?: number;
+    limit?: number;
+    childId?: string;
+    type?: string;
+    read?: boolean;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/parent/communications', { params });
+    return response.data;
+  }
+
+  async sendParentMessage(messageData: {
+    recipientId: string;
+    subject: string;
+    content: string;
+    childId?: string;
+    priority?: string;
+  }): Promise<any> {
+    const response = await this.client.post('/parent/communications/send', messageData);
+    return response.data.data;
+  }
+
+  async markParentMessageAsRead(messageId: string): Promise<any> {
+    const response = await this.client.patch(`/parent/communications/${messageId}/read`);
+    return response.data.data;
+  }
+
+  async replyToParentMessage(messageId: string, replyData: {
+    content: string;
+    attachments?: string[];
+  }): Promise<any> {
+    const response = await this.client.post(`/parent/communications/${messageId}/reply`, replyData);
+    return response.data.data;
+  }
+
+  async getParentChildren(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/parent/children', { params });
+    return response.data;
+  }
+
+  async addChild(childData: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    schoolId?: string;
+    centerId?: string;
+    specialNeeds?: string;
+    notes?: string;
+  }): Promise<any> {
+    const response = await this.client.post('/parent/children', childData);
+    return response.data.data;
+  }
+
+  async updateChild(childId: string, childData: any): Promise<any> {
+    const response = await this.client.put(`/parent/children/${childId}`, childData);
+    return response.data.data;
+  }
+
+  async removeChild(childId: string): Promise<any> {
+    const response = await this.client.delete(`/parent/children/${childId}`);
+    return response.data.data;
+  }
+
+  async getChildProgress(childId: string, params?: {
+    period?: string;
+    goalId?: string;
+  }): Promise<any> {
+    const response = await this.client.get(`/parent/children/${childId}/progress`, { params });
+    return response.data.data;
+  }
+
+  async getChildAssessments(childId: string, params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    status?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get(`/parent/children/${childId}/assessments`, { params });
+    return response.data;
+  }
+
+  async getChildSessionNotes(childId: string, params?: {
+    page?: number;
+    limit?: number;
+    goalId?: string;
+    date?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get(`/parent/children/${childId}/session-notes`, { params });
+    return response.data;
+  }
+
+  async getChildSchedule(childId: string, params?: {
+    date?: string;
+    week?: string;
+    month?: string;
+  }): Promise<any[]> {
+    const response = await this.client.get(`/parent/children/${childId}/schedule`, { params });
+    return response.data.data;
+  }
+
+  async uploadParentDocument(file: File, category: string, description?: string): Promise<any> {
     const formData = new FormData();
     formData.append('file', file);
-
-    const response = await this.client.post<ApiResponse<any>>('/files/upload/single', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    return response.data.data;
-  }
-
-  async uploadMultipleFiles(files: File[]): Promise<any> {
-    const formData = new FormData();
-    files.forEach(file => formData.append('files', file));
-
-    const response = await this.client.post<ApiResponse<any>>('/files/upload/multiple', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    return response.data.data;
-  }
-
-  async uploadAssessmentWorksheets(files: File[], studentId: string, assessmentId: string, domain: string): Promise<any> {
-    const formData = new FormData();
-    files.forEach(file => formData.append('worksheets', file));
-    formData.append('studentId', studentId);
-    formData.append('assessmentId', assessmentId);
-    formData.append('domain', domain);
-
-    const response = await this.client.post<ApiResponse<any>>('/files/upload/worksheets', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    return response.data.data;
-  }
-
-  async uploadParentDocument(file: File, category?: string, description?: string): Promise<any> {
-    // First upload the file to get file metadata
-    const uploadedFile = await this.uploadSingleFile(file);
-    
-    // Then create the parent document record
-    const documentData = {
-      fileName: uploadedFile.fileName || file.name,
-      filePath: uploadedFile.filePath,
-      fileType: uploadedFile.fileType || file.type,
-      fileSize: uploadedFile.fileSize || file.size,
-      category: category || 'GENERAL',
-      description: description || ''
-    };
-
-    const response = await this.client.post<ApiResponse<any>>('/parents/documents', documentData);
-    return response.data.data;
-  }
-
-  async downloadFile(type: string, fileId: string): Promise<Blob> {
-    const response = await this.client.get(`/files/download/${type}/${fileId}`, {
-      responseType: 'blob'
-    });
-    return response.data;
-  }
-
-  async deleteFile(type: string, fileId: string): Promise<void> {
-    await this.client.delete(`/files/${type}/${fileId}`);
-  }
-
-  // Admin endpoints
-  async getAdminDashboard(): Promise<any> {
-    try {
-      const response = await this.client.get<ApiResponse<any>>('/admin/dashboard/overview');
-      return response.data.data;
-    } catch (error) {
-      console.error('Failed to load admin dashboard:', error);
-      throw error; // Don't fallback to mock data
+    formData.append('category', category);
+    if (description) {
+      formData.append('description', description);
     }
+
+    const response = await this.client.post('/parents/documents/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data;
   }
 
-  async getAllUsers(params?: {
+  async deleteParentDocument(documentId: string): Promise<void> {
+    await this.client.delete(`/parents/documents/${documentId}`);
+  }
+
+  // Educator API methods
+  async deleteAssessment(assessmentId: string): Promise<void> {
+    await this.client.delete(`/educators/assessments/${assessmentId}`);
+  }
+
+  async deleteIEPGoal(goalId: string): Promise<void> {
+    await this.client.delete(`/educators/iep-goals/${goalId}`);
+  }
+
+  async updateSessionNote(noteId: string, noteData: any): Promise<any> {
+    const response = await this.client.put<ApiResponse<any>>(`/educators/session-notes/${noteId}`, noteData);
+    return response.data.data;
+  }
+
+  async deleteSessionNote(noteId: string): Promise<void> {
+    await this.client.delete(`/educators/session-notes/${noteId}`);
+  }
+
+  async generateReport(reportData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>('/educators/reports/generate', reportData);
+    return response.data.data;
+  }
+
+  async updateReport(reportId: string, reportData: any): Promise<any> {
+    const response = await this.client.put<ApiResponse<any>>(`/educators/reports/${reportId}`, reportData);
+    return response.data.data;
+  }
+
+  async deleteReport(reportId: string): Promise<void> {
+    await this.client.delete(`/educators/reports/${reportId}`);
+  }
+
+  async getEducatorProfile(): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/educators/profile');
+    return response.data.data;
+  }
+
+  async getEducatorNotifications(params?: {
     page?: number;
     limit?: number;
-    role?: string;
-    search?: string;
-    status?: string;
-  }): Promise<PaginatedResponse<any>> {
-    try {
-      const response = await this.client.get<PaginatedResponse<any>>('/admin/users', { params });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to load users:', error);
-      throw error;
-    }
-  }
-
-  async createUser(userData: any): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>('/admin/users', userData);
-    return response.data.data;
-  }
-
-  async updateUser(userId: string, userData: any): Promise<any> {
-    const response = await this.client.put<ApiResponse<any>>(`/admin/users/${userId}`, userData);
-    return response.data.data;
-  }
-
-  async deleteUser(userId: string): Promise<void> {
-    await this.client.delete(`/admin/users/${userId}`);
-  }
-
-  async activateUser(userId: string): Promise<void> {
-    await this.client.patch(`/admin/users/${userId}/activate`);
-  }
-
-  async deactivateUser(userId: string): Promise<void> {
-    await this.client.patch(`/admin/users/${userId}/deactivate`);
-  }
-
-  async getAllCenters(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-  }): Promise<PaginatedResponse<any>> {
-    // Use the regular centers endpoint since admin-specific endpoint doesn't exist
-    const response = await this.client.get<PaginatedResponse<any>>('/centers', { params });
-    return response.data;
-  }
-
-  async createCenterAsAdmin(centerData: any): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>('/admin/centers', centerData);
-    return response.data.data;
-  }
-
-  async updateCenterAsAdmin(centerId: string, centerData: any): Promise<any> {
-    const response = await this.client.put<ApiResponse<any>>(`/admin/centers/${centerId}`, centerData);
-    return response.data.data;
-  }
-
-  async deleteCenterAsAdmin(centerId: string): Promise<void> {
-    await this.client.delete(`/admin/centers/${centerId}`);
-  }
-
-  async getAllSchools(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    centerId?: string;
-  }): Promise<PaginatedResponse<any>> {
-    // Since there's no admin schools endpoint, we'll need to create a mock response
-    // or implement the endpoint. For now, return mock data structure.
-    throw new Error('Admin schools endpoint not implemented in backend');
-  }
-
-  async createSchoolAsAdmin(schoolData: any): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>('/admin/schools', schoolData);
-    return response.data.data;
-  }
-
-  async updateSchoolAsAdmin(schoolId: string, schoolData: any): Promise<any> {
-    const response = await this.client.put<ApiResponse<any>>(`/admin/schools/${schoolId}`, schoolData);
-    return response.data.data;
-  }
-
-  async deleteSchoolAsAdmin(schoolId: string): Promise<void> {
-    await this.client.delete(`/admin/schools/${schoolId}`);
-  }
-
-  async assignEducatorToCenterAsAdmin(assignmentData: {
-    centerId: string;
-    educatorId: string;
-    educatorType: string;
-  }): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>('/admin/assignments/educator-to-center', assignmentData);
-    return response.data.data;
-  }
-
-  async removeEducatorFromCenterAsAdmin(assignmentId: string): Promise<void> {
-    await this.client.delete(`/admin/assignments/educator-to-center/${assignmentId}`);
-  }
-
-  async assignStudentToEducatorAsAdmin(assignmentData: {
-    studentId: string;
-    specialEducatorId: string;
-  }): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>('/admin/assignments/student-to-educator', assignmentData);
-    return response.data.data;
-  }
-
-  async getPendingApprovals(params?: {
-    page?: number;
-    limit?: number;
+    read?: boolean;
     type?: string;
   }): Promise<PaginatedResponse<any>> {
-    const response = await this.client.get<PaginatedResponse<any>>('/admin/approvals', { params });
-    return response.data;
-  }
-
-  async approveRequest(requestId: string, comments?: string): Promise<void> {
-    await this.client.patch(`/admin/approvals/${requestId}/approve`, { comments });
-  }
-
-  async rejectRequest(requestId: string, reason?: string): Promise<void> {
-    await this.client.patch(`/admin/approvals/${requestId}/reject`, { reason });
-  }
-
-  async getAllStudentsAsAdmin(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    centerId?: string;
-    status?: string;
-  }): Promise<PaginatedResponse<any>> {
-    const response = await this.client.get<PaginatedResponse<any>>('/admin/students', { params });
-    return response.data;
-  }
-
-  async getStudentDetailsAsAdmin(studentId: string): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>(`/admin/students/${studentId}`);
-    return response.data.data;
-  }
-
-  async getAllReportsAsAdmin(params?: {
-    page?: number;
-    limit?: number;
-    type?: string;
-    status?: string;
-    centerId?: string;
-  }): Promise<PaginatedResponse<any>> {
-    const response = await this.client.get<PaginatedResponse<any>>('/admin/reports', { params });
-    return response.data;
-  }
-
-  async getSystemAnalytics(period?: string): Promise<any> {
-    try {
-      const response = await this.client.get<ApiResponse<any>>('/admin/analytics', {
-        params: { period }
-      });
-      return response.data.data;
-    } catch (error) {
-      console.error('Failed to load analytics:', error);
-      throw error;
-    }
-  }
-
-  async getAuditLogs(params?: {
-    page?: number;
-    limit?: number;
-    action?: string;
-    userId?: string;
-    resource?: string;
-    startDate?: string;
-    endDate?: string;
-  }): Promise<PaginatedResponse<any>> {
-    // Audit logs endpoint not implemented in backend
-    throw new Error('Audit logs endpoint not implemented in backend');
-  }
-
-  async globalSearch(query: string, type?: string): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>('/admin/search', {
-      params: { query, type }
-    });
-    return response.data.data;
-  }
-
-  async getSystemConfig(): Promise<any> {
-    // System config endpoint not implemented in backend
-    throw new Error('System config endpoint not implemented in backend');
-  }
-
-  async updateSystemConfig(configData: any): Promise<any> {
-    // System config endpoint not implemented in backend
-    throw new Error('System config endpoint not implemented in backend');
-  }
-
-  async exportData(exportData: {
-    type: string;
-    format: string;
-    filters?: any;
-  }): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>('/admin/export', exportData);
-    return response.data.data;
-  }
-
-  // Special Educator endpoints
-  async checkSpecialEducatorToken(): Promise<any> {
-    console.log('\n🎯 FRONTEND API: checkSpecialEducatorToken START');
-    console.log('🎯 Endpoint: /special-educators/check-token');
-    console.log('🎯 Method: GET');
-    
-    try {
-      const response = await this.client.get<ApiResponse<any>>('/special-educators/check-token');
-      console.log('✅ checkSpecialEducatorToken SUCCESS');
-      console.log('🎯 Response status:', response.status);
-      console.log('🎯 Response data:', response.data);
-      return response.data.data;
-    } catch (error: any) {
-      console.error('❌ checkSpecialEducatorToken FAILED');
-      console.error('🎯 Error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
-      });
-      throw error;
-    }
-  }
-
-  async getSpecialEducatorDashboard(): Promise<any> {
-    console.log('\n🎯 FRONTEND API: getSpecialEducatorDashboard START');
-    console.log('🎯 Endpoint: /special-educators/dashboard');
-    console.log('🎯 Method: GET');
-    
-    try {
-      const response = await this.client.get<ApiResponse<any>>('/special-educators/dashboard');
-      console.log('✅ getSpecialEducatorDashboard SUCCESS');
-      console.log('🎯 Response status:', response.status);
-      console.log('🎯 Response data:', response.data);
-      return response.data.data;
-    } catch (error: any) {
-      console.error('❌ getSpecialEducatorDashboard FAILED');
-      console.error('🎯 Error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
-      });
-      throw error;
-    }
-  }
-
-  async getSpecialEducatorProfile(): Promise<any> {
-    console.log('\n🎯 FRONTEND API: getSpecialEducatorProfile START');
-    console.log('🎯 Endpoint: /special-educators/profile');
-    console.log('🎯 Method: GET');
-    
-    try {
-      const response = await this.client.get<ApiResponse<any>>('/special-educators/profile');
-      console.log('✅ getSpecialEducatorProfile SUCCESS');
-      console.log('🎯 Response status:', response.status);
-      console.log('🎯 Response data:', response.data);
-      return response.data.data;
-    } catch (error: any) {
-      console.error('❌ getSpecialEducatorProfile FAILED');
-      console.error('🎯 Error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
-      });
-      throw error;
-    }
-  }
-
-  async updateSpecialEducatorProfile(profileData: any): Promise<any> {
-    console.log('\n🎯 FRONTEND API: updateSpecialEducatorProfile START');
-    console.log('🎯 Endpoint: /special-educators/profile');
-    console.log('🎯 Method: PUT');
-    console.log('🎯 Profile data:', profileData);
-    
-    try {
-      const response = await this.client.put<ApiResponse<any>>('/special-educators/profile', profileData);
-      console.log('✅ updateSpecialEducatorProfile SUCCESS');
-      console.log('🎯 Response status:', response.status);
-      console.log('🎯 Response data:', response.data);
-      return response.data.data;
-    } catch (error: any) {
-      console.error('❌ updateSpecialEducatorProfile FAILED');
-      console.error('🎯 Error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
-      });
-      throw error;
-    }
-  }
-
-  async getAssignedStudents(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-  }): Promise<PaginatedResponse<any>> {
-    console.log('\n🎯 FRONTEND API: getAssignedStudents START');
-    console.log('🎯 Endpoint: /special-educators/students');
-    console.log('🎯 Method: GET');
-    console.log('🎯 Params:', params);
-    
-    try {
-      const response = await this.client.get<PaginatedResponse<any>>('/special-educators/students', { params });
-      console.log('✅ getAssignedStudents SUCCESS');
-      console.log('🎯 Response status:', response.status);
-      console.log('🎯 Response data:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ getAssignedStudents FAILED');
-      console.error('🎯 Error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
-      });
-      throw error;
-    }
+    const response = await this.client.get<ApiResponse<PaginatedResponse<any>>>('/educators/notifications', { params });
+    return response.data.data!;
   }
 
   async getStudentDetailsForEducator(studentId: string): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>(`/special-educators/students/${studentId}`);
+    const response = await this.client.get<ApiResponse<any>>(`/special-educator/students/${studentId}`);
     return response.data.data;
   }
 
   async getEducatorRecentActivities(limit?: number): Promise<any[]> {
-    const response = await this.client.get<ApiResponse<any[]>>('/special-educators/activities', {
+    const response = await this.client.get<ApiResponse<any[]>>('/special-educator/activities', {
       params: { limit }
     });
     return response.data.data!;
   }
 
   async getEducatorStatistics(): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>('/special-educators/statistics');
+    const response = await this.client.get<ApiResponse<any>>('/special-educator/statistics');
     return response.data.data;
   }
 
   async getTodaysSchedule(): Promise<any[]> {
-    const response = await this.client.get<ApiResponse<any[]>>('/special-educators/schedule/today');
+    const response = await this.client.get<ApiResponse<any[]>>('/special-educator/schedule/today');
     return response.data.data!;
   }
 
   async createEducatorSessionNote(sessionData: any): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>('/special-educators/session-notes', sessionData);
+    const response = await this.client.post<ApiResponse<any>>('/special-educator/session-notes', sessionData);
     return response.data.data;
   }
 
@@ -989,7 +944,7 @@ class ApiClient {
     page?: number;
     limit?: number;
   }): Promise<PaginatedResponse<any>> {
-    const response = await this.client.get<PaginatedResponse<any>>(`/special-educators/students/${studentId}/session-notes`, { params });
+    const response = await this.client.get<PaginatedResponse<any>>(`/special-educator/session-notes/${studentId}`, { params });
     return response.data;
   }
 
@@ -1105,6 +1060,11 @@ class ApiClient {
   }
 
   // School CRUD endpoints
+  async createSchool(schoolData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>('/schools', schoolData);
+    return response.data.data;
+  }
+
   async updateSchool(schoolId: string, schoolData: any): Promise<any> {
     const response = await this.client.put<ApiResponse<any>>(`/schools/${schoolId}`, schoolData);
     return response.data.data;
@@ -1127,12 +1087,418 @@ class ApiClient {
     await this.client.patch(`/schools/${schoolId}/deactivate`);
   }
 
+  // Single file upload method
+  async uploadSingleFile(file: File, category?: string): Promise<{ filePath: string; fileId: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (category) {
+      formData.append('category', category);
+    }
+
+    const response = await this.client.post('/files/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data;
+  }
+
   // Legacy file upload helper (keeping for backward compatibility)
   async uploadFile(file: File, category?: string): Promise<string> {
-    const fileData = await this.uploadSingleFile(file);
+    const fileData = await this.uploadSingleFile(file, category);
     return fileData.filePath;
   }
 
+  // Missing API methods for hooks
+  async getSpecialEducatorStudents(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/special-educator/students', { params });
+    return response.data;
+  }
+
+  async getSpecialEducatorStatistics(): Promise<any> {
+    const response = await this.client.get('/special-educator/statistics');
+    return response.data;
+  }
+
+  async getSpecialEducatorSchedule(params?: {
+    date?: string;
+    week?: string;
+    month?: string;
+  }): Promise<any[]> {
+    const response = await this.client.get('/special-educator/schedule', { params });
+    return response.data;
+  }
+
+  async getSpecialEducatorSessionNotes(studentId: string, params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get(`/special-educator/session-notes/${studentId}`, { params });
+    return response.data;
+  }
+
+  async getStudentDetailsForSpecialEducator(studentId: string): Promise<any> {
+    const response = await this.client.get(`/special-educator/students/${studentId}`);
+    return response.data;
+  }
+
+  async assignStudentToSpecialEducator(assignmentData: {
+    studentId: string;
+    specialEducatorId: string;
+    notes?: string;
+  }): Promise<any> {
+    const response = await this.client.post('/special-educator/assign-student', assignmentData);
+    return response.data;
+  }
+
+  async getSuperSpecialEducatorSpecialEducators(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    centerId?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/super-special-educator/special-educators', { params });
+    return response.data;
+  }
+
+  async getSuperSpecialEducatorStudents(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    centerId?: string;
+    educatorId?: string;
+    status?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/super-special-educator/students', { params });
+    return response.data;
+  }
+
+  async getEducatorSchedule(params?: {
+    date?: string;
+    week?: string;
+    month?: string;
+  }): Promise<any[]> {
+    const response = await this.client.get<ApiResponse<any[]>>('/educators/schedule', { params });
+    return response.data.data!;
+  }
+
+  async createScheduleEntry(entryData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>('/educators/schedule', entryData);
+    return response.data.data;
+  }
+
+  async updateScheduleEntry(entryId: string, entryData: any): Promise<any> {
+    const response = await this.client.put<ApiResponse<any>>(`/educators/schedule/${entryId}`, entryData);
+    return response.data.data;
+  }
+
+  async deleteScheduleEntry(entryId: string): Promise<void> {
+    await this.client.delete(`/educators/schedule/${entryId}`);
+  }
+
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    await this.client.put(`/educators/notifications/${notificationId}/read`);
+  }
+
+  async markAllNotificationsAsRead(): Promise<void> {
+    await this.client.put('/educators/notifications/read-all');
+  }
+
+  async getFiles(params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    category?: string;
+    search?: string;
+    userId?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/files', { params });
+    return response.data;
+  }
+
+  async getFileDetails(fileId: string): Promise<any> {
+    const response = await this.client.get(`/files/${fileId}`);
+    return response.data;
+  }
+
+  async deleteFile(fileId: string): Promise<void> {
+    await this.client.delete(`/files/${fileId}`);
+  }
+
+  async updateFileMetadata(fileId: string, metadata: any): Promise<any> {
+    const response = await this.client.put(`/files/${fileId}/metadata`, metadata);
+    return response.data;
+  }
+
+  async downloadFile(fileId: string): Promise<Blob> {
+    const response = await this.client.get(`/files/${fileId}/download`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  }
+
+  async getGlobalStatistics(params?: {
+    period?: string;
+    type?: string;
+  }): Promise<any> {
+    const response = await this.client.get('/admin/statistics', { params });
+    return response.data.data;
+  }
+
+  async updateAppSettings(settings: any): Promise<any> {
+    const response = await this.client.put('/admin/settings', settings);
+    return response.data.data;
+  }
+
+  async getAppSettings(): Promise<any> {
+    const response = await this.client.get('/admin/settings');
+    return response.data.data;
+  }
+
+  async healthCheck(): Promise<any> {
+    const response = await this.client.get('/health');
+    return response.data;
+  }
+
+  async importData(importData: {
+    file: File;
+    type: string;
+    options?: any;
+  }): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', importData.file);
+    formData.append('type', importData.type);
+    if (importData.options) {
+      formData.append('options', JSON.stringify(importData.options));
+    }
+
+    const response = await this.client.post('/admin/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data;
+  }
+
+  async exportData(exportParams: {
+    type: string;
+    format?: string;
+    filters?: any;
+    dateRange?: {
+      from: string;
+      to: string;
+    };
+  }): Promise<Blob> {
+    const response = await this.client.post('/admin/export', exportParams, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
+
+  async getActivityLogs(params?: {
+    page?: number;
+    limit?: number;
+    userId?: string;
+    action?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/admin/activity-logs', { params });
+    return response.data.data;
+  }
+
+  async getSuperSpecialEducatorNotifications(params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    read?: boolean;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/super-special-educator/notifications', { params });
+    return response.data;
+  }
+
+  async getSuperSpecialEducatorAuditLogs(params?: any): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/super-special-educators/audit-logs', { params });
+    return response.data.data;
+  }
+
+  async getSuperSpecialEducatorAnalytics(params?: any): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/super-special-educators/analytics', { params });
+    return response.data.data;
+  }
+
+  async getSuperSpecialEducatorReports(params?: any): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/super-special-educators/reports', { params });
+    return response.data.data;
+  }
+
+  async generateSuperSpecialEducatorReport(reportData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>('/super-special-educators/reports/generate', reportData);
+    return response.data.data;
+  }
+
+  async getSuperSpecialEducatorAssessments(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    studentId?: string;
+    educatorId?: string;
+    centerId?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/super-special-educator/assessments', { params });
+    return response.data;
+  }
+
+  async reviewAssessment(assessmentId: string, reviewData: any): Promise<any> {
+    const response = await this.client.post(`/assessments/${assessmentId}/review`, reviewData);
+    return response.data;
+  }
+
+  async approveAssessment(assessmentId: string): Promise<any> {
+    const response = await this.client.post(`/assessments/${assessmentId}/approve`);
+    return response.data;
+  }
+
+  async transferStudent(transferData: {
+    studentId: string;
+    fromEducatorId: string;
+    toEducatorId: string;
+    reason?: string;
+    notes?: string;
+  }): Promise<any> {
+    const response = await this.client.post('/students/transfer', transferData);
+    return response.data;
+  }
+
+  async updateSpecialEducator(educatorId: string, educatorData: any): Promise<any> {
+    const response = await this.client.put(`/special-educators/${educatorId}`, educatorData);
+    return response.data;
+  }
+
+  async deleteSpecialEducator(educatorId: string): Promise<any> {
+    const response = await this.client.delete(`/special-educators/${educatorId}`);
+    return response.data;
+  }
+
+  async getSuperSpecialEducatorCenters(params?: any): Promise<any> {
+    const response = await this.client.get('/super-special-educators/centers', { params });
+    return response.data;
+  }
+
+  // Global search methods
+  async globalSearch(params?: {
+    query?: string;
+    type?: string;
+    filters?: any;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/search/global', { params });
+    return response.data;
+  }
+
+  async getSearchSuggestions(query: string): Promise<string[]> {
+    const response = await this.client.get('/search/suggestions', { params: { query } });
+    return response.data;
+  }
+
+  async getRecentSearches(): Promise<string[]> {
+    const response = await this.client.get('/search/recent');
+    return response.data;
+  }
+
+  async clearRecentSearches(): Promise<void> {
+    await this.client.delete('/search/recent');
+  }
+
+  // Educator-specific methods
+  async getAssignedStudents(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/educator/students', { params });
+    return response.data;
+  }
+
+  // Admin methods
+  async getAdminDashboard(): Promise<any> {
+    const response = await this.client.get('/admin/dashboard');
+    return response.data;
+  }
+
+  async getPendingApprovals(params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/admin/pending-approvals', { params });
+    return response.data;
+  }
+
+  async getSystemAnalytics(params?: {
+    period?: string;
+    metrics?: string[];
+  }): Promise<any> {
+    const response = await this.client.get('/admin/analytics', { params });
+    return response.data;
+  }
+
+  async getAuditLogs(params?: {
+    page?: number;
+    limit?: number;
+    userId?: string;
+    action?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/admin/audit-logs', { params });
+    return response.data;
+  }
+
+  async getAllStudentsAsAdmin(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    centerId?: string;
+    schoolId?: string;
+    status?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/admin/students', { params });
+    return response.data;
+  }
+
+  async getStudentDetailsAsAdmin(studentId: string): Promise<any> {
+    const response = await this.client.get(`/admin/students/${studentId}`);
+    return response.data;
+  }
+
+  async getEducatorAssignments(params?: {
+    page?: number;
+    limit?: number;
+    educatorId?: string;
+    centerId?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get('/admin/educator-assignments', { params });
+    return response.data;
+  }
+
+  async approveRequest(requestId: string, comments?: string): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/admin/requests/${requestId}/approve`, { comments });
+    return response.data.data;
+  }
+
+  async rejectRequest(requestId: string, reason?: string): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/admin/requests/${requestId}/reject`, { reason });
+    return response.data.data;
+  }
 }
 
 export const apiClient = new ApiClient();

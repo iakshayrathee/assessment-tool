@@ -156,10 +156,74 @@ export class AdminService {
   }
 
   async deleteUser(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({ 
+      where: { id: userId },
+      include: {
+        specialEducatorProfile: true,
+        superSpecialEducatorProfile: true
+      }
+    });
     if (!user) throw new Error('User not found');
 
-    await this.prisma.user.delete({ where: { id: userId } });
+    return await this.prisma.$transaction(async (tx) => {
+      // If user is a special educator, handle all related data
+      if (user.specialEducatorProfile) {
+        const specialEducatorId = user.specialEducatorProfile.id;
+        
+        // Delete all assessments created by this educator
+        await tx.assessment.deleteMany({
+          where: { specialEducatorId }
+        });
+        
+        // Delete all intake forms created by this educator
+        await tx.intakeForm.deleteMany({
+          where: { specialEducatorId }
+        });
+        
+        // Delete all IEP goals created by this educator
+        await tx.iEPGoal.deleteMany({
+          where: { specialEducatorId }
+        });
+        
+        // Delete all session notes created by this educator
+        await tx.sessionNote.deleteMany({
+          where: { specialEducatorId }
+        });
+        
+        // Delete all reports created by this educator
+        await tx.report.deleteMany({
+          where: { specialEducatorId }
+        });
+        
+        // Delete student assignments
+        await tx.studentAssignment.deleteMany({
+          where: { specialEducatorId }
+        });
+        
+        // Delete center assignments
+        await tx.centerAssignment.deleteMany({
+          where: { specialEducatorId }
+        });
+      }
+
+      // If user is a super special educator, remove their center assignments and reports
+      if (user.superSpecialEducatorProfile) {
+        const superSpecialEducatorId = user.superSpecialEducatorProfile.id;
+        
+        // Delete center assignments
+        await tx.centerAssignment.deleteMany({
+          where: { superSpecialEducatorId }
+        });
+        
+        // Delete reports reviewed by this super special educator
+        await tx.report.deleteMany({
+          where: { superSpecialEducatorId }
+        });
+      }
+
+      // Delete the user (profiles will be deleted due to CASCADE)
+      await tx.user.delete({ where: { id: userId } });
+    });
   }
 
   async activateUser(userId: string) {
@@ -259,56 +323,99 @@ export class AdminService {
   }
 
   // Helper methods for role profiles
+  private convertDateFields(data: any): any {
+    const converted = { ...data };
+    
+    // Convert date string fields to Date objects
+    const dateFields = ['dateOfBirth', 'rciValidityDate', 'startDate', 'targetDate', 'sessionDate', 'registrationDate'];
+    
+    dateFields.forEach(field => {
+      if (converted[field] && typeof converted[field] === 'string') {
+        // Convert date string to Date object
+        converted[field] = new Date(converted[field]);
+      }
+    });
+    
+    return converted;
+  }
+
   private async createRoleProfile(tx: any, userId: string, role: UserRole, profileData: any) {
+    const convertedData = this.convertDateFields(profileData);
+    
     switch (role) {
       case UserRole.ADMIN:
         await tx.adminProfile.create({
-          data: { userId, ...profileData }
+          data: { userId, ...convertedData }
         });
         break;
       case UserRole.SPECIAL_EDUCATOR:
         await tx.specialEducatorProfile.create({
-          data: { userId, ...profileData }
+          data: { userId, ...convertedData }
         });
         break;
       case UserRole.SUPER_SPECIAL_EDUCATOR:
         await tx.superSpecialEducatorProfile.create({
-          data: { userId, ...profileData }
+          data: { userId, ...convertedData }
         });
         break;
       case UserRole.CENTER:
         await tx.centerProfile.create({
-          data: { userId, ...profileData }
+          data: { userId, ...convertedData }
         });
         break;
       case UserRole.PARENT:
         await tx.parentProfile.create({
-          data: { userId, ...profileData }
+          data: { userId, ...convertedData }
         });
         break;
       case UserRole.SCHOOL_VIEWER:
         await tx.schoolViewerProfile.create({
-          data: { userId, ...profileData }
+          data: { userId, ...convertedData }
         });
         break;
     }
   }
 
   private async updateRoleProfile(tx: any, userId: string, role: UserRole, profileData: any) {
+    const convertedData = this.convertDateFields(profileData);
+    
     switch (role) {
       case UserRole.ADMIN:
         await tx.adminProfile.update({
           where: { userId },
-          data: profileData
+          data: convertedData
         });
         break;
       case UserRole.SPECIAL_EDUCATOR:
         await tx.specialEducatorProfile.update({
           where: { userId },
-          data: profileData
+          data: convertedData
         });
         break;
-      // Add other cases as needed
+      case UserRole.SUPER_SPECIAL_EDUCATOR:
+        await tx.superSpecialEducatorProfile.update({
+          where: { userId },
+          data: convertedData
+        });
+        break;
+      case UserRole.CENTER:
+        await tx.centerProfile.update({
+          where: { userId },
+          data: convertedData
+        });
+        break;
+      case UserRole.PARENT:
+        await tx.parentProfile.update({
+          where: { userId },
+          data: convertedData
+        });
+        break;
+      case UserRole.SCHOOL_VIEWER:
+        await tx.schoolViewerProfile.update({
+          where: { userId },
+          data: convertedData
+        });
+        break;
     }
   }
 
@@ -647,13 +754,33 @@ export class AdminService {
   async assignEducatorToCenter(assignmentData: any) {
     const { centerId, educatorId, educatorType } = assignmentData;
     
+    // First, get the educator's profile ID based on their user ID
+    let profileId: string;
+    if (educatorType === 'SPECIAL_EDUCATOR') {
+      const profile = await this.prisma.specialEducatorProfile.findUnique({
+        where: { userId: educatorId }
+      });
+      if (!profile) {
+        throw new Error('Special educator profile not found');
+      }
+      profileId = profile.id;
+    } else {
+      const profile = await this.prisma.superSpecialEducatorProfile.findUnique({
+        where: { userId: educatorId }
+      });
+      if (!profile) {
+        throw new Error('Super special educator profile not found');
+      }
+      profileId = profile.id;
+    }
+    
     // Check if assignment already exists
     const existingAssignment = await this.prisma.centerAssignment.findFirst({
       where: {
         centerId,
         OR: [
-          { specialEducatorId: educatorId },
-          { superSpecialEducatorId: educatorId }
+          { specialEducatorId: profileId },
+          { superSpecialEducatorId: profileId }
         ]
       }
     });
@@ -664,9 +791,9 @@ export class AdminService {
 
     const assignmentFields: any = { centerId };
     if (educatorType === 'SPECIAL_EDUCATOR') {
-      assignmentFields.specialEducatorId = educatorId;
+      assignmentFields.specialEducatorId = profileId;
     } else {
-      assignmentFields.superSpecialEducatorId = educatorId;
+      assignmentFields.superSpecialEducatorId = profileId;
     }
 
     return await this.prisma.centerAssignment.create({

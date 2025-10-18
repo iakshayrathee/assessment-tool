@@ -15,28 +15,51 @@ export class StudentRepository {
   }
 
   async create(studentData: StudentData): Promise<Student> {
-    const age = DateHelper.calculateAge(studentData.dateOfBirth);
+    // Ensure dateOfBirth is a proper Date object
+    const dateOfBirth = typeof studentData.dateOfBirth === 'string' 
+      ? new Date(studentData.dateOfBirth) 
+      : studentData.dateOfBirth;
+    
+    const age = DateHelper.calculateAge(dateOfBirth);
     
     // Extract only the fields that belong to the Student model
     const {
       parentName,
       parentPhone,
       parentEmail,
+      parentAddress,
+      emergencyContact,
+      relationship,
+      specialEducatorId,
+      previousSchool,
+      medicalConditions,
+      specialNeeds,
+      learningConcerns,
+      parentExpectations,
+      status,
       centerId,
       schoolId,
       parentId,
+      parent, // Explicitly extract parent field to exclude it
+      parentProfile, // Explicitly extract parentProfile field to exclude it
       ...studentFields
     } = studentData;
     
     // Prepare the data object with foreign key fields
     const createData: any = {
       ...studentFields,
+      dateOfBirth, // Use the properly converted Date object
       age,
       // Set foreign key fields directly
       centerId: centerId,
       parentId: parentId || null,
       schoolId: (schoolId && schoolId.length > 10) ? schoolId : null
     };
+
+    // Explicitly remove any parent object that might have been included
+    delete createData.parent;
+    
+    console.log('🔍 StudentRepository createData:', JSON.stringify(createData, null, 2));
 
     return this.prisma.student.create({
       data: createData,
@@ -94,7 +117,13 @@ export class StudentRepository {
     const updateData: any = { ...studentData };
     
     if (studentData.dateOfBirth) {
-      updateData.age = DateHelper.calculateAge(studentData.dateOfBirth);
+      // Ensure dateOfBirth is a proper Date object
+      const dateOfBirth = typeof studentData.dateOfBirth === 'string' 
+        ? new Date(studentData.dateOfBirth) 
+        : studentData.dateOfBirth;
+      
+      updateData.dateOfBirth = dateOfBirth;
+      updateData.age = DateHelper.calculateAge(dateOfBirth);
     }
 
     return this.prisma.student.update({

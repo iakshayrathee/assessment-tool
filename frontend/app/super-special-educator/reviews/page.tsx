@@ -179,10 +179,15 @@ export default function PendingReviewsPage() {
 
     try {
       setSubmitting(true);
-      await apiClient.reviewReport(selectedReview.id, {
-        action: reviewAction.action,
-        comments: reviewAction.comments
-      });
+      
+      // Handle REQUEST_REVISION as REJECT since the API only supports APPROVE/REJECT
+      const apiAction = reviewAction.action === 'REQUEST_REVISION' ? 'REJECT' : reviewAction.action;
+      
+      await apiClient.reviewReport(
+        selectedReview.id, 
+        apiAction, 
+        reviewAction.comments
+      );
       
       toast({
         title: "Success",

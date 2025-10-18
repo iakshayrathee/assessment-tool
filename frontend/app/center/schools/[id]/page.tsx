@@ -162,7 +162,7 @@ export default function SchoolDetailPage() {
   }
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="">
       <PageHeader
         title={school.name}
         description={`${school.address || 'No address provided'} • Linked to center`}

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +5,503 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                          String                       @id @default(cuid())
+  email                       String                       @unique
+  password                    String
+  role                        UserRole
+  isActive                    Boolean                      @default(true)
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  lastLogin                   DateTime?
+  adminProfile                AdminProfile?
+  auditLogs                   AuditLog[]
+  centerProfile               CenterProfile?
+  parentProfile               ParentProfile?
+  schoolViewerProfile         SchoolViewerProfile?
+  specialEducatorProfile      SpecialEducatorProfile?
+  superSpecialEducatorProfile SuperSpecialEducatorProfile?
+
+  @@map("users")
+}
+
+model AdminProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  fullName  String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_profiles")
+}
+
+model SuperSpecialEducatorProfile {
+  id                       String             @id @default(cuid())
+  userId                   String             @unique
+  fullName                 String
+  phone                    String?
+  dateOfBirth              DateTime?
+  gender                   Gender?
+  address                  String?
+  primaryLanguage          String?
+  secondaryLanguages       String[]
+  highestQualification     String?
+  fieldOfStudy             String?
+  institutionName          String?
+  yearOfGraduation         Int?
+  rciCertified             Boolean            @default(false)
+  rciValidityDate          DateTime?
+  specialEdQualification   String?
+  specializationAreas      String[]
+  yearsOfExperience        Int?
+  experienceTypes          String[]
+  maxGroupSize             Int?
+  currentWorkLocations     String[]
+  ldTypesHandled           String[]
+  gradeLevelsServed        String[]
+  assessmentTools          String?
+  assistiveTechProficiency String[]
+  areasOfInterest          String[]
+  consentToShare           Boolean            @default(false)
+  agreementToPolicies      Boolean            @default(false)
+  personalStatement        String?
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  assignedCenters          CenterAssignment[]
+  assignedSchools          SchoolAssignment[]
+  reviewedReports          Report[]
+  user                     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("super_special_educator_profiles")
+}
+
+model SpecialEducatorProfile {
+  id                       String              @id @default(cuid())
+  userId                   String              @unique
+  fullName                 String
+  phone                    String?
+  dateOfBirth              DateTime?
+  gender                   Gender?
+  address                  String?
+  primaryLanguage          String?
+  secondaryLanguages       String[]
+  highestQualification     String?
+  fieldOfStudy             String?
+  institutionName          String?
+  yearOfGraduation         Int?
+  rciCertified             Boolean             @default(false)
+  rciValidityDate          DateTime?
+  specialEdQualification   String?
+  specializationAreas      String[]
+  yearsOfExperience        Int?
+  experienceTypes          String[]
+  maxGroupSize             Int?
+  currentWorkLocations     String[]
+  ldTypesHandled           String[]
+  gradeLevelsServed        String[]
+  assessmentTools          String?
+  assistiveTechProficiency String[]
+  areasOfInterest          String[]
+  consentToShare           Boolean             @default(false)
+  agreementToPolicies      Boolean             @default(false)
+  personalStatement        String?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  additionalCertifications String[]
+  totalYearsOfExperience   Int?
+  assessments              Assessment[]
+  centerAssignments        CenterAssignment[]
+  schoolAssignments        SchoolAssignment[]
+  iepGoals                 IEPGoal[]
+  intakeForms              IntakeForm[]
+  reports                  Report[]
+  sessionNotes             SessionNote[]
+  user                     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedStudents         StudentAssignment[]
+
+  @@map("special_educator_profiles")
+}
+
+model CenterProfile {
+  id             String             @id @default(cuid())
+  userId         String             @unique
+  centerName     String
+  address        String?
+  phone          String?
+  email          String?
+  contactPerson  String?
+  operatingHours String?
+  description    String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  assignments    CenterAssignment[]
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schools        School[]
+  students       Student[]
+
+  @@map("center_profiles")
+}
+
+model ParentProfile {
+  id               String           @id @default(cuid())
+  userId           String           @unique
+  fullName         String
+  phone            String?
+  address          String?
+  emergencyContact String?
+  relationship     String           @default("Parent")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  concerns         ParentConcern[]
+  documents        ParentDocument[]
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  children         Student[]
+
+  @@map("parent_profiles")
+}
+
+model SchoolViewerProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  fullName  String
+  position  String?
+  phone     String?
+  schoolId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  school    School   @relation(fields: [schoolId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("school_viewer_profiles")
+}
+
+model School {
+  id            String                @id @default(cuid())
+  name          String
+  address       String?
+  phone         String?
+  email         String?
+  principalName String?
+  centerId      String
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  viewers       SchoolViewerProfile[]
+  center        CenterProfile         @relation(fields: [centerId], references: [id])
+  students      Student[]
+  assignments   SchoolAssignment[]
+
+  @@map("schools")
+}
+
+model Student {
+  id               String              @id @default(cuid())
+  fullName         String
+  dateOfBirth      DateTime
+  age              Int
+  gender           Gender
+  grade            String
+  motherTongue     String?
+  syllabus         String?
+  status           StudentStatus       @default(ACTIVE)
+  registrationDate DateTime            @default(now())
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  centerId         String
+  schoolId         String?
+  parentId         String?
+  assessments      Assessment[]
+  iepGoals         IEPGoal[]
+  intakeForms      IntakeForm[]
+  reports          Report[]
+  sessionNotes     SessionNote[]
+  assignments      StudentAssignment[]
+  documents        StudentDocument[]
+  center           CenterProfile       @relation(fields: [centerId], references: [id])
+  parent           ParentProfile?      @relation(fields: [parentId], references: [id])
+  school           School?             @relation(fields: [schoolId], references: [id])
+
+  @@map("students")
+}
+
+model StudentAssignment {
+  id                String                 @id @default(cuid())
+  studentId         String
+  specialEducatorId String
+  assignedDate      DateTime               @default(now())
+  isActive          Boolean                @default(true)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  specialEducator   SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  student           Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, specialEducatorId])
+  @@map("student_assignments")
+}
+
+model CenterAssignment {
+  id                     String                       @id @default(cuid())
+  centerId               String
+  specialEducatorId      String?
+  superSpecialEducatorId String?
+  assignedDate           DateTime                     @default(now())
+  isActive               Boolean                      @default(true)
+  createdAt              DateTime                     @default(now())
+  updatedAt              DateTime                     @updatedAt
+  center                 CenterProfile                @relation(fields: [centerId], references: [id])
+  specialEducator        SpecialEducatorProfile?      @relation(fields: [specialEducatorId], references: [id])
+  superSpecialEducator   SuperSpecialEducatorProfile? @relation(fields: [superSpecialEducatorId], references: [id])
+
+  @@map("center_assignments")
+}
+
+model SchoolAssignment {
+  id                     String                       @id @default(cuid())
+  schoolId               String
+  specialEducatorId      String?
+  superSpecialEducatorId String?
+  assignedDate           DateTime                     @default(now())
+  isActive               Boolean                      @default(true)
+  createdAt              DateTime                     @default(now())
+  updatedAt              DateTime                     @updatedAt
+  school                 School                       @relation(fields: [schoolId], references: [id])
+  specialEducator        SpecialEducatorProfile?      @relation(fields: [specialEducatorId], references: [id])
+  superSpecialEducator   SuperSpecialEducatorProfile? @relation(fields: [superSpecialEducatorId], references: [id])
+
+  @@map("school_assignments")
+}
+
+model IntakeForm {
+  id                                String                 @id @default(cuid())
+  studentId                         String
+  specialEducatorId                 String
+  address                           String?
+  familyIncome                      String?
+  familyType                        String?
+  digitalResourcesAtHome            Boolean?
+  dailyDigitalUse                   Int?
+  enjoysSchool                      Boolean?
+  studyAssistant                    String?
+  externalAcademicSupport           Boolean?
+  enjoysReading                     Boolean?
+  dailyParentChildTime              Int?
+  childType                         String?
+  fatherName                        String?
+  motherName                        String?
+  guardianName                      String?
+  pregnancyNormal                   Boolean?
+  medicationsDuringPregnancy        String?
+  miscarriagesAbortions             Boolean?
+  fullTermOrPremature               String?
+  deliveryType                      String?
+  breastFed                         Boolean?
+  infantJaundice                    Boolean?
+  incubation                        Boolean?
+  immunizationDone                  Boolean?
+  consanguineousMarriage            Boolean?
+  birthCry                          String?
+  delayInNeckStanding               Boolean?
+  delayInNeckStandingDetails        String?
+  ageOfWalking                      Int?
+  ageOfTwoWordSpeech                Int?
+  healthConcerns                    String?
+  epilepticHistory                  Boolean?
+  onMedication                      Boolean?
+  medicationDetails                 String?
+  asthmaWheezing                    Boolean?
+  wearsGlasses                      Boolean?
+  visionTestDone                    Boolean?
+  hearingTestDone                   Boolean?
+  attendedPreschool                 Boolean?
+  repeatedGrades                    Boolean?
+  whichGradeRepeated                String?
+  dominantWritingHand               String?
+  strugglesInLanguages              Boolean?
+  status                            AssessmentStatus       @default(PENDING)
+  completedAt                       DateTime?
+  createdAt                         DateTime               @default(now())
+  updatedAt                         DateTime               @updatedAt
+  medicationsDuringPregnancyDetails String?
+  specialEducator                   SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  student                           Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("intake_forms")
+}
+
+model Assessment {
+  id                    String                 @id @default(cuid())
+  studentId             String
+  specialEducatorId     String
+  readingObservations   String?
+  readingLevel          String?
+  readingFiles          String[]
+  writingObservations   String?
+  writingLevel          String?
+  writingFiles          String[]
+  mathObservations      String?
+  mathLevel             String?
+  mathFiles             String[]
+  vpObservations        String?
+  vpLevel               String?
+  vpFiles               String[]
+  motorObservations     String?
+  motorLevel            String?
+  motorFiles            String[]
+  attentionObservations String?
+  attentionLevel        String?
+  attentionFiles        String[]
+  assessmentType        String                 @default("Initial")
+  status                AssessmentStatus       @default(PENDING)
+  completedAt           DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  specialEducator       SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  student               Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("assessments")
+}
+
+model IEPGoal {
+  id                String                 @id @default(cuid())
+  studentId         String
+  specialEducatorId String
+  domain            String
+  goalStatement     String
+  strategy          String?
+  startDate         DateTime
+  targetDate        DateTime
+  expectedOutcome   String?
+  progressPercent   Int                    @default(0)
+  status            IEPGoalStatus          @default(NOT_STARTED)
+  notes             String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  specialEducator   SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  student           Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  progressUpdates   IEPProgress[]
+
+  @@map("iep_goals")
+}
+
+model IEPProgress {
+  id         String   @id @default(cuid())
+  goalId     String
+  updateDate DateTime @default(now())
+  progress   Int
+  notes      String?
+  rating     String?
+  createdAt  DateTime @default(now())
+  goal       IEPGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@map("iep_progress")
+}
+
+model SessionNote {
+  id                String                 @id @default(cuid())
+  studentId         String
+  specialEducatorId String
+  sessionDate       DateTime
+  duration          Int?
+  activities        String
+  observations      String?
+  progress          String?
+  nextSteps         String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  specialEducator   SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  student           Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("session_notes")
+}
+
+model Report {
+  id                     String                       @id @default(cuid())
+  studentId              String
+  specialEducatorId      String
+  superSpecialEducatorId String?
+  type                   ReportType
+  title                  String
+  content                String
+  summary                String?
+  recommendations        String?
+  educatorSignature      String?
+  status                 AssessmentStatus             @default(PENDING)
+  submittedAt            DateTime?
+  reviewedAt             DateTime?
+  createdAt              DateTime                     @default(now())
+  updatedAt              DateTime                     @updatedAt
+  specialEducator        SpecialEducatorProfile       @relation(fields: [specialEducatorId], references: [id])
+  student                Student                      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  superSpecialEducator   SuperSpecialEducatorProfile? @relation(fields: [superSpecialEducatorId], references: [id])
+
+  @@map("reports")
+}
+
+model ParentConcern {
+  id          String        @id @default(cuid())
+  parentId    String
+  studentId   String?
+  title       String
+  description String
+  category    String?
+  priority    String        @default("Medium")
+  status      String        @default("Open")
+  response    String?
+  respondedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  parent      ParentProfile @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@map("parent_concerns")
+}
+
+model StudentDocument {
+  id          String   @id @default(cuid())
+  studentId   String
+  fileName    String
+  filePath    String
+  fileType    String
+  fileSize    Int
+  category    String?
+  description String?
+  uploadedBy  String
+  createdAt   DateTime @default(now())
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("student_documents")
+}
+
+model ParentDocument {
+  id          String        @id @default(cuid())
+  parentId    String
+  fileName    String
+  filePath    String
+  fileType    String
+  fileSize    Int
+  category    String?
+  description String?
+  createdAt   DateTime      @default(now())
+  parent      ParentProfile @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@map("parent_documents")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  resource   String
+  resourceId String?
+  details    String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
 }
 
 enum UserRole {
@@ -51,532 +545,4 @@ enum StudentStatus {
   INACTIVE
   GRADUATED
   TRANSFERRED
-}
-
-model User {
-  id                String   @id @default(cuid())
-  email             String   @unique
-  password          String
-  role              UserRole
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  lastLogin         DateTime?
-
-  // Profile relationships
-  adminProfile              AdminProfile?
-  superSpecialEducatorProfile SuperSpecialEducatorProfile?
-  specialEducatorProfile    SpecialEducatorProfile?
-  centerProfile             CenterProfile?
-  parentProfile             ParentProfile?
-  schoolViewerProfile       SchoolViewerProfile?
-
-  // Activity logs
-  auditLogs         AuditLog[]
-
-  @@map("users")
-}
-
-model AdminProfile {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName  String
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("admin_profiles")
-}
-
-model SuperSpecialEducatorProfile {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName              String
-  phone                 String?
-  dateOfBirth           DateTime?
-  gender                Gender?
-  address               String?
-  primaryLanguage       String?
-  secondaryLanguages    String[] // JSON array
-  highestQualification  String?
-  fieldOfStudy          String?
-  institutionName       String?
-  yearOfGraduation      Int?
-  rciCertified          Boolean  @default(false)
-  rciValidityDate       DateTime?
-  specialEdQualification String?
-  specializationAreas   String[] // JSON array
-  yearsOfExperience     Int?
-  experienceTypes       String[] // JSON array
-  maxGroupSize          Int?
-  currentWorkLocations  String[] // JSON array
-  ldTypesHandled        String[] // JSON array
-  gradeLevelsServed     String[] // JSON array
-  assessmentTools       String?
-  assistiveTechProficiency String[] // JSON array
-  areasOfInterest       String[] // JSON array
-  consentToShare        Boolean  @default(false)
-  agreementToPolicies   Boolean  @default(false)
-  personalStatement     String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  // Relationships
-  assignedCenters       CenterAssignment[]
-  reviewedReports       Report[]
-
-  @@map("super_special_educator_profiles")
-}
-
-model SpecialEducatorProfile {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName              String
-  phone                 String?
-  dateOfBirth           DateTime?
-  gender                Gender?
-  address               String?
-  primaryLanguage       String?
-  secondaryLanguages    String[] // JSON array
-  highestQualification  String?
-  fieldOfStudy          String?
-  institutionName       String?
-  yearOfGraduation      Int?
-  rciCertified          Boolean  @default(false)
-  rciValidityDate       DateTime?
-  specialEdQualification String?
-  specializationAreas   String[] // JSON array
-  additionalCertifications String[] // JSON array - Added missing field
-  yearsOfExperience     Int?
-  experienceTypes       String[] // JSON array
-  maxGroupSize          Int?
-  totalYearsOfExperience Int? // Added missing field
-  currentWorkLocations  String[] // JSON array
-  ldTypesHandled        String[] // JSON array
-  gradeLevelsServed     String[] // JSON array
-  assessmentTools       String?
-  assistiveTechProficiency String[] // JSON array
-  areasOfInterest       String[] // JSON array
-  consentToShare        Boolean  @default(false)
-  agreementToPolicies   Boolean  @default(false)
-  personalStatement     String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  // Relationships
-  assignedStudents      StudentAssignment[]
-  intakeForms          IntakeForm[]
-  assessments          Assessment[]
-  iepGoals             IEPGoal[]
-  sessionNotes         SessionNote[]
-  reports              Report[]
-  centerAssignments    CenterAssignment[]
-
-  @@map("special_educator_profiles")
-}
-
-model CenterProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  centerName      String
-  address         String?
-  phone           String?
-  email           String?
-  contactPerson   String?
-  operatingHours  String?
-  description     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relationships
-  schools         School[]
-  assignments     CenterAssignment[]
-  students        Student[]
-
-  @@map("center_profiles")
-}
-
-model ParentProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName        String
-  phone           String?
-  address         String?
-  emergencyContact String?
-  relationship    String   @default("Parent") // Parent, Guardian, etc.
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relationships
-  children        Student[]
-  concerns        ParentConcern[]
-  documents       ParentDocument[]
-
-  @@map("parent_profiles")
-}
-
-model SchoolViewerProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName    String
-  position    String? // Principal, Coordinator, Counselor
-  phone       String?
-  schoolId    String
-  school      School   @relation(fields: [schoolId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("school_viewer_profiles")
-}
-
-model School {
-  id          String   @id @default(cuid())
-  name        String
-  address     String?
-  phone       String?
-  email       String?
-  principalName String?
-  centerId    String
-  center      CenterProfile @relation(fields: [centerId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relationships
-  students    Student[]
-  viewers     SchoolViewerProfile[]
-
-  @@map("schools")
-}
-
-model Student {
-  id              String        @id @default(cuid())
-  fullName        String
-  dateOfBirth     DateTime
-  age             Int
-  gender          Gender
-  grade           String
-  motherTongue    String?
-  syllabus        String?
-  status          StudentStatus @default(ACTIVE)
-  registrationDate DateTime     @default(now())
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  // Relationships
-  centerId        String
-  center          CenterProfile @relation(fields: [centerId], references: [id])
-  schoolId        String?
-  school          School?       @relation(fields: [schoolId], references: [id])
-  parentId        String?
-  parent          ParentProfile? @relation(fields: [parentId], references: [id])
-
-  // Educational data
-  assignments     StudentAssignment[]
-  intakeForms     IntakeForm[]
-  assessments     Assessment[]
-  iepGoals        IEPGoal[]
-  sessionNotes    SessionNote[]
-  reports         Report[]
-  documents       StudentDocument[]
-
-  @@map("students")
-}
-
-model StudentAssignment {
-  id                    String   @id @default(cuid())
-  studentId             String
-  student               Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  specialEducatorId     String
-  specialEducator       SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
-  assignedDate          DateTime @default(now())
-  isActive              Boolean  @default(true)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  @@unique([studentId, specialEducatorId])
-  @@map("student_assignments")
-}
-
-model CenterAssignment {
-  id                        String   @id @default(cuid())
-  centerId                  String
-  center                    CenterProfile @relation(fields: [centerId], references: [id])
-  specialEducatorId         String?
-  specialEducator           SpecialEducatorProfile? @relation(fields: [specialEducatorId], references: [id])
-  superSpecialEducatorId    String?
-  superSpecialEducator      SuperSpecialEducatorProfile? @relation(fields: [superSpecialEducatorId], references: [id])
-  assignedDate              DateTime @default(now())
-  isActive                  Boolean  @default(true)
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
-
-  @@map("center_assignments")
-}
-
-model IntakeForm {
-  id                      String   @id @default(cuid())
-  studentId               String
-  student                 Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  specialEducatorId       String
-  specialEducator         SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
-  
-  // Socio Demographic Data
-  address                 String?
-  familyIncome            String?
-  familyType              String?
-  digitalResourcesAtHome  Boolean?
-  dailyDigitalUse         Int?
-  enjoysSchool            Boolean?
-  studyAssistant          String?
-  externalAcademicSupport Boolean?
-  enjoysReading           Boolean?
-  dailyParentChildTime    Int?
-  childType               String?
-
-  // Family History
-  fatherName              String?
-  motherName              String?
-  guardianName            String?
-
-  // Prenatal, Natal & Delivery
-  pregnancyNormal         Boolean?
-  medicationsDuringPregnancy String?
-  medicationsDuringPregnancyDetails String?
-  miscarriagesAbortions   Boolean?
-  fullTermOrPremature     String?
-  deliveryType            String?
-
-  // Post Natal Factors
-  breastFed               Boolean?
-  infantJaundice          Boolean?
-  incubation              Boolean?
-  immunizationDone        Boolean?
-  consanguineousMarriage  Boolean?
-  birthCry                String?
-  delayInNeckStanding     Boolean?
-  delayInNeckStandingDetails String?
-  ageOfWalking            Int?
-  ageOfTwoWordSpeech      Int?
-
-  // Medical History
-  healthConcerns          String?
-  epilepticHistory        Boolean?
-  onMedication            Boolean?
-  medicationDetails       String?
-  asthmaWheezing          Boolean?
-  wearsGlasses            Boolean?
-  visionTestDone          Boolean?
-  hearingTestDone         Boolean?
-
-  // Educational History
-  attendedPreschool       Boolean?
-  repeatedGrades          Boolean?
-  whichGradeRepeated      String?
-  dominantWritingHand     String?
-  strugglesInLanguages    Boolean?
-
-  // Status and metadata
-  status                  AssessmentStatus @default(PENDING)
-  completedAt             DateTime?
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-
-  @@map("intake_forms")
-}
-
-model Assessment {
-  id                String   @id @default(cuid())
-  studentId         String
-  student           Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  specialEducatorId String
-  specialEducator   SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
-  
-  // Assessment domains
-  readingObservations     String?
-  readingLevel            String?
-  readingFiles            String[] // File paths
-  
-  writingObservations     String?
-  writingLevel            String?
-  writingFiles            String[] // File paths
-  
-  mathObservations        String?
-  mathLevel               String?
-  mathFiles               String[] // File paths
-  
-  vpObservations          String? // Visual Perception
-  vpLevel                 String?
-  vpFiles                 String[] // File paths
-  
-  motorObservations       String?
-  motorLevel              String?
-  motorFiles              String[] // File paths
-  
-  attentionObservations   String?
-  attentionLevel          String?
-  attentionFiles          String[] // File paths
-
-  // Assessment metadata
-  assessmentType          String   @default("Initial") // Initial, Reassessment
-  status                  AssessmentStatus @default(PENDING)
-  completedAt             DateTime?
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-
-  @@map("assessments")
-}
-
-model IEPGoal {
-  id                String        @id @default(cuid())
-  studentId         String
-  student           Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  specialEducatorId String
-  specialEducator   SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
-  
-  domain            String        // Reading, Writing, Math, etc.
-  goalStatement     String
-  strategy          String?
-  startDate         DateTime
-  targetDate        DateTime
-  expectedOutcome   String?
-  progressPercent   Int           @default(0)
-  status            IEPGoalStatus @default(NOT_STARTED)
-  notes             String?
-  
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-
-  // Progress updates
-  progressUpdates   IEPProgress[]
-
-  @@map("iep_goals")
-}
-
-model IEPProgress {
-  id          String   @id @default(cuid())
-  goalId      String
-  goal        IEPGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  updateDate  DateTime @default(now())
-  progress    Int      // Percentage
-  notes       String?
-  rating      String?  // Excellent, Good, Needs Improvement
-  createdAt   DateTime @default(now())
-
-  @@map("iep_progress")
-}
-
-model SessionNote {
-  id                String   @id @default(cuid())
-  studentId         String
-  student           Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  specialEducatorId String
-  specialEducator   SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
-  
-  sessionDate       DateTime
-  duration          Int?     // in minutes
-  activities        String
-  observations      String?
-  progress          String?
-  nextSteps         String?
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@map("session_notes")
-}
-
-model Report {
-  id                        String   @id @default(cuid())
-  studentId                 String
-  student                   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  specialEducatorId         String
-  specialEducator           SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
-  superSpecialEducatorId    String?
-  superSpecialEducator      SuperSpecialEducatorProfile? @relation(fields: [superSpecialEducatorId], references: [id])
-  
-  type                      ReportType
-  title                     String
-  content                   String   // JSON content of the report
-  summary                   String?
-  recommendations           String?
-  educatorSignature         String?
-  
-  status                    AssessmentStatus @default(PENDING)
-  submittedAt               DateTime?
-  reviewedAt                DateTime?
-  
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
-
-  @@map("reports")
-}
-
-model ParentConcern {
-  id          String        @id @default(cuid())
-  parentId    String
-  parent      ParentProfile @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  studentId   String?       // Optional - concern might be general
-  title       String
-  description String
-  category    String?       // Academic, Behavioral, Social, etc.
-  priority    String        @default("Medium") // Low, Medium, High
-  status      String        @default("Open")   // Open, In Progress, Resolved
-  response    String?
-  respondedAt DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  @@map("parent_concerns")
-}
-
-model StudentDocument {
-  id          String   @id @default(cuid())
-  studentId   String
-  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  fileName    String
-  filePath    String
-  fileType    String
-  fileSize    Int
-  category    String?  // Medical, Academic, Assessment, etc.
-  description String?
-  uploadedBy  String   // User ID who uploaded
-  createdAt   DateTime @default(now())
-
-  @@map("student_documents")
-}
-
-model ParentDocument {
-  id          String        @id @default(cuid())
-  parentId    String
-  parent      ParentProfile @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  fileName    String
-  filePath    String
-  fileType    String
-  fileSize    Int
-  category    String?       // Medical, School Report, etc.
-  description String?
-  createdAt   DateTime      @default(now())
-
-  @@map("parent_documents")
-}
-
-model AuditLog {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  action      String   // LOGIN, CREATE, UPDATE, DELETE, etc.
-  resource    String   // User, Student, Report, etc.
-  resourceId  String?  // ID of the affected resource
-  details     String?  // JSON details of the action
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
-
-  @@map("audit_logs")
 }

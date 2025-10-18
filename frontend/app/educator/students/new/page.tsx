@@ -23,6 +23,7 @@ import {
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
+import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 
 interface StudentFormData {
   fullName: string;
@@ -141,7 +142,7 @@ export default function NewStudentPage() {
         motherTongue: formData.motherTongue || '',
         syllabus: formData.syllabus || '',
         schoolId: formData.schoolId || null,
-        centerId: user?.centerId || '', // Auto-filled from educator's center
+        centerId: user?.profile?.id || '', // Auto-filled from educator's center
       };
 
       const response = await apiClient.createStudent(studentData);
@@ -220,23 +221,18 @@ export default function NewStudentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-                    <Input
-                      id="dateOfBirth"
-                      type="date"
-                      value={formData.dateOfBirth}
-                      onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                      className={errors.dateOfBirth ? 'border-red-500' : ''}
+                    <ProfessionalDatePicker
+                      label="Date of Birth"
+                      value={formData.dateOfBirth ? new Date(formData.dateOfBirth) : null}
+                      onChange={(date) => handleInputChange('dateOfBirth', date ? date.toISOString().split('T')[0] : '')}
+                      error={errors.dateOfBirth}
+                      required={true}
+                      placeholder="Select date of birth"
+                      toYear={new Date().getFullYear()}
                     />
                     {formData.dateOfBirth && (
                       <p className="text-sm text-gray-500">
                         Age: {calculateAge(formData.dateOfBirth)} years
-                      </p>
-                    )}
-                    {errors.dateOfBirth && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.dateOfBirth}
                       </p>
                     )}
                   </div>
@@ -435,7 +431,7 @@ export default function NewStudentPage() {
                   <div className="space-y-2">
                     <Label>Assigned Center</Label>
                     <div className="p-3 bg-gray-50 rounded-md">
-                      <p className="font-medium">{user?.centerProfile?.centerName || 'Current Center'}</p>
+                      <p className="font-medium">{user?.profile?.centerName || 'Current Center'}</p>
                       <p className="text-sm text-gray-600">Auto-assigned based on your login</p>
                     </div>
                   </div>
@@ -443,7 +439,7 @@ export default function NewStudentPage() {
                   <div className="space-y-2">
                     <Label>Assigned Educator</Label>
                     <div className="p-3 bg-gray-50 rounded-md">
-                      <p className="font-medium">{user?.specialEducatorProfile?.fullName || 'You'}</p>
+                      <p className="font-medium">{user?.profile?.fullName || 'You'}</p>
                       <p className="text-sm text-gray-600">Auto-assigned to you</p>
                     </div>
                   </div>

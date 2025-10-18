@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PageHeader } from '@/components/ui/page-header';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   School, 
@@ -113,28 +115,21 @@ export default function NewSchool() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center space-x-4">
-              <Link href="/center/schools">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Schools
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Link New School</h1>
-                <p className="text-gray-600">Add a new school to your center</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <PageHeader
+        title="Link New School"
+        description="Add a new school to your center"
+        actions={[
+          {
+            label: 'Back to Schools',
+            onClick: () => router.back(),
+            icon: ArrowLeft,
+            variant: 'outline'
+          }
+        ]}
+      />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="p-6 space-y-6">
         <Card>
           <CardHeader>
             <div className="flex items-center space-x-3">

@@ -433,7 +433,7 @@ export default function ReportDetailPage() {
   }
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="">
       <PageHeader
         title={`${report.type.replace('_', ' ')} Report`}
         description={`${report.student.fullName} • Grade ${report.student.grade} • Generated on ${new Date(report.createdAt).toLocaleDateString()}`}

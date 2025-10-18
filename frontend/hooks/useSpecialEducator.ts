@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { apiClient } from '@/lib/api';
+import { queryKeys, invalidationPatterns } from '@/lib/queryKeys';
 
 export function useCheckSpecialEducatorToken() {
   // Check token
   const tokenQuery = useQuery({
-    queryKey: ['specialEducator', 'token'],
+    queryKey: queryKeys.specialEducator.token(),
     queryFn: () => apiClient.checkSpecialEducatorToken(),
     staleTime: 1 * 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   return {
@@ -28,9 +30,10 @@ export function useCheckSpecialEducatorToken() {
 export function useSpecialEducatorDashboard() {
   // Get dashboard data
   const dashboardQuery = useQuery({
-    queryKey: ['specialEducator', 'dashboard'],
+    queryKey: queryKeys.specialEducator.dashboard(),
     queryFn: () => apiClient.getSpecialEducatorDashboard(),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   return {
@@ -53,16 +56,18 @@ export function useSpecialEducatorProfile() {
 
   // Get profile
   const profileQuery = useQuery({
-    queryKey: ['specialEducator', 'profile'],
+    queryKey: queryKeys.specialEducator.profile(),
     queryFn: () => apiClient.getSpecialEducatorProfile(),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: (profileData: any) => apiClient.updateSpecialEducatorProfile(profileData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['specialEducator', 'profile'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.specialEducator.profile() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.profile() });
       toast.success('Profile updated successfully!');
     },
     onError: (error: any) => {
@@ -89,19 +94,45 @@ export function useSpecialEducatorProfile() {
   };
 }
 
-export function useEducatorStudents(params?: {
+export function useSpecialEducatorStudents(params?: {
   page?: number;
   limit?: number;
   search?: string;
   status?: string;
+  centerId?: string;
 }) {
   const queryClient = useQueryClient();
 
   // Get assigned students
   const studentsQuery = useQuery({
-    queryKey: ['specialEducator', 'students', params],
-    queryFn: () => apiClient.getAssignedStudents(params),
-    staleTime: 2 * 60 * 1000,
+    queryKey: queryKeys.specialEducator.students(params),
+    queryFn: () => apiClient.getSpecialEducatorStudents(params),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Assign student mutation
+  const assignStudentMutation = useMutation({
+    mutationFn: (assignmentData: {
+      studentId: string;
+      educatorId: string;
+      centerId?: string;
+    }) => apiClient.assignStudentToSpecialEducator({
+      studentId: assignmentData.studentId,
+      specialEducatorId: assignmentData.educatorId,
+      notes: undefined
+    }),
+    onSuccess: (_, { studentId }) => {
+      // Invalidate specific student and lists
+      invalidationPatterns.student(studentId).forEach(queryKey => {
+        queryClient.invalidateQueries({ queryKey });
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.specialEducator.dashboard() });
+      toast.success('Student assigned successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to assign student');
+    },
   });
 
   return {
@@ -111,6 +142,10 @@ export function useEducatorStudents(params?: {
     
     // Loading states
     isLoading: studentsQuery.isLoading,
+    isAssigning: assignStudentMutation.isPending,
+    
+    // Actions
+    assignStudent: assignStudentMutation.mutate,
     
     // Error states
     error: studentsQuery.error,
@@ -120,13 +155,14 @@ export function useEducatorStudents(params?: {
   };
 }
 
-export function useEducatorStudentDetails(studentId?: string) {
+export function useSpecialEducatorStudentDetails(studentId?: string) {
   // Get student details
   const studentQuery = useQuery({
-    queryKey: ['specialEducator', 'student', studentId],
-    queryFn: () => apiClient.getStudentDetailsForEducator(studentId!),
+    queryKey: queryKeys.specialEducator.studentDetails(studentId!),
+    queryFn: () => apiClient.getStudentDetailsForSpecialEducator(studentId!),
     enabled: !!studentId,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   return {
@@ -144,12 +180,13 @@ export function useEducatorStudentDetails(studentId?: string) {
   };
 }
 
-export function useEducatorActivities(limit?: number) {
+export function useSpecialEducatorActivities(limit?: number) {
   // Get recent activities
   const activitiesQuery = useQuery({
-    queryKey: ['specialEducator', 'activities', limit],
+    queryKey: queryKeys.specialEducator.activities(limit),
     queryFn: () => apiClient.getEducatorRecentActivities(limit),
     staleTime: 1 * 60 * 1000, // 1 minute
+    gcTime: 3 * 60 * 1000, // 3 minutes
   });
 
   return {
@@ -167,12 +204,13 @@ export function useEducatorActivities(limit?: number) {
   };
 }
 
-export function useEducatorStatistics() {
+export function useSpecialEducatorStatistics() {
   // Get statistics
   const statsQuery = useQuery({
-    queryKey: ['specialEducator', 'statistics'],
-    queryFn: () => apiClient.getEducatorStatistics(),
+    queryKey: queryKeys.specialEducator.statistics(),
+    queryFn: () => apiClient.getSpecialEducatorStatistics(),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
   return {
@@ -190,12 +228,17 @@ export function useEducatorStatistics() {
   };
 }
 
-export function useTodaysSchedule() {
-  // Get today's schedule
+export function useSpecialEducatorSchedule(params?: {
+  date?: string;
+  week?: string;
+  month?: string;
+}) {
+  // Get schedule
   const scheduleQuery = useQuery({
-    queryKey: ['specialEducator', 'schedule', 'today'],
-    queryFn: () => apiClient.getTodaysSchedule(),
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    queryKey: queryKeys.specialEducator.schedule(),
+    queryFn: () => apiClient.getSpecialEducatorSchedule(params),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   return {
@@ -213,31 +256,53 @@ export function useTodaysSchedule() {
   };
 }
 
-export function useEducatorSessionNotes(studentId?: string, params?: {
+export function useSpecialEducatorSessionNotes(studentId?: string, params?: {
   page?: number;
   limit?: number;
+  goalId?: string;
+  date?: string;
 }) {
   const queryClient = useQueryClient();
 
   // Get session notes
   const sessionNotesQuery = useQuery({
-    queryKey: ['specialEducator', 'sessionNotes', studentId, params],
-    queryFn: () => apiClient.getEducatorSessionNotes(studentId!, params),
+    queryKey: queryKeys.specialEducator.sessionNotes(params),
+    queryFn: () => apiClient.getSpecialEducatorSessionNotes(studentId!, params),
     enabled: !!studentId,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 1 * 60 * 1000, // 1 minute (session notes need fresh data)
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Create session note mutation
   const createSessionNoteMutation = useMutation({
     mutationFn: (sessionData: any) => apiClient.createEducatorSessionNote(sessionData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['specialEducator', 'sessionNotes'] });
-      queryClient.invalidateQueries({ queryKey: ['specialEducator', 'activities'] });
-      queryClient.invalidateQueries({ queryKey: ['specialEducator', 'dashboard'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.specialEducator.sessionNotes() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.specialEducator.activities() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.specialEducator.dashboard() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.sessionNotes.lists() });
       toast.success('Session note created successfully!');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error || 'Failed to create session note');
+    },
+  });
+
+  // Update session note mutation
+  const updateSessionNoteMutation = useMutation({
+    mutationFn: ({ noteId, noteData }: { noteId: string; noteData: any }) => 
+      apiClient.createEducatorSessionNote({ ...noteData, id: noteId }),
+    onSuccess: () => {
+      // Invalidate specific note and lists
+      if (studentId) {
+        invalidationPatterns.sessionNote(studentId).forEach((queryKey: any) => {
+          queryClient.invalidateQueries({ queryKey });
+        });
+      }
+      toast.success('Session note updated successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to update session note');
     },
   });
 
@@ -249,9 +314,11 @@ export function useEducatorSessionNotes(studentId?: string, params?: {
     // Loading states
     isLoading: sessionNotesQuery.isLoading,
     isCreating: createSessionNoteMutation.isPending,
+    isUpdating: updateSessionNoteMutation.isPending,
     
     // Actions
     createSessionNote: createSessionNoteMutation.mutate,
+    updateSessionNote: updateSessionNoteMutation.mutate,
     
     // Error states
     error: sessionNotesQuery.error,

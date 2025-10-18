@@ -112,11 +112,12 @@ export default function EducatorStudentsPage() {
       }
 
       // Get educator details and all center students
-      const [educators, allStudents] = await Promise.all([
+      const [educatorsResponse, allStudents] = await Promise.all([
         apiClient.getCenterEducators(centerId),
         apiClient.getCenterStudents(centerId, { limit: 1000 })
       ]);
 
+      const educators = educatorsResponse.data || [];
       const educatorDetail = educators.find(e => e.educatorId === educatorId);
       if (!educatorDetail) {
         setError('Educator not found or not assigned to this center');
@@ -271,7 +272,7 @@ export default function EducatorStudentsPage() {
   const stats = calculateOverallStats();
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="">
       <PageHeader
         title={`${educator.fullName}'s Students`}
         description={`${filteredStudents.length} of ${students.length} students • ${educator.type} • ${educator.yearsOfExperience} years experience`}

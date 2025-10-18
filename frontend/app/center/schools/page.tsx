@@ -6,6 +6,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { PageHeader } from '@/components/ui/page-header';
+import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   School, 
   Plus,
@@ -15,12 +27,18 @@ import {
   Mail,
   User,
   Eye,
-  Edit,
   RefreshCw,
-  Building
+  Building,
+  Save,
+  MoreHorizontal,
+  Calendar,
+  GraduationCap,
+  UserCheck,
+  Clock
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 interface SchoolData {
   id: string;
@@ -40,6 +58,8 @@ interface SchoolData {
     fullName: string;
     status: string;
     grade: string;
+    registrationDate?: string;
+    hasAssignment?: boolean;
   }>;
   viewers: Array<{
     id: string;
@@ -52,11 +72,35 @@ interface SchoolData {
   }>;
 }
 
+interface SchoolFormData {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  principalName: string;
+}
+
 export default function CenterSchools() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [schools, setSchools] = useState<SchoolData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkingSchool, setLinkingSchool] = useState(false);
+  const [formData, setFormData] = useState<SchoolFormData>({
+    name: '',
+    address: '',
+    phone: '',
+    email: '',
+    principalName: ''
+  });
+  const [errors, setErrors] = useState<Partial<SchoolFormData>>({});
+
+  // Modal states
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showStudentsModal, setShowStudentsModal] = useState(false);
+  const [selectedSchool, setSelectedSchool] = useState<SchoolData | null>(null);
 
   useEffect(() => {
     loadSchools();
@@ -88,7 +132,9 @@ export default function CenterSchools() {
           id: student.id,
           fullName: student.fullName,
           status: student.status,
-          grade: student.grade
+          grade: student.grade,
+          registrationDate: student.registrationDate,
+          hasAssignment: student.hasAssignment
         })) || [],
         viewers: school.viewers?.map((viewer: any) => ({
           id: viewer.id,
@@ -105,9 +151,134 @@ export default function CenterSchools() {
     } catch (error) {
       console.error('Failed to load schools:', error);
       setSchools([]);
+      toast({
+        title: "Error",
+        description: "Failed to load schools. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleInputChange = (field: keyof SchoolFormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<SchoolFormData> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'School name is required';
+    }
+
+    if (!formData.address.trim()) {
+      newErrors.address = 'Address is required';
+    }
+
+    if (!formData.principalName.trim()) {
+      newErrors.principalName = 'Principal name is required';
+    }
+
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (formData.phone && !/^[\+]?[0-9\-\s\(\)]{10,}$/.test(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleLinkSchool = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      setLinkingSchool(true);
+      const centerId = user?.profile?.id;
+      if (!centerId) {
+        throw new Error('Center ID not found');
+      }
+
+      await apiClient.linkSchoolToCenter(centerId, {
+        name: formData.name.trim(),
+        address: formData.address.trim(),
+        phone: formData.phone.trim() || undefined,
+        email: formData.email.trim() || undefined,
+        principalName: formData.principalName.trim()
+      });
+
+      toast({
+        title: "Success",
+        description: "School linked successfully!",
+      });
+
+      // Reset form and close modal
+      setFormData({
+        name: '',
+        address: '',
+        phone: '',
+        email: '',
+        principalName: ''
+      });
+      setErrors({});
+      setShowLinkModal(false);
+      
+      // Reload schools
+      loadSchools();
+    } catch (error: any) {
+      console.error('Failed to link school:', error);
+      // Handle specific error cases
+      if (error.response?.data?.error?.includes('already exists')) {
+        setErrors({ name: 'A school with this name already exists in your center' });
+      } else {
+        setErrors({ name: 'Failed to link school. Please try again.' });
+      }
+    } finally {
+      setLinkingSchool(false);
+    }
+  };
+
+  const handleViewDetails = (school: SchoolData) => {
+    setSelectedSchool(school);
+    setShowDetailsModal(true);
+  };
+
+  const handleViewStudents = (school: SchoolData) => {
+    setSelectedSchool(school);
+    setShowStudentsModal(true);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      ACTIVE: { label: 'Active', variant: 'default' as const, className: 'bg-green-100 text-green-800' },
+      INACTIVE: { label: 'Inactive', variant: 'secondary' as const, className: 'bg-gray-100 text-gray-800' },
+      PENDING: { label: 'Pending', variant: 'outline' as const, className: 'bg-yellow-100 text-yellow-800' },
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.INACTIVE;
+    
+    return (
+      <Badge variant={config.variant} className={config.className}>
+        {config.label}
+      </Badge>
+    );
   };
 
   const filteredSchools = schools.filter(school =>
@@ -131,32 +302,30 @@ export default function CenterSchools() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Schools Management</h1>
-              <p className="text-gray-600">Manage schools linked to your center</p>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={loadSchools}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Link href="/center/schools/new">
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Link New School
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="">
+      <PageHeader
+        title="Schools Management"
+        description="Manage schools linked to your center"
+        badge={{
+          text: `${schools.length} Schools`,
+          variant: 'secondary'
+        }}
+        actions={[
+          {
+            label: 'Refresh',
+            onClick: loadSchools,
+            icon: RefreshCw,
+            variant: 'outline'
+          },
+          {
+            label: 'Link New School',
+            onClick: () => setShowLinkModal(true),
+            icon: Plus
+          }
+        ]}
+      />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="p-6 space-y-6">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -221,183 +390,592 @@ export default function CenterSchools() {
           </CardContent>
         </Card>
 
-        {/* Schools Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSchools.map((school) => (
-            <Card key={school.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <School className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{school.name}</CardTitle>
-                      <CardDescription>
-                        {school.studentCount} students enrolled
-                      </CardDescription>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                {/* School Details */}
-                <div className="space-y-2 text-sm">
-                  {school.principalName && (
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <User className="h-4 w-4" />
-                      <span>Principal: {school.principalName}</span>
-                    </div>
-                  )}
-                  
-                  {school.address && (
-                    <div className="flex items-start space-x-2 text-gray-600">
-                      <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      <span className="line-clamp-2">{school.address}</span>
-                    </div>
-                  )}
-                  
-                  {school.phone && (
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <Phone className="h-4 w-4" />
-                      <span>{school.phone}</span>
-                    </div>
-                  )}
-                  
-                  {school.email && (
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <Mail className="h-4 w-4" />
-                      <span className="truncate">{school.email}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Statistics */}
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{school.activeStudentCount}</div>
-                    <div className="text-xs text-gray-600">Active Students</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">{school.viewerCount}</div>
-                    <div className="text-xs text-gray-600">School Viewers</div>
-                  </div>
-                </div>
-
-                {/* Recent Students */}
-                {school.students.length > 0 && (
-                  <div className="pt-4 border-t">
-                    <h4 className="text-sm font-medium mb-2">Recent Students</h4>
-                    <div className="space-y-1">
-                      {school.students.slice(0, 3).map((student) => (
-                        <div key={student.id} className="flex items-center justify-between text-sm">
-                          <span className="truncate">{student.fullName}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {student.grade}
-                          </Badge>
-                        </div>
-                      ))}
-                      {school.students.length > 3 && (
-                        <div className="text-xs text-gray-500">
-                          +{school.students.length - 3} more students
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-4">
-                  <Link href={`/center/schools/${school.id}`} className="flex-1">
-                    <Button variant="outline" size="sm" className="w-full">
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
-                  </Link>
-                  <Link href={`/center/schools/${school.id}/students`} className="flex-1">
-                    <Button size="sm" className="w-full">
-                      <Users className="h-4 w-4 mr-1" />
-                      Students
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredSchools.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <School className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {searchTerm ? 'No schools found' : 'No schools linked yet'}
-              </h3>
-              <p className="text-gray-600 mb-6">
-                {searchTerm 
-                  ? 'Try adjusting your search terms'
-                  : 'Start by linking your first school to the center'
-                }
-              </p>
-              {!searchTerm && (
-                <Link href="/center/schools/new">
-                  <Button>
+        {/* Schools Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Schools ({filteredSchools.length})</CardTitle>
+            <CardDescription>
+              All schools linked to your center
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredSchools.length === 0 ? (
+              <div className="text-center py-12">
+                <School className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {searchTerm ? 'No schools found' : 'No schools linked yet'}
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  {searchTerm 
+                    ? 'Try adjusting your search terms'
+                    : 'Start by linking your first school to the center'
+                  }
+                </p>
+                {!searchTerm && (
+                  <Button onClick={() => setShowLinkModal(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Link New School
                   </Button>
-                </Link>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Quick Actions */}
-        {schools.length > 0 && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>
-                Common tasks for school management
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Link href="/center/students">
-                  <Button variant="outline" className="w-full h-auto p-4">
-                    <div className="text-center">
-                      <Users className="h-6 w-6 mx-auto mb-2" />
-                      <div className="font-medium">View All Students</div>
-                      <div className="text-xs text-gray-600">Across all schools</div>
-                    </div>
-                  </Button>
-                </Link>
-                
-                <Link href="/center/students/new">
-                  <Button variant="outline" className="w-full h-auto p-4">
-                    <div className="text-center">
-                      <Plus className="h-6 w-6 mx-auto mb-2" />
-                      <div className="font-medium">Add New Student</div>
-                      <div className="text-xs text-gray-600">Enroll to any school</div>
-                    </div>
-                  </Button>
-                </Link>
-                
-                <Link href="/center/reports">
-                  <Button variant="outline" className="w-full h-auto p-4">
-                    <div className="text-center">
-                      <Eye className="h-6 w-6 mx-auto mb-2" />
-                      <div className="font-medium">View Reports</div>
-                      <div className="text-xs text-gray-600">All school reports</div>
-                    </div>
-                  </Button>
-                </Link>
+                )}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>School Name</TableHead>
+                      <TableHead>Principal</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Address</TableHead>
+                      <TableHead className="text-center">Students</TableHead>
+                      <TableHead className="text-center">Active</TableHead>
+                      <TableHead className="text-center">Viewers</TableHead>
+                      <TableHead className="text-center">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSchools.map((school) => (
+                      <TableRow key={school.id}>
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <School className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">{school.name}</div>
+                              <div className="text-sm text-gray-500">
+                                Linked {new Date(school.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <User className="h-4 w-4 text-gray-400" />
+                            <span>{school.principalName || 'Not specified'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {school.phone && (
+                              <div className="flex items-center space-x-2 text-sm">
+                                <Phone className="h-3 w-3 text-gray-400" />
+                                <span>{school.phone}</span>
+                              </div>
+                            )}
+                            {school.email && (
+                              <div className="flex items-center space-x-2 text-sm">
+                                <Mail className="h-3 w-3 text-gray-400" />
+                                <span className="truncate max-w-[150px]">{school.email}</span>
+                              </div>
+                            )}
+                            {!school.phone && !school.email && (
+                              <span className="text-gray-500 text-sm">No contact info</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-start space-x-2 max-w-[200px]">
+                            <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm line-clamp-2">{school.address || 'Not specified'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="font-semibold text-blue-600">{school.studentCount}</div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="font-semibold text-green-600">{school.activeStudentCount}</div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="font-semibold text-purple-600">{school.viewerCount}</div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleViewDetails(school)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewStudents(school)}>
+                                <Users className="h-4 w-4 mr-2" />
+                                View Students
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => {
+                                // Handle edit action
+                                toast({
+                                  title: "Coming Soon",
+                                  description: "Edit functionality will be available soon.",
+                                });
+                              }}>
+                                <User className="h-4 w-4 mr-2" />
+                                Edit School
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Link School Modal */}
+      <Dialog open={showLinkModal} onOpenChange={setShowLinkModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <School className="h-5 w-5 text-blue-600" />
+              <span>Link New School</span>
+            </DialogTitle>
+            <DialogDescription>
+              Enter the details of the school you want to link to your center
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* School Name */}
+            <div className="space-y-2">
+              <Label htmlFor="modal-name" className="text-sm font-medium">
+                School Name *
+              </Label>
+              <Input
+                id="modal-name"
+                type="text"
+                placeholder="Enter school name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                className={errors.name ? 'border-red-500' : ''}
+              />
+              {errors.name && (
+                <p className="text-sm text-red-600">{errors.name}</p>
+              )}
+            </div>
+
+            {/* Address */}
+            <div className="space-y-2">
+              <Label htmlFor="modal-address" className="text-sm font-medium flex items-center">
+                <MapPin className="h-4 w-4 mr-1" />
+                Address *
+              </Label>
+              <Textarea
+                id="modal-address"
+                placeholder="Enter complete school address"
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                className={errors.address ? 'border-red-500' : ''}
+                rows={3}
+              />
+              {errors.address && (
+                <p className="text-sm text-red-600">{errors.address}</p>
+              )}
+            </div>
+
+            {/* Principal Name */}
+            <div className="space-y-2">
+              <Label htmlFor="modal-principal" className="text-sm font-medium flex items-center">
+                <User className="h-4 w-4 mr-1" />
+                Principal Name *
+              </Label>
+              <Input
+                id="modal-principal"
+                type="text"
+                placeholder="Enter principal's full name"
+                value={formData.principalName}
+                onChange={(e) => handleInputChange('principalName', e.target.value)}
+                className={errors.principalName ? 'border-red-500' : ''}
+              />
+              {errors.principalName && (
+                <p className="text-sm text-red-600">{errors.principalName}</p>
+              )}
+            </div>
+
+            {/* Contact Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="modal-phone" className="text-sm font-medium flex items-center">
+                  <Phone className="h-4 w-4 mr-1" />
+                  Phone Number
+                </Label>
+                <Input
+                  id="modal-phone"
+                  type="tel"
+                  placeholder="+91-11-12345678"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  className={errors.phone ? 'border-red-500' : ''}
+                />
+                {errors.phone && (
+                  <p className="text-sm text-red-600">{errors.phone}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="modal-email" className="text-sm font-medium flex items-center">
+                  <Mail className="h-4 w-4 mr-1" />
+                  Email Address
+                </Label>
+                <Input
+                  id="modal-email"
+                  type="email"
+                  placeholder="school@example.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className={errors.email ? 'border-red-500' : ''}
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="text-sm text-gray-600">
+              * Required fields
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowLinkModal(false);
+                setFormData({
+                  name: '',
+                  address: '',
+                  phone: '',
+                  email: '',
+                  principalName: ''
+                });
+                setErrors({});
+              }}
+              disabled={linkingSchool}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleLinkSchool}
+              disabled={linkingSchool}
+            >
+              {linkingSchool ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Linking School...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Link School
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* School Details Modal */}
+      <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <School className="h-5 w-5 text-blue-600" />
+              <span>School Details</span>
+            </DialogTitle>
+            <DialogDescription>
+              Complete information about {selectedSchool?.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSchool && (
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Basic Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">School Name</Label>
+                      <p className="text-lg font-semibold">{selectedSchool.name}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Principal</Label>
+                      <p className="text-lg">{selectedSchool.principalName || 'Not specified'}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Address</Label>
+                    <p className="text-base">{selectedSchool.address || 'Not specified'}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Phone</Label>
+                      <p className="text-base">{selectedSchool.phone || 'Not specified'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Email</Label>
+                      <p className="text-base">{selectedSchool.email || 'Not specified'}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Linked Date</Label>
+                      <p className="text-base">{formatDate(selectedSchool.createdAt)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Last Updated</Label>
+                      <p className="text-base">{formatDate(selectedSchool.updatedAt)}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Statistics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Statistics</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-blue-600">{selectedSchool.studentCount}</div>
+                      <div className="text-sm text-gray-600">Total Students</div>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <UserCheck className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-green-600">{selectedSchool.activeStudentCount}</div>
+                      <div className="text-sm text-gray-600">Active Students</div>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <Eye className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-purple-600">{selectedSchool.viewerCount}</div>
+                      <div className="text-sm text-gray-600">School Viewers</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Recent Students Preview */}
+              {selectedSchool.students.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Recent Students</CardTitle>
+                    <CardDescription>
+                      Latest {Math.min(5, selectedSchool.students.length)} students enrolled
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {selectedSchool.students.slice(0, 5).map((student) => (
+                        <div key={student.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <GraduationCap className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{student.fullName}</p>
+                              <p className="text-sm text-gray-600">Grade {student.grade}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            {getStatusBadge(student.status)}
+                          </div>
+                        </div>
+                      ))}
+                      {selectedSchool.students.length > 5 && (
+                        <div className="text-center py-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setShowDetailsModal(false);
+                              handleViewStudents(selectedSchool);
+                            }}
+                          >
+                            View All {selectedSchool.students.length} Students
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDetailsModal(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setShowDetailsModal(false);
+              if (selectedSchool) {
+                handleViewStudents(selectedSchool);
+              }
+            }}>
+              <Users className="h-4 w-4 mr-2" />
+              View Students
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Students Modal */}
+      <Dialog open={showStudentsModal} onOpenChange={setShowStudentsModal}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Users className="h-5 w-5 text-blue-600" />
+              <span>Students - {selectedSchool?.name}</span>
+            </DialogTitle>
+            <DialogDescription>
+              All students enrolled in {selectedSchool?.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSchool && (
+            <div className="space-y-6">
+              {/* Students Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="text-2xl font-bold">{selectedSchool.studentCount}</p>
+                        <p className="text-sm text-gray-600">Total Students</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-2">
+                      <UserCheck className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="text-2xl font-bold text-green-600">{selectedSchool.activeStudentCount}</p>
+                        <p className="text-sm text-gray-600">Active Students</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-5 w-5 text-orange-600" />
+                      <div>
+                        <p className="text-2xl font-bold text-orange-600">
+                          {selectedSchool.studentCount - selectedSchool.activeStudentCount}
+                        </p>
+                        <p className="text-sm text-gray-600">Inactive Students</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Students Table */}
+              {selectedSchool.students.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Students List</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Student Name</TableHead>
+                            <TableHead>Grade</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Registration Date</TableHead>
+                            <TableHead>Assignment</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {selectedSchool.students.map((student) => (
+                            <TableRow key={student.id}>
+                              <TableCell>
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <GraduationCap className="h-4 w-4 text-blue-600" />
+                                  </div>
+                                  <span className="font-medium">{student.fullName}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">Grade {student.grade}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                {getStatusBadge(student.status)}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  <Calendar className="h-4 w-4 text-gray-400" />
+                                  <span>{student.registrationDate ? formatDate(student.registrationDate) : 'N/A'}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {student.hasAssignment ? (
+                                  <Badge className="bg-green-100 text-green-800">
+                                    <UserCheck className="h-3 w-3 mr-1" />
+                                    Assigned
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-orange-600">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    Pending
+                                  </Badge>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Students Enrolled</h3>
+                    <p className="text-gray-600">This school doesn't have any students enrolled yet.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowStudentsModal(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setShowStudentsModal(false);
+              if (selectedSchool) {
+                handleViewDetails(selectedSchool);
+              }
+            }}>
+              <Eye className="h-4 w-4 mr-2" />
+              View School Details
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

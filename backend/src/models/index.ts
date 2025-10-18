@@ -134,10 +134,22 @@ export interface StudentData {
   centerId: string;
   schoolId?: string;
   parentId?: string; // Optional for new registrations
-  // Parent information for new registrations
+  // Parent information for new registrations (all optional)
   parentName?: string;
   parentPhone?: string;
   parentEmail?: string;
+  parentAddress?: string;
+  emergencyContact?: string;
+  relationship?: string;
+  // Additional student fields
+  age?: number;
+  specialEducatorId?: string;
+  previousSchool?: string;
+  medicalConditions?: string;
+  specialNeeds?: string;
+  learningConcerns?: string;
+  parentExpectations?: string;
+  status?: string;
 }
 
 export interface IntakeFormData {

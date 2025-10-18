@@ -2,19 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+
 import {
   Home,
   Users,
@@ -23,7 +14,6 @@ import {
   BookOpen,
   BarChart3,
   Settings,
-  LogOut,
   Menu,
   X,
   User,
@@ -54,6 +44,10 @@ import {
 interface SidebarProps {
   className?: string;
   userRole?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
+  isCollapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }
 
 interface NavigationItem {
@@ -135,9 +129,15 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       description: 'Manage educator accounts'
     },
     {
+      title: 'User Management',
+      href: '/admin/user-management',
+      icon: Users,
+      description: 'Manage all user accounts and roles'
+    },
+    {
       title: 'Child Records',
       href: '/admin/child-records',
-      icon: Users,
+      icon: ClipboardList,
       description: 'Student information management'
     },
     {
@@ -301,16 +301,6 @@ const roleNavigations: Record<string, NavigationItem[]> = {
   ]
 };
 
-// Helper function to get user initials
-const getInitials = (name: string): string => {
-  return name
-    .split(' ')
-    .map(word => word.charAt(0))
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-};
-
 // Helper function to get role display name
 const getRoleDisplayName = (role: string): string => {
   const roleNames: Record<string, string> = {
@@ -324,31 +314,56 @@ const getRoleDisplayName = (role: string): string => {
   return roleNames[role] || role;
 };
 
-export function UnifiedSidebar({ className, userRole = 'SPECIAL_EDUCATOR' }: SidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+export function UnifiedSidebar({ 
+  className, 
+  userRole = 'SPECIAL_EDUCATOR', 
+  isOpen = false, 
+  onClose,
+  isCollapsed: controlledCollapsed,
+  onCollapsedChange 
+}: SidebarProps) {
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, logout } = useAuth();
 
-  const navigationItems = roleNavigations[userRole] || roleNavigations.SPECIAL_EDUCATOR;
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.push('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
+  // Use controlled state if provided, otherwise use internal state
+  const isCollapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
+  
+  const handleToggleCollapse = () => {
+    const newCollapsed = !isCollapsed;
+    if (onCollapsedChange) {
+      onCollapsedChange(newCollapsed);
+    } else {
+      setInternalCollapsed(newCollapsed);
     }
   };
 
+  const navigationItems = roleNavigations[userRole] || roleNavigations.SPECIAL_EDUCATOR;
+
   return (
-    <div className={cn(
-      "flex flex-col h-screen bg-white border-r border-gray-200 transition-all duration-300",
-      isCollapsed ? "w-16" : "w-64",
-      className
-    )}>
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={cn(
+        "flex flex-col h-screen bg-white border-r border-gray-200 transition-all duration-300",
+        // Desktop and tablet behavior (md and up)
+        "hidden md:flex",
+        isCollapsed ? "w-16" : "w-72",
+        // Mobile behavior (below md)
+        "md:relative fixed inset-y-0 left-0 z-50",
+        isOpen ? "flex" : "hidden md:flex",
+        // Responsive width: fixed on mobile, responsive on tablet/desktop
+        isOpen ? "w-72" : "", // Mobile width when open
+        className
+      )}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-primary/5 to-blue-50">
+      <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gradient-to-r from-primary/5 to-blue-50">
         {!isCollapsed && (
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -364,75 +379,39 @@ export function UnifiedSidebar({ className, userRole = 'SPECIAL_EDUCATOR' }: Sid
             </div>
           </div>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="h-8 w-8 p-0"
-        >
-          {isCollapsed ? <Menu className="h-4 w-4" /> : <X className="h-4 w-4" />}
-        </Button>
+        
+        {/* Desktop/Tablet Collapse Button */}
+        <div className="hidden md:block">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleToggleCollapse}
+            className="h-8 w-8 p-0"
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? <Menu className="h-4 w-4" /> : <ChevronDown className="h-4 w-4 rotate-90" />}
+          </Button>
+        </div>
+        
+        {/* Mobile Close Button */}
+        <div className="md:hidden">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-8 w-8 p-0"
+            title="Close sidebar"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* User Profile Section */}
-      <div className="p-4 border-b border-gray-200">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className={cn(
-              "w-full p-2 h-auto justify-start hover:bg-gray-50",
-              isCollapsed && "justify-center"
-            )}>
-              <div className={cn(
-                "flex items-center gap-3",
-                isCollapsed && "justify-center"
-              )}>
-                <Avatar className="h-8 w-8 shrink-0">
-                  <AvatarImage src={user?.profile?.avatar} />
-                  <AvatarFallback className="bg-blue-100 text-blue-600">
-                    {user?.profile?.fullName ? getInitials(user.profile.fullName) : 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                {!isCollapsed && (
-                  <div className="flex-1 text-left">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {user?.profile?.fullName || getRoleDisplayName(userRole)}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {user?.email}
-                    </p>
-                  </div>
-                )}
-                {!isCollapsed && <ChevronDown className="h-4 w-4 text-gray-400" />}
-              </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href={`/${userRole.toLowerCase().replace('_', '-')}/profile`}>
-                <User className="mr-2 h-4 w-4" />
-                Profile Settings
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href={`/${userRole.toLowerCase().replace('_', '-')}/settings`}>
-                <Settings className="mr-2 h-4 w-4" />
-                Preferences
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-              <LogOut className="mr-2 h-4 w-4" />
-              🚪 Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+
 
       {/* Navigation */}
       <div className="flex-1 px-2 overflow-y-auto">
-        <nav className="space-y-1 py-4">
+        <nav className="space-y-1 py-3"> {/* Reduced padding from py-4 to py-3 */}
           {navigationItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             const Icon = item.icon;
@@ -442,22 +421,23 @@ export function UnifiedSidebar({ className, userRole = 'SPECIAL_EDUCATOR' }: Sid
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
                   className={cn(
-                    "w-full justify-start h-10 px-3",
+                    "w-full justify-start h-auto min-h-[2.5rem] px-3 py-2 rounded-lg", // Changed to h-auto with min-h and added py-2 for better content-based sizing
                     isCollapsed && "justify-center px-2",
-                    isActive && "bg-blue-50 text-blue-700 border-blue-200"
+                    isActive && "bg-blue-50 text-blue-700 border-blue-200",
+                    !isActive && "hover:bg-gray-50" // Better hover state
                   )}
                   title={isCollapsed ? item.title : undefined}
                 >
                   <Icon className={cn(
-                    "h-4 w-4",
+                    "h-4 w-4 shrink-0", // Added shrink-0
                     !isCollapsed && "mr-3",
                     isActive && "text-blue-600"
                   )} />
                   {!isCollapsed && (
-                    <div className="flex-1 text-left">
-                      <div className="text-sm font-medium">{item.title}</div>
+                    <div className="flex-1 text-left min-w-0"> {/* Added min-w-0 to prevent overflow */}
+                      <div className="text-sm font-medium leading-tight">{item.title}</div> {/* Added leading-tight */}
                       {!isActive && item.description && (
-                        <div className="text-xs text-gray-500 mt-0.5">
+                        <div className="text-xs text-gray-500 mt-0.5 leading-tight"> {/* Added leading-tight */}
                           {item.description}
                         </div>
                       )}
@@ -471,7 +451,7 @@ export function UnifiedSidebar({ className, userRole = 'SPECIAL_EDUCATOR' }: Sid
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-3 border-t border-gray-200"> {/* Reduced padding from p-4 to p-3 */}
         {!isCollapsed && (
           <div className="text-xs text-gray-500 text-center">
             <p>Knowled AI Platform</p>
@@ -480,5 +460,6 @@ export function UnifiedSidebar({ className, userRole = 'SPECIAL_EDUCATOR' }: Sid
         )}
       </div>
     </div>
+    </>
   );
 }

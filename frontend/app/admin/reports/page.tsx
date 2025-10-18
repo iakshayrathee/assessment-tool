@@ -33,7 +33,6 @@ import {
   Plus,
   Search
 } from 'lucide-react';
-import { apiClient } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
@@ -97,11 +96,10 @@ export default function ReportsAnalyticsPage() {
       setLoading(true);
       
       // Load reports from backend API
-      const reportsResponse = await apiClient.getAllReports({
+      const reportsResponse = await apiClient.getAllReportsAsAdmin({
         page: 1,
         limit: 50,
-        type: reportTypeFilter !== 'all' ? reportTypeFilter : undefined,
-        status: statusFilter !== 'all' ? statusFilter : undefined
+        type: reportTypeFilter !== 'all' ? reportTypeFilter : undefined
       });
       
       // Transform reports data
@@ -119,7 +117,7 @@ export default function ReportsAnalyticsPage() {
       }));
 
       // Load analytics from backend API
-      const analyticsResponse = await apiClient.getSystemAnalytics('month');
+      const analyticsResponse = await apiClient.getSystemAnalytics({ period: 'month' });
       
       // Transform analytics data
       const transformedAnalytics: AnalyticsData = {

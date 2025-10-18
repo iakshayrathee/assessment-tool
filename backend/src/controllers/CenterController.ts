@@ -631,11 +631,18 @@ export class CenterController {
   async getCenterEducators(req: AuthenticatedRequest, res: Response) {
     try {
       const centerId = req.params.id;
-      const educators = await this.centerService.getCenterEducators(centerId);
+      const { page = 1, limit = 50, search } = req.query;
+      
+      const result = await this.centerService.getCenterEducators(centerId, {
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
+        search: search as string
+      });
 
       res.json({
         success: true,
-        data: educators
+        data: result.educators,
+        pagination: result.pagination
       });
     } catch (error: any) {
       console.error('Get center educators error:', error);
