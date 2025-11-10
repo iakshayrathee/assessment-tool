@@ -11,7 +11,7 @@ export default function SuperSpecialEducatorLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; login?: string }>({});
   
   const { login, isLoggingIn, isAuthenticated, user } = useAuth();
   const router = useRouter();
@@ -20,7 +20,7 @@ export default function SuperSpecialEducatorLoginPage() {
   useEffect(() => {
     if (isAuthenticated && user) {
       if (user.role === 'SUPER_SPECIAL_EDUCATOR') {
-        router.push('/super-special-educator/centers');
+        router.push('/super-special-educator');
       } else {
         // Redirect to appropriate dashboard for other roles
         router.push('/');
@@ -32,26 +32,30 @@ export default function SuperSpecialEducatorLoginPage() {
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Please enter a valid email address.';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = 'Please enter a valid email address.';
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = 'Please enter your password.';
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = 'Please enter your password.';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      login({ email, password });
+      try {
+        await login({ email, password });
+      } catch (error: any) {
+        setErrors({ login: 'Invalid email or password.' });
+      }
     }
   };
 
@@ -201,9 +205,15 @@ export default function SuperSpecialEducatorLoginPage() {
                 </Link>
               </div>
 
+              {errors.login && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-red-600">{errors.login}</p>
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={isLoggingIn}
+                disabled={isLoggingIn || !email || !password}
                 className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-4 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 {isLoggingIn ? (
@@ -227,6 +237,22 @@ export default function SuperSpecialEducatorLoginPage() {
                 <div className="font-medium text-green-900">Super Special Educator</div>
                 <div className="text-green-700 text-sm">super.educator@knowled.com</div>
               </button>
+            </div>
+          </div>
+
+          {/* Footer with Terms and Privacy Policy */}
+          <div className="mt-8 text-center text-sm text-gray-500">
+            <div className="flex items-center justify-center space-x-2">
+              <Link href="/terms" className="hover:text-gray-700 transition-colors">
+                Terms of Use
+              </Link>
+              <span>|</span>
+              <Link href="/privacy" className="hover:text-gray-700 transition-colors">
+                Privacy Policy
+              </Link>
+            </div>
+            <div className="mt-2">
+              © 2024 Knowled Assessment Platform. All rights reserved.
             </div>
           </div>
         </motion.div>

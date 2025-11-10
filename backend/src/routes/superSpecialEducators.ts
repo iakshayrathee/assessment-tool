@@ -108,4 +108,11 @@ router.get('/analytics/performance', superSpecialEducatorController.getPerforman
  */
 router.get('/activities', superSpecialEducatorController.getRecentActivities);
 
+/**
+ * @route POST /api/super-special-educators/special-educators
+ * @desc Create a new Special Educator
+ * @access Private (Super Special Educator only)
+ */
+router.post('/special-educators', superSpecialEducatorController.createSpecialEducator);
+
 export default router;

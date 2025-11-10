@@ -103,7 +103,7 @@ export default function ReportsAnalyticsPage() {
       });
       
       // Transform reports data
-      const transformedReports: ReportData[] = reportsResponse.data.map((report: any) => ({
+      const transformedReports: ReportData[] = (reportsResponse.data || []).map((report: any) => ({
         id: report.id,
         title: report.title || report.name || 'Untitled Report',
         type: report.type || 'CUSTOM',

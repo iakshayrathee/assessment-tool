@@ -2,6 +2,62 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { apiClient } from '@/lib/api';
 import { queryKeys, invalidationPatterns } from '@/lib/queryKeys';
+import { UserRole, CenterProfile, School, SystemConfig, ExportFilters } from '@/types';
+
+// Interface definitions for mutation data
+export interface CreateUserData {
+  email: string;
+  password: string;
+  role: UserRole;
+  profileData: Record<string, unknown>;
+}
+
+export interface UpdateUserData {
+  email?: string;
+  role?: UserRole;
+  profileData?: Record<string, unknown>;
+  isActive?: boolean;
+}
+
+export interface CreateCenterData {
+  centerName: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  contactPerson?: string;
+  [key: string]: unknown;
+}
+
+export interface UpdateCenterData {
+  centerName?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  contactPerson?: string;
+  [key: string]: unknown;
+}
+
+export interface CreateSchoolData {
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  principalName?: string;
+  centerId: string;
+}
+
+export interface UpdateSchoolData {
+  name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  principalName?: string;
+  centerId?: string;
+}
+
+export interface UpdateSystemConfigData {
+  [key: string]: unknown;
+}
 
 // Admin Dashboard Hook
 export function useAdminDashboard() {
@@ -32,27 +88,27 @@ export function useAllUsers(params?: {
 
   // Create user mutation
   const createUserMutation = useMutation({
-    mutationFn: (userData: any) => apiClient.createUser(userData),
+    mutationFn: (userData: CreateUserData) => apiClient.createUser(userData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.dashboard() });
       toast.success('User created successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Failed to create user');
+    onError: (error: Error) => {
+      toast.error((error as any).response?.data?.error || 'Failed to create user');
     },
   });
 
   // Update user mutation
   const updateUserMutation = useMutation({
-    mutationFn: ({ userId, userData }: { userId: string; userData: any }) => 
+    mutationFn: ({ userId, userData }: { userId: string; userData: UpdateUserData }) => 
       apiClient.updateUser(userId, userData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
       toast.success('User updated successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Failed to update user');
+    onError: (error: Error) => {
+      toast.error((error as any).response?.data?.error || 'Failed to update user');
     },
   });
 
@@ -64,8 +120,8 @@ export function useAllUsers(params?: {
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.dashboard() });
       toast.success('User deleted successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Failed to delete user');
+    onError: (error: Error) => {
+      toast.error((error as any).response?.data?.error || 'Failed to delete user');
     },
   });
 
@@ -76,8 +132,8 @@ export function useAllUsers(params?: {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
       toast.success('User activated successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Failed to activate user');
+    onError: (error: Error) => {
+      toast.error((error as any).response?.data?.error || 'Failed to activate user');
     },
   });
 
@@ -88,8 +144,8 @@ export function useAllUsers(params?: {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
       toast.success('User deactivated successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Failed to deactivate user');
+    onError: (error: Error) => {
+      toast.error((error as any).response?.data?.error || 'Failed to deactivate user');
     },
   });
 

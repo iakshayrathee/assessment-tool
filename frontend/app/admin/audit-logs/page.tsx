@@ -8,10 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Shield,
   Search,
-  Filter,
   Download,
   RefreshCw,
-  Calendar,
   User,
   Activity,
   Database,
@@ -21,7 +19,6 @@ import {
   Plus,
   LogIn,
   LogOut,
-  Settings,
   FileText,
   Users,
   Building,
@@ -54,34 +51,20 @@ interface AuditLogsData {
 }
 
 export default function AdminAuditLogsPage() {
-  const { user } = useAuth();
+  useAuth();
   const [logsData, setLogsData] = useState<AuditLogsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedResource, setSelectedResource] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUserId] = useState('');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-
-  useEffect(() => {
-    loadAuditLogs();
-  }, [currentPage, searchQuery, selectedAction, selectedResource, selectedUserId, startDate, endDate]);
 
   const loadAuditLogs = async () => {
     try {
       setLoading(true);
-      const params = {
-        page: currentPage,
-        limit: 20,
-        ...(selectedAction && { action: selectedAction }),
-        ...(selectedResource && { resource: selectedResource }),
-        ...(selectedUserId && { userId: selectedUserId }),
-        ...(startDate && { startDate: startDate.toISOString().split('T')[0] }),
-        ...(endDate && { endDate: endDate.toISOString().split('T')[0] })
-      };
-
       // Since the audit logs endpoint is not implemented, show an error message
       setLogsData(null);
       console.warn('Audit logs endpoint not implemented in backend');
@@ -92,6 +75,10 @@ export default function AdminAuditLogsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadAuditLogs();
+  }, [currentPage, searchQuery, selectedAction, selectedResource, selectedUserId, startDate, endDate, loadAuditLogs]);
 
   const getActionIcon = (action: string) => {
     switch (action) {

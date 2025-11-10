@@ -1,5 +1,6 @@
-import { PrismaClient, StudentStatus, ReportType, IEPGoalStatus, AssessmentStatus } from '@prisma/client';
+import { PrismaClient, StudentStatus, ReportType, IEPGoalStatus, AssessmentStatus, UserRole } from '@prisma/client';
 import { PaginatedResponse } from '../models';
+import { AuthUtils } from '../utils/auth';
 
 const prisma = new PrismaClient();
 
@@ -541,14 +542,33 @@ export class SuperSpecialEducatorService {
    * Create training log
    */
   async createTrainingLog(userId: string, logData: any) {
-    // For now, we'll use audit logs to track training interactions
-    return await prisma.auditLog.create({
+    const profile = await prisma.superSpecialEducatorProfile.findUnique({
+      where: { userId }
+    });
+
+    if (!profile) {
+      throw new Error('Profile not found');
+    }
+
+    return await prisma.trainingLog.create({
       data: {
-        userId,
-        action: 'TRAINING_LOG',
-        resource: 'SpecialEducator',
-        resourceId: logData.educatorId,
-        details: JSON.stringify(logData)
+        superSpecialEducatorId: profile.id,
+        specialEducatorId: logData.educatorId,
+        title: logData.title,
+        description: logData.description,
+        type: logData.type || 'MENTORSHIP',
+        duration: logData.duration,
+        participants: logData.participants || [],
+        notes: logData.notes,
+        followUpRequired: logData.followUpRequired || false,
+        followUpDate: logData.followUpDate ? new Date(logData.followUpDate) : null
+      },
+      include: {
+        specialEducator: {
+          select: {
+            fullName: true
+          }
+        }
       }
     });
   }
@@ -564,20 +584,34 @@ export class SuperSpecialEducatorService {
     const { page, limit, educatorId } = params;
     const skip = (page - 1) * limit;
 
+    const profile = await prisma.superSpecialEducatorProfile.findUnique({
+      where: { userId }
+    });
+
+    if (!profile) {
+      throw new Error('Profile not found');
+    }
+
     const where = {
-      userId,
-      action: 'TRAINING_LOG',
-      ...(educatorId && { resourceId: educatorId })
+      superSpecialEducatorId: profile.id,
+      ...(educatorId && { specialEducatorId: educatorId })
     };
 
     const [logs, total] = await Promise.all([
-      prisma.auditLog.findMany({
+      prisma.trainingLog.findMany({
         where,
         skip,
         take: limit,
+        include: {
+          specialEducator: {
+            select: {
+              fullName: true
+            }
+          }
+        },
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.auditLog.count({ where })
+      prisma.trainingLog.count({ where })
     ]);
 
     return {
@@ -795,5 +829,81 @@ export class SuperSpecialEducatorService {
     });
 
     return activities;
+  }
+
+  /**
+   * Create a new Special Educator
+   */
+  async createSpecialEducator(userId: string, educatorData: any) {
+    const profile = await prisma.superSpecialEducatorProfile.findUnique({
+      where: { userId }
+    });
+
+    if (!profile) {
+      throw new Error('Super Special Educator profile not found');
+    }
+
+    const { email, password, profileData } = educatorData;
+    
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      throw new Error('User with this email already exists');
+    }
+
+    // Validate required profile fields
+    if (!profileData.fullName) {
+      throw new Error('Full name is required');
+    }
+
+    const hashedPassword = await AuthUtils.hashPassword(password);
+
+    return await prisma.$transaction(async (tx) => {
+      // Create user
+      const user = await tx.user.create({
+        data: { 
+          email, 
+          password: hashedPassword, 
+          role: UserRole.SPECIAL_EDUCATOR 
+        }
+      });
+
+      // Convert date fields
+      const convertedProfileData = this.convertDateFields(profileData);
+
+      // Create Special Educator profile
+      const specialEducatorProfile = await tx.specialEducatorProfile.create({
+        data: { 
+          userId: user.id, 
+          ...convertedProfileData 
+        }
+      });
+
+      // Return complete user data
+      return await tx.user.findUnique({
+        where: { id: user.id },
+        include: {
+          specialEducatorProfile: true
+        }
+      });
+    });
+  }
+
+  /**
+   * Helper method to convert date fields
+   */
+  private convertDateFields(data: any): any {
+    const converted = { ...data };
+    
+    // Convert date string fields to Date objects
+    const dateFields = ['dateOfBirth', 'rciValidityDate'];
+    
+    dateFields.forEach(field => {
+      if (converted[field] && typeof converted[field] === 'string') {
+        converted[field] = new Date(converted[field]);
+      }
+    });
+    
+    return converted;
   }
 }

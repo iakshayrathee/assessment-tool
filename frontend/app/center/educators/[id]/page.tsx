@@ -118,7 +118,7 @@ export default function EducatorDetailPage() {
 
       // Get assigned students for this educator
       const studentsData = await apiClient.getCenterStudents(centerId, { limit: 1000 });
-      const educatorStudents = studentsData.data.filter((student: any) => 
+      const educatorStudents = (studentsData.data || []).filter((student: any) => 
         student.assignments?.some((assignment: any) => 
           assignment.specialEducator?.id === educatorId && assignment.isActive
         )

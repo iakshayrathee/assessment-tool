@@ -26,17 +26,12 @@ import {
   MapPin,
   Phone,
   Mail,
-  Calendar,
-  Activity,
   RefreshCw,
   Download,
-  MoreHorizontal,
-  Trash2,
   CheckCircle,
   XCircle
 } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
 interface Center {
@@ -66,7 +61,7 @@ interface School {
 }
 
 export default function CentersSchoolsPage() {
-  const { user } = useAuth();
+  useAuth();
   const [centers, setCenters] = useState<Center[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,10 +69,6 @@ export default function CentersSchoolsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   const loadData = async () => {
     try {
@@ -90,8 +81,38 @@ export default function CentersSchoolsPage() {
         search: searchQuery || undefined 
       });
       
+      console.log('Centers API response:', centersResponse);
+      console.log('Available centers:', centersResponse.centers?.length || 0);
+      
       // Transform centers data - extract from nested centerProfile
-      const transformedCenters: Center[] = centersResponse.data.map((center: any) => {
+      interface CenterResponse {
+        id: string;
+        email?: string;
+        isActive?: boolean;
+        createdAt: string;
+        centerProfile?: {
+          centerName?: string;
+          address?: string;
+          contactPerson?: string;
+          email?: string;
+          phone?: string;
+          assignments?: unknown[];
+          students?: unknown[];
+          schools?: SchoolResponse[];
+        };
+      }
+
+      interface SchoolResponse {
+        id: string;
+        name?: string;
+        address?: string;
+        principalName?: string;
+        email?: string;
+        phone?: string;
+        createdAt: string;
+      }
+
+      const transformedCenters: Center[] = (centersResponse.centers || []).map((center: CenterResponse) => {
         const profile = center.centerProfile || {};
         return {
           id: center.id,
@@ -111,14 +132,14 @@ export default function CentersSchoolsPage() {
       let transformedSchools: School[] = [];
       try {
         // Flatten all schools from all centers
-        const allSchools = centersResponse.data.flatMap((center: any) => 
-          (center.centerProfile?.schools || []).map((school: any) => ({
+        const allSchools = (centersResponse.centers || []).flatMap((center: CenterResponse) => 
+          (center.centerProfile?.schools || []).map((school: SchoolResponse) => ({
             ...school,
             centerName: center.centerProfile?.centerName || 'Unknown Center'
           }))
         );
         
-        transformedSchools = allSchools.map((school: any) => ({
+        transformedSchools = allSchools.map((school: SchoolResponse & { centerName: string }) => ({
           id: school.id,
           name: school.name || 'Unknown School',
           location: school.address || 'Location not specified',
@@ -145,6 +166,10 @@ export default function CentersSchoolsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleToggleStatus = async (id: string, type: 'center' | 'school', currentStatus: boolean) => {
     try {

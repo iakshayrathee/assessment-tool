@@ -28,7 +28,7 @@ export default function LoginPage() {
       case 'ADMIN':
         return '/admin/dashboard';
       case 'SUPER_SPECIAL_EDUCATOR':
-        return '/super-special-educator/centers';
+        return '/super-special-educator';
       case 'SPECIAL_EDUCATOR':
         return '/educator/dashboard';
       case 'CENTER':

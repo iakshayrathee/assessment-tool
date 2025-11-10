@@ -66,14 +66,14 @@ export function useSuperSpecialEducatorSpecialEducators(params?: {
   });
 
   const createSpecialEducatorMutation = useMutation({
-    mutationFn: (educatorData: any) => apiClient.createUser({ ...educatorData, role: 'SPECIAL_EDUCATOR' }),
+    mutationFn: (educatorData: any) => apiClient.createSpecialEducator(educatorData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.superSpecialEducator.specialEducators() });
       queryClient.invalidateQueries({ queryKey: queryKeys.superSpecialEducator.dashboard() });
       toast.success('Special educator created successfully!');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Failed to create special educator');
+      toast.error(error.response?.data?.message || error.message || 'Failed to create special educator');
     },
   });
 

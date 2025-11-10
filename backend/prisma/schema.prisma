@@ -23,6 +23,7 @@ model User {
   schoolViewerProfile         SchoolViewerProfile?
   specialEducatorProfile      SpecialEducatorProfile?
   superSpecialEducatorProfile SuperSpecialEducatorProfile?
+  notifications               Notification[]
 
   @@map("users")
 }
@@ -74,6 +75,7 @@ model SuperSpecialEducatorProfile {
   assignedCenters          CenterAssignment[]
   assignedSchools          SchoolAssignment[]
   reviewedReports          Report[]
+  trainingLogs             TrainingLog[]
   user                     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("super_special_educator_profiles")
@@ -120,6 +122,7 @@ model SpecialEducatorProfile {
   intakeForms              IntakeForm[]
   reports                  Report[]
   sessionNotes             SessionNote[]
+  trainingLogs             TrainingLog[]
   user                     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   assignedStudents         StudentAssignment[]
 
@@ -504,6 +507,41 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  data      String?  // JSON data for additional context
+  createdAt DateTime @default(now())
+  readAt    DateTime?
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model TrainingLog {
+  id                     String                       @id @default(cuid())
+  superSpecialEducatorId String
+  specialEducatorId      String?
+  title                  String
+  description            String
+  type                   TrainingType                 @default(MENTORSHIP)
+  duration               Int?                         // Duration in minutes
+  participants           String[]                     // Array of educator IDs
+  notes                  String?
+  followUpRequired       Boolean                      @default(false)
+  followUpDate           DateTime?
+  createdAt              DateTime                     @default(now())
+  updatedAt              DateTime                     @updatedAt
+  superSpecialEducator   SuperSpecialEducatorProfile  @relation(fields: [superSpecialEducatorId], references: [id])
+  specialEducator        SpecialEducatorProfile?      @relation(fields: [specialEducatorId], references: [id])
+
+  @@map("training_logs")
+}
+
 enum UserRole {
   ADMIN
   SUPER_SPECIAL_EDUCATOR
@@ -545,4 +583,13 @@ enum StudentStatus {
   INACTIVE
   GRADUATED
   TRANSFERRED
+}
+
+enum TrainingType {
+  MENTORSHIP
+  WORKSHOP
+  OBSERVATION
+  FEEDBACK_SESSION
+  PROFESSIONAL_DEVELOPMENT
+  CASE_CONSULTATION
 }

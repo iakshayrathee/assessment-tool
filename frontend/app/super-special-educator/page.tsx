@@ -5,16 +5,28 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Users, 
-  Building2, 
-  AlertTriangle, 
+  User,
+  GraduationCap, 
   FileText, 
+  AlertTriangle, 
   TrendingUp,
-  Clock,
+  Building2,
+  Calendar,
   CheckCircle,
-  XCircle
+  Clock,
+  Eye,
+  BarChart3,
+  BookOpen,
+  Target,
+  Award,
+  Activity,
+  PieChart,
+  LineChart,
+  Plus,
+  Filter,
+  Download
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 
@@ -54,10 +66,11 @@ export default function SuperSpecialEducatorDashboard() {
     }
   };
 
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
       </div>
     );
   }
@@ -75,282 +88,329 @@ export default function SuperSpecialEducatorDashboard() {
     return <div>No data available</div>;
   }
 
-  const recentActivities = [
-    {
-      id: 1,
-      type: 'review',
-      description: 'Reviewed IEP for John Doe at Center A',
-      timestamp: '2 hours ago',
-      status: 'completed'
-    },
-    {
-      id: 2,
-      type: 'visit',
-      description: 'Scheduled visit to Center B',
-      timestamp: '4 hours ago',
-      status: 'scheduled'
-    },
-    {
-      id: 3,
-      type: 'flag',
-      description: 'New flagged case: Sarah Smith',
-      timestamp: '6 hours ago',
-      status: 'pending'
-    }
-  ];
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
+        <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            Welcome, {dashboardData.profile?.fullName || 'Super Special Educator'}
+            Super Special Educator Dashboard
           </h1>
-          <p className="text-gray-600 mt-1">
-            Manage and oversee special education programs across multiple centers
+          <p className="text-gray-600 mt-2">
+            Monitor, review, and support Special Educators across multiple centers
           </p>
         </div>
-        <Button onClick={() => router.push('/super-special-educator/profile')}>
-          View Profile
-        </Button>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Assigned Centers</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.centersCount}</div>
-            <p className="text-xs text-muted-foreground">
-              Active centers under supervision
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.totalStudents}</div>
-            <p className="text-xs text-muted-foreground">
-              Students across all centers
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Educators Under Supervision</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.educatorsUnderSupervision}</div>
-            <p className="text-xs text-muted-foreground">
-              Special educators managed
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.pendingReviews}</div>
-            <p className="text-xs text-muted-foreground">
-              Reports awaiting review
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Flagged Cases</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.flaggedCases}</div>
-            <p className="text-xs text-muted-foreground">
-              Cases requiring attention
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="pending-reviews">Pending Reviews</TabsTrigger>
-          <TabsTrigger value="flagged-cases">Flagged Cases</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+        {/* Dashboard Content Sections */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          {/* 1. Center Overview */}
+          <Card className="lg:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <Building2 className="mr-2 h-5 w-5" />
+                  Center Overview
+                </CardTitle>
                 <CardDescription>
-                  Access key functions and manage your responsibilities
+                  All assigned centers - click to drill down to school and child level
                 </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => router.push('/super-special-educator/centers')}
-                >
-                  <Building2 className="mr-2 h-4 w-4" />
-                  Manage Centers
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => router.push('/super-special-educator/educators')}
-                >
-                  <Users className="mr-2 h-4 w-4" />
-                  Supervise Educators
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => router.push('/super-special-educator/students')}
-                >
-                  <Users className="mr-2 h-4 w-4" />
-                  Monitor Students
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => router.push('/super-special-educator/reviews')}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  Review Reports
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>
-                  Latest updates and actions across your centers
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentActivities.map((activity) => (
-                    <div key={activity.id} className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        {activity.type === 'review' && <FileText className="h-4 w-4 text-blue-600" />}
-                        {activity.type === 'visit' && <Building2 className="h-4 w-4 text-green-600" />}
-                        {activity.type === 'flag' && <AlertTriangle className="h-4 w-4 text-red-600" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {activity.description}
-                        </p>
-                        <p className="text-sm text-gray-500">{activity.timestamp}</p>
-                      </div>
-                      <Badge variant={
-                        activity.status === 'completed' ? 'default' :
-                        activity.status === 'scheduled' ? 'secondary' : 'destructive'
-                      }>
-                        {activity.status}
-                      </Badge>
+              </div>
+              <Button variant="outline" size="sm">
+                <Eye className="mr-2 h-4 w-4" />
+                View All
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{dashboardData.stats.centersCount}</div>
+                  <div className="text-sm text-blue-800">Assigned Centers</div>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{dashboardData.stats.totalStudents}</div>
+                  <div className="text-sm text-green-800">Total Students</div>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">{dashboardData.stats.educatorsUnderSupervision}</div>
+                  <div className="text-sm text-purple-800">Special Educators</div>
+                </div>
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">12</div>
+                  <div className="text-sm text-orange-800">Schools</div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                  <div className="flex items-center space-x-3">
+                    <Building2 className="h-5 w-5 text-gray-500" />
+                    <div>
+                      <div className="font-medium">Sunshine Learning Center</div>
+                      <div className="text-sm text-gray-500">45 students • 8 educators • 3 schools</div>
                     </div>
-                  ))}
+                  </div>
+                  <Badge variant="secondary">Active</Badge>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                  <div className="flex items-center space-x-3">
+                    <Building2 className="h-5 w-5 text-gray-500" />
+                    <div>
+                      <div className="font-medium">Hope Special Education Center</div>
+                      <div className="text-sm text-gray-500">32 students • 6 educators • 2 schools</div>
+                    </div>
+                  </div>
+                  <Badge variant="secondary">Active</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-        <TabsContent value="pending-reviews">
+          {/* 2. Special Educator Tracker */}
           <Card>
-            <CardHeader>
-              <CardTitle>Pending Reviews</CardTitle>
-              <CardDescription>
-                Reports and assessments awaiting your review
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <Users className="mr-2 h-5 w-5" />
+                  Special Educator Tracker
+                </CardTitle>
+                <CardDescription>
+                  View assigned Special Educators, their children, and pending reports
+                </CardDescription>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" onClick={() => router.push('/super-special-educator/educators')}>
+                  View All
+                </Button>
+                <Button size="sm" onClick={() => router.push('/super-special-educator/educators?action=create')}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Educator
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No pending reviews</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  All reports have been reviewed. Check back later for new submissions.
-                </p>
-                <div className="mt-6">
-                  <Button onClick={() => router.push('/super-special-educator/reviews')}>
-                    View All Reviews
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium">Dr. Sarah Johnson</div>
+                      <div className="text-sm text-gray-500">12 assigned children</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="destructive" className="mb-1">3 Pending</Badge>
+                    <div className="text-xs text-gray-500">Reports</div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium">Ms. Emily Chen</div>
+                      <div className="text-sm text-gray-500">8 assigned children</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="secondary" className="mb-1">1 Pending</Badge>
+                    <div className="text-xs text-gray-500">Reports</div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 3. Assessment & IEP Review */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <FileText className="mr-2 h-5 w-5" />
+                  Assessment & IEP Review
+                </CardTitle>
+                <CardDescription>
+                  New IEPs, assessments, and reports requiring review or feedback
+                </CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => router.push('/super-special-educator/reviews')}>
+                Review All
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <div>
+                      <div className="font-medium text-sm">IEP Assessment - John Doe</div>
+                      <div className="text-xs text-gray-500">Submitted 2 days ago</div>
+                    </div>
+                  </div>
+                  <Badge variant="destructive">Urgent</Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                    <div>
+                      <div className="font-medium text-sm">Progress Report - Sarah Smith</div>
+                      <div className="text-xs text-gray-500">Submitted 1 day ago</div>
+                    </div>
+                  </div>
+                  <Badge variant="secondary">Review</Badge>
+                </div>
+                <div className="text-center py-4">
+                  <div className="text-2xl font-bold text-orange-600">{dashboardData.stats.pendingReviews}</div>
+                  <div className="text-sm text-gray-500">Total Pending Reviews</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 4. Flagged Cases */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <AlertTriangle className="mr-2 h-5 w-5" />
+                  Flagged Cases
+                </CardTitle>
+                <CardDescription>
+                  Escalated/low-progress children requiring intervention plan updates
+                </CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => router.push('/super-special-educator/flagged-cases')}>
+                View All
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                    <div>
+                      <div className="font-medium text-sm">Michael Johnson</div>
+                      <div className="text-xs text-gray-500">Low progress - 15% goal completion</div>
+                    </div>
+                  </div>
+                  <Badge variant="destructive">Critical</Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Clock className="h-4 w-4 text-orange-500" />
+                    <div>
+                      <div className="font-medium text-sm">Emma Wilson</div>
+                      <div className="text-xs text-gray-500">Overdue assessment - 30 days</div>
+                    </div>
+                  </div>
+                  <Badge variant="secondary">Overdue</Badge>
+                </div>
+                <div className="text-center py-4">
+                  <div className="text-2xl font-bold text-red-600">{dashboardData.stats.flaggedCases}</div>
+                  <div className="text-sm text-gray-500">Cases Requiring Attention</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 5. Training Log / Notes */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <BookOpen className="mr-2 h-5 w-5" />
+                  Training Log / Notes
+                </CardTitle>
+                <CardDescription>
+                  Record support interactions and suggestions for Special Educators
+                </CardDescription>
+              </div>
+              <Button variant="outline" size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Note
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="p-3 border rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-medium text-sm">Training Session - IEP Best Practices</div>
+                    <div className="text-xs text-gray-500">Today</div>
+                  </div>
+                  <div className="text-xs text-gray-600">Conducted training for 5 educators on new IEP guidelines</div>
+                  <div className="text-xs text-blue-600 mt-1">Dr. Sarah Johnson, Ms. Emily Chen, +3 others</div>
+                </div>
+                <div className="p-3 border rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-medium text-sm">Mentorship Note - Assessment Techniques</div>
+                    <div className="text-xs text-gray-500">Yesterday</div>
+                  </div>
+                  <div className="text-xs text-gray-600">Provided guidance on adaptive assessment methods</div>
+                  <div className="text-xs text-blue-600 mt-1">Ms. Emily Chen</div>
+                </div>
+                <div className="text-center py-2">
+                  <Button variant="ghost" size="sm" className="text-blue-600">
+                    View All Training Logs
                   </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="flagged-cases">
+          {/* 6. Cross-Center Comparison */}
           <Card>
-            <CardHeader>
-              <CardTitle>Flagged Cases</CardTitle>
-              <CardDescription>
-                Students requiring immediate attention or intervention
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <BarChart3 className="mr-2 h-5 w-5" />
+                  Cross-Center Comparison
+                </CardTitle>
+                <CardDescription>
+                  Performance, report completion rates, and analytics across centers
+                </CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => router.push('/super-special-educator/analytics')}>
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Full Analytics
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <AlertTriangle className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No flagged cases</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  All cases are currently under normal supervision.
-                </p>
-                <div className="mt-6">
-                  <Button onClick={() => router.push('/super-special-educator/flagged-cases')}>
-                    View All Cases
-                  </Button>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium">Report Completion Rate</div>
+                  <div className="text-sm text-gray-500">This Month</div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Sunshine Learning Center</span>
+                      <span className="text-green-600">92%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '92%' }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Hope Special Education</span>
+                      <span className="text-yellow-600">78%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-yellow-500 h-2 rounded-full" style={{ width: '78%' }}></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-2 border-t">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Average Progress Rate</span>
+                    <span className="font-medium text-blue-600">85%</span>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
-              <CardTitle>Analytics Overview</CardTitle>
-              <CardDescription>
-                Performance metrics and insights across your centers
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <TrendingUp className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">Analytics Dashboard</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  View detailed analytics and performance metrics.
-                </p>
-                <div className="mt-6">
-                  <Button onClick={() => router.push('/super-special-educator/analytics')}>
-                    View Full Analytics
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
     </div>
   );
 }

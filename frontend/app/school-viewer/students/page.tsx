@@ -1,0 +1,400 @@
+'use client';
+
+import { useState } from 'react';
+import { useSchoolViewerStudents } from '@/hooks/useSchoolViewer';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Users, 
+  Search, 
+  Filter,
+  User,
+  Calendar,
+  Phone,
+  Mail,
+  FileText,
+  Target,
+  TrendingUp,
+  AlertCircle,
+  Loader2,
+  Eye,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
+import { format } from 'date-fns';
+import Link from 'next/link';
+
+interface Student {
+  id: string;
+  fullName: string;
+  dateOfBirth: string;
+  age: number;
+  gender: string;
+  grade: string;
+  motherTongue?: string;
+  status: string;
+  registrationDate: string;
+  parent?: {
+    id: string;
+    fullName: string;
+    phone?: string;
+    user: {
+      email: string;
+    };
+  };
+  assignments: Array<{
+    specialEducator: {
+      id: string;
+      fullName: string;
+      phone?: string;
+    };
+  }>;
+  latestAssessment?: {
+    id: string;
+    status: string;
+    assessmentType: string;
+    completedAt?: string;
+  };
+  latestReport?: {
+    id: string;
+    type: string;
+    status: string;
+    submittedAt?: string;
+  };
+  iepProgress: number;
+  activeGoalsCount: number;
+}
+
+export default function SchoolViewerStudents() {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [grade, setGrade] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  const { 
+    students, 
+    pagination, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useSchoolViewerStudents({
+    page,
+    limit: 12,
+    search: search || undefined,
+    status: status || undefined,
+    grade: grade || undefined
+  });
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setPage(1); // Reset to first page when searching
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatus(value === 'all' ? '' : value);
+    setPage(1);
+  };
+
+  const handleGradeChange = (value: string) => {
+    setGrade(value === 'all' ? '' : value);
+    setPage(1);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800';
+      case 'graduated':
+        return 'bg-blue-100 text-blue-800';
+      case 'transferred':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getProgressColor = (progress: number) => {
+    if (progress >= 75) return 'text-green-600';
+    if (progress >= 50) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const formatStatus = (status: string) => {
+    return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Students</h3>
+        <p className="text-gray-600 mb-4">Unable to load student data. Please try again.</p>
+        <Button onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Students</h1>
+          <p className="text-gray-600">View and monitor students from your school</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center space-x-2"
+          >
+            <Filter className="h-4 w-4" />
+            <span>Filters</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search students by name..."
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Filters */}
+            {showFilters && (
+              <>
+                <Select value={status || 'all'} onValueChange={handleStatusChange}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="All Statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="INACTIVE">Inactive</SelectItem>
+                    <SelectItem value="GRADUATED">Graduated</SelectItem>
+                    <SelectItem value="TRANSFERRED">Transferred</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={grade || 'all'} onValueChange={handleGradeChange}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="All Grades" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Grades</SelectItem>
+                    <SelectItem value="Pre-K">Pre-K</SelectItem>
+                    <SelectItem value="K">Kindergarten</SelectItem>
+                    <SelectItem value="1">Grade 1</SelectItem>
+                    <SelectItem value="2">Grade 2</SelectItem>
+                    <SelectItem value="3">Grade 3</SelectItem>
+                    <SelectItem value="4">Grade 4</SelectItem>
+                    <SelectItem value="5">Grade 5</SelectItem>
+                    <SelectItem value="6">Grade 6</SelectItem>
+                    <SelectItem value="7">Grade 7</SelectItem>
+                    <SelectItem value="8">Grade 8</SelectItem>
+                    <SelectItem value="9">Grade 9</SelectItem>
+                    <SelectItem value="10">Grade 10</SelectItem>
+                    <SelectItem value="11">Grade 11</SelectItem>
+                    <SelectItem value="12">Grade 12</SelectItem>
+                  </SelectContent>
+                </Select>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Students Grid */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+          <span className="ml-2 text-gray-600">Loading students...</span>
+        </div>
+      ) : students.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Students Found</h3>
+            <p className="text-gray-600">
+              {search || status || grade 
+                ? 'No students match your current filters. Try adjusting your search criteria.'
+                : 'No students are currently enrolled at your school.'
+              }
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {students.map((student: Student) => (
+              <Card key={student.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{student.fullName}</CardTitle>
+                      <CardDescription className="flex items-center space-x-2 mt-1">
+                        <span>Grade {student.grade}</span>
+                        <span>•</span>
+                        <span>Age {student.age}</span>
+                      </CardDescription>
+                    </div>
+                    <Badge className={getStatusColor(student.status)}>
+                      {formatStatus(student.status)}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Student Info */}
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      <span>Enrolled: {format(new Date(student.registrationDate), 'MMM dd, yyyy')}</span>
+                    </div>
+                    {student.motherTongue && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <span className="w-4 h-4 mr-2 text-center">🗣️</span>
+                        <span>Language: {student.motherTongue}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Parent Info */}
+                  {student.parent && (
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm font-medium text-gray-900">{student.parent.fullName}</p>
+                      <div className="flex items-center space-x-4 mt-1">
+                        {student.parent.phone && (
+                          <div className="flex items-center text-xs text-gray-600">
+                            <Phone className="h-3 w-3 mr-1" />
+                            <span>{student.parent.phone}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center text-xs text-gray-600">
+                          <Mail className="h-3 w-3 mr-1" />
+                          <span>{student.parent.user.email}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Assigned Educator */}
+                  {student.assignments.length > 0 && (
+                    <div className="p-3 bg-indigo-50 rounded-lg">
+                      <p className="text-sm font-medium text-indigo-900">
+                        {student.assignments[0].specialEducator.fullName}
+                      </p>
+                      <p className="text-xs text-indigo-700">Special Educator</p>
+                      {student.assignments[0].specialEducator.phone && (
+                        <div className="flex items-center text-xs text-indigo-600 mt-1">
+                          <Phone className="h-3 w-3 mr-1" />
+                          <span>{student.assignments[0].specialEducator.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Progress Summary */}
+                  <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+                    <div className="text-center">
+                      <div className={`text-lg font-bold ${getProgressColor(student.iepProgress)}`}>
+                        {student.iepProgress}%
+                      </div>
+                      <p className="text-xs text-gray-600">IEP Progress</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">
+                        {student.activeGoalsCount}
+                      </div>
+                      <p className="text-xs text-gray-600">Active Goals</p>
+                    </div>
+                  </div>
+
+                  {/* Latest Assessment/Report */}
+                  {(student.latestAssessment || student.latestReport) && (
+                    <div className="space-y-2">
+                      {student.latestAssessment && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Latest Assessment:</span>
+                          <Badge variant="outline" className="text-xs">
+                            {formatStatus(student.latestAssessment.status)}
+                          </Badge>
+                        </div>
+                      )}
+                      {student.latestReport && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Latest Report:</span>
+                          <Badge variant="outline" className="text-xs">
+                            {formatStatus(student.latestReport.status)}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* View Details Button */}
+                  <Link href={`/school-viewer/students/${student.id}`}>
+                    <Button variant="outline" className="w-full mt-4">
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+                {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+                {pagination.total} students
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page >= pagination.totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

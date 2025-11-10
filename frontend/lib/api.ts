@@ -235,7 +235,10 @@ class ApiClient {
   }
 
   async assignStudentToEducator(studentId: string, specialEducatorId: string): Promise<void> {
-    await this.client.post(`/students/${studentId}/assign`, { specialEducatorId });
+    await this.client.post('/admin/assignments/student-to-educator', { 
+      studentId, 
+      specialEducatorId 
+    });
   }
 
   async unassignStudentFromEducator(studentId: string, specialEducatorId: string): Promise<void> {
@@ -407,22 +410,22 @@ class ApiClient {
     isActive?: boolean;
     profileData?: any;
   }): Promise<any> {
-    const response = await this.client.put<ApiResponse<any>>(`/auth/users/${userId}`, userData);
+    const response = await this.client.put<ApiResponse<any>>(`/admin/users/${userId}`, userData);
     return response.data.data;
   }
 
   async deleteUser(userId: string): Promise<any> {
-    const response = await this.client.delete<ApiResponse<any>>(`/auth/users/${userId}`);
+    const response = await this.client.delete<ApiResponse<any>>(`/admin/users/${userId}`);
     return response.data.data;
   }
 
   async deactivateUser(userId: string): Promise<any> {
-    const response = await this.client.patch<ApiResponse<any>>(`/auth/users/${userId}/deactivate`);
+    const response = await this.client.patch<ApiResponse<any>>(`/admin/users/${userId}/deactivate`);
     return response.data.data;
   }
 
   async activateUser(userId: string): Promise<any> {
-    const response = await this.client.patch<ApiResponse<any>>(`/auth/users/${userId}/activate`);
+    const response = await this.client.patch<ApiResponse<any>>(`/admin/users/${userId}/activate`);
     return response.data.data;
   }
 
@@ -432,32 +435,32 @@ class ApiClient {
     role: string;
     profileData: any;
   }): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>('/auth/users', userData);
+    const response = await this.client.post<ApiResponse<any>>('/admin/users', userData);
     return response.data.data;
   }
 
   async getAllCenters(filters?: any): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>('/centers/all', { params: filters });
-    return response.data.data;
+    const response = await this.client.get<PaginatedResponse<any>>('/admin/centers', { params: filters });
+    return response.data;
   }
 
   async getAllSchools(filters?: any): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>('/schools/all', { params: filters });
-    return response.data.data;
+    const response = await this.client.get<PaginatedResponse<any>>('/admin/schools', { params: filters });
+    return response.data;
   }
 
   async getAllUsers(filters?: any): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>('/auth/users/all', { params: filters });
-    return response.data.data;
+    const response = await this.client.get<PaginatedResponse<any>>('/admin/users', { params: filters });
+    return response.data;
   }
 
   async getSystemConfig(): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>('/system/config');
+    const response = await this.client.get<ApiResponse<any>>('/admin/config');
     return response.data.data;
   }
 
   async updateSystemConfig(configData: any): Promise<any> {
-    const response = await this.client.put<ApiResponse<any>>('/system/config', configData);
+    const response = await this.client.put<ApiResponse<any>>('/admin/config', configData);
     return response.data.data;
   }
 
@@ -472,8 +475,8 @@ class ApiClient {
   }
 
   async getAllReportsAsAdmin(params?: any): Promise<any> {
-    const response = await this.client.get<ApiResponse<any>>('/admin/reports/all', { params });
-    return response.data.data;
+    const response = await this.client.get<PaginatedResponse<any>>('/admin/reports', { params });
+    return response.data;
   }
 
   async getSpecialEducatorProfile(): Promise<any> {
@@ -514,17 +517,17 @@ class ApiClient {
   }
 
   async createCenter(centerData: any): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>('/centers', centerData);
+    const response = await this.client.post<ApiResponse<any>>('/admin/centers', centerData);
     return response.data.data;
   }
 
   async updateCenter(id: string, centerData: any): Promise<any> {
-    const response = await this.client.put<ApiResponse<any>>(`/centers/${id}`, centerData);
+    const response = await this.client.put<ApiResponse<any>>(`/admin/centers/${id}`, centerData);
     return response.data.data;
   }
 
   async deleteCenter(id: string): Promise<void> {
-    await this.client.delete(`/centers/${id}`);
+    await this.client.delete(`/admin/centers/${id}`);
   }
 
   async linkSchoolToCenter(centerId: string, schoolData: any): Promise<any> {
@@ -533,7 +536,8 @@ class ApiClient {
   }
 
   async assignEducatorToCenter(centerId: string, educatorId: string, educatorType: string): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>(`/centers/${centerId}/assign-educator`, {
+    const response = await this.client.post<ApiResponse<any>>('/admin/assignments/educator-to-center', {
+      centerId,
       educatorId,
       educatorType
     });
@@ -567,7 +571,7 @@ class ApiClient {
   }
 
   async removeEducatorFromCenter(centerId: string, assignmentId: string): Promise<void> {
-    await this.client.delete(`/centers/${centerId}/assignments/${assignmentId}`);
+    await this.client.delete(`/admin/assignments/educator-to-center/${assignmentId}`);
   }
 
   async getCenterReports(centerId: string, params?: {
@@ -1054,19 +1058,24 @@ class ApiClient {
     return response.data.data!;
   }
 
+  async createSpecialEducator(educatorData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>('/super-special-educators/special-educators', educatorData);
+    return response.data.data;
+  }
+
   // School CRUD endpoints
   async createSchool(schoolData: any): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>('/schools', schoolData);
+    const response = await this.client.post<ApiResponse<any>>('/admin/schools', schoolData);
     return response.data.data;
   }
 
   async updateSchool(schoolId: string, schoolData: any): Promise<any> {
-    const response = await this.client.put<ApiResponse<any>>(`/schools/${schoolId}`, schoolData);
+    const response = await this.client.put<ApiResponse<any>>(`/admin/schools/${schoolId}`, schoolData);
     return response.data.data;
   }
 
   async deleteSchool(schoolId: string): Promise<void> {
-    await this.client.delete(`/schools/${schoolId}`);
+    await this.client.delete(`/admin/schools/${schoolId}`);
   }
 
   async getSchool(schoolId: string): Promise<any> {
@@ -1303,8 +1312,8 @@ class ApiClient {
     startDate?: string;
     endDate?: string;
   }): Promise<PaginatedResponse<any>> {
-    const response = await this.client.get('/admin/activity-logs', { params });
-    return response.data.data;
+    const response = await this.client.get('/admin/audit-logs', { params });
+    return response.data;
   }
 
   async getSuperSpecialEducatorNotifications(params?: {
@@ -1394,7 +1403,7 @@ class ApiClient {
     page?: number;
     limit?: number;
   }): Promise<PaginatedResponse<any>> {
-    const response = await this.client.get('/search/global', { params });
+    const response = await this.client.get('/admin/search', { params });
     return response.data;
   }
 
@@ -1425,8 +1434,8 @@ class ApiClient {
 
   // Admin methods
   async getAdminDashboard(): Promise<any> {
-    const response = await this.client.get('/admin/dashboard');
-    return response.data;
+    const response = await this.client.get('/admin/dashboard/overview');
+    return response.data.data;
   }
 
   async getPendingApprovals(params?: {
@@ -1434,7 +1443,7 @@ class ApiClient {
     limit?: number;
     type?: string;
   }): Promise<PaginatedResponse<any>> {
-    const response = await this.client.get('/admin/pending-approvals', { params });
+    const response = await this.client.get('/admin/approvals', { params });
     return response.data;
   }
 
@@ -1442,8 +1451,8 @@ class ApiClient {
     period?: string;
     metrics?: string[];
   }): Promise<any> {
-    const response = await this.client.get('/admin/analytics', { params });
-    return response.data;
+    const response = await this.client.get<ApiResponse<any>>('/admin/analytics', { params });
+    return response.data.data;
   }
 
   async getAuditLogs(params?: {
@@ -1486,13 +1495,73 @@ class ApiClient {
   }
 
   async approveRequest(requestId: string, comments?: string): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>(`/admin/requests/${requestId}/approve`, { comments });
+    const response = await this.client.patch<ApiResponse<any>>(`/admin/approvals/${requestId}/approve`, { comments });
     return response.data.data;
   }
 
   async rejectRequest(requestId: string, reason?: string): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>(`/admin/requests/${requestId}/reject`, { reason });
+    const response = await this.client.patch<ApiResponse<any>>(`/admin/approvals/${requestId}/reject`, { reason });
     return response.data.data;
+  }
+
+  // School Viewer endpoints
+  async getSchoolViewerProfile(): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/school-viewers/profile');
+    return response.data.data;
+  }
+
+  async updateSchoolViewerProfile(data: {
+    fullName?: string;
+    position?: string;
+    phone?: string;
+  }): Promise<any> {
+    const response = await this.client.put<ApiResponse<any>>('/school-viewers/profile', data);
+    return response.data.data;
+  }
+
+  async getSchoolViewerDashboard(): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/school-viewers/dashboard');
+    return response.data.data;
+  }
+
+  async getSchoolViewerStudents(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    grade?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get<PaginatedResponse<any>>('/school-viewers/students', { params });
+    return response.data;
+  }
+
+  async getSchoolViewerStudent(studentId: string): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/school-viewers/students/${studentId}`);
+    return response.data.data;
+  }
+
+  async getSchoolViewerReports(params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    status?: string;
+    studentId?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get<PaginatedResponse<any>>('/school-viewers/reports', { params });
+    return response.data;
+  }
+
+  async getSchoolViewerReport(reportId: string): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/school-viewers/reports/${reportId}`);
+    return response.data.data;
+  }
+
+  async getSchoolViewerActivity(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get<PaginatedResponse<any>>('/school-viewers/activity', { params });
+    return response.data;
   }
 }
 

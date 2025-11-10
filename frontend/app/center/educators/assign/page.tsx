@@ -139,7 +139,7 @@ export default function AssignEducatorPage() {
         search: ''
       });
       
-      const transformedStudents: Student[] = response.data.map((student: any) => ({
+      const transformedStudents: Student[] = (response.data || []).map((student: any) => ({
         id: student.id,
         fullName: student.fullName || `${student.firstName || ''} ${student.lastName || ''}`.trim(),
         age: student.age ?? calculateAge(student.dateOfBirth),

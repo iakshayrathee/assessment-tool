@@ -76,7 +76,7 @@ export default function PendingApprovalsPage() {
       });
       
       // Transform backend data to match frontend interface
-      const transformedRequests: PendingRequest[] = response.data.map((request: any) => ({
+      const transformedRequests: PendingRequest[] = (response.data || []).map((request: any) => ({
         id: request.id,
         type: request.type || 'USER_CREATION',
         requestedBy: {

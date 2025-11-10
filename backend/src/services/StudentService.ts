@@ -100,6 +100,24 @@ export class StudentService {
     return await this.studentRepository.create(finalStudentData);
   }
 
+  async getStudentsBySchoolViewer(userId: string, page: number = 1, limit: number = 10) {
+    const schoolViewerProfile = await this.studentRepository.prismaClient.schoolViewerProfile.findUnique({
+      where: { userId }
+    });
+
+    if (!schoolViewerProfile) {
+      throw new Error('School Viewer profile not found');
+    }
+
+    return await this.getStudentsBySchool(schoolViewerProfile.schoolId, page, limit);
+  }
+
+  async getSchoolViewerProfile(userId: string) {
+    return await this.studentRepository.prismaClient.schoolViewerProfile.findUnique({
+      where: { userId }
+    });
+  }
+
   async getStudentById(id: string): Promise<Student> {
     const student = await this.studentRepository.findById(id);
     if (!student) {

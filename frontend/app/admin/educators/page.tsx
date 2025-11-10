@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +44,7 @@ import Link from 'next/link';
 import { apiClient } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { CreateUserModal } from '@/components/modals/CreateUserModal';
 
 interface Center {
   id: string;
@@ -93,13 +94,15 @@ export default function EducatorManagementPage() {
   const [selectedCenterId, setSelectedCenterId] = useState('');
   const [workloadDialogOpen, setWorkloadDialogOpen] = useState(false);
   const [workloadEducator, setWorkloadEducator] = useState<Educator | null>(null);
+  const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
 
+  // Load centers only once on mount
   useEffect(() => {
-    loadEducators();
     loadCenters(1);
-  }, [currentPage, searchQuery, roleFilter, centerFilter, statusFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const loadEducators = async () => {
+  const loadEducators = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -115,11 +118,11 @@ export default function EducatorManagementPage() {
       const response = await apiClient.getAllUsers(params);
       
       console.log('Raw API response:', response);
-      console.log('Available users:', response.data?.length || 0);
-      console.log('User roles found:', response.data?.map((u: any) => u.role) || []);
+      console.log('Available users:', response.users?.length || 0);
+      console.log('User roles found:', response.users?.map((u: any) => u.role) || []);
       
       // Transform backend data to match frontend interface
-      let transformedEducators: Educator[] = response.data
+      let transformedEducators: Educator[] = (response.users || [])
         .filter((user: any) => {
           const hasEducatorRole = user.role === 'SPECIAL_EDUCATOR' || user.role === 'SUPER_SPECIAL_EDUCATOR';
           const hasEducatorProfile = user.specialEducatorProfile || user.superSpecialEducatorProfile;
@@ -265,10 +268,16 @@ export default function EducatorManagementPage() {
             }
           }
         ];
+        
+        // For demo data, set proper pagination (5 educators, 10 per page = 1 page)
+        setTotalPages(1);
+      } else {
+        // Use actual pagination from API response
+        const totalPages = Math.ceil(response.total / 10);
+        setTotalPages(totalPages);
       }
 
       setEducators(transformedEducators);
-      setTotalPages(response.pagination?.totalPages || 1);
     } catch (error) {
       console.error('Failed to load educators:', error);
       toast({
@@ -280,7 +289,12 @@ export default function EducatorManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchQuery, roleFilter, centerFilter, statusFilter]);
+
+  // Load educators when filters change
+  useEffect(() => {
+    loadEducators();
+  }, [currentPage, searchQuery, roleFilter, centerFilter, statusFilter]);
 
   const loadCenters = async (page: number = 1) => {
     try {
@@ -432,28 +446,30 @@ export default function EducatorManagementPage() {
     return 'text-green-600';
   };
 
-  const filteredEducators = educators.filter(educator => {
-    const matchesSearch = !searchQuery || 
-      educator.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      educator.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      educator.specializations.some(spec => spec.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesRole = roleFilter === 'all' || educator.role === roleFilter;
-    const matchesCenter = centerFilter === 'all' || educator.centerId === centerFilter;
-    const matchesStatus = statusFilter === 'all' || 
-      (statusFilter === 'active' && educator.isActive) ||
-      (statusFilter === 'inactive' && !educator.isActive);
-    
-    return matchesSearch && matchesRole && matchesCenter && matchesStatus;
-  });
+  const filteredEducators = useMemo(() => {
+    return educators.filter(educator => {
+      const matchesSearch = !searchQuery || 
+        educator.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        educator.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        educator.specializations.some(spec => spec.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesRole = roleFilter === 'all' || educator.role === roleFilter;
+      const matchesCenter = centerFilter === 'all' || educator.centerId === centerFilter;
+      const matchesStatus = statusFilter === 'all' || 
+        (statusFilter === 'active' && educator.isActive) ||
+        (statusFilter === 'inactive' && !educator.isActive);
+      
+      return matchesSearch && matchesRole && matchesCenter && matchesStatus;
+    });
+  }, [educators, searchQuery, roleFilter, centerFilter, statusFilter]);
 
-  const stats = {
-    total: educators.length,
-    active: educators.filter(e => e.isActive).length,
-    superSpecial: educators.filter(e => e.role === 'SUPER_SPECIAL_EDUCATOR').length,
-    special: educators.filter(e => e.role === 'SPECIAL_EDUCATOR').length,
-    averageWorkload: educators.length > 0 ? Math.round(educators.reduce((sum, e) => sum + e.workloadPercentage, 0) / educators.length) : 0
-  };
+  const stats = useMemo(() => ({
+    total: filteredEducators.length,
+    active: filteredEducators.filter(e => e.isActive).length,
+    superSpecial: filteredEducators.filter(e => e.role === 'SUPER_SPECIAL_EDUCATOR').length,
+    special: filteredEducators.filter(e => e.role === 'SPECIAL_EDUCATOR').length,
+    averageWorkload: filteredEducators.length > 0 ? Math.round(filteredEducators.reduce((sum, e) => sum + e.workloadPercentage, 0) / filteredEducators.length) : 0
+  }), [filteredEducators]);
 
   if (loading) {
     return (
@@ -509,7 +525,7 @@ export default function EducatorManagementPage() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button>
+          <Button onClick={() => setCreateUserModalOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Educator
           </Button>
@@ -1088,6 +1104,16 @@ export default function EducatorManagementPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create User Modal */}
+      <CreateUserModal
+        isOpen={createUserModalOpen}
+        onClose={() => setCreateUserModalOpen(false)}
+        onUserCreated={() => {
+          setCreateUserModalOpen(false);
+          loadEducators(); // Refresh the educators list
+        }}
+      />
     </div>
   );
 }

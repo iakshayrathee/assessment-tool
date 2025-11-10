@@ -436,4 +436,34 @@ export class SuperSpecialEducatorController {
       });
     }
   };
+
+  /**
+   * Create a new Special Educator
+   */
+  createSpecialEducator = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        res.status(401).json({ success: false, message: 'Unauthorized' });
+        return;
+      }
+
+      const specialEducator = await this.superSpecialEducatorService.createSpecialEducator(
+        userId,
+        req.body
+      );
+      
+      res.status(201).json({
+        success: true,
+        data: specialEducator,
+        message: 'Special Educator created successfully'
+      });
+    } catch (error: any) {
+      console.error('Error creating Special Educator:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to create Special Educator'
+      });
+    }
+  };
 }

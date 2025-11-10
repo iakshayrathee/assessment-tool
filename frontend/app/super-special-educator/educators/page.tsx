@@ -1,758 +1,786 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Users, 
   Search,
   ArrowLeft,
   Eye,
+  Plus,
+  Filter,
+  Mail,
+  Phone,
+  MapPin,
   Calendar,
   GraduationCap,
   Award,
   Building2,
-  Filter,
-  Star,
-  FileText,
-  Activity,
-  CheckCircle,
-  Clock,
-  Mail,
-  Phone,
-  MapPin,
-  BookOpen,
-  TrendingUp
+  ChevronLeft,
+  ChevronRight,
+  Edit,
+  Trash2,
+  MoreHorizontal
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useSuperSpecialEducatorSpecialEducators } from '@/hooks/useSuperSpecialEducator';
 
-interface EducatorAssignment {
+interface SpecialEducator {
   id: string;
-  centerId: string;
-  specialEducatorId: string;
-  assignedDate: string;
-  isActive: boolean;
-  specialEducator: {
-    id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  specialization: string[];
+  yearsOfExperience?: number;
+  rciCertified: boolean;
+  assignedStudents: number;
+  pendingReports: number;
+  centerName: string;
+  status: 'active' | 'inactive';
+  lastLogin?: string;
+  createdAt: string;
+}
+
+interface CreateEducatorForm {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  profileData: {
     fullName: string;
-    specialization: string[];
-    yearsOfExperience?: number;
-    qualifications: string[];
-    assignedStudents: {
-      id: string;
-      student: {
-        id: string;
-        fullName: string;
-        status: string;
-      };
-    }[];
-  };
-  center: {
-    id: string;
-    centerName: string;
-    address?: string;
-    students?: any[];
-    assignments?: any[];
+    phone: string;
+    dateOfBirth: string;
+    gender: string;
+    address: string;
+    primaryLanguage: string;
+    secondaryLanguages: string[];
+    highestQualification: string;
+    fieldOfStudy: string;
+    institutionName: string;
+    yearOfGraduation: number | null;
+    rciCertified: boolean;
+    rciValidityDate: string;
+    specialEdQualification: string;
+    specializationAreas: string[];
+    yearsOfExperience: number | null;
+    experienceTypes: string[];
+    maxGroupSize: number | null;
+    currentWorkLocations: string[];
+    ldTypesHandled: string[];
+    gradeLevelsServed: string[];
+    assessmentTools: string;
+    assistiveTechProficiency: string[];
+    areasOfInterest: string[];
+    consentToShare: boolean;
+    agreementToPolicies: boolean;
+    personalStatement: string;
   };
 }
 
 export default function EducatorsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [educatorAssignments, setEducatorAssignments] = useState<EducatorAssignment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [centerFilter, setCenterFilter] = useState<string>('all');
   
-  // Modal states
-  const [selectedEducator, setSelectedEducator] = useState<EducatorAssignment | null>(null);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [evaluationModalOpen, setEvaluationModalOpen] = useState(false);
-  
-  // Evaluation form states
-  const [evaluationRating, setEvaluationRating] = useState<number>(0);
-  const [evaluationComments, setEvaluationComments] = useState('');
-  const [evaluationCategory, setEvaluationCategory] = useState('');
-  const [submittingEvaluation, setSubmittingEvaluation] = useState(false);
+  // Create educator modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState<CreateEducatorForm>({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    profileData: {
+      fullName: '',
+      phone: '',
+      dateOfBirth: '',
+      gender: '',
+      address: '',
+      primaryLanguage: '',
+      secondaryLanguages: [],
+      highestQualification: '',
+      fieldOfStudy: '',
+      institutionName: '',
+      yearOfGraduation: null,
+      rciCertified: false,
+      rciValidityDate: '',
+      specialEdQualification: '',
+      specializationAreas: [],
+      yearsOfExperience: null,
+      experienceTypes: [],
+      maxGroupSize: null,
+      currentWorkLocations: [],
+      ldTypesHandled: [],
+      gradeLevelsServed: [],
+      assessmentTools: '',
+      assistiveTechProficiency: [],
+      areasOfInterest: [],
+      consentToShare: false,
+      agreementToPolicies: false,
+      personalStatement: ''
+    }
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
+  // Use the hook for data fetching
+  const {
+    specialEducators,
+    pagination,
+    isLoading,
+    isCreating,
+    createSpecialEducator,
+    error,
+    refetch
+  } = useSuperSpecialEducatorSpecialEducators({
+    page,
+    limit,
+    search: searchTerm,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    centerId: centerFilter === 'all' ? undefined : centerFilter
+  });
+
+  // Check if we should open create modal from URL params
   useEffect(() => {
-    fetchEducators();
-  }, []);
+    if (searchParams.get('action') === 'create') {
+      setShowCreateModal(true);
+    }
+  }, [searchParams]);
 
-  const fetchEducators = async () => {
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Basic validation
+    if (!createForm.email) errors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(createForm.email)) errors.email = 'Invalid email format';
+    
+    if (!createForm.password) errors.password = 'Password is required';
+    else if (createForm.password.length < 6) errors.password = 'Password must be at least 6 characters';
+    
+    if (createForm.password !== createForm.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+
+    // Profile validation
+    if (!createForm.profileData.fullName) errors.fullName = 'Full name is required';
+    if (!createForm.profileData.specialEdQualification) errors.specialEdQualification = 'Special education qualification is required';
+    if (createForm.profileData.specializationAreas.length === 0) errors.specializationAreas = 'At least one specialization area is required';
+    if (!createForm.profileData.consentToShare) errors.consentToShare = 'Consent to share information is required';
+    if (!createForm.profileData.agreementToPolicies) errors.agreementToPolicies = 'Agreement to policies is required';
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleCreateEducator = async () => {
+    if (!validateForm()) return;
+
     try {
-      setLoading(true);
-      const response = await apiClient.getAssignedEducators();
-      setEducatorAssignments(Array.isArray(response.data) ? response.data : []);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to fetch educators",
-        variant: "destructive",
+      await createSpecialEducator(createForm);
+      setShowCreateModal(false);
+      setCreateForm({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        profileData: {
+          fullName: '',
+          phone: '',
+          dateOfBirth: '',
+          gender: '',
+          address: '',
+          primaryLanguage: '',
+          secondaryLanguages: [],
+          highestQualification: '',
+          fieldOfStudy: '',
+          institutionName: '',
+          yearOfGraduation: null,
+          rciCertified: false,
+          rciValidityDate: '',
+          specialEdQualification: '',
+          specializationAreas: [],
+          yearsOfExperience: null,
+          experienceTypes: [],
+          maxGroupSize: null,
+          currentWorkLocations: [],
+          ldTypesHandled: [],
+          gradeLevelsServed: [],
+          assessmentTools: '',
+          assistiveTechProficiency: [],
+          areasOfInterest: [],
+          consentToShare: false,
+          agreementToPolicies: false,
+          personalStatement: ''
+        }
       });
-      setEducatorAssignments([]);
-    } finally {
-      setLoading(false);
+      setFormErrors({});
+    } catch (error) {
+      console.error('Failed to create educator:', error);
     }
   };
 
-  const assignmentsArray = Array.isArray(educatorAssignments) ? educatorAssignments : [];
-  const uniqueCenters = Array.from(new Set(assignmentsArray.map(a => a.center?.centerName).filter(Boolean)));
-
-  const filteredAssignments = assignmentsArray.filter(assignment => {
-    const educator = assignment.specialEducator;
-    const center = assignment.center;
-    
-    const matchesSearch = 
-      educator?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      center?.centerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (educator?.specialization || []).some(s => s?.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesStatus = statusFilter === 'all' || (assignment.isActive ? 'ACTIVE' : 'INACTIVE') === statusFilter;
-    const matchesCenter = centerFilter === 'all' || center?.centerName === centerFilter;
-    
-    return matchesSearch && matchesStatus && matchesCenter;
-  });
-
-  const getStatusColor = (isActive: boolean) => {
-    return isActive 
-      ? 'bg-green-100 text-green-800'
-      : 'bg-red-100 text-red-800';
+  const addToArray = (field: keyof CreateEducatorForm['profileData'], value: string) => {
+    if (!value.trim()) return;
+    const currentArray = (createForm.profileData[field] as string[]) || [];
+    if (!currentArray.includes(value.trim())) {
+      setCreateForm({
+        ...createForm,
+        profileData: {
+          ...createForm.profileData,
+          [field]: [...currentArray, value.trim()]
+        }
+      });
+    }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+  const removeFromArray = (field: keyof CreateEducatorForm['profileData'], value: string) => {
+    const currentArray = (createForm.profileData[field] as string[]) || [];
+    setCreateForm({
+      ...createForm,
+      profileData: {
+        ...createForm.profileData,
+        [field]: currentArray.filter(item => item !== value)
+      }
     });
   };
 
-  const handleViewProfile = (assignment: EducatorAssignment) => {
-    setSelectedEducator(assignment);
-    setProfileModalOpen(true);
-  };
-
-  const handleEvaluate = (assignment: EducatorAssignment) => {
-    setSelectedEducator(assignment);
-    setEvaluationModalOpen(true);
-    // Reset form
-    setEvaluationRating(0);
-    setEvaluationComments('');
-    setEvaluationCategory('');
-  };
-
-  const submitEvaluation = async () => {
-    if (!selectedEducator || !evaluationRating || !evaluationCategory) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setSubmittingEvaluation(true);
-      // Here you would call the API to submit the evaluation
-      // await apiClient.evaluateEducator(selectedEducator.specialEducator.id, { 
-      //   rating: evaluationRating, 
-      //   comments: evaluationComments, 
-      //   category: evaluationCategory 
-      // });
-      
-      toast({
-        title: "Success",
-        description: "Evaluation submitted successfully",
-      });
-      
-      setEvaluationModalOpen(false);
-      fetchEducators(); // Refresh data
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to submit evaluation",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmittingEvaluation(false);
-    }
-  };
-
-  const renderStarRating = (rating: number, onRatingChange?: (rating: number) => void) => {
-    return (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`h-5 w-5 cursor-pointer ${
-              star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-            }`}
-            onClick={() => onRatingChange && onRatingChange(star)}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
+            variant="ghost"
+            onClick={() => router.push('/super-special-educator')}
+            className="flex items-center"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Assigned Educators</h1>
-            <p className="text-gray-600">Monitor and evaluate educators under your supervision</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters and Search */}
-      <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search educators..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <div className="flex gap-3 items-center">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="INACTIVE">Inactive</SelectItem>
-                <SelectItem value="ON_LEAVE">On Leave</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <Select value={centerFilter} onValueChange={setCenterFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Centers</SelectItem>
-              {uniqueCenters.map(center => (
-                <SelectItem key={center} value={center}>{center}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Educators</p>
-                <p className="text-2xl font-bold">{educatorAssignments.length}</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Active</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {educatorAssignments.filter(a => a.isActive).length}
-                </p>
-              </div>
-              <Award className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Students</p>
-                <p className="text-2xl font-bold text-orange-600">
-                  {educatorAssignments.reduce((sum, a) => sum + (a.specialEducator?.assignedStudents?.length || 0), 0)}
-                </p>
-              </div>
-              <Calendar className="h-8 w-8 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Avg. Experience</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {educatorAssignments.filter(a => a.specialEducator?.yearsOfExperience).length > 0
-                    ? (educatorAssignments.reduce((sum, a) => sum + (a.specialEducator?.yearsOfExperience || 0), 0) / 
-                       educatorAssignments.filter(a => a.specialEducator?.yearsOfExperience).length).toFixed(1)
-                    : 'N/A'
-                  } yrs
-                </p>
-              </div>
-              <GraduationCap className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Educators List */}
-      {filteredAssignments.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Users className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {searchTerm || statusFilter !== 'all' || centerFilter !== 'all' 
-                ? 'No educators found' 
-                : 'No educators assigned'
-              }
-            </h3>
-            <p className="text-gray-600 text-center max-w-md">
-              {searchTerm || statusFilter !== 'all' || centerFilter !== 'all'
-                ? 'Try adjusting your search terms or filters to find the educators you\'re looking for.'
-                : 'You don\'t have any educators assigned yet. Please contact your administrator.'
-              }
+            <h1 className="text-3xl font-bold text-gray-900">Special Educators</h1>
+            <p className="text-gray-600 mt-1">
+              Manage and oversee Special Educators across your assigned centers
             </p>
-            {(searchTerm || statusFilter !== 'all' || centerFilter !== 'all') && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm('');
-                  setStatusFilter('all');
-                  setCenterFilter('all');
-                }}
-                className="mt-4"
-              >
-                Clear Filters
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredAssignments.map((assignment) => {
-            const educator = assignment.specialEducator;
-            const center = assignment.center;
-            return (
-            <Card key={assignment.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg font-semibold text-gray-900 mb-1">
-                        {educator?.fullName || 'Unknown Educator'}
-                      </CardTitle>
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
-                        <Building2 className="h-4 w-4 mr-1" />
-                        {center?.centerName || 'Unknown Center'}
-                      </div>
-                    </div>
-                    <Badge className={getStatusColor(assignment.isActive)}>
-                      {assignment.isActive ? 'ACTIVE' : 'INACTIVE'}
-                    </Badge>
-                  </div>
-                </CardHeader>
-              <CardContent className="space-y-4">
-                  {/* Assignment Information */}
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="font-medium">Assigned:</span>
-                      <span className="ml-1">{formatDate(assignment.assignedDate)}</span>
-                    </div>
-                  </div>
-
-                {/* Specializations */}
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-700">Specializations:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {(educator?.specialization || []).map((spec, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {spec}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Statistics */}
-                  <div className="grid grid-cols-2 gap-4 py-3 border-t border-gray-100">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">{educator?.assignedStudents?.length || 0}</div>
-                      <div className="text-xs text-gray-600">Students</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">
-                        {educator?.yearsOfExperience || 'N/A'}
-                      </div>
-                      <div className="text-xs text-gray-600">Years Exp.</div>
-                    </div>
-                  </div>
-
-                {/* Additional Information */}
-                  <div className="space-y-2 text-sm border-t border-gray-100 pt-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Center Students:</span>
-                      <span className="font-medium">{center?.students?.length || 0}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Center Educators:</span>
-                      <span className="font-medium">{center?.assignments?.length || 0}</span>
-                    </div>
-                  </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-3 border-t border-gray-100">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleViewProfile(assignment)}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Profile
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEvaluate(assignment)}
-                  >
-                    <Award className="h-4 w-4 mr-2" />
-                    Evaluate
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-            );
-          })}
+          </div>
         </div>
-      )}
+        <Button onClick={() => setShowCreateModal(true)} className="flex items-center">
+          <Plus className="mr-2 h-4 w-4" />
+          Add Special Educator
+        </Button>
+      </div>
 
-      {/* Educator Profile Modal */}
-      <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              {selectedEducator?.specialEducator.fullName}
-            </DialogTitle>
-            <DialogDescription>
-              Comprehensive educator profile and performance information
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedEducator && (
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="students">Students</TabsTrigger>
-                <TabsTrigger value="performance">Performance</TabsTrigger>
-                <TabsTrigger value="evaluations">Evaluations</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="overview" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Basic Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Name:</span>
-                        <span>{selectedEducator.specialEducator.fullName}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Center:</span>
-                        <span>{selectedEducator.center.centerName}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Assigned Date:</span>
-                        <span>{formatDate(selectedEducator.assignedDate)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Experience:</span>
-                        <span>{selectedEducator.specialEducator.yearsOfExperience || 'N/A'} years</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Status:</span>
-                        <Badge variant={selectedEducator.isActive ? 'default' : 'secondary'}>
-                          {selectedEducator.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Specializations</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedEducator.specialEducator.specialization.map((spec, index) => (
-                          <Badge key={index} variant="outline">
-                            {spec}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Qualifications</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {selectedEducator.specialEducator.qualifications.map((qual, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <BookOpen className="h-4 w-4 text-muted-foreground" />
-                            <span>{qual}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Statistics</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex justify-between">
-                        <span>Assigned Students:</span>
-                        <Badge variant="secondary">{selectedEducator.specialEducator.assignedStudents.length}</Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Center Students:</span>
-                        <Badge variant="outline">{selectedEducator.center.students?.length || 0}</Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Center Educators:</span>
-                        <Badge variant="outline">{selectedEducator.center.assignments?.length || 0}</Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="students" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Assigned Students</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {selectedEducator.specialEducator.assignedStudents.map((assignment, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <Users className="h-4 w-4 text-blue-500" />
-                            <div>
-                              <p className="font-medium">{assignment.student.fullName}</p>
-                              <p className="text-sm text-muted-foreground">ID: {assignment.student.id}</p>
-                            </div>
-                          </div>
-                          <Badge variant={assignment.student.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                            {assignment.student.status}
-                          </Badge>
-                        </div>
-                      ))}
-                      {selectedEducator.specialEducator.assignedStudents.length === 0 && (
-                        <p className="text-center text-muted-foreground py-4">No students assigned</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="performance" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Performance Metrics</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center p-4 border rounded-lg">
-                        <TrendingUp className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-green-600">85%</div>
-                        <div className="text-sm text-muted-foreground">Student Progress</div>
-                      </div>
-                      <div className="text-center p-4 border rounded-lg">
-                        <Star className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-yellow-600">4.2</div>
-                        <div className="text-sm text-muted-foreground">Avg. Rating</div>
-                      </div>
-                      <div className="text-center p-4 border rounded-lg">
-                        <CheckCircle className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-blue-600">12</div>
-                        <div className="text-sm text-muted-foreground">Completed Goals</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="evaluations" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Recent Evaluations</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Star className="h-4 w-4 text-yellow-500" />
-                          <div>
-                            <p className="font-medium">Monthly Performance Review</p>
-                            <p className="text-sm text-muted-foreground">December 2024</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {renderStarRating(4)}
-                          <span className="text-sm text-muted-foreground">4.0</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Award className="h-4 w-4 text-blue-500" />
-                          <div>
-                            <p className="font-medium">Teaching Effectiveness</p>
-                            <p className="text-sm text-muted-foreground">November 2024</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {renderStarRating(5)}
-                          <span className="text-sm text-muted-foreground">5.0</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Users className="h-4 w-4 text-green-500" />
-                          <div>
-                            <p className="font-medium">Student Engagement</p>
-                            <p className="text-sm text-muted-foreground">October 2024</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {renderStarRating(4)}
-                          <span className="text-sm text-muted-foreground">4.2</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Evaluation Modal */}
-      <Dialog open={evaluationModalOpen} onOpenChange={setEvaluationModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
-              Evaluate Educator
-            </DialogTitle>
-            <DialogDescription>
-              Evaluate {selectedEducator?.specialEducator.fullName}'s performance
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Evaluation Category *</label>
-              <Select value={evaluationCategory} onValueChange={setEvaluationCategory}>
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Filter className="mr-2 h-5 w-5" />
+            Filters
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="search">Search</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="search"
+                  placeholder="Search educators..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select evaluation category" />
+                  <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="teaching_effectiveness">Teaching Effectiveness</SelectItem>
-                  <SelectItem value="student_engagement">Student Engagement</SelectItem>
-                  <SelectItem value="professional_development">Professional Development</SelectItem>
-                  <SelectItem value="communication">Communication</SelectItem>
-                  <SelectItem value="collaboration">Collaboration</SelectItem>
-                  <SelectItem value="overall_performance">Overall Performance</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Rating *</label>
-              <div className="flex items-center gap-2">
-                {renderStarRating(evaluationRating, setEvaluationRating)}
-                <span className="text-sm text-muted-foreground ml-2">
-                  {evaluationRating > 0 ? `${evaluationRating}/5` : 'Select rating'}
-                </span>
-              </div>
+            <div>
+              <Label htmlFor="center">Center</Label>
+              <Select value={centerFilter} onValueChange={setCenterFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All centers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Centers</SelectItem>
+                  <SelectItem value="center1">Sunshine Learning Center</SelectItem>
+                  <SelectItem value="center2">Hope Special Education Center</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Comments</label>
-              <Textarea
-                placeholder="Provide detailed feedback and comments..."
-                value={evaluationComments}
-                onChange={(e) => setEvaluationComments(e.target.value)}
-                rows={4}
-              />
-            </div>
-            
-            <div className="flex gap-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setEvaluationModalOpen(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={submitEvaluation}
-                disabled={submittingEvaluation || !evaluationRating || !evaluationCategory}
-                className="flex-1"
-              >
-                {submittingEvaluation ? 'Submitting...' : 'Submit Evaluation'}
+            <div className="flex items-end">
+              <Button variant="outline" onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('all');
+                setCenterFilter('all');
+              }}>
+                Clear Filters
               </Button>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Educators Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Special Educators ({pagination?.total || 0})</CardTitle>
+              <CardDescription>
+                Manage Special Educators under your supervision
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Specialization</TableHead>
+                  <TableHead>Experience</TableHead>
+                  <TableHead>Students</TableHead>
+                  <TableHead>Reports</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {specialEducators.map((educator: any) => (
+                  <TableRow key={educator.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Users className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{educator.specialEducator?.fullName || 'N/A'}</div>
+                          <div className="text-sm text-gray-500">{educator.center?.centerName}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="flex items-center text-sm">
+                          <Mail className="h-3 w-3 mr-1 text-gray-400" />
+                          {educator.specialEducator?.user?.email || 'N/A'}
+                        </div>
+                        {educator.specialEducator?.phone && (
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Phone className="h-3 w-3 mr-1 text-gray-400" />
+                            {educator.specialEducator.phone}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {educator.specialEducator?.specializationAreas?.slice(0, 2).map((area: string, index: number) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {area}
+                          </Badge>
+                        ))}
+                        {educator.specialEducator?.specializationAreas?.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{educator.specialEducator.specializationAreas.length - 2} more
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {educator.specialEducator?.yearsOfExperience ? (
+                          <div className="flex items-center">
+                            <Award className="h-3 w-3 mr-1 text-gray-400" />
+                            {educator.specialEducator.yearsOfExperience} years
+                          </div>
+                        ) : (
+                          'N/A'
+                        )}
+                        {educator.specialEducator?.rciCertified && (
+                          <Badge variant="outline" className="text-xs mt-1">
+                            RCI Certified
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-blue-600">
+                          {educator.specialEducator?.assignedStudents?.length || 0}
+                        </div>
+                        <div className="text-xs text-gray-500">Students</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-center">
+                        <Badge variant="destructive" className="text-xs">
+                          {Math.floor(Math.random() * 5)} Pending
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={educator.isActive ? "default" : "secondary"}>
+                        {educator.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-gray-500">
+                Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total} results
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                    .filter(pageNum => 
+                      pageNum === 1 || 
+                      pageNum === pagination.totalPages || 
+                      (pageNum >= page - 1 && pageNum <= page + 1)
+                    )
+                    .map((pageNum, index, array) => (
+                      <div key={pageNum} className="flex items-center">
+                        {index > 0 && array[index - 1] !== pageNum - 1 && (
+                          <span className="px-2 text-gray-400">...</span>
+                        )}
+                        <Button
+                          variant={pageNum === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPage(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      </div>
+                    ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page >= pagination.totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Create Special Educator Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Special Educator</DialogTitle>
+            <DialogDescription>
+              Add a new Special Educator to your team. All fields marked with * are required.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Account Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Account Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="email">Email Address *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={createForm.email}
+                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                    placeholder="educator@example.com"
+                  />
+                  {formErrors.email && <p className="text-sm text-red-600 mt-1">{formErrors.email}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                    placeholder="Minimum 6 characters"
+                  />
+                  {formErrors.password && <p className="text-sm text-red-600 mt-1">{formErrors.password}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={createForm.confirmPassword}
+                    onChange={(e) => setCreateForm({ ...createForm, confirmPassword: e.target.value })}
+                    placeholder="Re-enter password"
+                  />
+                  {formErrors.confirmPassword && <p className="text-sm text-red-600 mt-1">{formErrors.confirmPassword}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Personal Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Personal Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="fullName">Full Name *</Label>
+                  <Input
+                    id="fullName"
+                    value={createForm.profileData.fullName}
+                    onChange={(e) => setCreateForm({
+                      ...createForm,
+                      profileData: { ...createForm.profileData, fullName: e.target.value }
+                    })}
+                    placeholder="Enter full name"
+                  />
+                  {formErrors.fullName && <p className="text-sm text-red-600 mt-1">{formErrors.fullName}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    value={createForm.profileData.phone}
+                    onChange={(e) => setCreateForm({
+                      ...createForm,
+                      profileData: { ...createForm.profileData, phone: e.target.value }
+                    })}
+                    placeholder="Enter phone number"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={createForm.profileData.dateOfBirth}
+                    onChange={(e) => setCreateForm({
+                      ...createForm,
+                      profileData: { ...createForm.profileData, dateOfBirth: e.target.value }
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select
+                    value={createForm.profileData.gender}
+                    onValueChange={(value) => setCreateForm({
+                      ...createForm,
+                      profileData: { ...createForm.profileData, gender: value }
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MALE">Male</SelectItem>
+                      <SelectItem value="FEMALE">Female</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Professional Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Professional Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="specialEdQualification">Special Education Qualification *</Label>
+                  <Input
+                    id="specialEdQualification"
+                    value={createForm.profileData.specialEdQualification}
+                    onChange={(e) => setCreateForm({
+                      ...createForm,
+                      profileData: { ...createForm.profileData, specialEdQualification: e.target.value }
+                    })}
+                    placeholder="e.g., M.Ed in Special Education"
+                  />
+                  {formErrors.specialEdQualification && <p className="text-sm text-red-600 mt-1">{formErrors.specialEdQualification}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="yearsOfExperience">Years of Experience</Label>
+                  <Input
+                    id="yearsOfExperience"
+                    type="number"
+                    value={createForm.profileData.yearsOfExperience || ''}
+                    onChange={(e) => setCreateForm({
+                      ...createForm,
+                      profileData: { ...createForm.profileData, yearsOfExperience: e.target.value ? parseInt(e.target.value) : null }
+                    })}
+                    placeholder="Enter years of experience"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="rciCertified"
+                    checked={createForm.profileData.rciCertified}
+                    onCheckedChange={(checked) => setCreateForm({
+                      ...createForm,
+                      profileData: { ...createForm.profileData, rciCertified: !!checked }
+                    })}
+                  />
+                  <Label htmlFor="rciCertified">RCI Certified</Label>
+                </div>
+                {createForm.profileData.rciCertified && (
+                  <div>
+                    <Label htmlFor="rciValidityDate">RCI Validity Date</Label>
+                    <Input
+                      id="rciValidityDate"
+                      type="date"
+                      value={createForm.profileData.rciValidityDate}
+                      onChange={(e) => setCreateForm({
+                        ...createForm,
+                        profileData: { ...createForm.profileData, rciValidityDate: e.target.value }
+                      })}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Specialization Areas */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Specialization Areas *</h3>
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {createForm.profileData.specializationAreas.map((area, index) => (
+                    <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      {area}
+                      <button
+                        type="button"
+                        onClick={() => removeFromArray('specializationAreas', area)}
+                        className="ml-1 text-red-500 hover:text-red-700"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Select onValueChange={(value) => addToArray('specializationAreas', value)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Add specialization area" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Autism Spectrum Disorders">Autism Spectrum Disorders</SelectItem>
+                      <SelectItem value="Learning Disabilities">Learning Disabilities</SelectItem>
+                      <SelectItem value="Intellectual Disabilities">Intellectual Disabilities</SelectItem>
+                      <SelectItem value="ADHD">ADHD</SelectItem>
+                      <SelectItem value="Behavioral Disorders">Behavioral Disorders</SelectItem>
+                      <SelectItem value="Speech and Language Disorders">Speech and Language Disorders</SelectItem>
+                      <SelectItem value="Physical Disabilities">Physical Disabilities</SelectItem>
+                      <SelectItem value="Multiple Disabilities">Multiple Disabilities</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {formErrors.specializationAreas && <p className="text-sm text-red-600">{formErrors.specializationAreas}</p>}
+              </div>
+            </div>
+
+            {/* Consent and Agreements */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Consent and Agreements</h3>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="consentToShare"
+                    checked={createForm.profileData.consentToShare}
+                    onCheckedChange={(checked) => setCreateForm({
+                      ...createForm,
+                      profileData: { ...createForm.profileData, consentToShare: !!checked }
+                    })}
+                  />
+                  <Label htmlFor="consentToShare">I consent to share my information with relevant stakeholders *</Label>
+                </div>
+                {formErrors.consentToShare && <p className="text-sm text-red-600">{formErrors.consentToShare}</p>}
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="agreementToPolicies"
+                    checked={createForm.profileData.agreementToPolicies}
+                    onCheckedChange={(checked) => setCreateForm({
+                      ...createForm,
+                      profileData: { ...createForm.profileData, agreementToPolicies: !!checked }
+                    })}
+                  />
+                  <Label htmlFor="agreementToPolicies">I agree to the platform policies and terms of use *</Label>
+                </div>
+                {formErrors.agreementToPolicies && <p className="text-sm text-red-600">{formErrors.agreementToPolicies}</p>}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateEducator} disabled={isCreating}>
+              {isCreating ? 'Creating...' : 'Create Special Educator'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

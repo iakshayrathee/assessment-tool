@@ -16,6 +16,7 @@ import adminRoutes from './routes/admin';
 import specialEducatorRoutes from './routes/specialEducators';
 import superSpecialEducatorRoutes from './routes/superSpecialEducators';
 import reportRoutes from './routes/reports';
+import schoolViewerRoutes from './routes/schoolViewers';
 
 // Load environment variables
 dotenv.config();
@@ -60,6 +61,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/special-educators', specialEducatorRoutes);
 app.use('/api/super-special-educators', superSpecialEducatorRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/school-viewers', schoolViewerRoutes);
 
 // Global error handler
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

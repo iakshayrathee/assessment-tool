@@ -99,6 +99,9 @@ export class StudentController {
       } else if (req.user!.role === UserRole.SPECIAL_EDUCATOR) {
         // Special educators see their assigned students
         result = await this.studentService.getStudentsBySpecialEducator(req.user!.userId, page, limit);
+      } else if (req.user!.role === UserRole.SCHOOL_VIEWER) {
+        // School viewers see students from their assigned school
+        result = await this.studentService.getStudentsBySchoolViewer(req.user!.userId, page, limit);
       } else if (centerId) {
         result = await this.studentService.getStudentsByCenter(centerId, page, limit);
       } else if (schoolId) {
@@ -139,6 +142,12 @@ export class StudentController {
       if (req.user!.role === UserRole.PARENT) {
         // Parents can only access their own children
         if (student.parentId !== req.user!.userId) {
+          return ResponseHelper.error(res, 'Access denied', 403);
+        }
+      } else if (req.user!.role === UserRole.SCHOOL_VIEWER) {
+        // School viewers can only access students from their school
+        const schoolViewerProfile = await this.studentService.getSchoolViewerProfile(req.user!.userId);
+        if (!schoolViewerProfile || student.schoolId !== schoolViewerProfile.schoolId) {
           return ResponseHelper.error(res, 'Access denied', 403);
         }
       }
