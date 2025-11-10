@@ -4,6 +4,7 @@
   "description": "Backend API for Knowled Special Education Management Platform",
   "main": "dist/index.js",
   "scripts": {
+    "prebuild": "npx prisma generate",
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
@@ -11,8 +12,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:seed": "ts-node prisma/seed.ts",
-    "postbuild": "npx prisma generate"
+    "db:seed": "ts-node prisma/seed.ts"
   },
   "keywords": ["special-education", "management", "api"],
   "author": "Knowled Team",
