@@ -594,53 +594,7 @@ function AssessmentsPageContent() {
           </CardContent>
         </Card>
 
-        {/* File Upload */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Upload Worksheets</CardTitle>
-            <p className="text-sm text-gray-600">
-              Upload supporting worksheets, samples, or evidence (PDF, PNG, JPG)
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-              <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600">
-                  Drag & drop files here, or click to browse
-                </p>
-                <Input
-                  type="file"
-                  multiple
-                  accept=".pdf,.png,.jpg,.jpeg"
-                  onChange={(e) => handleFileUpload(domainKey, e.target.files)}
-                  className="hidden"
-                  id={`${domainKey}-files`}
-                />
-                <Label htmlFor={`${domainKey}-files`} className="cursor-pointer">
-                  <Button variant="outline" size="sm" type="button">
-                    Browse Files
-                  </Button>
-                </Label>
-              </div>
-            </div>
-            
-            {assessmentData[filesKey] && assessmentData[filesKey].length > 0 && (
-              <div className="mt-4">
-                <p className="text-sm font-medium mb-2">Selected Files:</p>
-                <div className="space-y-1">
-                  {assessmentData[filesKey].map((file: File, index: number) => (
-                    <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
-                      <FileText className="h-4 w-4" />
-                      <span>{file.name}</span>
-                      <span className="text-xs">({(file.size / 1024).toFixed(1)} KB)</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
       </div>
     );
   };

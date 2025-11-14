@@ -579,3 +579,14 @@ export function useEducatorNotifications(params?: {
     isMarkingAllAsRead: markAllAsReadMutation.isPending,
   };
 }
+
+// Educator Student Details Hook
+export function useEducatorStudentDetails(studentId?: string) {
+  return useQuery({
+    queryKey: queryKeys.educator.studentDetails(studentId!),
+    queryFn: () => apiClient.getStudentDetailsForEducator(studentId!),
+    enabled: !!studentId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}

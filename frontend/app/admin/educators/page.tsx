@@ -107,6 +107,7 @@ export default function EducatorManagementPage() {
       setLoading(true);
       
       // Load educators from backend API
+      // When roleFilter is 'all', we don't pass role filter (get all users) and filter client-side
       const params = {
         page: currentPage,
         limit: 10,
@@ -118,11 +119,19 @@ export default function EducatorManagementPage() {
       const response = await apiClient.getAllUsers(params);
       
       console.log('Raw API response:', response);
-      console.log('Available users:', response.users?.length || 0);
-      console.log('User roles found:', response.users?.map((u: any) => u.role) || []);
+      console.log('Available users:', response.data?.length || 0);
+      console.log('User roles found:', response.data?.map((u: any) => u.role) || []);
+      console.log('All users details:', response.data?.map((u: any) => ({
+        id: u.id,
+        email: u.email,
+        role: u.role,
+        isActive: u.isActive,
+        hasSpecialProfile: !!u.specialEducatorProfile,
+        hasSuperSpecialProfile: !!u.superSpecialEducatorProfile
+      })) || []);
       
       // Transform backend data to match frontend interface
-      let transformedEducators: Educator[] = (response.users || [])
+      let transformedEducators: Educator[] = (response.data || [])
         .filter((user: any) => {
           const hasEducatorRole = user.role === 'SPECIAL_EDUCATOR' || user.role === 'SUPER_SPECIAL_EDUCATOR';
           const hasEducatorProfile = user.specialEducatorProfile || user.superSpecialEducatorProfile;
@@ -157,125 +166,13 @@ export default function EducatorManagementPage() {
         });
       
       console.log('Transformed educators:', transformedEducators.length);
+      console.log('API response structure:', response);
       
-      // If no educators found, create some demo data for testing
-      if (transformedEducators.length === 0) {
-        console.log('No educators found in API response, using demo data');
-        transformedEducators = [
-          {
-            id: 'demo-1',
-            name: 'Dr. Sarah Johnson',
-            email: 'sarah.johnson@knowled.com',
-            phone: '+919876543210',
-            role: 'SUPER_SPECIAL_EDUCATOR',
-            isActive: true,
-            centerName: 'Knowled Learning Center - Delhi Branch',
-            centerId: 'center-1',
-            specializations: ['Autism Spectrum Disorders', 'Behavioral Therapy', 'IEP Development'],
-            experience: 8,
-            linkedStudents: 12,
-            workloadPercentage: 80,
-            lastLogin: '2025-09-19T10:30:00Z',
-            createdAt: '2025-01-15T09:00:00Z',
-            performance: {
-              rating: 4.8,
-              completedAssessments: 45,
-              activeIEPs: 12
-            }
-          },
-          {
-            id: 'demo-2',
-            name: 'Ms. Priya Sharma',
-            email: 'priya.sharma@knowled.com',
-            phone: '+919876543211',
-            role: 'SPECIAL_EDUCATOR',
-            isActive: true,
-            centerName: 'Knowled Learning Center - Mumbai Branch',
-            centerId: 'center-2',
-            specializations: ['Learning Disabilities', 'Speech Therapy'],
-            experience: 5,
-            linkedStudents: 8,
-            workloadPercentage: 53,
-            lastLogin: '2025-09-19T11:15:00Z',
-            createdAt: '2025-03-20T09:00:00Z',
-            performance: {
-              rating: 4.6,
-              completedAssessments: 32,
-              activeIEPs: 8
-            }
-          },
-          {
-            id: 'demo-3',
-            name: 'Mr. Rajesh Kumar',
-            email: 'rajesh.kumar@knowled.com',
-            phone: '+919876543212',
-            role: 'SPECIAL_EDUCATOR',
-            isActive: true,
-            centerName: 'Knowled Learning Center - Bangalore Branch',
-            centerId: 'center-3',
-            specializations: ['ADHD', 'Occupational Therapy'],
-            experience: 6,
-            linkedStudents: 10,
-            workloadPercentage: 67,
-            lastLogin: '2025-09-19T09:45:00Z',
-            createdAt: '2025-02-10T09:00:00Z',
-            performance: {
-              rating: 4.7,
-              completedAssessments: 38,
-              activeIEPs: 10
-            }
-          },
-          {
-            id: 'demo-4',
-            name: 'Dr. Meera Patel',
-            email: 'meera.patel@knowled.com',
-            phone: '+919876543213',
-            role: 'SUPER_SPECIAL_EDUCATOR',
-            isActive: false,
-            centerName: 'Not Assigned',
-            centerId: '',
-            specializations: ['Developmental Delays', 'Early Intervention', 'Family Counseling'],
-            experience: 12,
-            linkedStudents: 0,
-            workloadPercentage: 0,
-            lastLogin: '2025-09-10T16:30:00Z',
-            createdAt: '2024-11-05T09:00:00Z',
-            performance: {
-              rating: 4.9,
-              completedAssessments: 67,
-              activeIEPs: 0
-            }
-          },
-          {
-            id: 'demo-5',
-            name: 'Ms. Anjali Reddy',
-            email: 'anjali.reddy@knowled.com',
-            phone: '+919876543214',
-            role: 'SPECIAL_EDUCATOR',
-            isActive: true,
-            centerName: 'Knowled Learning Center - Chennai Branch',
-            centerId: 'center-4',
-            specializations: ['Dyslexia', 'Reading Intervention'],
-            experience: 4,
-            linkedStudents: 14,
-            workloadPercentage: 93,
-            lastLogin: '2025-09-19T12:00:00Z',
-            createdAt: '2025-05-12T09:00:00Z',
-            performance: {
-              rating: 4.5,
-              completedAssessments: 28,
-              activeIEPs: 14
-            }
-          }
-        ];
-        
-        // For demo data, set proper pagination (5 educators, 10 per page = 1 page)
-        setTotalPages(1);
-      } else {
-        // Use actual pagination from API response
-        const totalPages = Math.ceil(response.total / 10);
-        setTotalPages(totalPages);
-      }
+      // Use actual pagination from API response
+      // Note: We use the total count from API for pagination controls
+      // but we display the filtered educators client-side
+      const totalPages = Math.ceil(response.pagination?.total / 10);
+      setTotalPages(totalPages);
 
       setEducators(transformedEducators);
     } catch (error) {

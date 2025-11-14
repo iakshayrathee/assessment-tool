@@ -811,4 +811,22 @@ export class CenterController {
       });
     }
   }
+
+  // Get cities and centers data for work locations dropdown
+  async getCitiesAndCenters(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    try {
+      const citiesAndCenters = await this.centerService.getCitiesAndCenters();
+
+      return res.json({
+        success: true,
+        data: citiesAndCenters
+      });
+    } catch (error: any) {
+      console.error('Get cities and centers error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch cities and centers data'
+      });
+    }
+  }
 }

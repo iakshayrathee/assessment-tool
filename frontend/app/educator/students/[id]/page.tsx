@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useSpecialEducatorStudentDetails } from '@/hooks/useSpecialEducator';
+import { useEducatorStudentDetails } from '@/hooks/useEducator';
 import { useIntakeForm, useAssessments, useIEPGoals, useSessionNotes, useReports } from '@/hooks/useAssessments';
 // Use route-level UnifiedLayout; remove page-level EducatorLayout
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +28,8 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  TrendingUp
+  TrendingUp,
+  Notebook
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -37,7 +38,7 @@ export default function StudentDetailPage() {
   const params = useParams();
   const studentId = params.id as string;
 
-  const { student, isLoading } = useSpecialEducatorStudentDetails(studentId);
+  const { data: student, isLoading } = useEducatorStudentDetails(studentId);
   const { intakeForm } = useIntakeForm(studentId);
   const { assessments } = useAssessments(studentId);
   const { iepGoals } = useIEPGoals(studentId);
@@ -599,11 +600,35 @@ export default function StudentDetailPage() {
                 <CardDescription>Student assessment history and results</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Brain className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">Assessment functionality coming soon</p>
-                  <Button disabled>View Assessments</Button>
-                </div>
+                {assessments.length > 0 ? (
+                  <div className="space-y-4">
+                    {assessments.map((assessment: any) => (
+                      <div key={assessment.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">{assessment.assessmentType}</h4>
+                            <p className="text-sm text-gray-600">
+                              Date: {new Date(assessment.assessmentDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Badge className={getStatusColor(assessment.status)}>
+                            {assessment.status}
+                          </Badge>
+                        </div>
+                        {assessment.score && (
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-600">Score: {assessment.score}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Brain className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">No assessments available for this student</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -615,27 +640,92 @@ export default function StudentDetailPage() {
                 <CardDescription>Individual Education Plan goals and progress</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">IEP Goals functionality coming soon</p>
-                  <Button disabled>Manage Goals</Button>
-                </div>
+                {iepGoals.length > 0 ? (
+                  <div className="space-y-4">
+                    {iepGoals.map((goal: any) => (
+                      <div key={goal.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">{goal.goalTitle}</h4>
+                          <div className="flex items-center gap-2">
+                            {getGoalStatusIcon(goal.status)}
+                            <Badge className={getStatusColor(goal.status)}>
+                              {goal.status}
+                            </Badge>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">{goal.goalDescription}</p>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium">Target Date:</span>{' '}
+                            {goal.targetDate ? new Date(goal.targetDate).toLocaleDateString() : 'Not set'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Progress:</span>{' '}
+                            {goal.progressPercentage ? `${goal.progressPercentage}%` : '0%'}
+                          </div>
+                        </div>
+                        {goal.progressPercentage && (
+                          <div className="mt-2">
+                            <Progress value={goal.progressPercentage} className="h-2" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">No IEP goals set for this student</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="sessions">
+          <TabsContent value="session-notes">
             <Card>
               <CardHeader>
                 <CardTitle>Session Notes</CardTitle>
-                <CardDescription>Documentation of therapy and education sessions</CardDescription>
+                <CardDescription>Session observations and notes</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">Session Notes functionality coming soon</p>
-                  <Button disabled>View Sessions</Button>
-                </div>
+                {sessionNotes.length > 0 ? (
+                  <div className="space-y-4">
+                    {sessionNotes.map((note: any) => (
+                      <div key={note.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">
+                            Session on {new Date(note.sessionDate).toLocaleDateString()}
+                          </h4>
+                          <Badge className={getStatusColor(note.status)}>
+                            {note.status}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm mb-2">
+                          <div>
+                            <span className="font-medium">Duration:</span> {note.durationMinutes} minutes
+                          </div>
+                          <div>
+                            <span className="font-medium">Focus Area:</span> {note.focusArea}
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {note.notes.length > 150 ? `${note.notes.substring(0, 150)}...` : note.notes}
+                        </p>
+                        {note.notes.length > 150 && (
+                          <Button variant="link" className="p-0 h-auto text-xs">
+                            Read more
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Notebook className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">No session notes available for this student</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -644,14 +734,46 @@ export default function StudentDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Reports</CardTitle>
-                <CardDescription>Generated reports and documentation</CardDescription>
+                <CardDescription>Progress reports and documentation</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <BarChart3 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">Reports functionality coming soon</p>
-                  <Button disabled>Generate Report</Button>
-                </div>
+                {reports.length > 0 ? (
+                  <div className="space-y-4">
+                    {reports.map((report: any) => (
+                      <div key={report.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">{report.reportType}</h4>
+                          <Badge className={getStatusColor(report.status)}>
+                            {report.status}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm mb-2">
+                          <div>
+                            <span className="font-medium">Date:</span>{' '}
+                            {new Date(report.reportDate).toLocaleDateString()}
+                          </div>
+                          <div>
+                            <span className="font-medium">Period:</span>{' '}
+                            {report.reportingPeriod}
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {report.summary?.length > 150 ? `${report.summary.substring(0, 150)}...` : report.summary || 'No summary available'}
+                        </p>
+                        {report.summary?.length > 150 && (
+                          <Button variant="link" className="p-0 h-auto text-xs">
+                            Read more
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">No reports available for this student</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

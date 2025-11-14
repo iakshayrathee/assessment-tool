@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSpecialEducatorProfile } from "@/hooks/useSpecialEducator";
+import { apiClient } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -176,6 +177,14 @@ export default function EducatorProfile() {
     rciValidityDate: ""
   });
   
+  // State for cities and centers data
+  const [cities, setCities] = useState<string[]>([]);
+  const [centersByCity, setCentersByCity] = useState<Record<string, Array<{ id: string; name: string }>>>({});
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedCenter, setSelectedCenter] = useState("");
+  const [otherWorkLocation, setOtherWorkLocation] = useState("");
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
+  
   // State for dropdown selections that reset after adding to arrays
   const [dropdownSelections, setDropdownSelections] = useState({
     secondaryLanguage: "",
@@ -194,6 +203,24 @@ export default function EducatorProfile() {
   }, []);
 
 
+
+  // Fetch cities and centers data on component mount
+  useEffect(() => {
+    const fetchCitiesAndCenters = async () => {
+      setIsLoadingCities(true);
+      try {
+        const data = await apiClient.getCitiesAndCenters();
+        setCities(data.cities);
+        setCentersByCity(data.centersByCity);
+      } catch (error) {
+        console.error("Failed to fetch cities and centers:", error);
+      } finally {
+        setIsLoadingCities(false);
+      }
+    };
+
+    fetchCitiesAndCenters();
+  }, []);
 
   useEffect(() => {
     if (profile) {
@@ -1058,55 +1085,70 @@ export default function EducatorProfile() {
 
                   <div>
                     <Label>Current Work Locations *</Label>
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Type work locations separated by spaces (e.g., 'Delhi Mumbai Bangalore')"
-                        value={newWorkLocation}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setNewWorkLocation(value);
-                          
-                          // Auto-create tags when user types space
-                          if (value.endsWith(' ') && value.trim()) {
-                            const locations = value.trim().split(/\s+/).filter(loc => loc.length > 0);
-                            const newLocations = locations.filter(loc => !formData.currentWorkLocations.includes(loc));
-                            
-                            if (newLocations.length > 0) {
-                              setFormData(prev => {
-                                const updatedLocations = [...prev.currentWorkLocations, ...newLocations];
-                                return {
-                                  ...prev,
-                                  currentWorkLocations: updatedLocations,
-                                  centerCount: updatedLocations.length,
-                                  workingInMultipleCenters: updatedLocations.length > 1
-                                };
-                              });
-                            }
-                            setNewWorkLocation('');
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && newWorkLocation.trim()) {
-                            e.preventDefault();
-                            const locations = newWorkLocation.trim().split(/\s+/).filter(loc => loc.length > 0);
-                            const newLocations = locations.filter(loc => !formData.currentWorkLocations.includes(loc));
-                            
-                            if (newLocations.length > 0) {
-                              setFormData(prev => {
-                                const updatedLocations = [...prev.currentWorkLocations, ...newLocations];
-                                return {
-                                  ...prev,
-                                  currentWorkLocations: updatedLocations,
-                                  centerCount: updatedLocations.length,
-                                  workingInMultipleCenters: updatedLocations.length > 1
-                                };
-                              });
-                            }
-                            setNewWorkLocation('');
-                          }
-                        }}
-                        className={errors.currentWorkLocations ? "border-red-500" : ""}
-                      />
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Select City</Label>
+                          <Select
+                            value={selectedCity}
+                            onValueChange={(value) => {
+                              setSelectedCity(value);
+                              setSelectedCenter("");
+                            }}
+                            disabled={isLoadingCities}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={isLoadingCities ? "Loading cities..." : "Select a city"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {cities.map(city => (
+                                <SelectItem key={city} value={city}>
+                                  {city}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label>Select Center</Label>
+                          <Select
+                            value={selectedCenter}
+                            onValueChange={(value) => {
+                               setSelectedCenter(value);
+                               const center = centersByCity[selectedCity]?.find(c => c.id === value);
+                               if (center && !formData.currentWorkLocations.includes(center.name)) {
+                                 setFormData(prev => {
+                                   const updatedLocations = [...prev.currentWorkLocations, center.name];
+                                   return {
+                                     ...prev,
+                                     currentWorkLocations: updatedLocations,
+                                     centerCount: updatedLocations.length,
+                                     workingInMultipleCenters: updatedLocations.length > 1
+                                   };
+                                 });
+                               }
+                               setSelectedCity("");
+                               setSelectedCenter("");
+                             }}
+                            disabled={!selectedCity || isLoadingCities}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={selectedCity ? "Select a center" : "Select city first"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {selectedCity && centersByCity[selectedCity]?.map(center => (
+                                <SelectItem key={center.id} value={center.id}>
+                                  {center.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+
+
                       <div className="flex flex-wrap gap-2">
                         {formData.currentWorkLocations.map(location => (
                           <Badge key={location} variant="secondary" className="cursor-pointer" onClick={() => removeWorkLocation(location)}>

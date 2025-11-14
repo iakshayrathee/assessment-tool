@@ -58,7 +58,9 @@ export function useIntakeForm(studentId?: string) {
   // Create intake form mutation
   const createIntakeFormMutation = useMutation({
     mutationFn: (intakeData: any) => apiClient.createIntakeForm(intakeData),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Invalidate both specific student intake form and all intake forms queries
+      queryClient.invalidateQueries({ queryKey: ['intakeForm', variables.studentId] });
       queryClient.invalidateQueries({ queryKey: ['intakeForm'] });
       toast.success('Intake form created successfully!');
     },
@@ -71,7 +73,9 @@ export function useIntakeForm(studentId?: string) {
   // Update intake form mutation
   const updateIntakeFormMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => apiClient.updateIntakeForm(id, data),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Invalidate both specific student intake form and all intake forms queries
+      queryClient.invalidateQueries({ queryKey: ['intakeForm', variables.data.studentId] });
       queryClient.invalidateQueries({ queryKey: ['intakeForm'] });
       toast.success('Intake form updated successfully!');
     },
@@ -84,7 +88,11 @@ export function useIntakeForm(studentId?: string) {
   // Complete intake form mutation
   const completeIntakeFormMutation = useMutation({
     mutationFn: (id: string) => apiClient.completeIntakeForm(id),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Invalidate both specific student intake form and all intake forms queries
+      if (data && data.studentId) {
+        queryClient.invalidateQueries({ queryKey: ['intakeForm', data.studentId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['intakeForm'] });
       toast.success('Intake form completed successfully!');
     },
@@ -335,6 +343,16 @@ export function useReports(studentId?: string) {
     staleTime: 2 * 60 * 1000,
   });
 
+  // Get report by ID
+  const getReportById = (reportId: string) => {
+    return useQuery({
+      queryKey: ['report', reportId],
+      queryFn: () => apiClient.getReport(reportId),
+      enabled: !!reportId,
+      staleTime: 2 * 60 * 1000,
+    });
+  };
+
   // Create report mutation
   const createReportMutation = useMutation({
     mutationFn: (reportData: any) => apiClient.createReport(reportData),
@@ -348,12 +366,28 @@ export function useReports(studentId?: string) {
     },
   });
 
+  // Update report mutation
+  const updateReportMutation = useMutation({
+    mutationFn: ({ reportId, data }: { reportId: string; data: any }) =>
+      apiClient.updateReport(reportId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['report'] });
+      toast.success('Report updated successfully!');
+    },
+    onError: (error: any) => {
+      const userFriendlyMessage = formatErrorMessage(error, 'Failed to update report');
+      toast.error(userFriendlyMessage);
+    },
+  });
+
   // Submit report mutation
   const submitReportMutation = useMutation({
     mutationFn: ({ reportId, signature }: { reportId: string; signature: string }) =>
       apiClient.submitReport(reportId, signature),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['report'] });
       toast.success('Report submitted successfully!');
     },
     onError: (error: any) => {
@@ -361,6 +395,54 @@ export function useReports(studentId?: string) {
       toast.error(userFriendlyMessage);
     },
   });
+
+  // Review report mutation (for super special educators)
+  const reviewReportMutation = useMutation({
+    mutationFn: ({ reportId, action, comments, recommendations }: { 
+      reportId: string; 
+      action: 'APPROVE' | 'REJECT'; 
+      comments?: string; 
+      recommendations?: string; 
+    }) => apiClient.reviewReport(reportId, action, comments, recommendations),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['report'] });
+      toast.success('Report reviewed successfully!');
+    },
+    onError: (error: any) => {
+      const userFriendlyMessage = formatErrorMessage(error, 'Failed to review report');
+      toast.error(userFriendlyMessage);
+    },
+  });
+
+  // Download report as PDF
+  const downloadReport = async (reportId: string, fileName?: string) => {
+    try {
+      const response = await apiClient.downloadReport(reportId);
+      
+      // Create a blob from the response
+      const blob = new Blob([response], { type: 'application/pdf' });
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName || `report_${reportId}.pdf`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+      
+      toast.success('Report downloaded successfully!');
+    } catch (error: any) {
+      const userFriendlyMessage = formatErrorMessage(error, 'Failed to download report');
+      toast.error(userFriendlyMessage);
+    }
+  };
 
   return {
     // Data
@@ -371,11 +453,17 @@ export function useReports(studentId?: string) {
     
     // Actions
     createReport: createReportMutation.mutate,
+    updateReport: updateReportMutation.mutate,
     submitReport: submitReportMutation.mutate,
+    reviewReport: reviewReportMutation.mutate,
+    downloadReport,
+    getReportById,
     
     // Action loading states
     isCreating: createReportMutation.isPending,
+    isUpdating: updateReportMutation.isPending,
     isSubmitting: submitReportMutation.isPending,
+    isReviewing: reviewReportMutation.isPending,
     
     // Refetch
     refetch: reportsQuery.refetch,

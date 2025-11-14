@@ -228,6 +228,8 @@ export const queryKeys = {
     profile: () => [...queryKeys.educator.all, 'profile'] as const,
     students: (params?: any) => 
       [...queryKeys.educator.all, 'students', params] as const,
+    studentDetails: (studentId: string) => 
+      [...queryKeys.educator.all, 'studentDetails', studentId] as const,
     assessments: (params?: any) => 
       [...queryKeys.educator.all, 'assessments', params] as const,
     iepGoals: (params?: any) => 

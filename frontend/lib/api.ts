@@ -500,6 +500,17 @@ class ApiClient {
     return response.data;
   }
 
+  async getCitiesAndCenters(): Promise<{
+    cities: string[];
+    centersByCity: Record<string, Array<{ id: string; name: string }>>;
+  }> {
+    const response = await this.client.get<ApiResponse<{
+      cities: string[];
+      centersByCity: Record<string, Array<{ id: string; name: string }>>;
+    }>>('/centers/cities-centers');
+    return response.data.data!;
+  }
+
   async getCenter(id: string): Promise<any> {
     const response = await this.client.get<ApiResponse<any>>(`/centers/${id}`);
     return response.data.data;

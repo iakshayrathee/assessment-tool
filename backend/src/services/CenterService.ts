@@ -895,4 +895,62 @@ export class CenterService {
       }
     };
   }
+
+  // Get cities and centers data for work locations dropdown
+  async getCitiesAndCenters() {
+    // Get all active centers with their addresses
+    const centers = await this.prisma.centerProfile.findMany({
+      where: {
+        user: {
+          isActive: true
+        }
+      },
+      select: {
+        id: true,
+        centerName: true,
+        address: true
+      },
+      orderBy: {
+        centerName: 'asc'
+      }
+    });
+
+    // Extract cities from addresses
+    const cities = new Set<string>();
+    const centersByCity: Record<string, Array<{id: string, name: string}>> = {};
+
+    centers.forEach(center => {
+      if (center.address) {
+        // Simple city extraction - assume city is the last part of address before state/country
+        const addressParts = center.address.split(',').map(part => part.trim());
+        const city = addressParts[addressParts.length - 2] || center.address; // Second last part is usually city
+        
+        if (city) {
+          cities.add(city);
+          
+          if (!centersByCity[city]) {
+            centersByCity[city] = [];
+          }
+          
+          centersByCity[city].push({
+            id: center.id,
+            name: center.centerName
+          });
+        }
+      }
+    });
+
+    // Convert to sorted arrays
+    const sortedCities = Array.from(cities).sort();
+    
+    // Sort centers within each city
+    Object.keys(centersByCity).forEach(city => {
+      centersByCity[city].sort((a, b) => a.name.localeCompare(b.name));
+    });
+
+    return {
+      cities: sortedCities,
+      centersByCity
+    };
+  }
 }

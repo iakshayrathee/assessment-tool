@@ -241,9 +241,9 @@ function IntakeFormPageContent() {
 
   const { intakeForm, createIntakeForm, updateIntakeForm, completeIntakeForm, isCreating, isUpdating } = useIntakeForm(selectedStudentId || undefined);
 
-  // Prefill form data with selected student's basic information
+  // Prefill form data with selected student's basic information (only when no intake form exists)
   useEffect(() => {
-    if (selectedStudentData && selectedStudentId) {
+    if (selectedStudentData && selectedStudentId && !intakeForm) {
       setFormData(prev => ({
         ...prev,
         name: selectedStudentData.fullName || '',
@@ -259,15 +259,137 @@ function IntakeFormPageContent() {
         address: selectedStudentData.parent?.address || '',
       }));
     }
-  }, [selectedStudentData, selectedStudentId]);
+  }, [selectedStudentData, selectedStudentId, intakeForm]);
 
   // Populate form data when existing intake form is loaded
   useEffect(() => {
-    if (intakeForm && intakeForm.data) {
-      setFormData(intakeForm.data as FormData);
+    console.log('Intake form data received:', intakeForm);
+    if (intakeForm) {
+      console.log('Setting form data from API:', intakeForm);
+      // Debug: Check if student data is available in the intake form
+      console.log('Student data in intake form:', intakeForm.student);
+      console.log('Current form data before update:', formData);
+      
+      // Update form data with intake form values while preserving current state
+      setFormData(prev => ({
+        ...prev,
+        // Section 1: Socio Demographic Data
+        // Use more robust fallback logic to ensure student data is preserved
+        name: intakeForm.student?.fullName?.trim() || prev.name,
+        age: intakeForm.student?.age?.toString() || prev.age,
+        gender: intakeForm.student?.gender?.trim() ? convertGenderCase(intakeForm.student.gender.trim()) : prev.gender,
+        schoolCenter: intakeForm.student?.school?.name?.trim() || intakeForm.student?.center?.centerName?.trim() || prev.schoolCenter,
+        address: intakeForm.address?.trim() || prev.address,
+        class: intakeForm.student?.grade?.trim() || prev.class,
+        motherTongue: intakeForm.student?.motherTongue?.trim() || prev.motherTongue,
+        syllabus: intakeForm.student?.syllabus?.trim() || prev.syllabus,
+
+        // Section 2: Family History / Background
+        fatherName: intakeForm.fatherName || prev.fatherName,
+        motherName: intakeForm.motherName || prev.motherName,
+        guardianName: intakeForm.guardianName || prev.guardianName,
+        familyIncome: intakeForm.familyIncome || prev.familyIncome,
+        familyType: intakeForm.familyType || prev.familyType,
+        digitalResourcesAtHome: intakeForm.digitalResourcesAtHome ?? prev.digitalResourcesAtHome,
+        dailyDigitalUse: intakeForm.dailyDigitalUse?.toString() || prev.dailyDigitalUse,
+        enjoysSchool: intakeForm.enjoysSchool ?? prev.enjoysSchool,
+        studyAssistant: intakeForm.studyAssistant || prev.studyAssistant,
+        externalAcademicSupport: intakeForm.externalAcademicSupport ?? prev.externalAcademicSupport,
+        enjoysReading: intakeForm.enjoysReading ?? prev.enjoysReading,
+        dailyParentChildTime: intakeForm.dailyParentChildTime?.toString() || prev.dailyParentChildTime,
+        childType: intakeForm.childType || prev.childType,
+
+        // Section 3: Prenatal, Natal & Delivery Details
+        pregnancyNormal: intakeForm.pregnancyNormal ?? prev.pregnancyNormal,
+        medicationsDuringPregnancy: intakeForm.medicationsDuringPregnancy || prev.medicationsDuringPregnancy,
+        medicationsDuringPregnancyDetails: intakeForm.medicationsDuringPregnancyDetails || prev.medicationsDuringPregnancyDetails,
+        miscarriagesAbortions: intakeForm.miscarriagesAbortions ?? prev.miscarriagesAbortions,
+        fullTermOrPremature: intakeForm.fullTermOrPremature || prev.fullTermOrPremature,
+        deliveryType: intakeForm.deliveryType || prev.deliveryType,
+
+        // Section 4: Post Natal Factors
+        breastFed: intakeForm.breastFed ?? prev.breastFed,
+        infantJaundice: intakeForm.infantJaundice ?? prev.infantJaundice,
+        incubation: intakeForm.incubation ?? prev.incubation,
+        immunizationDone: intakeForm.immunizationDone ?? prev.immunizationDone,
+        consanguineousMarriage: intakeForm.consanguineousMarriage ?? prev.consanguineousMarriage,
+        birthCry: intakeForm.birthCry || prev.birthCry,
+        delayInNeckStanding: intakeForm.delayInNeckStanding ?? prev.delayInNeckStanding,
+        delayInNeckStandingDetails: intakeForm.delayInNeckStandingDetails || prev.delayInNeckStandingDetails,
+        ageOfWalking: intakeForm.ageOfWalking?.toString() || prev.ageOfWalking,
+        ageOfTwoWordSpeech: intakeForm.ageOfTwoWordSpeech?.toString() || prev.ageOfTwoWordSpeech,
+
+        // Section 5: Medical History
+        healthConcerns: intakeForm.healthConcerns || prev.healthConcerns,
+        epilepticHistory: intakeForm.epilepticHistory ?? prev.epilepticHistory,
+        onMedication: intakeForm.onMedication ?? prev.onMedication,
+        medicationDetails: intakeForm.medicationDetails || prev.medicationDetails,
+        asthmaWheezing: intakeForm.asthmaWheezing ?? prev.asthmaWheezing,
+        wearsGlasses: intakeForm.wearsGlasses ?? prev.wearsGlasses,
+        visionTestDone: intakeForm.visionTestDone ?? prev.visionTestDone,
+        hearingTestDone: intakeForm.hearingTestDone ?? prev.hearingTestDone,
+
+        // Section 6: Educational History
+        attendedPreschool: intakeForm.attendedPreschool ?? prev.attendedPreschool,
+        repeatedGrades: intakeForm.repeatedGrades ?? prev.repeatedGrades,
+        whichGradeRepeated: intakeForm.whichGradeRepeated || prev.whichGradeRepeated,
+        dominantWritingHand: intakeForm.dominantWritingHand || prev.dominantWritingHand,
+        strugglesInLanguages: intakeForm.strugglesInLanguages ?? prev.strugglesInLanguages,
+      }));
+      
       if (intakeForm.status === 'COMPLETED') {
         console.log('Intake form is already completed for this student');
       }
+    } else {
+      console.log('No intake form found for this student, preserving existing student data');
+      // Only reset the intake-specific fields, preserve student data
+      setFormData(prev => ({
+        ...prev,
+        // Reset only intake-specific fields, keep student data intact
+        address: '',
+        familyIncome: '',
+        familyType: '',
+        digitalResourcesAtHome: false,
+        dailyDigitalUse: '',
+        enjoysSchool: false,
+        studyAssistant: '',
+        externalAcademicSupport: false,
+        enjoysReading: false,
+        dailyParentChildTime: '',
+        childType: '',
+        fatherName: '',
+        motherName: '',
+        guardianName: '',
+        pregnancyNormal: false,
+        medicationsDuringPregnancy: '',
+        medicationsDuringPregnancyDetails: '',
+        miscarriagesAbortions: false,
+        fullTermOrPremature: '',
+        deliveryType: '',
+        breastFed: false,
+        infantJaundice: false,
+        incubation: false,
+        immunizationDone: false,
+        consanguineousMarriage: false,
+        birthCry: '',
+        delayInNeckStanding: false,
+        delayInNeckStandingDetails: '',
+        ageOfWalking: '',
+        ageOfTwoWordSpeech: '',
+        healthConcerns: '',
+        epilepticHistory: false,
+        onMedication: false,
+        medicationDetails: '',
+        asthmaWheezing: false,
+        wearsGlasses: false,
+        visionTestDone: false,
+        hearingTestDone: false,
+        attendedPreschool: false,
+        repeatedGrades: false,
+        whichGradeRepeated: '',
+        dominantWritingHand: '',
+        strugglesInLanguages: false,
+      }));
     }
   }, [intakeForm]);
 
@@ -284,8 +406,24 @@ function IntakeFormPageContent() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
+  // Convert gender from API format (e.g., "MALE") to UI dropdown format (e.g., "Male")
+  const convertGenderCase = (gender: string): string => {
+    const genderMap: Record<string, string> = {
+      'MALE': 'Male',
+      'FEMALE': 'Female',
+      'OTHER': 'Other',
+      'Male': 'Male',
+      'Female': 'Female',
+      'Other': 'Other'
+    };
+    return genderMap[gender] || gender;
+  };
+
   const handleInputChange = useCallback((field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
     setHasUnsavedChanges(true);
   }, []);
 
@@ -436,32 +574,30 @@ function IntakeFormPageContent() {
 
   // Calculate progress based on completed sections
   const calculateProgress = () => {
-    if (!intakeForm) return 0;
-    
     const sections = [
       {
         name: 'demographics',
-        hasData: formData.name && formData.age && formData.gender && formData.schoolCenter
+        hasData: !!(formData.name && formData.age && formData.gender && formData.schoolCenter && formData.class)
       },
       {
-        name: 'familyHistory',
-        hasData: formData.fatherName || formData.motherName || formData.familyType
+        name: 'family',
+        hasData: !!(formData.fatherName && formData.motherName && formData.familyIncome && formData.familyType)
       },
       {
-        name: 'prenatalHistory',
-        hasData: formData.pregnancyNormal !== undefined || formData.fullTermOrPremature || formData.deliveryType
+        name: 'prenatal',
+        hasData: !!(formData.fullTermOrPremature && formData.deliveryType)
       },
       {
-        name: 'postnatalHistory',
-        hasData: formData.breastFed !== undefined || formData.birthCry || formData.ageOfWalking
+        name: 'postnatal',
+        hasData: !!(formData.birthCry && formData.ageOfWalking && formData.ageOfTwoWordSpeech)
       },
       {
-        name: 'medicalHistory',
-        hasData: formData.healthConcerns || formData.onMedication !== undefined || formData.medicationDetails
+        name: 'medical',
+        hasData: !!formData.healthConcerns
       },
       {
-        name: 'educationalHistory',
-        hasData: formData.attendedPreschool !== undefined || formData.repeatedGrades !== undefined || formData.dominantWritingHand
+        name: 'educational',
+        hasData: !!formData.dominantWritingHand
       }
     ];
     
@@ -475,7 +611,7 @@ function IntakeFormPageContent() {
   const isTabCompleted = (tabId: string): boolean => {
     switch (tabId) {
       case 'demographics':
-        return !!(formData.name && formData.age && formData.gender && formData.schoolCenter && formData.class);
+        return !!(formData.name && formData.age && formData.gender && formData.schoolCenter && formData.syllabus);
       case 'family':
         return !!(formData.fatherName && formData.motherName && formData.familyIncome && formData.familyType);
       case 'prenatal':
@@ -1443,16 +1579,6 @@ function IntakeFormPageContent() {
       </div>
 
       <div className="max-w-6xl mx-auto p-6 space-y-6">
-        {/* Progress - Only show when there's actual progress */}
-        {progress > 0 && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Form Progress</span>
-              <span>{Math.round(progress)}% Complete</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </div>
-        )}
 
         {/* Student Selection Message - Show when no student selected */}
         {!selectedStudentId && (
