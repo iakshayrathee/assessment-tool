@@ -288,6 +288,11 @@ class ApiClient {
     return response.data.data;
   }
 
+  async completeAssessment(id: string): Promise<any> {
+    const response = await this.client.patch<ApiResponse<any>>(`/assessments/${id}/complete`);
+    return response.data.data;
+  }
+
   async getAssessmentsByStudent(studentId: string): Promise<any[]> {
     const response = await this.client.get<ApiResponse<any[]>>(`/assessments/student/${studentId}`);
     return response.data.data!;
@@ -327,14 +332,37 @@ class ApiClient {
     await this.client.post(url, { progress, notes, rating });
   }
 
-  async getIEPGoalsByStudent(studentId: string): Promise<any[]> {
-    const response = await this.client.get<ApiResponse<any[]>>(`/assessments/iep-goals/student/${studentId}`);
-    return response.data.data!;
+  async getIEPGoalsByStudent(studentId: string, page = 1, limit = 10, filters?: {
+    domain?: string;
+    status?: string;
+    search?: string;
+    startDateFrom?: string;
+    startDateTo?: string;
+    targetDateFrom?: string;
+    targetDateTo?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const params: any = { page, limit, ...filters };
+    const response = await this.client.get<PaginatedResponse<any>>(`/assessments/iep-goals/student/${studentId}`, {
+      params
+    });
+    return response.data;
   }
 
-  async getIEPGoalsByEducator(educatorId: string): Promise<any[]> {
-    const response = await this.client.get<ApiResponse<any[]>>(`/assessments/iep-goals/educator/${educatorId}`);
-    return response.data.data!;
+  async getIEPGoalsByEducator(educatorId: string, page = 1, limit = 10, filters?: {
+    studentId?: string;
+    domain?: string;
+    status?: string;
+    search?: string;
+    startDateFrom?: string;
+    startDateTo?: string;
+    targetDateFrom?: string;
+    targetDateTo?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const params: any = { page, limit, ...filters };
+    const response = await this.client.get<PaginatedResponse<any>>(`/assessments/iep-goals/educator/${educatorId}`, {
+      params
+    });
+    return response.data;
   }
 
   async createSessionNote(sessionData: any): Promise<any> {

@@ -4,7 +4,7 @@ import { validationResult } from 'express-validator';
 import { AssessmentService } from '../services/AssessmentService';
 import { AuthenticatedRequest } from '../utils/auth';
 import { ResponseHelper } from '../utils/helpers';
-import { UserRole } from '../models';
+import { UserRole, IEPGoalStatus } from '../models';
 
 export class AssessmentController {
   private assessmentService: AssessmentService;
@@ -242,8 +242,21 @@ export class AssessmentController {
         return ResponseHelper.error(res, 'Validation failed', 400);
       }
 
-      const iepGoals = await this.assessmentService.getIEPGoalsByStudent(req.params.studentId);
-      return ResponseHelper.success(res, iepGoals);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      // Parse filters from query parameters
+      const filters: any = {};
+      if (req.query.domain) filters.domain = req.query.domain as string;
+      if (req.query.status) filters.status = req.query.status as IEPGoalStatus;
+      if (req.query.search) filters.search = req.query.search as string;
+      if (req.query.startDateFrom) filters.startDateFrom = new Date(req.query.startDateFrom as string);
+      if (req.query.startDateTo) filters.startDateTo = new Date(req.query.startDateTo as string);
+      if (req.query.targetDateFrom) filters.targetDateFrom = new Date(req.query.targetDateFrom as string);
+      if (req.query.targetDateTo) filters.targetDateTo = new Date(req.query.targetDateTo as string);
+
+      const result = await this.assessmentService.getIEPGoalsByStudent(req.params.studentId, page, limit, filters);
+      return ResponseHelper.paginated(res, result.iepGoals, page, limit, result.total);
     } catch (error: any) {
       return ResponseHelper.error(res, error.message, 400);
     }
@@ -256,8 +269,22 @@ export class AssessmentController {
         return ResponseHelper.error(res, 'Validation failed', 400);
       }
 
-      const iepGoals = await this.assessmentService.getIEPGoalsByEducator(req.params.educatorId);
-      return ResponseHelper.success(res, iepGoals);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      // Parse filters from query parameters
+      const filters: any = {};
+      if (req.query.studentId) filters.studentId = req.query.studentId as string;
+      if (req.query.domain) filters.domain = req.query.domain as string;
+      if (req.query.status) filters.status = req.query.status as IEPGoalStatus;
+      if (req.query.search) filters.search = req.query.search as string;
+      if (req.query.startDateFrom) filters.startDateFrom = new Date(req.query.startDateFrom as string);
+      if (req.query.startDateTo) filters.startDateTo = new Date(req.query.startDateTo as string);
+      if (req.query.targetDateFrom) filters.targetDateFrom = new Date(req.query.targetDateFrom as string);
+      if (req.query.targetDateTo) filters.targetDateTo = new Date(req.query.targetDateTo as string);
+
+      const result = await this.assessmentService.getIEPGoalsByEducator(req.params.educatorId, page, limit, filters);
+      return ResponseHelper.paginated(res, result.iepGoals, page, limit, result.total);
     } catch (error: any) {
       return ResponseHelper.error(res, error.message, 400);
     }

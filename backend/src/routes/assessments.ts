@@ -771,6 +771,32 @@ const updateAssessmentWithAuth = async (req: Request, res: Response, next: NextF
   }
 };
 
+const completeAssessmentWithAuth = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const decoded = requireAuth(req);
+    requireEducatorRoles(decoded);
+    
+    // Get the special educator profile ID from the user ID
+    const specialEducatorProfile = await prisma.specialEducatorProfile.findUnique({
+      where: { userId: decoded.userId }
+    });
+
+    if (!specialEducatorProfile) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Special educator profile not found' 
+      });
+    }
+    
+    // Add user info to request for controller with the correct specialEducatorId
+    (req as any).user = { userId: specialEducatorProfile.id };
+    
+    return await assessmentController.completeAssessment(req as any, res);
+  } catch (error: any) {
+    return res.status(401).json({ success: false, error: error.message });
+  }
+};
+
 const getAssessmentsByStudentWithAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const decoded = requireAuth(req);
@@ -882,6 +908,7 @@ router.get('/iep-goals/educator/:educatorId', async (req, res) => {
 
 router.post('/', createAssessmentWithAuth);
 router.put('/:id', updateAssessmentWithAuth);
+router.patch('/:id/complete', completeAssessmentWithAuth);
 router.get('/student/:studentId', getAssessmentsByStudentWithAuth);
 router.get('/history/:studentId', getAssessmentHistoryWithAuth);
 router.get('/stats', getAssessmentStats);

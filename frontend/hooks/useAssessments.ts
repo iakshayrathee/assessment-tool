@@ -156,9 +156,7 @@ export function useAssessments(studentId?: string, onSuccess?: () => void) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assessments'] });
       toast.success('Assessment created successfully!');
-      if (onSuccess) {
-        onSuccess();
-      }
+      // Don't call onSuccess (resetForm) for draft saves - we want to preserve form data
     },
     onError: (error: any) => {
       const userFriendlyMessage = formatErrorMessage(error, 'Failed to create assessment');
@@ -179,6 +177,19 @@ export function useAssessments(studentId?: string, onSuccess?: () => void) {
     },
   });
 
+  // Complete assessment mutation
+  const completeAssessmentMutation = useMutation({
+    mutationFn: (id: string) => apiClient.completeAssessment(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      toast.success('Assessment completed successfully!');
+    },
+    onError: (error: any) => {
+      const userFriendlyMessage = formatErrorMessage(error, 'Failed to complete assessment');
+      toast.error(userFriendlyMessage);
+    },
+  });
+
   return {
     // Data
     assessments: assessmentsQuery.data || [],
@@ -192,11 +203,16 @@ export function useAssessments(studentId?: string, onSuccess?: () => void) {
     
     // Actions
     createAssessment: createAssessmentMutation.mutate,
+    createAssessmentAsync: createAssessmentMutation.mutateAsync,
     updateAssessment: updateAssessmentMutation.mutate,
+    updateAssessmentAsync: updateAssessmentMutation.mutateAsync,
+    completeAssessment: completeAssessmentMutation.mutate,
+    completeAssessmentAsync: completeAssessmentMutation.mutateAsync,
     
     // Action loading states
     isCreating: createAssessmentMutation.isPending,
     isUpdating: updateAssessmentMutation.isPending,
+    isCompleting: completeAssessmentMutation.isPending,
     
     // Refetch
     refetch: assessmentsQuery.refetch,
@@ -204,21 +220,21 @@ export function useAssessments(studentId?: string, onSuccess?: () => void) {
   };
 }
 
-export function useIEPGoals(studentId?: string, educatorId?: string) {
+export function useIEPGoals(studentId?: string, educatorId?: string, page = 1, limit = 10, filters?: any) {
   const queryClient = useQueryClient();
 
   // Get IEP goals by student
   const iepGoalsQuery = useQuery({
-    queryKey: ['iepGoals', studentId],
-    queryFn: () => apiClient.getIEPGoalsByStudent(studentId!),
+    queryKey: ['iepGoals', studentId, page, limit, filters],
+    queryFn: () => apiClient.getIEPGoalsByStudent(studentId!, page, limit, filters),
     enabled: !!studentId,
     staleTime: 2 * 60 * 1000,
   });
 
   // Get IEP goals by educator (for all students view)
   const iepGoalsByEducatorQuery = useQuery({
-    queryKey: ['iepGoals', 'educator', educatorId],
-    queryFn: () => apiClient.getIEPGoalsByEducator(educatorId!),
+    queryKey: ['iepGoals', 'educator', educatorId, page, limit, filters],
+    queryFn: () => apiClient.getIEPGoalsByEducator(educatorId!, page, limit, filters),
     enabled: !!educatorId && !studentId, // Only fetch when educatorId is provided and no specific student
     staleTime: 2 * 60 * 1000,
   });
@@ -269,10 +285,15 @@ export function useIEPGoals(studentId?: string, educatorId?: string) {
 
   return {
     // Data
-    iepGoals: studentId ? (iepGoalsQuery.data || []) : (iepGoalsByEducatorQuery.data || []),
+    iepGoals: studentId ? (iepGoalsQuery.data?.data || []) : (iepGoalsByEducatorQuery.data?.data || []),
+    
+    // Pagination info
+    pagination: studentId ? iepGoalsQuery.data?.pagination : iepGoalsByEducatorQuery.data?.pagination,
     
     // Loading states
     isLoading: studentId ? iepGoalsQuery.isLoading : iepGoalsByEducatorQuery.isLoading,
+    isError: studentId ? iepGoalsQuery.isError : iepGoalsByEducatorQuery.isError,
+    error: studentId ? iepGoalsQuery.error : iepGoalsByEducatorQuery.error,
     
     // Actions
     createIEPGoal: createIEPGoalMutation.mutate,

@@ -297,48 +297,141 @@ export class AssessmentRepository {
     });
   }
 
-  async findIEPGoalsByStudent(studentId: string): Promise<IEPGoal[]> {
-    return this.prisma.iEPGoal.findMany({
-      where: { 
-        studentId,
-        status: { not: IEPGoalStatus.DISCONTINUED }
-      },
-      include: {
-        student: true,
-        specialEducator: {
-          include: {
-            user: true
+  async findIEPGoalsByStudent(studentId: string, page: number = 1, limit: number = 10, filters?: {
+    domain?: string;
+    status?: IEPGoalStatus;
+    search?: string;
+    startDateFrom?: Date;
+    startDateTo?: Date;
+    targetDateFrom?: Date;
+    targetDateTo?: Date;
+  }): Promise<{ iepGoals: IEPGoal[], total: number }> {
+    const skip = (page - 1) * limit;
+    
+    const whereClause: any = {
+      studentId,
+      status: { not: IEPGoalStatus.DISCONTINUED }
+    };
+
+    // Apply filters
+    if (filters?.domain) {
+      whereClause.domain = filters.domain;
+    }
+    if (filters?.status) {
+      whereClause.status = filters.status;
+    }
+    if (filters?.search) {
+      whereClause.OR = [
+        { goalStatement: { contains: filters.search, mode: 'insensitive' } },
+        { strategy: { contains: filters.search, mode: 'insensitive' } },
+        { expectedOutcome: { contains: filters.search, mode: 'insensitive' } }
+      ];
+    }
+    if (filters?.startDateFrom || filters?.startDateTo) {
+      whereClause.startDate = {};
+      if (filters.startDateFrom) whereClause.startDate.gte = filters.startDateFrom;
+      if (filters.startDateTo) whereClause.startDate.lte = filters.startDateTo;
+    }
+    if (filters?.targetDateFrom || filters?.targetDateTo) {
+      whereClause.targetDate = {};
+      if (filters.targetDateFrom) whereClause.targetDate.gte = filters.targetDateFrom;
+      if (filters.targetDateTo) whereClause.targetDate.lte = filters.targetDateTo;
+    }
+
+    const [iepGoals, total] = await Promise.all([
+      this.prisma.iEPGoal.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        include: {
+          student: true,
+          specialEducator: {
+            include: {
+              user: true
+            }
+          },
+          progressUpdates: {
+            orderBy: { updateDate: 'desc' },
+            take: 5
           }
         },
-        progressUpdates: {
-          orderBy: { updateDate: 'desc' },
-          take: 3
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.iEPGoal.count({ where: whereClause })
+    ]);
+
+    return { iepGoals, total };
   }
 
-  async findIEPGoalsByEducator(specialEducatorId: string): Promise<IEPGoal[]> {
-    return this.prisma.iEPGoal.findMany({
-      where: { 
-        specialEducatorId,
-        status: { not: IEPGoalStatus.DISCONTINUED }
-      },
-      include: {
-        student: true,
-        specialEducator: {
-          include: {
-            user: true
+  async findIEPGoalsByEducator(specialEducatorId: string, page: number = 1, limit: number = 10, filters?: {
+    studentId?: string;
+    domain?: string;
+    status?: IEPGoalStatus;
+    search?: string;
+    startDateFrom?: Date;
+    startDateTo?: Date;
+    targetDateFrom?: Date;
+    targetDateTo?: Date;
+  }): Promise<{ iepGoals: IEPGoal[], total: number }> {
+    const skip = (page - 1) * limit;
+    
+    const whereClause: any = {
+      specialEducatorId,
+      status: { not: IEPGoalStatus.DISCONTINUED }
+    };
+
+    // Apply filters
+    if (filters?.studentId) {
+      whereClause.studentId = filters.studentId;
+    }
+    if (filters?.domain) {
+      whereClause.domain = filters.domain;
+    }
+    if (filters?.status) {
+      whereClause.status = filters.status;
+    }
+    if (filters?.search) {
+      whereClause.OR = [
+        { goalStatement: { contains: filters.search, mode: 'insensitive' } },
+        { strategy: { contains: filters.search, mode: 'insensitive' } },
+        { expectedOutcome: { contains: filters.search, mode: 'insensitive' } },
+        { student: { fullName: { contains: filters.search, mode: 'insensitive' } } }
+      ];
+    }
+    if (filters?.startDateFrom || filters?.startDateTo) {
+      whereClause.startDate = {};
+      if (filters.startDateFrom) whereClause.startDate.gte = filters.startDateFrom;
+      if (filters.startDateTo) whereClause.startDate.lte = filters.startDateTo;
+    }
+    if (filters?.targetDateFrom || filters?.targetDateTo) {
+      whereClause.targetDate = {};
+      if (filters.targetDateFrom) whereClause.targetDate.gte = filters.targetDateFrom;
+      if (filters.targetDateTo) whereClause.targetDate.lte = filters.targetDateTo;
+    }
+
+    const [iepGoals, total] = await Promise.all([
+      this.prisma.iEPGoal.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        include: {
+          student: true,
+          specialEducator: {
+            include: {
+              user: true
+            }
+          },
+          progressUpdates: {
+            orderBy: { updateDate: 'desc' },
+            take: 3
           }
         },
-        progressUpdates: {
-          orderBy: { updateDate: 'desc' },
-          take: 1
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.iEPGoal.count({ where: whereClause })
+    ]);
+
+    return { iepGoals, total };
   }
 
   // Session Note methods

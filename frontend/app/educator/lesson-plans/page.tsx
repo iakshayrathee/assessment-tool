@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Calendar, Target, TrendingUp, User, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { ArrowLeft, Plus, Calendar, Target, TrendingUp, User, CheckCircle, Clock, AlertCircle, Search, Filter, ArrowUpDown } from 'lucide-react';
 import { useIEPGoals } from '@/hooks/useAssessments';
 import { useEducatorStudents } from '@/hooks/useEducator';
 import { useAuth } from '@/hooks/useAuth';
@@ -59,22 +60,47 @@ function LessonPlansPageContent() {
     rating: ''
   });
   
+  // Student search modal state
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [studentCurrentPage, setStudentCurrentPage] = useState(1);
+  const [studentItemsPerPage, setStudentItemsPerPage] = useState(10);
+  
+  // Pagination and filtering state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [domainFilter, setDomainFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('startDate');
+  const [sortOrder, setSortOrder] = useState('desc');
+  
   // Get educator ID from auth
   const educatorId = user?.profile?.id;
   
   // Fetch students for this educator
   const { students, isLoading: studentsLoading } = useEducatorStudents();
   
-  // Fetch IEP goals for all students under this educator
+  // Fetch IEP goals for all students under this educator with pagination and filtering
+  const filters = {
+    domain: domainFilter === 'all' ? '' : domainFilter,
+    status: statusFilter === 'all' ? '' : statusFilter,
+    search: searchTerm,
+    sortBy,
+    sortOrder
+  };
+
   const { 
     iepGoals, 
+    pagination,
     createIEPGoal, 
     updateIEPGoal, 
     updateProgress, 
     isCreating, 
     isUpdating,
-    isLoading: goalsLoading 
-  } = useIEPGoals(undefined, educatorId);
+    isLoading: goalsLoading,
+    isFetching: goalsFetching 
+  } = useIEPGoals(undefined, educatorId, currentPage, itemsPerPage, filters);
 
   // Update newGoal studentId when selectedStudentId changes
   useEffect(() => {
@@ -134,7 +160,7 @@ function LessonPlansPageContent() {
     return config;
   };
 
-  // Filter goals by selected student
+  // Filter goals by selected student (now handled by backend, but maintain frontend filtering for consistency)
   const filteredGoals = selectedStudentId 
     ? iepGoals?.filter((goal: any) => goal.studentId === selectedStudentId) || []
     : iepGoals || [];
@@ -266,18 +292,118 @@ function LessonPlansPageContent() {
             <CardTitle className="text-lg">Select Student</CardTitle>
           </CardHeader>
           <CardContent>
-            <Select value={selectedStudentId || ''} onValueChange={setSelectedStudentId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Choose a student to view their IEP goals" />
-              </SelectTrigger>
-              <SelectContent>
-                {students?.map((student: Student) => (
-                  <SelectItem key={student.id} value={student.id}>
-                    {student.fullName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-4">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start text-left font-normal"
+                onClick={() => setShowStudentModal(true)}
+              >
+                {selectedStudentId ? getStudentName(selectedStudentId) : 'Choose a student to view their IEP goals'}
+              </Button>
+              
+              {selectedStudentId && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-sm">
+                    {getStudentName(selectedStudentId)}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedStudentId(null)}
+                    className="h-6 px-2"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Search and Filter Controls */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filter & Search
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Search */}
+              <div className="space-y-2">
+                <Label htmlFor="search">Search Goals</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="search"
+                    placeholder="Search goals..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Domain Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="domain">Domain</Label>
+                <Select value={domainFilter} onValueChange={setDomainFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All domains" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All domains</SelectItem>
+                    {DOMAINS.map(domain => (
+                      <SelectItem key={domain} value={domain}>
+                        {domain}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Status Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                    <SelectItem value="ACHIEVED">Achieved</SelectItem>
+                    <SelectItem value="DISCONTINUED">Discontinued</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sort Options */}
+              <div className="space-y-2">
+                <Label htmlFor="sort">Sort By</Label>
+                <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+                  const [newSortBy, newSortOrder] = value.split('-');
+                  setSortBy(newSortBy);
+                  setSortOrder(newSortOrder);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sort by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="startDate-desc">Start Date (Newest)</SelectItem>
+                    <SelectItem value="startDate-asc">Start Date (Oldest)</SelectItem>
+                    <SelectItem value="targetDate-desc">Target Date (Newest)</SelectItem>
+                    <SelectItem value="targetDate-asc">Target Date (Oldest)</SelectItem>
+                    <SelectItem value="progressPercent-desc">Progress (High to Low)</SelectItem>
+                    <SelectItem value="progressPercent-asc">Progress (Low to High)</SelectItem>
+                    <SelectItem value="status-asc">Status (A-Z)</SelectItem>
+                    <SelectItem value="status-desc">Status (Z-A)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -285,57 +411,107 @@ function LessonPlansPageContent() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{filteredGoals.length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    For selected student
-                  </p>
-                </div>
-                <Target className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">
-                    {filteredGoals.filter((goal: any) => goal.status === 'IN_PROGRESS').length}
+              {goalsLoading ? (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-300">--</div>
+                    <p className="text-xs text-muted-foreground">
+                      For selected student
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground">In Progress</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">
-                    {filteredGoals.filter((goal: any) => goal.status === 'ACHIEVED').length}
+                  <div className="animate-pulse">
+                    <Target className="h-8 w-8 text-gray-200" />
                   </div>
-                  <p className="text-xs text-muted-foreground">Achieved</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
-              </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold">{filteredGoals.length}</div>
+                    <p className="text-xs text-muted-foreground">
+                      For selected student
+                    </p>
+                  </div>
+                  <Target className="h-8 w-8 text-blue-500" />
+                </div>
+              )}
             </CardContent>
           </Card>
           
           <Card>
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{calculateOverallProgress()}%</div>
-                  <p className="text-xs text-muted-foreground">Overall Progress</p>
+              {goalsLoading ? (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-300">--</div>
+                    <p className="text-xs text-muted-foreground">In Progress</p>
+                  </div>
+                  <div className="animate-pulse">
+                    <TrendingUp className="h-8 w-8 text-gray-200" />
+                  </div>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-600 text-xs font-bold">{calculateOverallProgress()}%</span>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold">
+                      {filteredGoals.filter((goal: any) => goal.status === 'IN_PROGRESS').length}
+                    </div>
+                    <p className="text-xs text-muted-foreground">In Progress</p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-yellow-500" />
                 </div>
-              </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              {goalsLoading ? (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-300">--</div>
+                    <p className="text-xs text-muted-foreground">Achieved</p>
+                  </div>
+                  <div className="animate-pulse">
+                    <CheckCircle className="h-8 w-8 text-gray-200" />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold">
+                      {filteredGoals.filter((goal: any) => goal.status === 'ACHIEVED').length}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Achieved</p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              {goalsLoading ? (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-300">--</div>
+                    <p className="text-xs text-muted-foreground">Overall Progress</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                    <span className="text-gray-400 text-xs font-bold">--%</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold">{calculateOverallProgress()}%</div>
+                    <p className="text-xs text-muted-foreground">Overall Progress</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-blue-600 text-xs font-bold">{calculateOverallProgress()}%</span>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -351,9 +527,20 @@ function LessonPlansPageContent() {
                   - {getStudentName(selectedStudentId)}
                 </span>
               )}
+              {goalsFetching && (
+                <div className="ml-2 animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {goalsFetching && (
+              <div className="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center z-10 rounded-lg">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-600">Loading goals...</p>
+                </div>
+              </div>
+            )}
             {filteredGoals.length === 0 ? (
               <div className="text-center py-12">
                 <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
@@ -438,6 +625,49 @@ function LessonPlansPageContent() {
                     </div>
                   );
                 })}
+                
+                {/* Pagination */}
+                {pagination && pagination.totalPages > 1 && (
+                  <div className="mt-6">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          />
+                        </PaginationItem>
+                        
+                        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                          const pageNum = Math.max(1, Math.min(pagination.totalPages - 4, currentPage - 2)) + i;
+                          if (pageNum > pagination.totalPages) return null;
+                          return (
+                            <PaginationItem key={pageNum}>
+                              <PaginationLink
+                                isActive={currentPage === pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                                className="cursor-pointer"
+                              >
+                                {pageNum}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                            className={currentPage === pagination.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                    
+                    <div className="text-center text-sm text-gray-500 mt-2">
+                      Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, pagination.totalItems)} of {pagination.totalItems} goals
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -504,6 +734,138 @@ function LessonPlansPageContent() {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Student Search Modal */}
+        <Dialog open={showStudentModal} onOpenChange={setShowStudentModal}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Select Student</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+              {/* Search Input */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search students by name..."
+                  value={studentSearchTerm}
+                  onChange={(e) => {
+                    setStudentSearchTerm(e.target.value);
+                    setStudentCurrentPage(1);
+                  }}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Students List */}
+              <div className="flex-1 overflow-y-auto border rounded-lg">
+                {studentsLoading ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading students...</p>
+                  </div>
+                ) : students && students.length > 0 ? (
+                  <div className="divide-y">
+                    {students
+                      .filter((student: Student) => 
+                        student.fullName.toLowerCase().includes(studentSearchTerm.toLowerCase())
+                      )
+                      .slice((studentCurrentPage - 1) * studentItemsPerPage, studentCurrentPage * studentItemsPerPage)
+                      .map((student: Student) => (
+                        <div
+                          key={student.id}
+                          className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                            selectedStudentId === student.id ? 'bg-blue-50 border-l-4 border-l-blue-600' : ''
+                          }`}
+                          onClick={() => {
+                            setSelectedStudentId(student.id);
+                            setShowStudentModal(false);
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-gray-900">{student.fullName}</h4>
+                              <p className="text-sm text-gray-600">
+                                {student.grade && student.grade !== '' ? 
+                                  `Grade ${student.grade}` : 
+                                  'No grade level'
+                                }
+                              </p>
+                            </div>
+                            {selectedStudentId === student.id && (
+                              <Badge variant="default" className="bg-blue-600">
+                                Selected
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center">
+                    <User className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
+                    <p className="text-gray-600">
+                      {studentSearchTerm 
+                        ? 'No students match your search criteria' 
+                        : 'No students are assigned to you yet'
+                      }
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Pagination */}
+              {students && students.filter((student: Student) => 
+                student.fullName.toLowerCase().includes(studentSearchTerm.toLowerCase())
+              ).length > studentItemsPerPage && (
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <div className="text-sm text-gray-600">
+                    Showing {((studentCurrentPage - 1) * studentItemsPerPage) + 1} to {
+                      Math.min(studentCurrentPage * studentItemsPerPage, 
+                      students.filter((student: Student) => 
+                        student.fullName.toLowerCase().includes(studentSearchTerm.toLowerCase())
+                      ).length)
+                    } of {
+                      students.filter((student: Student) => 
+                        student.fullName.toLowerCase().includes(studentSearchTerm.toLowerCase())
+                      ).length
+                    } students
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setStudentCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={studentCurrentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    
+                    <span className="text-sm text-gray-600">
+                      Page {studentCurrentPage}
+                    </span>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setStudentCurrentPage(prev => prev + 1)}
+                      disabled={
+                        studentCurrentPage * studentItemsPerPage >= 
+                        students.filter((student: Student) => 
+                          student.fullName.toLowerCase().includes(studentSearchTerm.toLowerCase())
+                        ).length
+                      }
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </div>

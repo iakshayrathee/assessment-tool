@@ -135,6 +135,48 @@ const SKILL_DOMAINS: SkillDomain[] = [
 
 export const dynamic = 'force-dynamic';
 
+// Helper function to format user-friendly error messages
+const formatErrorMessage = (error: any, defaultMessage: string): string => {
+  const errorMessage = error.response?.data?.error || error.message || defaultMessage;
+  
+  // Handle common database/technical errors with user-friendly messages
+  if (errorMessage.includes('foreign key constraint')) {
+    return 'Unable to save assessment. Please ensure all required information is provided.';
+  }
+  
+  if (errorMessage.includes('validation')) {
+    return 'Please check that all required fields are filled out correctly.';
+  }
+  
+  if (errorMessage.includes('duplicate') || errorMessage.includes('unique')) {
+    return 'An assessment with this information already exists.';
+  }
+  
+  if (errorMessage.includes('not found')) {
+    return 'The requested assessment could not be found.';
+  }
+  
+  if (errorMessage.includes('unauthorized') || errorMessage.includes('permission')) {
+    return 'You do not have permission to perform this action.';
+  }
+  
+  if (errorMessage.includes('network') || errorMessage.includes('timeout')) {
+    return 'Connection error. Please check your internet connection and try again.';
+  }
+  
+  // Return the original error message if it's already user-friendly (doesn't contain technical terms)
+  if (!errorMessage.includes('SQL') && 
+      !errorMessage.includes('database') && 
+      !errorMessage.includes('constraint') &&
+      !errorMessage.includes('prisma') &&
+      errorMessage.length < 100) {
+    return errorMessage;
+  }
+  
+  // Fallback to default message for other technical errors
+  return defaultMessage;
+};
+
 function AssessmentsPageContent() {
   const searchParams = useSearchParams();
   const studentIdFromParams = searchParams.get('studentId') || undefined;
@@ -255,7 +297,7 @@ function AssessmentsPageContent() {
     limit: 100, 
     search: studentSearch 
   });
-  const { assessments, history, createAssessment, updateAssessment, isCreating, isUpdating, isLoadingHistory } = useAssessments(selectedStudentId, resetForm);
+  const { assessments, history, createAssessment, createAssessmentAsync, updateAssessment, completeAssessment, completeAssessmentAsync, isCreating, isUpdating, isCompleting, isLoadingHistory } = useAssessments(selectedStudentId, resetForm);
 
   // Update assessment data when student is selected and reset form
   useEffect(() => {
@@ -429,7 +471,7 @@ function AssessmentsPageContent() {
     };
   };
 
-  const handleSubmit = (): void => {
+  const handleSubmit = async (): Promise<void> => {
     const validation = validateForm();
     
     if (!validation.isValid) {
@@ -442,9 +484,19 @@ function AssessmentsPageContent() {
       return;
     }
     
-    const transformedData = transformDataForBackend(assessmentData);
-    const submitData = { ...transformedData, status: 'COMPLETED' };
-    createAssessment(submitData);
+    try {
+      // First create the assessment as a draft
+      const transformedData = transformDataForBackend(assessmentData);
+      const createdAssessment = await createAssessmentAsync(transformedData);
+      
+      // Then complete the assessment
+      await completeAssessmentAsync(createdAssessment.id);
+      
+      toast.success('Assessment completed successfully!');
+    } catch (error) {
+      const userFriendlyMessage = formatErrorMessage(error, 'Failed to complete assessment');
+      toast.error(userFriendlyMessage);
+    }
   };
 
   const renderDomainAssessment = (domain: SkillDomain) => {

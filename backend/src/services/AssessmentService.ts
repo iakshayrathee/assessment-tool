@@ -173,12 +173,29 @@ export class AssessmentService {
     return goal;
   }
 
-  async getIEPGoalsByStudent(studentId: string): Promise<IEPGoal[]> {
-    return await this.assessmentRepository.findIEPGoalsByStudent(studentId);
+  async getIEPGoalsByStudent(studentId: string, page: number = 1, limit: number = 10, filters?: {
+    domain?: string;
+    status?: IEPGoalStatus;
+    search?: string;
+    startDateFrom?: Date;
+    startDateTo?: Date;
+    targetDateFrom?: Date;
+    targetDateTo?: Date;
+  }): Promise<{ iepGoals: IEPGoal[], total: number }> {
+    return await this.assessmentRepository.findIEPGoalsByStudent(studentId, page, limit, filters);
   }
 
-  async getIEPGoalsByEducator(specialEducatorId: string): Promise<IEPGoal[]> {
-    return await this.assessmentRepository.findIEPGoalsByEducator(specialEducatorId);
+  async getIEPGoalsByEducator(specialEducatorId: string, page: number = 1, limit: number = 10, filters?: {
+    studentId?: string;
+    domain?: string;
+    status?: IEPGoalStatus;
+    search?: string;
+    startDateFrom?: Date;
+    startDateTo?: Date;
+    targetDateFrom?: Date;
+    targetDateTo?: Date;
+  }): Promise<{ iepGoals: IEPGoal[], total: number }> {
+    return await this.assessmentRepository.findIEPGoalsByEducator(specialEducatorId, page, limit, filters);
   }
 
   async discontinueIEPGoal(goalId: string, reason?: string): Promise<IEPGoal> {
@@ -347,19 +364,19 @@ export class AssessmentService {
       this.assessmentRepository.findReportsByStudent(studentId)
     ]);
 
-    const activeIEPGoals = iepGoals.filter(goal => 
+    const activeIEPGoals = iepGoals.iepGoals.filter(goal => 
       goal.status === IEPGoalStatus.IN_PROGRESS || goal.status === IEPGoalStatus.NOT_STARTED
     );
 
-    const completedIEPGoals = iepGoals.filter(goal => 
+    const completedIEPGoals = iepGoals.iepGoals.filter(goal => 
       goal.status === IEPGoalStatus.ACHIEVED
     );
 
     // Calculate overall progress
     let overallProgress = 0;
-    if (iepGoals.length > 0) {
-      const totalProgress = iepGoals.reduce((sum, goal) => sum + goal.progressPercent, 0);
-      overallProgress = Math.round(totalProgress / iepGoals.length);
+    if (iepGoals.iepGoals.length > 0) {
+      const totalProgress = iepGoals.iepGoals.reduce((sum, goal) => sum + goal.progressPercent, 0);
+      overallProgress = Math.round(totalProgress / iepGoals.iepGoals.length);
     }
 
     return {
