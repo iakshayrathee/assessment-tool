@@ -1,1003 +1,293 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useAssessments } from '@/hooks/useAssessments';
+import { useState } from 'react';
 import { useEducatorStudents } from '@/hooks/useEducator';
-
-// Type definitions for assessment data
-interface AssessmentFormData {
-  [key: string]: any; // Index signature for dynamic key access
-  studentId: string;
-  assessmentType: string;
-  // Reading
-  readingObservations: string;
-  readingLevel: string;
-  readingFiles: File[];
-  readingQ1: string; // Is the child reading at grade level?
-  readingQ2: string; // Can the child decode unfamiliar words?
-  readingQ3: string; // Can the child answer comprehension questions?
-  // Writing
-  writingObservations: string;
-  writingLevel: string;
-  writingFiles: File[];
-  writingQ1: string; // Can the child write legibly?
-  writingQ2: string; // Does the child use proper letter formation?
-  writingQ3: string; // Can the child compose sentences?
-  // Math
-  mathObservations: string;
-  mathLevel: string;
-  mathFiles: File[];
-  mathQ1: string; // Does the child understand number concepts?
-  mathQ2: string; // Can the child perform basic operations?
-  mathQ3: string; // Can the child solve word problems?
-  // Visual Perception
-  vpObservations: string;
-  vpLevel: string;
-  vpFiles: File[];
-  vpQ1: string; // Can the child copy shapes accurately?
-  vpQ2: string; // Does the child show spatial awareness?
-  vpQ3: string; // Can the child complete puzzles?
-  // Motor Skills
-  motorObservations: string;
-  motorLevel: string;
-  motorFiles: File[];
-  motorQ1: string; // Fine motor control (pencil grip, cutting)?
-  motorQ2: string; // Gross motor skills (balance, coordination)?
-  motorQ3: string; // Can the child tie shoes/buttons?
-  // Attention
-  attentionObservations: string;
-  attentionLevel: string;
-  attentionFiles: File[];
-  attentionQ1: string; // Can the child focus on tasks?
-  attentionQ2: string; // How long can the child sustain attention?
-  attentionQ3: string; // Does the child get easily distracted?
-}
-
-interface SkillDomain {
-  id: string;
-  title: string;
-  icon: any;
-  color: string;
-  description: string;
-}
-// Use route-level UnifiedLayout; remove page-level EducatorLayout
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-
-import { 
-  ArrowLeft, 
-  Brain,
-  BookOpen,
-  PenTool,
-  Calculator,
-  Eye,
-  Zap,
-  Upload,
-  Save,
-  Send,
-  FileText,
-  Plus
-} from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { motion } from 'framer-motion';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { BookOpen, PenTool, Calculator, FileText, Plus, Users } from 'lucide-react';
 import Link from 'next/link';
+import { FormalAssessmentForm } from '@/components/assessments/FormalAssessmentForm';
+import { ReadingSkillAssessment } from '@/components/assessments/ReadingSkillAssessment';
+import { WritingSkillAssessment } from '@/components/assessments/WritingSkillAssessment';
+import { MathSkillAssessment } from '@/components/assessments/MathSkillAssessment';
+import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
 
-const SKILL_DOMAINS: SkillDomain[] = [
-  {
-    id: 'reading',
-    title: 'Reading',
-    icon: BookOpen,
-    color: 'bg-blue-50 text-blue-600 border-blue-200',
-    description: 'Phonemic awareness, decoding, comprehension'
-  },
-  {
-    id: 'writing',
-    title: 'Writing',
-    icon: PenTool,
-    color: 'bg-green-50 text-green-600 border-green-200',
-    description: 'Handwriting, composition, spelling'
-  },
-  {
-    id: 'math',
-    title: 'Math',
-    icon: Calculator,
-    color: 'bg-purple-50 text-purple-600 border-purple-200',
-    description: 'Number sense, operations, problem solving'
-  },
-  {
-    id: 'vp',
-    title: 'Visual Perception',
-    icon: Eye,
-    color: 'bg-orange-50 text-orange-600 border-orange-200',
-    description: 'Visual processing, spatial awareness'
-  },
-  {
-    id: 'motor',
-    title: 'Motor Skills',
-    icon: Zap,
-    color: 'bg-red-50 text-red-600 border-red-200',
-    description: 'Fine and gross motor coordination'
-  },
-  {
-    id: 'attention',
-    title: 'Attention',
-    icon: Brain,
-    color: 'bg-yellow-50 text-yellow-600 border-yellow-200',
-    description: 'Focus, concentration, task persistence'
-  }
-];
-
-export const dynamic = 'force-dynamic';
-
-// Helper function to format user-friendly error messages
-const formatErrorMessage = (error: any, defaultMessage: string): string => {
-  const errorMessage = error.response?.data?.error || error.message || defaultMessage;
+export default function AssessmentsPage() {
+  const { user } = useAuth();
+  const { students, isLoading: studentsLoading } = useEducatorStudents();
   
-  // Handle common database/technical errors with user-friendly messages
-  if (errorMessage.includes('foreign key constraint')) {
-    return 'Unable to save assessment. Please ensure all required information is provided.';
-  }
-  
-  if (errorMessage.includes('validation')) {
-    return 'Please check that all required fields are filled out correctly.';
-  }
-  
-  if (errorMessage.includes('duplicate') || errorMessage.includes('unique')) {
-    return 'An assessment with this information already exists.';
-  }
-  
-  if (errorMessage.includes('not found')) {
-    return 'The requested assessment could not be found.';
-  }
-  
-  if (errorMessage.includes('unauthorized') || errorMessage.includes('permission')) {
-    return 'You do not have permission to perform this action.';
-  }
-  
-  if (errorMessage.includes('network') || errorMessage.includes('timeout')) {
-    return 'Connection error. Please check your internet connection and try again.';
-  }
-  
-  // Return the original error message if it's already user-friendly (doesn't contain technical terms)
-  if (!errorMessage.includes('SQL') && 
-      !errorMessage.includes('database') && 
-      !errorMessage.includes('constraint') &&
-      !errorMessage.includes('prisma') &&
-      errorMessage.length < 100) {
-    return errorMessage;
-  }
-  
-  // Fallback to default message for other technical errors
-  return defaultMessage;
-};
-
-function AssessmentsPageContent() {
-  const searchParams = useSearchParams();
-  const studentIdFromParams = searchParams.get('studentId') || undefined;
-  
-  // Student selection state
-  const [selectedStudentId, setSelectedStudentId] = useState<string>(studentIdFromParams || '');
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [studentSearch, setStudentSearch] = useState<string>('');
-  
-  const [selectedDomain, setSelectedDomain] = useState<string>('reading');
-  const [assessmentData, setAssessmentData] = useState<AssessmentFormData>({
-    studentId: selectedStudentId,
-    assessmentType: 'Initial',
-    // Reading
-    readingObservations: '',
-    readingLevel: '',
-    readingFiles: [],
-    readingQ1: '',
-    readingQ2: '',
-    readingQ3: '',
-    // Writing
-    writingObservations: '',
-    writingLevel: '',
-    writingFiles: [],
-    writingQ1: '',
-    writingQ2: '',
-    writingQ3: '',
-    // Math
-    mathObservations: '',
-    mathLevel: '',
-    mathFiles: [],
-    mathQ1: '',
-    mathQ2: '',
-    mathQ3: '',
-    // Visual Perception
-    vpObservations: '',
-    vpLevel: '',
-    vpFiles: [],
-    vpQ1: '',
-    vpQ2: '',
-    vpQ3: '',
-    // Motor Skills
-    motorObservations: '',
-    motorLevel: '',
-    motorFiles: [],
-    motorQ1: '',
-    motorQ2: '',
-    motorQ3: '',
-    // Attention
-    attentionObservations: '',
-    attentionLevel: '',
-    attentionFiles: [],
-    attentionQ1: '',
-    attentionQ2: '',
-    attentionQ3: ''
-  });
+  const [assessmentTab, setAssessmentTab] = useState('formal');
+  const [showFormalForm, setShowFormalForm] = useState(false);
+  const [showSkillAssessment, setShowSkillAssessment] = useState<'reading' | 'writing' | 'math' | null>(null);
+  const [showStudentModal, setShowStudentModal] = useState(false);
 
-  // Function to reset form to initial state
-  const resetForm = (studentId?: string) => {
-    // Check if student has completed initial assessment
-    const currentStudentId = studentId || selectedStudentId || '';
-    const studentAssessments = assessments?.filter((assessment: any) => assessment.studentId === currentStudentId);
-    const hasCompletedInitial = studentAssessments?.some((assessment: any) => 
-      assessment.assessmentType === 'Initial' && assessment.status === 'COMPLETED'
-    );
-    
-    setAssessmentData({
-      studentId: currentStudentId,
-      assessmentType: hasCompletedInitial ? 'Reassessment' : 'Initial',
-      // Reading
-      readingObservations: '',
-      readingLevel: '',
-      readingFiles: [],
-      readingQ1: '',
-      readingQ2: '',
-      readingQ3: '',
-      // Writing
-      writingObservations: '',
-      writingLevel: '',
-      writingFiles: [],
-      writingQ1: '',
-      writingQ2: '',
-      writingQ3: '',
-      // Math
-      mathObservations: '',
-      mathLevel: '',
-      mathFiles: [],
-      mathQ1: '',
-      mathQ2: '',
-      mathQ3: '',
-      // Visual Perception
-      vpObservations: '',
-      vpLevel: '',
-      vpFiles: [],
-      vpQ1: '',
-      vpQ2: '',
-      vpQ3: '',
-      // Motor Skills
-      motorObservations: '',
-      motorLevel: '',
-      motorFiles: [],
-      motorQ1: '',
-      motorQ2: '',
-      motorQ3: '',
-      // Attention
-      attentionObservations: '',
-      attentionLevel: '',
-      attentionFiles: [],
-      attentionQ1: '',
-      attentionQ2: '',
-      attentionQ3: ''
-    });
-    // Reset to first domain tab
-    setSelectedDomain('reading');
-  };
+  const selectedStudent = students?.find(s => s.id === selectedStudentId);
 
-  // Fetch students and assessments
-  const { students, isLoading: isLoadingStudents } = useEducatorStudents({ 
-    limit: 100, 
-    search: studentSearch 
-  });
-  const { assessments, history, createAssessment, createAssessmentAsync, updateAssessment, completeAssessment, completeAssessmentAsync, isCreating, isUpdating, isCompleting, isLoadingHistory } = useAssessments(selectedStudentId, resetForm);
+  return (
+    <div className="max-w-7xl mx-auto p-6 pb-12">
+      {/* Header with student selection in top right */}
+      <div className="flex items-start justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Comprehensive Assessments</h1>
+            <p className="text-gray-600">Formal referrals and detailed skill assessments</p>
+          </div>
+          
+          {/* Student Selection - Top Right with more width */}
+          <div className="flex items-center gap-4">
+            {selectedStudent ? (
+              <div className="flex items-center gap-4 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200 min-w-[250px]">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-blue-900 text-sm truncate">
+                    {selectedStudent.fullName || selectedStudent.name || 'Unknown'}
+                  </p>
+                  <p className="text-xs text-blue-700">
+                    Grade {selectedStudent.grade || 'N/A'}
+                  </p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowStudentModal(true)}
+                  className="h-8 w-8 p-0 flex-shrink-0"
+                  title="Change student"
+                >
+                  <Users className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                onClick={() => setShowStudentModal(true)}
+                className="flex items-center gap-2 px-4 py-2 min-w-[140px]"
+              >
+                <Users className="h-4 w-4" />
+                Select Student
+              </Button>
+            )}
+          </div>
+        </div>
 
-  // Update assessment data when student is selected and reset form
-  useEffect(() => {
-    if (selectedStudentId) {
-      resetForm(selectedStudentId);
-    }
-  }, [selectedStudentId]);
+        {/* Assessment Tabs */}
+        {selectedStudentId ? (
+          <Tabs value={assessmentTab} onValueChange={setAssessmentTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="formal">
+                <FileText className="h-4 w-4 mr-2" />
+                Formal Assessments
+              </TabsTrigger>
+              <TabsTrigger value="skill">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Skill Assessments
+              </TabsTrigger>
+            </TabsList>
 
-  // Check if initial assessment exists for reassessment validation
-  const hasInitialAssessment = assessments?.some((assessment: any) => 
-    assessment.assessmentType === 'Initial' && assessment.status === 'COMPLETED'
-  );
-
-  // Get latest initial assessment for comparison
-  const latestInitialAssessment = assessments?.find((assessment: any) => 
-    assessment.assessmentType === 'Initial' && assessment.status === 'COMPLETED'
-  );
-
-  // Helper function to determine if there's improvement between levels
-  const isImprovement = (currentLevel: string, previousLevel: string): boolean => {
-    if (!currentLevel || !previousLevel) return false;
-    
-    // Define level hierarchies (higher index = better)
-    const levelHierarchies = [
-      // Reading levels
-      ['2+ Levels Below', '1 Level Below', 'Yes'],
-      // Yes/Help/No pattern
-      ['No', 'With Help', 'Yes'],
-      ['Not Yet', 'With Help', 'Yes'],
-      ['Not Yet', 'Partially', 'Yes'],
-      ['No', 'Partially', 'Yes'],
-      ['No', 'Sometimes', 'Yes'],
-      // Quality levels
-      ['Poor', 'Fair', 'Good'],
-      // Frequency levels
-      ['Rarely', 'Sometimes', 'Always'],
-      // Independence levels
-      ['Not Yet', 'With Help', 'Independently'],
-      ['No', 'Learning', 'Yes'],
-      // Effort levels
-      ['No', 'With Effort', 'Yes'],
-      ['No', 'With Difficulty', 'Yes'],
-      // Comprehension levels
-      ['Not Yet', 'Partially', 'Fully'],
-      // Visual perception levels
-      ['Struggles', 'Below Level', 'Age Appropriate']
-    ];
-
-    // Find which hierarchy applies to these levels
-    for (const hierarchy of levelHierarchies) {
-      const currentIndex = hierarchy.indexOf(currentLevel);
-      const previousIndex = hierarchy.indexOf(previousLevel);
-      
-      if (currentIndex !== -1 && previousIndex !== -1) {
-        return currentIndex > previousIndex;
-      }
-    }
-    
-    // If no hierarchy matches, consider any change as potential improvement
-    return currentLevel !== previousLevel;
-  };
-
-  // Progress comparison function
-  const getProgressComparison = (domain: string) => {
-    if (!latestInitialAssessment || assessmentData.assessmentType !== 'Reassessment') {
-      return null;
-    }
-
-    const currentLevel = assessmentData[`${domain}Level`];
-    const previousLevel = latestInitialAssessment[`${domain}Level`];
-    const currentObservations = assessmentData[`${domain}Observations`];
-    const previousObservations = latestInitialAssessment[`${domain}Observations`];
-
-    if (!previousLevel && !previousObservations) return null;
-
-    return {
-      previousLevel,
-      currentLevel,
-      previousObservations,
-      currentObservations,
-      hasImprovement: isImprovement(currentLevel, previousLevel)
-    };
-  };
-
-  const handleInputChange = (field: string, value: any): void => {
-    setAssessmentData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleFileUpload = (domain: string, files: FileList | null): void => {
-    if (files) {
-      const fileArray = Array.from(files);
-      handleInputChange(`${domain}Files`, fileArray);
-    }
-  };
-
-  const transformDataForBackend = (data: AssessmentFormData) => {
-    // Transform frontend format to backend format
-    const backendData = {
-      studentId: data.studentId,
-      assessmentType: data.assessmentType,
-      // Reading
-      readingObservations: data.readingObservations,
-      readingLevel: `Q1: ${data.readingQ1 || 'Not answered'} | Q2: ${data.readingQ2 || 'Not answered'} | Q3: ${data.readingQ3 || 'Not answered'}`,
-      readingFiles: [], // File handling would need to be implemented separately
-      // Writing
-      writingObservations: data.writingObservations,
-      writingLevel: `Q1: ${data.writingQ1 || 'Not answered'} | Q2: ${data.writingQ2 || 'Not answered'} | Q3: ${data.writingQ3 || 'Not answered'}`,
-      writingFiles: [],
-      // Math
-      mathObservations: data.mathObservations,
-      mathLevel: `Q1: ${data.mathQ1 || 'Not answered'} | Q2: ${data.mathQ2 || 'Not answered'} | Q3: ${data.mathQ3 || 'Not answered'}`,
-      mathFiles: [],
-      // Visual Perception
-      vpObservations: data.vpObservations,
-      vpLevel: `Q1: ${data.vpQ1 || 'Not answered'} | Q2: ${data.vpQ2 || 'Not answered'} | Q3: ${data.vpQ3 || 'Not answered'}`,
-      vpFiles: [],
-      // Motor Skills
-      motorObservations: data.motorObservations,
-      motorLevel: `Q1: ${data.motorQ1 || 'Not answered'} | Q2: ${data.motorQ2 || 'Not answered'} | Q3: ${data.motorQ3 || 'Not answered'}`,
-      motorFiles: [],
-      // Attention
-      attentionObservations: data.attentionObservations,
-      attentionLevel: `Q1: ${data.attentionQ1 || 'Not answered'} | Q2: ${data.attentionQ2 || 'Not answered'} | Q3: ${data.attentionQ3 || 'Not answered'}`,
-      attentionFiles: []
-    };
-    return backendData;
-  };
-
-  const handleSaveDraft = (): void => {
-    if (!selectedStudentId) {
-      toast({
-        title: "No Student Selected",
-        description: "Please select a student before saving the assessment.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const transformedData = transformDataForBackend(assessmentData);
-    createAssessment(transformedData);
-  };
-
-  // Form validation function
-  const validateForm = (): { isValid: boolean; missingFields: string[] } => {
-    const missingFields: string[] = [];
-    
-    // Check if student is selected
-    if (!selectedStudentId) {
-      missingFields.push('Student selection');
-    }
-    
-    // Check each domain for required fields
-    SKILL_DOMAINS.forEach(domain => {
-      const domainKey = domain.id;
-      const hasQuestions = assessmentData[`${domainKey}Q1`] && 
-                          assessmentData[`${domainKey}Q2`] && 
-                          assessmentData[`${domainKey}Q3`];
-      const hasObservations = assessmentData[`${domainKey}Observations`]?.trim();
-      
-      if (!hasQuestions) {
-        missingFields.push(`${domain.title} - Assessment Questions`);
-      }
-      if (!hasObservations) {
-        missingFields.push(`${domain.title} - Observations`);
-      }
-    });
-    
-    return {
-      isValid: missingFields.length === 0,
-      missingFields
-    };
-  };
-
-  const handleSubmit = async (): Promise<void> => {
-    const validation = validateForm();
-    
-    if (!validation.isValid) {
-      // Show validation error
-      toast({
-        title: "Assessment Incomplete",
-        description: `Please complete the following required fields:\n${validation.missingFields.map(field => `• ${field}`).join('\n')}`,
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      // First create the assessment as a draft
-      const transformedData = transformDataForBackend(assessmentData);
-      const createdAssessment = await createAssessmentAsync(transformedData);
-      
-      // Then complete the assessment
-      await completeAssessmentAsync(createdAssessment.id);
-      
-      toast.success('Assessment completed successfully!');
-    } catch (error) {
-      const userFriendlyMessage = formatErrorMessage(error, 'Failed to complete assessment');
-      toast.error(userFriendlyMessage);
-    }
-  };
-
-  const renderDomainAssessment = (domain: SkillDomain) => {
-    const domainKey = domain.id;
-    const observationsKey = `${domainKey}Observations`;
-    const levelKey = `${domainKey}Level`;
-    const filesKey = `${domainKey}Files`;
-
-    // Domain-specific questions
-    const getQuestions = () => {
-      switch (domainKey) {
-        case 'reading':
-          return [
-            { question: 'Is the child reading at grade level?', options: ['Yes', '1 Level Below', '2+ Levels Below'] },
-            { question: 'Can the child decode unfamiliar words?', options: ['Yes', 'With Help', 'No'] },
-            { question: 'Can the child answer comprehension questions?', options: ['Fully', 'Partially', 'Not Yet'] }
-          ];
-        case 'writing':
-          return [
-            { question: 'Can the child write legibly?', options: ['Yes', 'With Effort', 'No'] },
-            { question: 'Does the child use proper letter formation?', options: ['Always', 'Sometimes', 'Rarely'] },
-            { question: 'Can the child compose sentences?', options: ['Independently', 'With Help', 'Not Yet'] }
-          ];
-        case 'math':
-          return [
-            { question: 'Does the child understand number concepts?', options: ['Yes', 'Partially', 'No'] },
-            { question: 'Can the child perform basic operations?', options: ['Yes', 'With Help', 'No'] },
-            { question: 'Can the child solve word problems?', options: ['Yes', 'Sometimes', 'No'] }
-          ];
-        case 'vp':
-          return [
-            { question: 'Can the child copy shapes accurately?', options: ['Yes', 'With Difficulty', 'No'] },
-            { question: 'Does the child show spatial awareness?', options: ['Good', 'Fair', 'Poor'] },
-            { question: 'Can the child complete puzzles?', options: ['Age Appropriate', 'Below Level', 'Struggles'] }
-          ];
-        case 'motor':
-          return [
-            { question: 'Fine motor control (pencil grip, cutting)?', options: ['Good', 'Fair', 'Poor'] },
-            { question: 'Gross motor skills (balance, coordination)?', options: ['Good', 'Fair', 'Poor'] },
-            { question: 'Can the child tie shoes/buttons?', options: ['Yes', 'Learning', 'No'] }
-          ];
-        case 'attention':
-          return [
-            { question: 'Can the child focus on tasks?', options: ['Good Focus', 'Moderate', 'Poor Focus'] },
-            { question: 'How long can the child sustain attention?', options: ['15+ minutes', '5-15 minutes', '<5 minutes'] },
-            { question: 'Does the child get easily distracted?', options: ['Rarely', 'Sometimes', 'Often'] }
-          ];
-        default:
-          return [];
-      }
-    };
-
-    // Get progress comparison for this domain
-    const progressComparison = getProgressComparison(domainKey);
-
-    return (
-      <div className="space-y-6">
-        {/* Progress Comparison (for Reassessments) */}
-        {progressComparison && (
-          <Card className="border-blue-200 bg-blue-50">
-            <CardHeader>
-              <CardTitle className="text-lg text-blue-900 flex items-center gap-2">
-                📊 Progress Comparison - {domain.title}
-              </CardTitle>
-              <p className="text-sm text-blue-700">
-                Comparing with Initial Assessment from{' '}
-                {new Date(latestInitialAssessment.completedAt || latestInitialAssessment.createdAt).toLocaleDateString()}
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {progressComparison.previousLevel && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-blue-900">Previous Level</Label>
-                    <div className="p-2 bg-white rounded border">
-                      <p className="text-sm">{progressComparison.previousLevel}</p>
+            {/* Formal Assessments Tab */}
+            <TabsContent value="formal" className="mt-6">
+              <Card className="flex-1">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Formal Assessment Referrals</CardTitle>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Create referrals for psychological, educational, or specialized assessments
+                      </p>
                     </div>
+                    <Button onClick={() => setShowFormalForm(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Referral
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-blue-900">Current Level</Label>
-                    <div className="p-2 bg-white rounded border">
-                      <p className="text-sm">{progressComparison.currentLevel || 'Not yet assessed'}</p>
-                    </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-12">
+                    <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-4">No formal assessments yet</p>
+                    <Button onClick={() => setShowFormalForm(true)} variant="outline">
+                      Create First Referral
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Skill Assessments Tab */}
+            <TabsContent value="skill" className="mt-6">
+              {showSkillAssessment ? (
+                <div>
+                  {showSkillAssessment === 'reading' && (
+                    <ReadingSkillAssessment
+                      studentId={selectedStudentId}
+                      onSuccess={() => setShowSkillAssessment(null)}
+                      onCancel={() => setShowSkillAssessment(null)}
+                    />
+                  )}
+                  {showSkillAssessment === 'writing' && (
+                    <WritingSkillAssessment
+                      studentId={selectedStudentId}
+                      onSuccess={() => setShowSkillAssessment(null)}
+                      onCancel={() => setShowSkillAssessment(null)}
+                    />
+                  )}
+                  {showSkillAssessment === 'math' && (
+                    <MathSkillAssessment
+                      studentId={selectedStudentId}
+                      onSuccess={() => setShowSkillAssessment(null)}
+                      onCancel={() => setShowSkillAssessment(null)}
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="flex-1">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-2">Choose Assessment Type</h3>
+                    <p className="text-sm text-gray-600">
+                      Select a skill area to conduct a detailed symptom-based assessment
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Reading Assessment Card */}
+                    <Card 
+                      className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-blue-500"
+                      onClick={() => setShowSkillAssessment('reading')}
+                    >
+                      <CardHeader>
+                        <div className="flex items-center justify-center mb-4">
+                          <div className="p-4 bg-blue-100 rounded-full">
+                            <BookOpen className="h-8 w-8 text-blue-600" />
+                          </div>
+                        </div>
+                        <CardTitle className="text-center">Reading Assessment</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="text-sm text-gray-600 space-y-2">
+                          <li>• Decoding & Word Reading (17 symptoms)</li>
+                          <li>• Fluency & Reading Flow (10 symptoms)</li>
+                          <li>• Eye Tracking & Visual Skills (8 symptoms)</li>
+                          <li>• Comprehension (3 symptoms)</li>
+                          <li>• Attention & Behavior (7 symptoms)</li>
+                          <li>• Mechanics & Punctuation (4 symptoms)</li>
+                        </ul>
+                        <div className="mt-4 text-center">
+                          <span className="text-xs font-semibold text-blue-600">50+ Symptoms</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Writing Assessment Card */}
+                    <Card 
+                      className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-green-500"
+                      onClick={() => setShowSkillAssessment('writing')}
+                    >
+                      <CardHeader>
+                        <div className="flex items-center justify-center mb-4">
+                          <div className="p-4 bg-green-100 rounded-full">
+                            <PenTool className="h-8 w-8 text-green-600" />
+                          </div>
+                        </div>
+                        <CardTitle className="text-center">Writing Assessment</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="text-sm text-gray-600 space-y-2">
+                          <li>• Fine Motor & Grip (8 symptoms)</li>
+                          <li>• Letter Formation (7 symptoms)</li>
+                          <li>• Spacing & Alignment (9 symptoms)</li>
+                          <li>• Handwriting Fluency (7 symptoms)</li>
+                          <li>• Dictation & Spelling (9 symptoms)</li>
+                          <li>• Sentence Formation (9 symptoms)</li>
+                          <li>• Copying & Organization (12 symptoms)</li>
+                        </ul>
+                        <div className="mt-4 text-center">
+                          <span className="text-xs font-semibold text-green-600">60+ Symptoms</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Math Assessment Card */}
+                    <Card 
+                      className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-purple-500"
+                      onClick={() => setShowSkillAssessment('math')}
+                    >
+                      <CardHeader>
+                        <div className="flex items-center justify-center mb-4">
+                          <div className="p-4 bg-purple-100 rounded-full">
+                            <Calculator className="h-8 w-8 text-purple-600" />
+                          </div>
+                        </div>
+                        <CardTitle className="text-center">Math Assessment</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="text-sm text-gray-600 space-y-2">
+                          <li>• Number Sense (15 symptoms)</li>
+                          <li>• Basic Operations (10 symptoms)</li>
+                          <li>• Concepts & Pre-Math (9 symptoms)</li>
+                          <li>• Math Fluency (7 symptoms)</li>
+                          <li>• Visual-Spatial (7 symptoms)</li>
+                          <li>• Symbol Confusion (6 symptoms)</li>
+                          <li>• Behavioral Indicators (7 symptoms)</li>
+                        </ul>
+                        <div className="mt-4 text-center">
+                          <span className="text-xs font-semibold text-purple-600">60+ Symptoms</span>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
               )}
-              {progressComparison.previousObservations && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-blue-900">Previous Observations</Label>
-                  <div className="p-3 bg-white rounded border">
-                    <p className="text-sm text-gray-700">{progressComparison.previousObservations}</p>
-                  </div>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <Card className="flex-1">
+            <CardContent className="py-12">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Plus className="h-8 w-8 text-gray-400" />
                 </div>
-              )}
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Student Selected</h3>
+                <p className="text-gray-600">
+                  Please select a student from above to begin an assessment
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Structured Questions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Assessment Questions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {getQuestions().map((q, index) => {
-              const questionKey = `${domainKey}Q${index + 1}`;
-              return (
-                <div key={index} className="space-y-2">
-                  <Label className="text-sm font-medium">{q.question}</Label>
-                  <Select 
-                    value={assessmentData[questionKey] || ''} 
-                    onValueChange={(value) => handleInputChange(questionKey, value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select response" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {q.options.map((option) => (
-                        <SelectItem key={option} value={option}>{option}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+      {/* Student Selection Modal */}
+      <StudentSelectionModal
+        isOpen={showStudentModal}
+        onClose={() => setShowStudentModal(false)}
+        onSelect={setSelectedStudentId}
+        selectedStudentId={selectedStudentId}
+      />
 
-        {/* Observations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Detailed Observations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor={`${domainKey}-observations`}>
-                Educator's observations on {domain.title.toLowerCase()} skills
-              </Label>
-              <Textarea
-                id={`${domainKey}-observations`}
-                value={assessmentData[observationsKey] || ''}
-                onChange={(e) => handleInputChange(observationsKey, e.target.value)}
-                placeholder={`Describe the child's ${domain.title.toLowerCase()} abilities, challenges, and specific observations...`}
-                rows={4}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-
-      </div>
-    );
-  };
-
-  return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-200">
-          <Link href="/educator/students">
-            <Button variant="ghost" size="sm" className="mb-3">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Students
-            </Button>
-          </Link>
-          <h1 className="text-xl font-bold text-gray-900">Student Assessment</h1>
-          <p className="text-sm text-gray-600">Comprehensive skill evaluation</p>
-        </div>
-
-        {/* Student Selection */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor="studentSearch" className="text-sm font-medium">Search Students</Label>
-              <Input
-                id="studentSearch"
-                placeholder="Search by name..."
-                value={studentSearch}
-                onChange={(e) => setStudentSearch(e.target.value)}
-                className="h-8"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="studentSelect" className="text-sm font-medium">Select Student</Label>
-              <Select 
-                value={selectedStudentId} 
-                onValueChange={(value) => {
-                  // Prevent selection of disabled values
-                  if (value !== 'loading' && value !== 'no-students') {
-                    setSelectedStudentId(value);
-                  }
-                }}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Choose a student..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingStudents ? (
-                    <SelectItem value="loading" disabled>Loading students...</SelectItem>
-                  ) : students.length === 0 ? (
-                    <SelectItem value="no-students" disabled>No students found</SelectItem>
-                  ) : (
-                    students
-                      .filter((student: any) => 
-                        student.fullName.toLowerCase().includes(studentSearch.toLowerCase())
-                      )
-                      .map((student: any) => (
-                        <SelectItem key={student.id} value={student.id}>
-                          {student.fullName} - Grade {student.grade}
-                        </SelectItem>
-                      ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Formal Assessment Form Modal */}
+      <Dialog open={showFormalForm} onOpenChange={setShowFormalForm}>
+        <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0">
+          <div className="sticky top-0 bg-white z-10 px-6 pt-6 pb-4 border-b">
+            <DialogHeader>
+              <DialogTitle>New Formal Assessment Referral</DialogTitle>
+            </DialogHeader>
           </div>
-        </div>
-
-        {/* Assessment Type Selection */}
-        {selectedStudentId && (
-          <div className="p-4 border-b border-gray-200">
-            <div className="space-y-3">
-              <Label htmlFor="assessmentType" className="text-sm font-medium">Assessment Type</Label>
-              <Select 
-                value={assessmentData.assessmentType} 
-                onValueChange={(value) => handleInputChange('assessmentType', value)}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem 
-                    value="Initial" 
-                    disabled={hasInitialAssessment}
-                  >
-                    Initial Assessment
-                    {hasInitialAssessment && ' (Already Completed)'}
-                  </SelectItem>
-                  <SelectItem 
-                    value="Reassessment" 
-                    disabled={!hasInitialAssessment}
-                  >
-                    Reassessment
-                    {!hasInitialAssessment && ' (Requires Initial)'}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              {!hasInitialAssessment && (
-                <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                  ⚠️ Complete Initial Assessment first
-                </p>
-              )}
-              {hasInitialAssessment && assessmentData.assessmentType === 'Reassessment' && (
-                <p className="text-xs text-green-600 bg-green-50 p-2 rounded">
-                  ✓ Initial Assessment completed - Conducting Reassessment
-                </p>
-              )}
-              {assessmentData.assessmentType === 'Reassessment' && latestInitialAssessment && (
-                <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                  📊 Comparing with Initial from{' '}
-                  {new Date(latestInitialAssessment.completedAt || latestInitialAssessment.createdAt).toLocaleDateString()}
-                </p>
-              )}
-            </div>
+          <div className="px-6 pb-6">
+            <FormalAssessmentForm
+              studentId={selectedStudentId}
+              referredBy={user?.profile?.fullName || 'Educator'}
+              onSuccess={() => {
+                setShowFormalForm(false);
+                // Could add refresh logic here
+              }}
+              onCancel={() => setShowFormalForm(false)}
+            />
           </div>
-        )}
-
-        {/* Assessment History */}
-        {selectedStudentId && (
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center gap-2 mb-3">
-              <FileText className="h-4 w-4" />
-              <span className="text-sm font-medium">Assessment History</span>
-              {history && (
-                <span className="text-xs text-gray-500">
-                  ({history.totalAssessments} total, {history.completedAssessments} completed)
-                </span>
-              )}
-            </div>
-            
-            {isLoadingHistory ? (
-              <div className="text-xs text-gray-500">Loading assessment history...</div>
-            ) : history && history.assessments.length > 0 ? (
-              <div className="space-y-2 max-h-40 overflow-y-auto">
-                {history.assessments.map((assessment: any, index: number) => (
-                  <div key={assessment.id} className="p-2 border rounded text-xs">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          assessment.status === 'COMPLETED' ? 'bg-green-500' : 
-                          assessment.status === 'IN_PROGRESS' ? 'bg-yellow-500' : 'bg-gray-400'
-                        }`} />
-                        <span className="font-medium">
-                          {assessment.assessmentType}
-                        </span>
-                      </div>
-                      <Badge variant="outline" className="text-xs py-0 px-1 ml-2">
-                        {assessment.status === 'COMPLETED' ? 'Done' : 
-                         assessment.status === 'IN_PROGRESS' ? 'In Progress' : 'Draft'}
-                      </Badge>
-                    </div>
-                    <p className="text-gray-500">
-                      {assessment.completedAt 
-                        ? new Date(assessment.completedAt).toLocaleDateString()
-                        : new Date(assessment.createdAt).toLocaleDateString()
-                      }
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
-                No assessment history found for this student.
-              </div>
-            )}
-            
-            {history && (history.hasSuccessfulAssessments || history.hasDrafts) && (
-              <div className="mt-2 flex gap-2 text-xs">
-                {history.hasSuccessfulAssessments && (
-                  <span className="text-green-600 bg-green-50 px-2 py-1 rounded">
-                    ✓ Has completed assessments
-                  </span>
-                )}
-                {history.hasDrafts && (
-                  <span className="text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
-                    📝 Has drafts/in-progress
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header with Actions */}
-        <div className="bg-white border-b border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              {selectedStudentId && students.find((s: any) => s.id === selectedStudentId) && (
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {students.find((s: any) => s.id === selectedStudentId)?.fullName}
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Grade {students.find((s: any) => s.id === selectedStudentId)?.grade} • {assessmentData.assessmentType} Assessment
-                  </p>
-                </div>
-              )}
-              {!selectedStudentId && (
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Select a Student</h2>
-                  <p className="text-sm text-gray-600">Choose a student from the sidebar to begin assessment</p>
-                </div>
-              )}
-            </div>
-            {selectedStudentId && (
-              <div className="flex items-center gap-2">
-                <Button onClick={handleSaveDraft} variant="outline" disabled={isCreating || isUpdating} size="sm">
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Draft
-                </Button>
-                <Button onClick={handleSubmit} disabled={isCreating || isUpdating} size="sm">
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit Assessment
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Assessment Content */}
-        {selectedStudentId ? (
-          <div className="flex-1 overflow-y-auto">
-            {/* Tabbed Interface for Domains */}
-            <Card className="h-full flex flex-col">
-              <CardContent className="p-0 flex-1 flex flex-col">
-                {/* Tab Navigation */}
-                <div className="border-b border-gray-200">
-                  <nav className="flex space-x-6 px-6 overflow-x-auto" aria-label="Tabs">
-                    {SKILL_DOMAINS.map((domain) => {
-                      const Icon = domain.icon;
-                      const isSelected = selectedDomain === domain.id;
-                      const hasLevel = assessmentData[`${domain.id}Q1`] || assessmentData[`${domain.id}Q2`] || assessmentData[`${domain.id}Q3`];
-                      const hasObservations = assessmentData[`${domain.id}Observations`];
-                      const hasFiles = assessmentData[`${domain.id}Files`]?.length > 0;
-                      const fileCount = assessmentData[`${domain.id}Files`]?.length || 0;
-                      const isComplete = hasLevel && hasObservations;
-                      const progressComparison = getProgressComparison(domain.id);
-                      
-                      return (
-                        <button
-                          key={domain.id}
-                          onClick={() => setSelectedDomain(domain.id)}
-                          className={`${
-                            isSelected
-                              ? 'border-blue-500 text-blue-600 bg-blue-50'
-                              : isComplete
-                                ? 'border-transparent text-green-700 hover:text-green-800 hover:border-green-300 bg-green-50'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                          } whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm flex flex-col items-center gap-1 transition-all min-w-[100px] relative`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Icon className="h-4 w-4" />
-                            <span className="text-xs">{domain.title}</span>
-                          </div>
-                          
-                          {/* Progress Indicators */}
-                          <div className="flex items-center gap-1 text-xs">
-                            {/* Completion Status */}
-                            {isComplete ? (
-                              <span className="text-green-600 font-medium">✓ Complete</span>
-                            ) : hasLevel || hasObservations ? (
-                              <span className="text-yellow-600 font-medium">⚠ Partial</span>
-                            ) : (
-                              <span className="text-gray-400">○ Pending</span>
-                            )}
-                            
-                            {/* File Count */}
-                            {fileCount > 0 && (
-                              <span className="text-blue-600 ml-1">📎{fileCount}</span>
-                            )}
-                          </div>
-                          
-                          {/* Improvement Indicator for Reassessments */}
-                          {progressComparison && progressComparison.hasImprovement && (
-                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">↗</span>
-                            </div>
-                          )}
-                          
-                          {/* Progress Bar */}
-                          <div className="w-full h-1 bg-gray-200 rounded-full mt-1">
-                            <div 
-                              className={`h-1 rounded-full transition-all duration-300 ${
-                                isComplete 
-                                  ? 'bg-green-500' 
-                                  : hasLevel || hasObservations 
-                                    ? 'bg-yellow-500' 
-                                    : 'bg-gray-300'
-                              }`}
-                              style={{
-                                width: isComplete ? '100%' : (hasLevel || hasObservations) ? '50%' : '0%'
-                              }}
-                            />
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </nav>
-                </div>
-
-                {/* Tab Content */}
-                <div className="flex-1 overflow-y-auto p-6">
-                  <motion.div
-                    key={selectedDomain}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {(() => {
-                      const selectedDomainData = SKILL_DOMAINS.find(d => d.id === selectedDomain);
-                      return selectedDomainData ? renderDomainAssessment(selectedDomainData) : null;
-                    })()}
-                  </motion.div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-50">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Plus className="h-8 w-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Student Selected</h3>
-              <p className="text-gray-600 max-w-sm">
-                Please select a student from the sidebar to begin conducting an assessment.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
-
-  );
-}
-
-export default function AssessmentsPage() {
-  return (
-    <Suspense fallback={<div className="flex h-screen bg-gray-50 items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading assessment page...</p>
-      </div>
-    </div>}>
-      <AssessmentsPageContent />
-    </Suspense>
   );
 }

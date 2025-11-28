@@ -67,10 +67,10 @@ const navigationItems = [
     description: 'Conduct and manage assessments'
   },
   {
-    title: 'IEP & Lesson Plans',
-    href: '/educator/lesson-plans',
+    title: 'IEP Management',
+    href: '/educator/iep-management',
     icon: BookOpen,
-    description: 'Individual education plans and goals'
+    description: 'Individual education programs and management'
   },
   {
     title: 'Reports',

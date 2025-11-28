@@ -114,12 +114,8 @@ const roleMenus: Record<string, MenuItem[]> = {
     },
     {
       title: 'Assessments',
+      href: '/educator/assessments',
       icon: FileText,
-      children: [
-        { title: 'Pending', href: '/educator/assessments/pending', icon: FileText, badge: '3' },
-        { title: 'Completed', href: '/educator/assessments/completed', icon: FileText },
-        { title: 'Create New', href: '/educator/assessments/new', icon: FileText },
-      ],
     },
     {
       title: 'IEP Plans',

@@ -129,6 +129,52 @@ export class SchoolViewerService {
       }
     });
 
+    // Get total reports count
+    const totalReports = await this.prisma.report.count({
+      where: {
+        student: { schoolId }
+      }
+    });
+
+    // Get reports by type
+    const reportsByType = await this.prisma.report.groupBy({
+      by: ['type'],
+      where: {
+        student: { schoolId }
+      },
+      _count: { id: true }
+    });
+
+    // Calculate compliance rate (students with active interventions)
+    const studentsWithActiveInterventions = await this.prisma.student.count({
+      where: {
+        schoolId,
+        status: 'ACTIVE',
+        assignments: {
+          some: {
+            isActive: true
+          }
+        }
+      }
+    });
+
+    const complianceRate = totalStudents > 0 
+      ? Math.round((studentsWithActiveInterventions / totalStudents) * 100)
+      : 0;
+
+    // Calculate intervention progress (average IEP goal progress)
+    const iepGoalsProgress = await this.prisma.iEPGoal.aggregate({
+      where: {
+        student: { schoolId },
+        status: 'IN_PROGRESS'
+      },
+      _avg: {
+        progressPercent: true
+      }
+    });
+
+    const interventionProgress = iepGoalsProgress._avg.progressPercent || 0;
+
     // Get assigned educators
     const assignedEducators = await this.prisma.studentAssignment.findMany({
       where: {
@@ -159,7 +205,14 @@ export class SchoolViewerService {
           acc[stat.status] = stat._count.id;
           return acc;
         }, {} as Record<string, number>),
-        sessionNotesThisMonth
+        sessionNotesThisMonth,
+        totalReports,
+        reportsByType: reportsByType.reduce((acc, stat) => {
+          acc[stat.type] = stat._count.id;
+          return acc;
+        }, {} as Record<string, number>),
+        complianceRate,
+        interventionProgress
       },
       recentAssessments,
       recentReports,

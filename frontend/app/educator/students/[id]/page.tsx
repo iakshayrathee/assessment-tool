@@ -249,7 +249,7 @@ export default function StudentDetailPage() {
                           <Progress value={goal.progressPercent} className="h-2" />
                         </div>
                       ))}
-                      <Link href={`/educator/lesson-plans?studentId=${studentId}`}>
+                      <Link href={`/educator/iep-management?studentId=${studentId}`}>
                         <Button variant="outline" size="sm" className="w-full mt-4">
                           View All Goals
                         </Button>
@@ -259,7 +259,7 @@ export default function StudentDetailPage() {
                     <div className="text-center py-6">
                       <Target className="h-8 w-8 text-gray-300 mx-auto mb-2" />
                       <p className="text-sm text-gray-500 mb-3">No IEP goals set yet</p>
-                      <Link href={`/educator/lesson-plans?studentId=${studentId}`}>
+                      <Link href={`/educator/iep-management?studentId=${studentId}`}>
                         <Button size="sm">
                           <Plus className="h-4 w-4 mr-2" />
                           Create First Goal
@@ -322,7 +322,7 @@ export default function StudentDetailPage() {
                       <span className="text-sm">Assessment</span>
                     </Button>
                   </Link>
-                  <Link href={`/educator/lesson-plans?studentId=${studentId}`}>
+                  <Link href={`/educator/iep-management?studentId=${studentId}`}>
                     <Button variant="outline" className="w-full h-20 flex flex-col gap-2">
                       <Target className="h-6 w-6" />
                       <span className="text-sm">IEP Goals</span>

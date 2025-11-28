@@ -1,459 +1,941 @@
 'use client';
 
-import { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, Suspense, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useAssessments';
-// Use route-level UnifiedLayout; remove page-level EducatorLayout
+import { useEducatorStudents } from '@/hooks/useEducator';
+import ReactDOMServer from 'react-dom/server';
+import { apiClient } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  ArrowLeft, 
-  BarChart3,
-  Plus,
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import {
   Download,
   Eye,
-  Edit,
+  BarChart3, 
   FileText,
   Send,
-  Clock,
+  Brain,
   CheckCircle,
-  AlertCircle,
-  Filter
+  Loader2,
+  Users,
+  FileDown
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
+import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
 
 const REPORT_TYPES = [
-  { value: 'INTAKE', label: 'Intake Report', description: 'Comprehensive intake assessment summary' },
-  { value: 'ASSESSMENT', label: 'Assessment Report', description: 'Skill domain assessment results' },
-  { value: 'IEP', label: 'IEP Report', description: 'Individual Education Plan progress' },
-  { value: 'PROGRESS', label: 'Progress Report', description: 'Overall student progress summary' }
+  { value: 'AI_COMPREHENSIVE', label: 'AI Comprehensive Report', description: 'AI-generated comprehensive progress analysis' }
 ];
 
-const REPORT_STATUS_CONFIG = {
-  'PENDING': { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-  'IN_PROGRESS': { color: 'bg-blue-100 text-blue-800', icon: Edit },
-  'COMPLETED': { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-  'REVIEWED': { color: 'bg-purple-100 text-purple-800', icon: CheckCircle }
-};
+
 
 export const dynamic = 'force-dynamic';
 
 function ReportsPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const studentId = searchParams.get('studentId');
-  const [showNewReportDialog, setShowNewReportDialog] = useState(false);
-  const [selectedReportType, setSelectedReportType] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [newReport, setNewReport] = useState({
-    studentId: studentId || '',
-    type: '',
-    title: '',
-    content: '',
-    summary: '',
-    recommendations: ''
-  });
+  const [selectedStudent, setSelectedStudent] = useState<string>(studentId || '');
 
-  const { reports, createReport, submitReport, isCreating, isSubmitting } = useReports(studentId || undefined);
 
-  const handleCreateReport = () => {
-    createReport(newReport);
-    setShowNewReportDialog(false);
-    setNewReport({
-      studentId: studentId || '',
-      type: '',
-      title: '',
-      content: '',
-      summary: '',
-      recommendations: ''
-    });
+
+  // Modals & AI Preview
+  const [showAIPreview, setShowAIPreview] = useState(false);
+  const [aiPreview, setAiPreview] = useState<any>(null);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
+  // Fetch students
+  const { students, isLoading: isLoadingStudents } = useEducatorStudents();
+  
+  // PDF download ref
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  // Fetch reports for selected student
+  const { reports, submitReport, isSubmitting, refetch } = useReports(selectedStudent || undefined);
+
+  // Get selected student details
+  const selectedStudentObj = students?.find(s => s.id === selectedStudent);
+  const selectedStudentName = selectedStudentObj?.fullName || selectedStudentObj?.name || 'Selected Student';
+  const selectedStudentGrade = selectedStudentObj?.grade || '';
+
+  // Sync URL with selected student
+  useEffect(() => {
+    if (selectedStudent && selectedStudent !== studentId) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('studentId', selectedStudent);
+      router.replace(`/educator/reports?${params.toString()}`);
+    }
+  }, [selectedStudent, studentId, searchParams, router]);
+
+  // Handlers
+  const handleSubmitReport = async (reportId: string) => {
+    try {
+      const signature = 'Digital Signature';
+      await submitReport({ reportId, signature });
+      toast.success('Report submitted successfully');
+      refetch();
+    } catch (error) {
+      toast.error('Failed to submit report');
+    }
   };
 
-  const handleSubmitReport = (reportId: string) => {
-    const signature = 'Digital Signature'; // In real app, this would be proper digital signature
-    submitReport({ reportId, signature });
+  const handleGenerateAIReport = async () => {
+    if (!selectedStudent) {
+      toast.error('Please select a student first');
+      return;
+    }
+
+    console.log('Generating AI report for student:', selectedStudent);
+    setIsGeneratingAI(true);
+    try {
+      const result = await apiClient.generateAIReport(selectedStudent);
+      console.log('AI report generation successful:', result);
+
+      // Show the generated report in modal for preview and save
+      setAiPreview(result);
+      setShowAIPreview(true);
+
+      toast.success('AI report generated successfully');
+    } catch (error: any) {
+      console.error('Failed to generate AI report:', error);
+      console.error('Error details:', error.response?.data);
+      toast.error(error.response?.data?.error || 'Failed to generate AI report');
+    } finally {
+      setIsGeneratingAI(false);
+    }
   };
 
-  const getStatusIcon = (status: string) => {
-    const config = (REPORT_STATUS_CONFIG as any)[status] || REPORT_STATUS_CONFIG['PENDING'];
-    const Icon = config.icon;
-    return <Icon className="h-4 w-4" />;
+  const handlePreviewAIReport = async () => {
+    if (!selectedStudent) {
+      toast.error('Please select a student first');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const preview = await apiClient.previewAIReport(selectedStudent);
+      console.log('AI preview response:', preview);
+      setAiPreview(preview);
+      setShowAIPreview(true);
+    } catch (error: any) {
+      console.error('Failed to preview AI report:', error);
+      toast.error(error.response?.data?.error || 'Failed to preview AI report');
+    } finally {
+      setIsGeneratingAI(false);
+    }
   };
 
-  const getStatusColor = (status: string) => {
-    return (REPORT_STATUS_CONFIG as any)[status]?.color || REPORT_STATUS_CONFIG['PENDING'].color;
+  const handleViewReport = (report: any) => {
+    setSelectedReport(report);
+    setShowReportModal(true);
   };
 
-  const filteredReports = reports.filter((report: any) => {
-    if (selectedReportType && report.type !== selectedReportType) return false;
-    if (filterStatus && report.status !== filterStatus) return false;
-    return true;
-  });
-
-  const getReportsByStatus = (status: string) => {
-    return reports.filter((report: any) => report.status === status);
+  const createReport = async (aiData: any) => {
+    try {
+      // The AI report is already saved during generation, so we just need to refetch
+      await refetch();
+      toast.success('AI report saved successfully');
+    } catch (error) {
+      console.error('Failed to save report:', error);
+      toast.error('Failed to save report');
+    }
   };
+
+  const downloadPDF = async () => {
+    if (!reportRef.current || !aiPreview) return;
+    
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const element = reportRef.current;
+      const opt = {
+        margin: 10,
+        filename: `${selectedStudentName.replace(/\s+/g, '-').toLowerCase()}-report-${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      html2pdf().from(element).set(opt).save();
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      console.error('Failed to download PDF:', error);
+      toast.error('Failed to download PDF');
+    }
+  };
+
+  const downloadReportPDF = async (report: any) => {
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+
+      const ReportComponent = (
+        <div style={{ 
+          fontFamily: 'Arial, sans-serif', 
+          fontSize: '14px', 
+          lineHeight: '1.8', 
+          color: '#2d3748',
+          padding: '0',
+          margin: '0'
+        }}>
+          {/* Report Header */}
+          <div style={{ 
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            padding: '2rem',
+            borderRadius: '8px 8px 0 0',
+            marginBottom: '2rem'
+          }}>
+            <h1 style={{ 
+              fontSize: '28px', 
+              fontWeight: 'bold', 
+              marginBottom: '0.5rem',
+              textAlign: 'center'
+            }}>
+              {report.title}
+            </h1>
+            <p style={{ 
+              fontSize: '16px',
+              textAlign: 'center',
+              opacity: '0.9'
+            }}>
+              {REPORT_TYPES.find(t => t.value === report.type)?.label || report.type}
+            </p>
+          </div>
+
+          {/* Student & Educator Information */}
+          <div style={{ 
+            padding: '0 2rem 2rem 2rem'
+          }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1fr', 
+              gap: '2rem', 
+              marginBottom: '2rem',
+              background: '#f8fafc',
+              padding: '1.5rem',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0'
+            }}>
+              <div>
+                <h3 style={{ 
+                  fontSize: '16px', 
+                  fontWeight: 'bold', 
+                  color: '#4a5568',
+                  marginBottom: '1rem',
+                  borderBottom: '2px solid #667eea',
+                  paddingBottom: '0.5rem'
+                }}>
+                  Student Information
+                </h3>
+                <p style={{ margin: '0.5rem 0' }}><strong>Name:</strong> {selectedStudentName}</p>
+                <p style={{ margin: '0.5rem 0' }}><strong>Grade:</strong> Grade {selectedStudentGrade}</p>
+                <p style={{ margin: '0.5rem 0' }}><strong>Report Date:</strong> {new Date(report.createdAt).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</p>
+              </div>
+              
+              <div>
+                <h3 style={{ 
+                  fontSize: '16px', 
+                  fontWeight: 'bold', 
+                  color: '#4a5568',
+                  marginBottom: '1rem',
+                  borderBottom: '2px solid #667eea',
+                  paddingBottom: '0.5rem'
+                }}>
+                  Report Information
+                </h3>
+                <p style={{ margin: '0.5rem 0' }}><strong>Report ID:</strong> {report.id.slice(0, 8)}</p>
+                <p style={{ margin: '0.5rem 0' }}><strong>Report Type:</strong> {REPORT_TYPES.find(t => t.value === report.type)?.label || report.type}</p>
+              </div>
+            </div>
+
+            {/* Executive Summary Section */}
+            {report.summary && (
+              <div style={{ 
+                marginBottom: '2rem',
+                background: 'white',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+              }}>
+                <h2 style={{ 
+                  fontSize: '20px', 
+                  fontWeight: 'bold', 
+                  color: '#2d3748', 
+                  marginBottom: '1rem',
+                  paddingBottom: '0.5rem',
+                  borderBottom: '2px solid #4299e1'
+                }}>
+                  📋 Executive Summary
+                </h2>
+                <div style={{ 
+                  fontSize: '15px',
+                  lineHeight: '1.8',
+                  color: '#4a5568'
+                }} dangerouslySetInnerHTML={{ 
+                  __html: report.summary
+                    .replace(/<strong>(.*?)<\/strong>/g, '<strong style="color: #2d3748;">$1</strong>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #2d3748;">$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em style="color: #4a5568;">$1</em>')
+                    .replace(/\n/g, '<br />')
+                    .replace(/^#\s+(.*)$/gm, '<h3 style="font-size: 18px; font-weight: bold; color: #2d3748; margin: 1rem 0 0.5rem 0;">$1</h3>')
+                    .replace(/^##\s+(.*)$/gm, '<h4 style="font-size: 16px; font-weight: bold; color: #4a5568; margin: 0.8rem 0 0.4rem 0;">$1</h4>')
+                    .replace(/^-\s+(.*)$/gm, '<li style="margin: 0.3rem 0; padding-left: 1rem;">• $1</li>')
+                }} />
+              </div>
+            )}
+
+            {/* Recommendations Section */}
+            {report.recommendations && (
+              <div style={{ 
+                marginBottom: '2rem',
+                background: '#f0fff4',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                border: '1px solid #c6f6d5',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+              }}>
+                <h2 style={{ 
+                  fontSize: '20px', 
+                  fontWeight: 'bold', 
+                  color: '#2d3748', 
+                  marginBottom: '1rem',
+                  paddingBottom: '0.5rem',
+                  borderBottom: '2px solid #48bb78'
+                }}>
+                  💡 Recommendations & Next Steps
+                </h2>
+                <div style={{ 
+                  fontSize: '15px',
+                  lineHeight: '1.8',
+                  color: '#2f855a'
+                }} dangerouslySetInnerHTML={{ 
+                  __html: report.recommendations
+                    .replace(/<strong>(.*?)<\/strong>/g, '<strong style="color: #2d3748;">$1</strong>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #2d3748;">$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em style="color: #2f855a;">$1</em>')
+                    .replace(/\n/g, '<br />')
+                    .replace(/^#\s+(.*)$/gm, '<h3 style="font-size: 18px; font-weight: bold; color: #2d3748; margin: 1rem 0 0.5rem 0;">$1</h3>')
+                    .replace(/^##\s+(.*)$/gm, '<h4 style="font-size: 16px; font-weight: bold; color: #2f855a; margin: 0.8rem 0 0.4rem 0;">$1</h4>')
+                    .replace(/^-\s+(.*)$/gm, '<li style="margin: 0.3rem 0; padding-left: 1rem;">• $1</li>')
+                }} />
+              </div>
+            )}
+
+            {/* Detailed Analysis Section */}
+            {report.content && (
+              <div style={{ 
+                background: '#fff5f5',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                border: '1px solid #fed7d7',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+              }}>
+                <h2 style={{ 
+                  fontSize: '20px', 
+                  fontWeight: 'bold', 
+                  color: '#2d3748', 
+                  marginBottom: '1rem',
+                  paddingBottom: '0.5rem',
+                  borderBottom: '2px solid #f56565'
+                }}>
+                  🔍 Detailed Analysis
+                </h2>
+                <div style={{ 
+                  fontSize: '15px',
+                  lineHeight: '1.8',
+                  color: '#c53030'
+                }} dangerouslySetInnerHTML={{ 
+                  __html: report.content
+                    .replace(/<strong>(.*?)<\/strong>/g, '<strong style="color: #2d3748;">$1</strong>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #2d3748;">$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em style="color: #c53030;">$1</em>')
+                    .replace(/\n/g, '<br />')
+                    .replace(/^#\s+(.*)$/gm, '<h3 style="font-size: 18px; font-weight: bold; color: #2d3748; margin: 1rem 0 0.5rem 0;">$1</h3>')
+                    .replace(/^##\s+(.*)$/gm, '<h4 style="font-size: 16px; font-weight: bold; color: #c53030; margin: 0.8rem 0 0.4rem 0;">$1</h4>')
+                    .replace(/^-\s+(.*)$/gm, '<li style="margin: 0.3rem 0; padding-left: 1rem;">• $1</li>')
+                }} />
+              </div>
+            )}
+
+            {/* Report Footer */}
+            <div style={{ 
+              marginTop: '2rem',
+              padding: '1rem',
+              background: '#edf2f7',
+              borderRadius: '8px',
+              textAlign: 'center',
+              fontSize: '12px',
+              color: '#718096',
+              border: '1px solid #e2e8f0'
+            }}>
+              <p style={{ margin: '0.25rem 0' }}>
+                Report generated on {new Date(report.createdAt).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </p>
+              <p style={{ margin: '0.25rem 0', fontWeight: 'bold' }}>
+                Confidential - For educational purposes only
+              </p>
+              <p style={{ margin: '0.25rem 0', fontSize: '11px' }}>
+                © {new Date().getFullYear()} Knowled Assessment Platform
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+
+      const html = ReactDOMServer.renderToStaticMarkup(ReportComponent);
+
+      const opt = {
+        margin: 15,
+        filename: `${selectedStudentName.replace(/\s+/g, '-').toLowerCase()}-${new Date(report.createdAt).toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2,
+          useCORS: true,
+          logging: false
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: 'portrait',
+          compress: true
+        }
+      };
+
+      html2pdf().from(html).set(opt).save();
+      toast.success('Report PDF downloaded successfully');
+    } catch (error) {
+      console.error('Failed to download report PDF:', error);
+      toast.error('Failed to download report PDF');
+    }
+  };
+
+  const filteredReports = reports || [];
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentReports = filteredReports.slice(startIndex, endIndex);
+
+  // Empty state when no students
+  if (!isLoadingStudents && students?.length === 0) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-96">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6 text-center">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Students Available</h3>
+            <p className="text-gray-500 mb-4">You don't have any assigned students yet.</p>
+            <Link href="/educator/students">
+              <Button>View Students</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/educator/students">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Students
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-              <p className="text-gray-600">Generate and manage student assessment reports</p>
-            </div>
-          </div>
-          <Dialog open={showNewReportDialog} onOpenChange={setShowNewReportDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Generate Report
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Generate New Report</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="reportType">Report Type</Label>
-                    <Select value={newReport.type} onValueChange={(value) => setNewReport(prev => ({ ...prev, type: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select report type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {REPORT_TYPES.map(type => (
-                          <SelectItem key={type.value} value={type.value}>
-                            <div>
-                              <div className="font-medium">{type.label}</div>
-                              <div className="text-xs text-gray-500">{type.description}</div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Report Title</Label>
-                    <Input
-                      placeholder="Enter report title..."
-                      value={newReport.title}
-                      onChange={(e) => setNewReport(prev => ({ ...prev, title: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="summary">Executive Summary</Label>
-                  <Textarea
-                    placeholder="Brief overview of key findings and conclusions..."
-                    value={newReport.summary}
-                    onChange={(e) => setNewReport(prev => ({ ...prev, summary: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="content">Report Content</Label>
-                  <Textarea
-                    placeholder="Detailed report content including assessments, observations, and analysis..."
-                    value={newReport.content}
-                    onChange={(e) => setNewReport(prev => ({ ...prev, content: e.target.value }))}
-                    rows={6}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="recommendations">Recommendations</Label>
-                  <Textarea
-                    placeholder="Specific recommendations for interventions, strategies, or next steps..."
-                    value={newReport.recommendations}
-                    onChange={(e) => setNewReport(prev => ({ ...prev, recommendations: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button variant="outline" onClick={() => setShowNewReportDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleCreateReport} disabled={isCreating}>
-                    Generate Report
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+          <p className="text-gray-600">Generate and manage student assessment reports</p>
         </div>
 
-        {/* Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{reports.length}</div>
-                <p className="text-xs text-muted-foreground">All time</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-                <Edit className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{getReportsByStatus('IN_PROGRESS').length}</div>
-                <p className="text-xs text-muted-foreground">Being drafted</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Completed</CardTitle>
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{getReportsByStatus('COMPLETED').length}</div>
-                <p className="text-xs text-muted-foreground">Ready for review</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">This Month</CardTitle>
-                <Clock className="h-4 w-4 text-purple-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {reports.filter((r: any) => {
-                    const reportDate = new Date(r.createdAt);
-                    const now = new Date();
-                    return reportDate.getMonth() === now.getMonth() && reportDate.getFullYear() === now.getFullYear();
-                  }).length}
-                </div>
-                <p className="text-xs text-muted-foreground">Generated recently</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Filters and Reports List */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Reports List
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Select value={selectedReportType} onValueChange={setSelectedReportType}>
-                  <SelectTrigger className="w-48">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter by type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    {REPORT_TYPES.map(type => (
-                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
-                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                    <SelectItem value="COMPLETED">Completed</SelectItem>
-                    <SelectItem value="REVIEWED">Reviewed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {filteredReports.length === 0 ? (
-              <div className="text-center py-12">
-                <BarChart3 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No reports found</h3>
-                <p className="text-gray-500 mb-4">
-                  {reports.length === 0 
-                    ? "Start by generating your first report"
-                    : "Try adjusting your filter criteria"
-                  }
+        {/* Student Selection & AI Buttons */}
+        <div className="flex flex-wrap items-end gap-3">
+          {selectedStudent ? (
+            <div className="flex items-center gap-4 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200 min-w-[250px]">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-blue-900 text-sm truncate">
+                  {selectedStudentName || 'Selected Student'}
                 </p>
-                <Button onClick={() => setShowNewReportDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Generate First Report
-                </Button>
+                <p className="text-xs text-blue-700">
+                  Grade {selectedStudentGrade || 'N/A'}
+                </p>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowStudentModal(true)}
+                className="h-8 w-8 p-0 flex-shrink-0"
+                title="Change student"
+              >
+                <Users className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => setShowStudentModal(true)}
+              className="flex items-center gap-2 px-4 py-2 min-w-[140px]"
+            >
+              <Users className="h-4 w-4" />
+              Select Student
+            </Button>
+          )}
+
+          <Button
+            onClick={handleGenerateAIReport}
+            disabled={isGeneratingAI || !selectedStudent}
+            className="bg-gradient-to-r from-purple-500 to-blue-600 text-white hover:from-purple-600 hover:to-blue-700"
+          >
+            {isGeneratingAI ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Generating...
+              </>
             ) : (
-              <div className="space-y-4">
-                {filteredReports.map((report: any, index: number) => (
-                  <motion.div
-                    key={report.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge variant="outline" className="text-xs">
-                            {REPORT_TYPES.find(t => t.value === report.type)?.label || report.type}
-                          </Badge>
-                          <Badge className={getStatusColor(report.status)}>
-                            {getStatusIcon(report.status)}
-                            <span className="ml-1">{report.status.replace('_', ' ')}</span>
-                          </Badge>
-                        </div>
-                        
-                        <h3 className="font-semibold text-gray-900 mb-2">{report.title}</h3>
-                        
-                        {report.summary && (
-                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                            {report.summary}
-                          </p>
-                        )}
-                        
-                        <div className="flex items-center gap-6 text-sm text-gray-500">
-                          <span>Created: {new Date(report.createdAt).toLocaleDateString()}</span>
-                          {report.submittedAt && (
-                            <span>Submitted: {new Date(report.submittedAt).toLocaleDateString()}</span>
-                          )}
-                          {report.reviewedAt && (
-                            <span>Reviewed: {new Date(report.reviewedAt).toLocaleDateString()}</span>
-                          )}
-                        </div>
+              <>
+                <Brain className="h-4 w-4 mr-2" />
+                Generate AI Report
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Reports List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Reports List
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {currentReports.length === 0 ? (
+            <div className="text-center py-12">
+              <BarChart3 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No reports found</h3>
+              <p className="text-gray-500">
+                {reports?.length === 0
+                  ? "Start by generating your first AI report"
+                  : "Try adjusting your filters"}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {currentReports.map((report: any, index: number) => (
+                <motion.div
+                  key={report.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <Badge variant="outline" className="text-xs">
+                          {REPORT_TYPES.find(t => t.value === report.type)?.label || report.type}
+                        </Badge>
                       </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4 mr-1" />
-                          PDF
-                        </Button>
-                        {report.status === 'COMPLETED' && (
-                          <Button 
-                            size="sm"
-                            onClick={() => handleSubmitReport(report.id)}
-                            disabled={isSubmitting}
-                          >
-                            <Send className="h-4 w-4 mr-1" />
-                            Submit
-                          </Button>
-                        )}
-                        {report.status === 'PENDING' || report.status === 'IN_PROGRESS' ? (
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                        ) : null}
+                      <h3 className="font-semibold text-gray-900 mb-2">{report.title}</h3>
+                      {report.summary && (
+                        <p className="text-sm text-gray-600 line-clamp-2 mb-3">{report.summary}</p>
+                      )}
+                      <div className="text-sm text-gray-500">
+                        Created: {new Date(report.createdAt).toLocaleDateString()}
+                        {report.submittedAt && ` • Submitted: ${new Date(report.submittedAt).toLocaleDateString()}`}
                       </div>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Report Templates */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Report Templates</CardTitle>
-            <p className="text-sm text-gray-600">Quick start templates for common report types</p>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {REPORT_TYPES.map((template) => (
-                <motion.div
-                  key={template.value}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Card 
-                    className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => {
-                      setNewReport(prev => ({ 
-                        ...prev, 
-                        type: template.value,
-                        title: `${template.label} - ${new Date().toLocaleDateString()}`
-                      }));
-                      setShowNewReportDialog(true);
-                    }}
-                  >
-                    <CardContent className="p-4 text-center">
-                      <FileText className="h-8 w-8 mx-auto mb-2 text-gray-600" />
-                      <h3 className="font-medium text-sm mb-1">{template.label}</h3>
-                      <p className="text-xs text-gray-500">{template.description}</p>
-                    </CardContent>
-                  </Card>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button variant="outline" size="sm" onClick={() => handleViewReport(report)}>
+                        <Eye className="h-4 w-4 mr-1" /> View
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => downloadReportPDF(report)}>
+                        <Download className="h-4 w-4 mr-1" /> PDF
+                      </Button>
+                      {report.status === 'COMPLETED' && (
+                        <Button size="sm" onClick={() => handleSubmitReport(report.id)} disabled={isSubmitting}>
+                          <Send className="h-4 w-4 mr-1" /> Submit
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </motion.div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          )}
+          
+          {/* Pagination Controls */}
+          {filteredReports.length > itemsPerPage && (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t">
+              <div className="text-sm text-gray-500">
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredReports.length)} of {filteredReports.length} reports
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="h-8 w-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                  {totalPages > 5 && (
+                    <span className="px-2 text-sm text-gray-500">...</span>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* AI Preview Dialog */}
+      <Dialog open={showAIPreview} onOpenChange={setShowAIPreview}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-purple-600" />
+              AI-Generated Report Preview
+            </DialogTitle>
+          </DialogHeader>
+          {aiPreview && (
+            <div className="space-y-6 mt-4">
+              {/* Report Header with Student & Educator Details */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 p-6 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-bold text-2xl text-blue-900 mb-2">
+                      {aiPreview.title || 'Student Progress Report'}
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      AI-generated comprehensive analysis based on assessments, goals, and progress data.
+                    </p>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Student:</span>
+                      <span className="text-gray-900">{selectedStudentName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Grade:</span>
+                      <span className="text-gray-900">Grade {selectedStudentGrade}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Date:</span>
+                      <span className="text-gray-900">{new Date().toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Report Type:</span>
+                      <span className="text-gray-900">AI Comprehensive Analysis</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Report Content with Improved Formatting */}
+              <div ref={reportRef} className="space-y-6">
+                {aiPreview.summary && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h4 className="font-semibold text-lg text-blue-800 mb-3 flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Executive Summary
+                    </h4>
+                    <div className="prose prose-blue max-w-none">
+                      <div 
+                        className="whitespace-pre-wrap text-gray-800 leading-relaxed text-base"
+                        dangerouslySetInnerHTML={{
+                          __html: aiPreview.summary
+                            .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>')
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\n/g, '<br />')
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {aiPreview.recommendations && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                    <h4 className="font-semibold text-lg text-green-800 mb-3 flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5" />
+                      Recommendations & Next Steps
+                    </h4>
+                    <div className="prose prose-green max-w-none">
+                      <div 
+                        className="whitespace-pre-wrap text-green-900 leading-relaxed text-base"
+                        dangerouslySetInnerHTML={{
+                          __html: aiPreview.recommendations
+                            .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>')
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\n/g, '<br />')
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {aiPreview.content && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h4 className="font-semibold text-lg text-gray-800 mb-3 flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Detailed Analysis
+                    </h4>
+                    <div className="prose prose-gray max-w-none">
+                      <div 
+                        className="whitespace-pre-wrap text-gray-800 leading-relaxed text-base"
+                        dangerouslySetInnerHTML={{
+                          __html: aiPreview.content
+                            .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>')
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                            .replace(/^#\s+(.*)$/gm, '<h4 class="text-xl font-semibold mt-6 mb-3 text-blue-800">$1</h4>')
+                            .replace(/^##\s+(.*)$/gm, '<h5 class="text-lg font-medium mt-4 mb-2 text-gray-800">$1</h5>')
+                            .replace(/^-\s+(.*)$/gm, '<li class="ml-4 mb-1">$1</li>')
+                            .replace(/\n\n/g, '</div><div class="mt-4">')
+                            .replace(/\n/g, '<br />')
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Report Footer */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center text-xs text-gray-500">
+                  <p>This report was generated using AI analysis on {new Date().toLocaleDateString()}</p>
+                  <p>Confidential - For educational purposes only</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-between items-center pt-4 border-t">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Sparkles className="h-4 w-4" />
+                  AI-Generated Report
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setShowAIPreview(false)}>
+                    Close
+                  </Button>
+                  <Button
+                    onClick={downloadPDF}
+                    variant="outline"
+                    className="border-green-200 text-green-700 hover:bg-green-50"
+                  >
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      createReport(aiPreview);
+                      setShowAIPreview(false);
+                    }}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Save as Report
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Student Selection Modal */}
+      <StudentSelectionModal
+        isOpen={showStudentModal}
+        onClose={() => setShowStudentModal(false)}
+        onSelect={(id) => {
+          setSelectedStudent(id);
+          setShowStudentModal(false);
+        }}
+        selectedStudentId={selectedStudent}
+      />
+
+      {/* Report View Modal */}
+      <Dialog open={showReportModal} onOpenChange={setShowReportModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              {selectedReport?.title || 'Report Details'}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedReport && (
+            <div className="space-y-6 mt-4">
+              {/* Report Header */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 p-6 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-bold text-2xl text-blue-900 mb-2">
+                      {selectedReport.title}
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      {REPORT_TYPES.find(t => t.value === selectedReport.type)?.label || selectedReport.type}
+                    </p>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Student:</span>
+                      <span className="text-gray-900">{selectedStudentName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Grade:</span>
+                      <span className="text-gray-900">Grade {selectedStudentGrade}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Date:</span>
+                      <span className="text-gray-900">
+                        {new Date(selectedReport.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              {/* Report Content */}
+              {selectedReport.summary && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h4 className="font-semibold text-lg text-blue-800 mb-3 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Executive Summary
+                  </h4>
+                  <div className="prose prose-blue max-w-none">
+                    <div 
+                      className="whitespace-pre-wrap text-gray-800 leading-relaxed text-base"
+                      dangerouslySetInnerHTML={{
+                        __html: selectedReport.summary
+                          .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>')
+                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                          .replace(/\n/g, '<br />')
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedReport.recommendations && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                  <h4 className="font-semibold text-lg text-green-800 mb-3 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    Recommendations & Next Steps
+                  </h4>
+                  <div className="prose prose-green max-w-none">
+                    <div 
+                      className="whitespace-pre-wrap text-green-900 leading-relaxed text-base"
+                      dangerouslySetInnerHTML={{
+                        __html: selectedReport.recommendations
+                          .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>')
+                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                          .replace(/\n/g, '<br />')
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedReport.content && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h4 className="font-semibold text-lg text-gray-800 mb-3 flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Detailed Analysis
+                  </h4>
+                  <div className="prose prose-gray max-w-none">
+                    <div 
+                      className="whitespace-pre-wrap text-gray-800 leading-relaxed text-base"
+                      dangerouslySetInnerHTML={{
+                        __html: selectedReport.content
+                          .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>')
+                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                          .replace(/^#\s+(.*)$/gm, '<h4 class="text-xl font-semibold mt-6 mb-3 text-blue-800">$1</h4>')
+                          .replace(/^##\s+(.*)$/gm, '<h5 class="text-lg font-medium mt-4 mb-2 text-gray-800">$1</h5>')
+                          .replace(/^-\s+(.*)$/gm, '<li class="ml-4 mb-1">$1</li>')
+                          .replace(/\n\n/g, '</div><div class="mt-4">')
+                          .replace(/\n/g, '<br />')
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-between items-center pt-4 border-t">
+                <div className="text-sm text-gray-500">
+                  Created: {new Date(selectedReport.createdAt).toLocaleDateString()}
+                  {selectedReport.submittedAt && 
+                    ` • Submitted: ${new Date(selectedReport.submittedAt).toLocaleDateString()}`
+                  }
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setShowReportModal(false)}>
+                    Close
+                  </Button>
+                  <Button
+                    onClick={() => downloadReportPDF(selectedReport)}
+                    variant="outline"
+                    className="border-green-200 text-green-700 hover:bg-green-50"
+                  >
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 export default function ReportsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading reports...</p>
-      </div>
-    </div>}>
-      <ReportsPageContent />
-    </Suspense>
+
+    <ReportsPageContent />
+
   );
 }

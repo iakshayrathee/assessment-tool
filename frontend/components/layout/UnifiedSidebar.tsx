@@ -91,16 +91,22 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       description: 'Conduct and manage assessments'
     },
     {
-      title: 'IEP & Lesson Plans',
-      href: '/educator/lesson-plans',
+      title: 'IEP Management',
+      href: '/educator/iep-management',
       icon: BookOpen,
-      description: 'Individual education plans and goals'
+      description: 'Individual education programs and management'
     },
     {
       title: 'Reports',
       href: '/educator/reports',
       icon: BarChart3,
       description: 'Generate and view reports'
+    },
+    {
+      title: 'Lesson Plans',
+      href: '/educator/lesson-plans-new',
+      icon: Calendar,
+      description: 'Create and manage lesson plans'
     }
   ],
   ADMIN: [

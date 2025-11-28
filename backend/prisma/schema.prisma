@@ -82,8 +82,8 @@ model SuperSpecialEducatorProfile {
 }
 
 model SpecialEducatorProfile {
-  id                       String              @id @default(cuid())
-  userId                   String              @unique
+  id                       String                   @id @default(cuid())
+  userId                   String                   @unique
   fullName                 String
   phone                    String?
   dateOfBirth              DateTime?
@@ -95,7 +95,7 @@ model SpecialEducatorProfile {
   fieldOfStudy             String?
   institutionName          String?
   yearOfGraduation         Int?
-  rciCertified             Boolean             @default(false)
+  rciCertified             Boolean                  @default(false)
   rciValidityDate          DateTime?
   specialEdQualification   String?
   specializationAreas      String[]
@@ -108,14 +108,20 @@ model SpecialEducatorProfile {
   assessmentTools          String?
   assistiveTechProficiency String[]
   areasOfInterest          String[]
-  consentToShare           Boolean             @default(false)
-  agreementToPolicies      Boolean             @default(false)
+  consentToShare           Boolean                  @default(false)
+  agreementToPolicies      Boolean                  @default(false)
   personalStatement        String?
-  createdAt                DateTime            @default(now())
-  updatedAt                DateTime            @updatedAt
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
   additionalCertifications String[]
   totalYearsOfExperience   Int?
   assessments              Assessment[]
+  formalAssessments        FormalAssessment[]
+  readingSkillAssessments  ReadingSkillAssessment[]
+  writingSkillAssessments  WritingSkillAssessment[]
+  mathSkillAssessments     MathSkillAssessment[]
+  lessonPlans              LessonPlan[]
+  homework                 Homework[]
   centerAssignments        CenterAssignment[]
   schoolAssignments        SchoolAssignment[]
   iepGoals                 IEPGoal[]
@@ -123,8 +129,10 @@ model SpecialEducatorProfile {
   reports                  Report[]
   sessionNotes             SessionNote[]
   trainingLogs             TrainingLog[]
-  user                     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                     User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   assignedStudents         StudentAssignment[]
+  ieps                     IEP[]
+  iepDocuments             IEPDocument[]
 
   @@map("special_educator_profiles")
 }
@@ -161,6 +169,7 @@ model ParentProfile {
   updatedAt        DateTime         @updatedAt
   concerns         ParentConcern[]
   documents        ParentDocument[]
+  homework         Homework[]
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   children         Student[]
 
@@ -201,31 +210,39 @@ model School {
 }
 
 model Student {
-  id               String              @id @default(cuid())
-  fullName         String
-  dateOfBirth      DateTime
-  age              Int
-  gender           Gender
-  grade            String
-  motherTongue     String?
-  syllabus         String?
-  status           StudentStatus       @default(ACTIVE)
-  registrationDate DateTime            @default(now())
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  centerId         String
-  schoolId         String?
-  parentId         String?
-  assessments      Assessment[]
-  iepGoals         IEPGoal[]
-  intakeForms      IntakeForm[]
-  reports          Report[]
-  sessionNotes     SessionNote[]
-  assignments      StudentAssignment[]
-  documents        StudentDocument[]
-  center           CenterProfile       @relation(fields: [centerId], references: [id])
-  parent           ParentProfile?      @relation(fields: [parentId], references: [id])
-  school           School?             @relation(fields: [schoolId], references: [id])
+  id                      String                   @id @default(cuid())
+  fullName                String
+  dateOfBirth             DateTime
+  age                     Int
+  gender                  Gender
+  grade                   String
+  motherTongue            String?
+  syllabus                String?
+  status                  StudentStatus            @default(ACTIVE)
+  registrationDate        DateTime                 @default(now())
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  centerId                String
+  schoolId                String?
+  parentId                String?
+  assessments             Assessment[]
+  formalAssessments       FormalAssessment[]
+  readingSkillAssessments ReadingSkillAssessment[]
+  writingSkillAssessments WritingSkillAssessment[]
+  mathSkillAssessments    MathSkillAssessment[]
+  lessonPlans             LessonPlan[]
+  homework                Homework[]
+  iepGoals                IEPGoal[]
+  intakeForms             IntakeForm[]
+  reports                 Report[]
+  sessionNotes            SessionNote[]
+  assignments             StudentAssignment[]
+  documents               StudentDocument[]
+  center                  CenterProfile            @relation(fields: [centerId], references: [id])
+  parent                  ParentProfile?           @relation(fields: [parentId], references: [id])
+  school                  School?                  @relation(fields: [schoolId], references: [id])
+  ieps                    IEP[]
+  iepDocuments            IEPDocument[]
 
   @@map("students")
 }
@@ -243,6 +260,70 @@ model StudentAssignment {
 
   @@unique([studentId, specialEducatorId])
   @@map("student_assignments")
+}
+
+model IEP {
+  id                 String    @id @default(cuid())
+  studentId          String
+  educatorId         String
+  startDate          DateTime
+  endDate            DateTime
+  presentLevel       Json?
+  longTermGoals      Json[]
+  shortTermGoals     Json[]
+  areasOfRemediation String[]
+  status             IEPStatus @default(DRAFT)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  student     Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  educator    SpecialEducatorProfile @relation(fields: [educatorId], references: [id])
+  weeklyPlans WeeklyPlan[]
+
+  @@map("ieps")
+}
+
+model WeeklyPlan {
+  id            String   @id @default(cuid())
+  iepId         String
+  weekStartDate DateTime
+  weekEndDate   DateTime
+  monthlyPlan   Json[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  iep         IEP                @relation(fields: [iepId], references: [id], onDelete: Cascade)
+  evaluations WeeklyEvaluation[]
+
+  @@map("weekly_plans")
+}
+
+model WeeklyEvaluation {
+  id                String   @id @default(cuid())
+  weeklyPlanId      String
+  evaluationDate    DateTime
+  oralLanguage      Json?
+  reading           Json?
+  writing           Json?
+  spelling          Json?
+  math              Json?
+  attention         String?
+  behavioralSitting String?
+  taskCompletion    String?
+  strategies        String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  weeklyPlan WeeklyPlan @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+
+  @@map("weekly_evaluations")
+}
+
+enum IEPStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
 }
 
 model CenterAssignment {
@@ -334,6 +415,7 @@ model IntakeForm {
   @@map("intake_forms")
 }
 
+// Informal Assessment (existing structure - now explicitly informal)
 model Assessment {
   id                    String                 @id @default(cuid())
   studentId             String
@@ -365,6 +447,461 @@ model Assessment {
   student               Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@map("assessments")
+}
+
+// Formal Assessment
+model FormalAssessment {
+  id                String                 @id @default(cuid())
+  studentId         String
+  specialEducatorId String
+  assessmentType    String // Type of formal assessment
+  referralReason    String?
+  referralDate      DateTime
+  referredBy        String // Auto-filled from educator
+  conductedBy       String?
+  credentials       String?
+  clinicName        String?
+  assessmentDate    DateTime?
+  keyFindings       String?
+  diagnosis         String?
+  recommendations   String?
+  uploadedFiles     String[] // Array of file paths/URLs
+  status            AssessmentStatus       @default(PENDING)
+  completedAt       DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  specialEducator   SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  student           Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("formal_assessments")
+}
+
+// Reading Skill Assessment
+model ReadingSkillAssessment {
+  id                                  String  @id @default(cuid())
+  studentId                           String
+  specialEducatorId                   String
+  // Assessment Questions
+  readingQ1                           String? // Is the child reading at grade level?
+  readingQ2                           String? // Can the child decode unfamiliar words?
+  readingQ3                           String? // Can the child answer comprehension questions?
+  // Decoding & Word Reading Errors
+  missesLetters                       Boolean @default(false)
+  missesWords                         Boolean @default(false)
+  missesSentences                     Boolean @default(false)
+  substitution                        Boolean @default(false)
+  omissionBeginning                   Boolean @default(false)
+  omissionEnding                      Boolean @default(false)
+  omissionWholeWord                   Boolean @default(false)
+  additionWordsOrSyllables            Boolean @default(false)
+  guessingWords                       Boolean @default(false)
+  mispronunciation                    Boolean @default(false)
+  troubleBlendingSyllables            Boolean @default(false)
+  difficultyDecodingUnfamiliar        Boolean @default(false)
+  poorWordRecognition                 Boolean @default(false)
+  troubleRememberingSightWords        Boolean @default(false)
+  troubleLearningLetterSound          Boolean @default(false)
+  shortLongVowelConfusion             Boolean @default(false)
+  poorSyllabication                   Boolean @default(false)
+  // Fluency & Reading Flow
+  poorFlowWhileReading                Boolean @default(false)
+  choppyReading                       Boolean @default(false)
+  lotsOfGaps                          Boolean @default(false)
+  wordByWordReading                   Boolean @default(false)
+  reReadingSameLine                   Boolean @default(false)
+  repetitionOfWords                   Boolean @default(false)
+  vocalizeDuringSilentReading         Boolean @default(false)
+  poorIntonations                     Boolean @default(false)
+  poorPhrasing                        Boolean @default(false)
+  slowEffortfulReading                Boolean @default(false)
+  // Tracking, Eye Movement, Visual Skills
+  movesHeadWhileReading               Boolean @default(false)
+  losesPlaceWhileReading              Boolean @default(false)
+  skipsLines                          Boolean @default(false)
+  poorEyeTracking                     Boolean @default(false)
+  poorScanningSkills                  Boolean @default(false)
+  holdsBookTooClose                   Boolean @default(false)
+  difficultyLeftRightEyeMovement      Boolean @default(false)
+  difficultyRecognizingSimilarLetters Boolean @default(false)
+  // Comprehension Indicators
+  readsWithoutUnderstanding           Boolean @default(false)
+  forgetsWhatWasRead                  Boolean @default(false)
+  difficultyAnsweringQuestions        Boolean @default(false)
+  // Attention & Reading Behavior
+  notInterestedInReading              Boolean @default(false)
+  avoidsReadingAloud                  Boolean @default(false)
+  avoidsReadingActivities             Boolean @default(false)
+  yawningFrequently                   Boolean @default(false)
+  easilyFrustrated                    Boolean @default(false)
+  lowConfidence                       Boolean @default(false)
+  poorReadingStamina                  Boolean @default(false)
+  // Mechanics & Punctuation
+  punctuationErrors                   Boolean @default(false)
+  doesNotPauseAtFullStop              Boolean @default(false)
+  extraPausesAtCommas                 Boolean @default(false)
+  incorrectToneForQuestionExclamation Boolean @default(false)
+
+  additionalNotes String?
+  status          AssessmentStatus       @default(PENDING)
+  completedAt     DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  specialEducator SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  student         Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("reading_skill_assessments")
+}
+
+// Writing Skill Assessment
+model WritingSkillAssessment {
+  id                                 String  @id @default(cuid())
+  studentId                          String
+  specialEducatorId                  String
+  // Assessment Questions
+  writingQ1                          String? // Can the child write legibly?
+  writingQ2                          String? // Does the child use proper letter formation?
+  writingQ3                          String? // Can the child compose sentences?
+  // Fine Motor & Grip Issues
+  incorrectPencilGrip                Boolean @default(false)
+  holdsPencilTooTightly              Boolean @default(false)
+  holdsPencilTooLoosely              Boolean @default(false)
+  writesExcessivePressure            Boolean @default(false)
+  writesLightPressure                Boolean @default(false)
+  wristFingerPainComplaints          Boolean @default(false)
+  slowFineMotorSpeed                 Boolean @default(false)
+  fatigueAfterShortWriting           Boolean @default(false)
+  // Letter Formation Issues
+  incorrectLetterFormation           Boolean @default(false)
+  reversals                          Boolean @default(false)
+  difficultiesFormingCurvesDiagonals Boolean @default(false)
+  lettersWrittenMirrorImage          Boolean @default(false)
+  poorStrokeSequence                 Boolean @default(false)
+  capitalsInsertedBetweenWords       Boolean @default(false)
+  difficultyCopyingLetters           Boolean @default(false)
+  // Spacing, Alignment & Presentation
+  poorSpacingBetweenLetters          Boolean @default(false)
+  poorSpacingBetweenWords            Boolean @default(false)
+  writesOutsideLine                  Boolean @default(false)
+  difficultyMaintainingBaseline      Boolean @default(false)
+  unevenLetterSize                   Boolean @default(false)
+  inconsistentSpacingAcrossPage      Boolean @default(false)
+  crowdedWriting                     Boolean @default(false)
+  tooMuchSpaceBetweenLetters         Boolean @default(false)
+  floatingLettersAboveLine           Boolean @default(false)
+  // Handwriting Fluency
+  verySlowWriting                    Boolean @default(false)
+  writesTooFastManyErrors            Boolean @default(false)
+  poorHandwritingEndurance           Boolean @default(false)
+  choppyWriting                      Boolean @default(false)
+  inconsistentPace                   Boolean @default(false)
+  repeatedErasing                    Boolean @default(false)
+  frequentCorrections                Boolean @default(false)
+  // Dictation & Spelling
+  difficultyWritingDictatedLetters   Boolean @default(false)
+  difficultyWritingDictatedWords     Boolean @default(false)
+  spellsPhonetically                 Boolean @default(false)
+  omitsLettersInSpelling             Boolean @default(false)
+  addsExtraLetters                   Boolean @default(false)
+  substitutesLettersOrSounds         Boolean @default(false)
+  confusesVowelSounds                Boolean @default(false)
+  troubleEncodingCVC                 Boolean @default(false)
+  troubleEncodingBlendsDigraphs      Boolean @default(false)
+  // Sentence Formation / Written Expression
+  cannotConstructSimpleSentences     Boolean @default(false)
+  writesOnlySingleWords              Boolean @default(false)
+  strugglesExpandSentences           Boolean @default(false)
+  poorGrammarUsage                   Boolean @default(false)
+  writesIncompleteSentences          Boolean @default(false)
+  confusingSentenceOrder             Boolean @default(false)
+  difficultyExpressingIdeas          Boolean @default(false)
+  avoidsWrittenTasks                 Boolean @default(false)
+  needsVerbalPromptsToWrite          Boolean @default(false)
+  // Copying Skills
+  difficultyCopyingFromBoard         Boolean @default(false)
+  difficultyCopyingFromBook          Boolean @default(false)
+  slowCopying                        Boolean @default(false)
+  skipsWordsOrLettersWhenCopying     Boolean @default(false)
+  copiesInaccurately                 Boolean @default(false)
+  looksAwayFrequentlyWhileCopying    Boolean @default(false)
+  // Organization & Structure
+  writingDisorganized                Boolean @default(false)
+  thoughtsNotLogicallySequenced      Boolean @default(false)
+  cannotPlanWriting                  Boolean @default(false)
+  beginsWritingRandomAreasOnPage     Boolean @default(false)
+  noConceptOfMargins                 Boolean @default(false)
+  paragraphingDifficulty             Boolean @default(false)
+  // Behavioral / Self-Management Issues
+  avoidsWritingActivities            Boolean @default(false)
+  complainsWritingIsHard             Boolean @default(false)
+  getsFrustratedQuickly              Boolean @default(false)
+  lowWritingStamina                  Boolean @default(false)
+  givesUpInMiddleOfTask              Boolean @default(false)
+  lowConfidenceWriting               Boolean @default(false)
+  inconsistentPerformanceAcrossDays  Boolean @default(false)
+
+  additionalNotes String?
+  status          AssessmentStatus       @default(PENDING)
+  completedAt     DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  specialEducator SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  student         Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("writing_skill_assessments")
+}
+
+// Math Skill Assessment
+model MathSkillAssessment {
+  id                                  String  @id @default(cuid())
+  studentId                           String
+  specialEducatorId                   String
+  // Assessment Questions
+  mathQ1                              String? // Does the child understand number concepts?
+  mathQ2                              String? // Can the child perform basic operations?
+  mathQ3                              String? // Can the child solve word problems?
+  // Number Sense & Number Identification
+  difficultyIdentifyingNumbers1to10   Boolean @default(false)
+  difficultyIdentifyingNumbers1to20   Boolean @default(false)
+  difficultyIdentifyingNumbers1to100  Boolean @default(false)
+  reversesNumbers                     Boolean @default(false)
+  writesNumbersIncorrectly            Boolean @default(false)
+  difficultySequencingNumbers         Boolean @default(false)
+  skipsNumbersWhileCounting           Boolean @default(false)
+  countsSlowlyOrWithEffort            Boolean @default(false)
+  troubleWithForwardCounting          Boolean @default(false)
+  troubleWithBackwardCounting         Boolean @default(false)
+  difficultyWithSkipCounting          Boolean @default(false)
+  doesNotUnderstandQuantity           Boolean @default(false)
+  cannotMatchNumberToQuantity         Boolean @default(false)
+  cannotCompareNumbers                Boolean @default(false)
+  difficultyIdentifyingPlaceValue     Boolean @default(false)
+  // Basic Operations: Addition & Subtraction
+  strugglesSingleDigitAddition        Boolean @default(false)
+  strugglesSingleDigitSubtraction     Boolean @default(false)
+  cannotCarryOver                     Boolean @default(false)
+  cannotBorrow                        Boolean @default(false)
+  usesFingerCountingExcessively       Boolean @default(false)
+  cannotPerformMentalMath             Boolean @default(false)
+  doesNotUnderstandPlusMinusSymbols   Boolean @default(false)
+  confusesAdditionSubtraction         Boolean @default(false)
+  difficultyWithWordProblems          Boolean @default(false)
+  cannotUnderstandRealWorldMath       Boolean @default(false)
+  // Concepts & Pre-Math Skills
+  difficultyUnderstandingPatterns     Boolean @default(false)
+  difficultyFinishingPatterns         Boolean @default(false)
+  troubleIdentifyingShapes            Boolean @default(false)
+  troubleSortingObjects               Boolean @default(false)
+  difficultyInMatching                Boolean @default(false)
+  difficultyWithSpatialConcepts       Boolean @default(false)
+  difficultyUnderstandingMeasurement  Boolean @default(false)
+  difficultyWithTimeConcepts          Boolean @default(false)
+  difficultyReadingClock              Boolean @default(false)
+  // Math Fluency & Working Speed
+  verySlowInSolvingProblems           Boolean @default(false)
+  frequentCalculationMistakes         Boolean @default(false)
+  poorWorkingMemoryForMath            Boolean @default(false)
+  troubleRememberingMathFacts         Boolean @default(false)
+  difficultyRememberingSteps          Boolean @default(false)
+  needsRepeatedInstructions           Boolean @default(false)
+  getsConfusedDuringMultiStep         Boolean @default(false)
+  // Visual-Spatial & Alignment Issues
+  misalignsNumbersInColumns           Boolean @default(false)
+  writesNumbersOutsideGrid            Boolean @default(false)
+  poorSpatialOrganization             Boolean @default(false)
+  placesDigitsInWrongOrder            Boolean @default(false)
+  drawsShapesIncorrectly              Boolean @default(false)
+  cannotVisuallyGroupObjects          Boolean @default(false)
+  difficultyCopyingMathFromBoard      Boolean @default(false)
+  // Symbol & Concept Confusion
+  confusesMathSymbols                 Boolean @default(false)
+  cannotUnderstandEqualsMeansSameAs   Boolean @default(false)
+  treatsEqualsAsAnswerComesAfter      Boolean @default(false)
+  difficultyRememberingOperationRules Boolean @default(false)
+  cannotDifferentiateTensOnes         Boolean @default(false)
+  misunderstandsMoreLess              Boolean @default(false)
+  // Behavioral & Learning Indicators
+  avoidsMathTasks                     Boolean @default(false)
+  lowMathConfidence                   Boolean @default(false)
+  givesUpQuickly                      Boolean @default(false)
+  anxiousDuringMathActivities         Boolean @default(false)
+  needsConstantPrompting              Boolean @default(false)
+  appearsConfusedAfterExplanation     Boolean @default(false)
+  poorAttentionDuringMath             Boolean @default(false)
+
+  additionalNotes String?
+  status          AssessmentStatus       @default(PENDING)
+  completedAt     DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  specialEducator SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  student         Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("math_skill_assessments")
+}
+
+// Lesson Plan
+model LessonPlan {
+  id                 String                 @id @default(cuid())
+  studentId          String
+  specialEducatorId  String
+  date               DateTime
+  skillArea          SkillArea // Reading / Writing / Math
+  specificTopic      String // e.g., CVC blending
+  areasOfRemediation String[] // Multi-select from assessment symptoms
+  activityStrategy   String // Description of activity
+  resourcesUsed      String[] // Worksheets, Manipulatives, Videos, Digital content
+  expectedTime       Int? // in minutes
+  actualTimeTaken    Int? // in minutes
+  motivationLevel    MotivationLevel?
+  outcome            String? // Child response and observations
+  nextStep           String? // Next session plan
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  specialEducator    SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  student            Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("lesson_plans")
+}
+
+// Homework Assignment
+model Homework {
+  id                String                 @id @default(cuid())
+  studentId         String
+  specialEducatorId String
+  parentId          String?
+  subject           SkillArea // Reading / Writing / Math
+  title             String
+  instructions      String
+  attachedFiles     String[] // PDF / Image / Link
+  dueDate           DateTime
+  additionalNotes   String?
+  estimatedTime     Int? // in minutes
+  skillTargeted     String? // Mapped from lesson plan
+  status            HomeworkStatus         @default(ASSIGNED)
+  submittedAt       DateTime?
+  parentFeedback    String?
+  educatorFeedback  String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  specialEducator   SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  student           Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parent            ParentProfile?         @relation(fields: [parentId], references: [id])
+
+  @@map("homework")
+}
+
+// Learning Materials
+model LearningMaterial {
+  id          String    @id @default(cuid())
+  title       String
+  subject     SkillArea // Reading / Writing / Math
+  grade       Int // 1-6
+  category    String? // Worksheets, Videos, Activities, etc.
+  description String?
+  fileUrl     String? // URL or path to the material
+  fileType    String? // PDF, Video, Image, etc.
+  tags        String[] // For better searchability
+  isPublic    Boolean   @default(true)
+  uploadedBy  String? // Educator ID
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("learning_materials")
+}
+
+model IEPDocument {
+  id                 String                 @id @default(cuid())
+  studentId          String
+  specialEducatorId  String
+  title              String
+  durationMonths     Int
+  startDate          DateTime
+  endDate            DateTime
+  areasOfRemediation String[]               @default([])
+  status             IEPStatus              @default(DRAFT)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  specialEducator    SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  student            Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subjectSections    IEPSubjectSection[]
+  weeklyEvaluations  IEPWeeklyEvaluation[]
+
+  @@map("iep_documents")
+}
+
+model IEPSubjectSection {
+  id                     String             @id @default(cuid())
+  iepDocumentId          String
+  subject                IEPSubject
+  presentLevelReceptive  String?
+  presentLevelExpressive String?
+  longTermGoals          IEPLongTermGoal[]
+  shortTermGoals         IEPShortTermGoal[]
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  iepDocument            IEPDocument        @relation(fields: [iepDocumentId], references: [id], onDelete: Cascade)
+
+  @@map("iep_subject_sections")
+}
+
+model IEPLongTermGoal {
+  id               String            @id @default(cuid())
+  subjectSectionId String
+  goalNumber       Int
+  description      String
+  durationMonths   Int
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  subjectSection   IEPSubjectSection @relation(fields: [subjectSectionId], references: [id], onDelete: Cascade)
+
+  @@map("iep_long_term_goals")
+}
+
+model IEPShortTermGoal {
+  id                String            @id @default(cuid())
+  subjectSectionId  String
+  goalNumber        Int
+  description       String
+  teacherAssistance String?
+  targetDate        DateTime
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  subjectSection    IEPSubjectSection @relation(fields: [subjectSectionId], references: [id], onDelete: Cascade)
+
+  @@map("iep_short_term_goals")
+}
+
+model IEPWeeklyEvaluation {
+  id            String              @id @default(cuid())
+  iepDocumentId String
+  weekNumber    Int
+  startDate     DateTime
+  endDate       DateTime
+  activities    IEPWeeklyActivity[]
+  strategies    String?
+  observations  String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  iepDocument   IEPDocument         @relation(fields: [iepDocumentId], references: [id], onDelete: Cascade)
+
+  @@map("iep_weekly_evaluations")
+}
+
+model IEPWeeklyActivity {
+  id                 String                      @id @default(cuid())
+  weeklyEvaluationId String
+  subject            IEPSubject
+  activity           String
+  analysis           String?
+  assessment         String?
+  attentionLevel     BehavioralAttentionLevel?
+  sittingTolerance   BehavioralSittingTolerance?
+  taskCompletion     BehavioralTaskCompletion?
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+  weeklyEvaluation   IEPWeeklyEvaluation         @relation(fields: [weeklyEvaluationId], references: [id], onDelete: Cascade)
+
+  @@map("iep_weekly_activities")
 }
 
 model IEPGoal {
@@ -508,36 +1045,36 @@ model AuditLog {
 }
 
 model Notification {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   type      String
   title     String
   message   String
-  isRead    Boolean  @default(false)
-  data      String?  // JSON data for additional context
-  createdAt DateTime @default(now())
+  isRead    Boolean   @default(false)
+  data      String? // JSON data for additional context
+  createdAt DateTime  @default(now())
   readAt    DateTime?
-  user      User     @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 
   @@map("notifications")
 }
 
 model TrainingLog {
-  id                     String                       @id @default(cuid())
+  id                     String                      @id @default(cuid())
   superSpecialEducatorId String
   specialEducatorId      String?
   title                  String
   description            String
-  type                   TrainingType                 @default(MENTORSHIP)
-  duration               Int?                         // Duration in minutes
-  participants           String[]                     // Array of educator IDs
+  type                   TrainingType                @default(MENTORSHIP)
+  duration               Int? // Duration in minutes
+  participants           String[] // Array of educator IDs
   notes                  String?
-  followUpRequired       Boolean                      @default(false)
+  followUpRequired       Boolean                     @default(false)
   followUpDate           DateTime?
-  createdAt              DateTime                     @default(now())
-  updatedAt              DateTime                     @updatedAt
-  superSpecialEducator   SuperSpecialEducatorProfile  @relation(fields: [superSpecialEducatorId], references: [id])
-  specialEducator        SpecialEducatorProfile?      @relation(fields: [specialEducatorId], references: [id])
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+  superSpecialEducator   SuperSpecialEducatorProfile @relation(fields: [superSpecialEducatorId], references: [id])
+  specialEducator        SpecialEducatorProfile?     @relation(fields: [specialEducatorId], references: [id])
 
   @@map("training_logs")
 }
@@ -571,6 +1108,35 @@ enum IEPGoalStatus {
   DISCONTINUED
 }
 
+enum IEPSubject {
+  ORAL_LANGUAGE
+  READING
+  WRITING
+  SPELLING
+  MATH
+}
+
+enum BehavioralAttentionLevel {
+  POOR
+  FAIR
+  GOOD
+  EXCELLENT
+}
+
+enum BehavioralSittingTolerance {
+  POOR
+  FAIR
+  GOOD
+  EXCELLENT
+}
+
+enum BehavioralTaskCompletion {
+  NOT_COMPLETED
+  PARTIALLY_COMPLETED
+  COMPLETED_WITH_ASSISTANCE
+  COMPLETED_INDEPENDENTLY
+}
+
 enum ReportType {
   INTAKE
   ASSESSMENT
@@ -592,4 +1158,24 @@ enum TrainingType {
   FEEDBACK_SESSION
   PROFESSIONAL_DEVELOPMENT
   CASE_CONSULTATION
+}
+
+enum SkillArea {
+  READING
+  WRITING
+  MATH
+}
+
+enum MotivationLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum HomeworkStatus {
+  ASSIGNED
+  IN_PROGRESS
+  SUBMITTED
+  REVIEWED
+  COMPLETED
 }

@@ -8,7 +8,7 @@ class ApiClient {
   constructor() {
     this.client = axios.create({
       baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
-      timeout: 10000,
+      timeout: 30000, // Increased from 10s to 30s for AI operations
       headers: {
         'Content-Type': 'application/json',
       },
@@ -21,9 +21,9 @@ class ApiClient {
         if (config.url === '/auth/login') {
           return config;
         }
-        
+
         const token = this.getToken();
-        
+
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         } else {
@@ -42,7 +42,7 @@ class ApiClient {
             }
           }
         }
-        
+
         return config;
       },
       (error) => {
@@ -63,7 +63,7 @@ class ApiClient {
             if (typeof window !== 'undefined') {
               // Clear auth state from Zustand store
               useAuthStore.getState().clearAuth();
-              
+
               // Redirect to home page if not already there
               if (!window.location.pathname.includes('/login') && window.location.pathname !== '/') {
                 window.location.href = '/';
@@ -80,12 +80,12 @@ class ApiClient {
     if (typeof window !== 'undefined') {
       // Try to get token from Zustand store
       const tokenFromStore = useAuthStore.getState().getToken();
-      
+
       // If token exists in store, return it
       if (tokenFromStore) {
         return tokenFromStore;
       }
-      
+
       // If no token in store, check localStorage directly
       const tokenFromLocalStorage = localStorage.getItem('token');
       if (tokenFromLocalStorage) {
@@ -101,11 +101,11 @@ class ApiClient {
             console.error('Error parsing user from localStorage', e);
           }
         }
-        
+
         // If we couldn't get the user, still return the token
         return tokenFromLocalStorage;
       }
-      
+
       // No token found anywhere
       return null;
     }
@@ -127,21 +127,21 @@ class ApiClient {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await this.client.post<ApiResponse<LoginResponse>>('/auth/login', credentials);
     const { data } = response.data;
-    
+
     if (data?.token) {
       if (typeof window !== 'undefined') {
         // Clear any existing auth data first
         useAuthStore.getState().clearAuth();
-        
+
         // Set the new auth data
         useAuthStore.getState().setAuth(data.token, data.user, data.expiresIn);
-        
+
         // Also set in localStorage directly as a backup
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
       }
     }
-    
+
     return data!;
   }
 
@@ -151,7 +151,7 @@ class ApiClient {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('knowled-auth-storage');
-    
+
     try {
       await this.client.post('/auth/logout');
     } catch (error) {
@@ -163,24 +163,24 @@ class ApiClient {
   async getProfile(): Promise<User> {
     const response = await this.client.get<ApiResponse<User>>('/auth/profile');
     const user = response.data.data!;
-    
+
     // Update the user in the auth store
     if (typeof window !== 'undefined') {
       useAuthStore.getState().updateUser(user);
     }
-    
+
     return user;
   }
 
   async updateProfile(profileData: any): Promise<User> {
     const response = await this.client.put<ApiResponse<User>>('/auth/profile', profileData);
     const updatedUser = response.data.data!;
-    
+
     // Update the user in the auth store
     if (typeof window !== 'undefined') {
       useAuthStore.getState().updateUser(updatedUser);
     }
-    
+
     return updatedUser;
   }
 
@@ -235,9 +235,9 @@ class ApiClient {
   }
 
   async assignStudentToEducator(studentId: string, specialEducatorId: string): Promise<void> {
-    await this.client.post('/admin/assignments/student-to-educator', { 
-      studentId, 
-      specialEducatorId 
+    await this.client.post('/admin/assignments/student-to-educator', {
+      studentId,
+      specialEducatorId
     });
   }
 
@@ -365,6 +365,75 @@ class ApiClient {
     return response.data;
   }
 
+  // New IEP Document Methods
+  async createIEPDocument(documentData: any): Promise<any> {
+    const response = await this.client.post('/iep/documents', documentData);
+    // Backend returns the document directly, not wrapped in ApiResponse
+    return response.data;
+  }
+
+  async getIEPDocumentById(id: string): Promise<any> {
+    const response = await this.client.get(`/iep/documents/${id}`);
+    // Backend returns document directly
+    return response.data;
+  }
+
+  async getIEPDocumentsByStudent(studentId: string): Promise<any[]> {
+    const response = await this.client.get(`/iep/students/${studentId}/documents`);
+    // Backend returns array directly
+    return response.data;
+  }
+
+  async getIEPDocumentsByEducator(educatorId: string): Promise<any[]> {
+    const response = await this.client.get(`/iep/educators/${educatorId}/documents`);
+    // Backend returns array directly, not wrapped in ApiResponse
+    return response.data;
+  }
+
+  async updateIEPDocument(id: string, updates: any): Promise<any> {
+    const response = await this.client.put<ApiResponse<any>>(`/iep/documents/${id}`, updates);
+    return response.data.data;
+  }
+
+  async deleteIEPDocument(id: string): Promise<void> {
+    await this.client.delete(`/iep/documents/${id}`);
+  }
+
+  async addSubjectSection(iepDocumentId: string, sectionData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/iep/documents/${iepDocumentId}/subject-sections`, sectionData);
+    return response.data.data;
+  }
+
+  async addLongTermGoal(subjectSectionId: string, goalData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/iep/subject-sections/${subjectSectionId}/long-term-goals`, goalData);
+    return response.data.data;
+  }
+
+  async addShortTermGoal(subjectSectionId: string, goalData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/iep/subject-sections/${subjectSectionId}/short-term-goals`, goalData);
+    return response.data.data;
+  }
+
+  async addWeeklyEvaluation(iepDocumentId: string, evaluationData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/iep/documents/${iepDocumentId}/weekly-evaluations`, evaluationData);
+    return response.data.data;
+  }
+
+  async addWeeklyActivity(weeklyEvaluationId: string, activityData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/iep/weekly-evaluations/${weeklyEvaluationId}/activities`, activityData);
+    return response.data.data;
+  }
+
+  async getWeeklyEvaluationById(id: string): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/iep/weekly-evaluations/${id}`);
+    return response.data.data;
+  }
+
+  async getSubjectSectionById(id: string): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/iep/subject-sections/${id}`);
+    return response.data.data;
+  }
+
   async createSessionNote(sessionData: any): Promise<any> {
     const response = await this.client.post<ApiResponse<any>>('/assessments/session-notes', sessionData);
     return response.data.data;
@@ -383,7 +452,7 @@ class ApiClient {
   }
 
   async getReportsByStudent(studentId: string): Promise<any[]> {
-    const response = await this.client.get<ApiResponse<any[]>>(`/assessments/reports/student/${studentId}`);
+    const response = await this.client.get<ApiResponse<any[]>>(`/reports?studentId=${studentId}`);
     return response.data.data!;
   }
 
@@ -925,6 +994,20 @@ class ApiClient {
   async generateReport(reportData: any): Promise<any> {
     const response = await this.client.post<ApiResponse<any>>('/educators/reports/generate', reportData);
     return response.data.data;
+  }
+
+  async generateAIReport(studentId: string): Promise<any> {
+    console.log(`Generating AI report for student: ${studentId}`);
+    const response = await this.client.post<ApiResponse<any>>(`/reports/ai/generate/${studentId}`);
+    console.log('AI report generation response:', response.data);
+    return response.data.report || response.data.data;
+  }
+
+  async previewAIReport(studentId: string): Promise<any> {
+    console.log(`Previewing AI report for student: ${studentId}`);
+    const response = await this.client.get<ApiResponse<any>>(`/reports/ai/preview/${studentId}`);
+    console.log('AI report preview response:', response.data);
+    return response.data.report || response.data.data;
   }
 
   async updateReport(reportId: string, reportData: any): Promise<any> {
@@ -1601,6 +1684,222 @@ class ApiClient {
   }): Promise<PaginatedResponse<any>> {
     const response = await this.client.get<PaginatedResponse<any>>('/school-viewers/activity', { params });
     return response.data;
+  }
+
+  // ==================== NEW ASSESSMENT METHODS ====================
+
+  // Formal Assessments
+  async createFormalAssessment(data: any): Promise<any> {
+    const response = await this.client.post('/assessments/formal', data);
+    return response.data.data;
+  }
+
+  async getFormalAssessmentsByStudent(studentId: string): Promise<any[]> {
+    const response = await this.client.get(`/assessments/formal/student/${studentId}`);
+    return response.data.data;
+  }
+
+  async getFormalAssessmentById(id: string): Promise<any> {
+    const response = await this.client.get(`/assessments/formal/${id}`);
+    return response.data.data;
+  }
+
+  async updateFormalAssessment(id: string, data: any): Promise<any> {
+    const response = await this.client.put(`/assessments/formal/${id}`, data);
+    return response.data.data;
+  }
+
+  async completeFormalAssessment(id: string): Promise<any> {
+    const response = await this.client.put(`/assessments/formal/${id}/complete`);
+    return response.data.data;
+  }
+
+  async deleteFormalAssessment(id: string): Promise<void> {
+    await this.client.delete(`/assessments/formal/${id}`);
+  }
+
+  // Reading Skill Assessment
+  async createReadingSkillAssessment(data: any): Promise<any> {
+    const response = await this.client.post('/assessments/skill/reading', data);
+    return response.data.data;
+  }
+
+  async getReadingSkillAssessmentsByStudent(studentId: string): Promise<any[]> {
+    const response = await this.client.get(`/assessments/skill/reading/student/${studentId}`);
+    return response.data.data;
+  }
+
+  async getReadingSkillAssessmentById(id: string): Promise<any> {
+    const response = await this.client.get(`/assessments/skill/reading/${id}`);
+    return response.data.data;
+  }
+
+  async updateReadingSkillAssessment(id: string, data: any): Promise<any> {
+    const response = await this.client.put(`/assessments/skill/reading/${id}`, data);
+    return response.data.data;
+  }
+
+  async completeReadingSkillAssessment(id: string): Promise<any> {
+    const response = await this.client.put(`/assessments/skill/reading/${id}/complete`);
+    return response.data.data;
+  }
+
+  // Writing Skill Assessment
+  async createWritingSkillAssessment(data: any): Promise<any> {
+    const response = await this.client.post('/assessments/skill/writing', data);
+    return response.data.data;
+  }
+
+  async getWritingSkillAssessmentsByStudent(studentId: string): Promise<any[]> {
+    const response = await this.client.get(`/assessments/skill/writing/student/${studentId}`);
+    return response.data.data;
+  }
+
+  async getWritingSkillAssessmentById(id: string): Promise<any> {
+    const response = await this.client.get(`/assessments/skill/writing/${id}`);
+    return response.data.data;
+  }
+
+  async updateWritingSkillAssessment(id: string, data: any): Promise<any> {
+    const response = await this.client.put(`/assessments/skill/writing/${id}`, data);
+    return response.data.data;
+  }
+
+  async completeWritingSkillAssessment(id: string): Promise<any> {
+    const response = await this.client.put(`/assessments/skill/writing/${id}/complete`);
+    return response.data.data;
+  }
+
+  // Math Skill Assessment
+  async createMathSkillAssessment(data: any): Promise<any> {
+    const response = await this.client.post('/assessments/skill/math', data);
+    return response.data.data;
+  }
+
+  async getMathSkillAssessmentsByStudent(studentId: string): Promise<any[]> {
+    const response = await this.client.get(`/assessments/skill/math/student/${studentId}`);
+    return response.data.data;
+  }
+
+  async getMathSkillAssessmentById(id: string): Promise<any> {
+    const response = await this.client.get(`/assessments/skill/math/${id}`);
+    return response.data.data;
+  }
+
+  async updateMathSkillAssessment(id: string, data: any): Promise<any> {
+    const response = await this.client.put(`/assessments/skill/math/${id}`, data);
+    return response.data.data;
+  }
+
+  async completeMathSkillAssessment(id: string): Promise<any> {
+    const response = await this.client.put(`/assessments/skill/math/${id}/complete`);
+    return response.data.data;
+  }
+
+  // Lesson Plans
+  async createLessonPlan(data: any): Promise<any> {
+    const response = await this.client.post('/lesson-plans', data);
+    return response.data.data;
+  }
+
+  async getLessonPlansByStudent(studentId: string, page = 1, limit = 20): Promise<any> {
+    const response = await this.client.get(`/lesson-plans/student/${studentId}`, {
+      params: { page, limit }
+    });
+    return response.data.data;
+  }
+
+  async getLessonPlanById(id: string): Promise<any> {
+    const response = await this.client.get(`/lesson-plans/${id}`);
+    return response.data.data;
+  }
+
+  async updateLessonPlan(id: string, data: any): Promise<any> {
+    const response = await this.client.put(`/lesson-plans/${id}`, data);
+    return response.data.data;
+  }
+
+  async deleteLessonPlan(id: string): Promise<void> {
+    await this.client.delete(`/lesson-plans/${id}`);
+  }
+
+  // Homework
+  async createHomework(data: any): Promise<any> {
+    const response = await this.client.post('/homework', data);
+    return response.data.data;
+  }
+
+  async getHomeworkByStudent(studentId: string, page = 1, limit = 20): Promise<any> {
+    const response = await this.client.get(`/homework/student/${studentId}`, {
+      params: { page, limit }
+    });
+    return response.data.data;
+  }
+
+  async getHomeworkByParent(page = 1, limit = 20): Promise<any> {
+    const response = await this.client.get('/homework/parent/me', {
+      params: { page, limit }
+    });
+    return response.data.data;
+  }
+
+  async getHomeworkById(id: string): Promise<any> {
+    const response = await this.client.get(`/homework/${id}`);
+    return response.data.data;
+  }
+
+  async updateHomework(id: string, data: any): Promise<any> {
+    const response = await this.client.put(`/homework/${id}`, data);
+    return response.data.data;
+  }
+
+  async submitHomework(id: string, parentFeedback?: string): Promise<any> {
+    const response = await this.client.put(`/homework/${id}/submit`, { parentFeedback });
+    return response.data.data;
+  }
+
+  async reviewHomework(id: string, educatorFeedback: string): Promise<any> {
+    const response = await this.client.put(`/homework/${id}/review`, { educatorFeedback });
+    return response.data.data;
+  }
+
+  async completeHomework(id: string): Promise<any> {
+    const response = await this.client.put(`/homework/${id}/complete`);
+    return response.data.data;
+  }
+
+  async deleteHomework(id: string): Promise<void> {
+    await this.client.delete(`/homework/${id}`);
+  }
+
+  // Learning Materials
+  async createLearningMaterial(data: any): Promise<any> {
+    const response = await this.client.post('/materials', data);
+    return response.data.data;
+  }
+
+  async getLearningMaterials(params: any): Promise<any> {
+    const response = await this.client.get('/materials', { params });
+    return response.data.data;
+  }
+
+  async getLearningMaterialsBySubjectAndGrade(subject: string, grade: number): Promise<any[]> {
+    const response = await this.client.get(`/materials/${subject}/${grade}`);
+    return response.data.data;
+  }
+
+  async getLearningMaterialById(id: string): Promise<any> {
+    const response = await this.client.get(`/materials/${id}`);
+    return response.data.data;
+  }
+
+  async updateLearningMaterial(id: string, data: any): Promise<any> {
+    const response = await this.client.put(`/materials/${id}`, data);
+    return response.data.data;
+  }
+
+  async deleteLearningMaterial(id: string): Promise<void> {
+    await this.client.delete(`/materials/${id}`);
   }
 }
 

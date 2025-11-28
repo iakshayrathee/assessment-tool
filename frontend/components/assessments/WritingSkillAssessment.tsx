@@ -1,0 +1,452 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, ChevronRight, Download, Eye } from 'lucide-react';
+import { apiClient } from '@/lib/api';
+import { toast } from 'react-hot-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+interface WritingSkillAssessmentProps {
+  studentId: string;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+const WRITING_QUESTIONS = [
+  { 
+    id: 'writingQ1',
+    question: 'Can the child write legibly?', 
+    options: ['Yes', 'With Effort', 'No'] 
+  },
+  { 
+    id: 'writingQ2',
+    question: 'Does the child use proper letter formation?', 
+    options: ['Always', 'Sometimes', 'Rarely'] 
+  },
+  { 
+    id: 'writingQ3',
+    question: 'Can the child compose sentences?', 
+    options: ['Independently', 'With Help', 'Not Yet'] 
+  }
+];
+
+const WRITING_SYMPTOMS = {
+  'Fine Motor & Grip Issues': [
+    { key: 'incorrectPencilGrip', label: 'Incorrect pencil grip' },
+    { key: 'holdsPencilTooTightly', label: 'Holds pencil too tightly' },
+    { key: 'holdsPencilTooLoosely', label: 'Holds pencil too loosely' },
+    { key: 'writesExcessivePressure', label: 'Writes with excessive pressure' },
+    { key: 'writesLightPressure', label: 'Writes with very light pressure' },
+    { key: 'wristFingerPainComplaints', label: 'Wrist or finger pain complaints' },
+    { key: 'slowFineMotorSpeed', label: 'Slow fine motor speed' },
+    { key: 'fatigueAfterShortWriting', label: 'Fatigue after short writing task' },
+  ],
+  'Letter Formation Issues': [
+    { key: 'incorrectLetterFormation', label: 'Incorrect letter formation' },
+    { key: 'reversals', label: 'Reversals (b/d, p/q, m/w, n/u, etc.)' },
+    { key: 'difficultiesFormingCurvesDiagonals', label: 'Difficulties forming curves or diagonals' },
+    { key: 'lettersWrittenMirrorImage', label: 'Letters written in mirror image' },
+    { key: 'poorStrokeSequence', label: 'Poor stroke sequence' },
+    { key: 'capitalsInsertedBetweenWords', label: 'Capitals inserted in between words' },
+    { key: 'difficultyCopyingLetters', label: 'Difficulty copying letters accurately' },
+  ],
+  'Spacing, Alignment & Presentation': [
+    { key: 'poorSpacingBetweenLetters', label: 'Poor spacing between letters' },
+    { key: 'poorSpacingBetweenWords', label: 'Poor spacing between words' },
+    { key: 'writesOutsideLine', label: 'Writes outside the line' },
+    { key: 'difficultyMaintainingBaseline', label: 'Difficulty maintaining baseline' },
+    { key: 'unevenLetterSize', label: 'Uneven letter size' },
+    { key: 'inconsistentSpacingAcrossPage', label: 'Inconsistent spacing across the page' },
+    { key: 'crowdedWriting', label: 'Crowded writing' },
+    { key: 'tooMuchSpaceBetweenLetters', label: 'Too much space between letters' },
+    { key: 'floatingLettersAboveLine', label: 'Floating letters above the line' },
+  ],
+  'Handwriting Fluency': [
+    { key: 'verySlowWriting', label: 'Very slow writing' },
+    { key: 'writesTooFastManyErrors', label: 'Writes too fast with many errors' },
+    { key: 'poorHandwritingEndurance', label: 'Poor handwriting endurance' },
+    { key: 'choppyWriting', label: 'Choppy writing' },
+    { key: 'inconsistentPace', label: 'Inconsistent pace' },
+    { key: 'repeatedErasing', label: 'Repeated erasing' },
+    { key: 'frequentCorrections', label: 'Frequent corrections' },
+  ],
+  'Dictation & Spelling': [
+    { key: 'difficultyWritingDictatedLetters', label: 'Difficulty writing dictated letters' },
+    { key: 'difficultyWritingDictatedWords', label: 'Difficulty writing dictated words' },
+    { key: 'spellsPhonetically', label: 'Spells phonetically but incorrectly' },
+    { key: 'omitsLettersInSpelling', label: 'Omits letters in spelling' },
+    { key: 'addsExtraLetters', label: 'Adds extra letters' },
+    { key: 'substitutesLettersOrSounds', label: 'Substitutes letters or sounds' },
+    { key: 'confusesVowelSounds', label: 'Confuses vowel sounds' },
+    { key: 'troubleEncodingCVC', label: 'Trouble encoding CVC words' },
+    { key: 'troubleEncodingBlendsDigraphs', label: 'Trouble encoding blends/digraphs' },
+  ],
+  'Sentence Formation / Written Expression': [
+    { key: 'cannotConstructSimpleSentences', label: 'Cannot construct simple sentences' },
+    { key: 'writesOnlySingleWords', label: 'Writes only single words' },
+    { key: 'strugglesExpandSentences', label: 'Struggles to expand sentences' },
+    { key: 'poorGrammarUsage', label: 'Poor grammar usage' },
+    { key: 'writesIncompleteSentences', label: 'Writes incomplete sentences' },
+    { key: 'confusingSentenceOrder', label: 'Confusing sentence order' },
+    { key: 'difficultyExpressingIdeas', label: 'Difficulty expressing ideas' },
+    { key: 'avoidsWrittenTasks', label: 'Avoids written tasks' },
+    { key: 'needsVerbalPromptsToWrite', label: 'Needs verbal prompts to write' },
+  ],
+  'Copying Skills': [
+    { key: 'difficultyCopyingFromBoard', label: 'Difficulty copying from board' },
+    { key: 'difficultyCopyingFromBook', label: 'Difficulty copying from book' },
+    { key: 'slowCopying', label: 'Slow copying' },
+    { key: 'skipsWordsOrLettersWhenCopying', label: 'Skips words or letters when copying' },
+    { key: 'copiesInaccurately', label: 'Copies inaccurately' },
+    { key: 'looksAwayFrequentlyWhileCopying', label: 'Looks away frequently while copying' },
+  ],
+  'Organization & Structure': [
+    { key: 'writingDisorganized', label: 'Writing is disorganized' },
+    { key: 'thoughtsNotLogicallySequenced', label: 'Thoughts not logically sequenced' },
+    { key: 'cannotPlanWriting', label: 'Cannot plan writing' },
+    { key: 'beginsWritingRandomAreasOnPage', label: 'Begins writing in random areas on page' },
+    { key: 'noConceptOfMargins', label: 'No concept of margins' },
+    { key: 'paragraphingDifficulty', label: 'Paragraphing difficulty (Grade-level kids)' },
+  ],
+  'Behavioral / Self-Management Issues': [
+    { key: 'avoidsWritingActivities', label: 'Avoids writing activities' },
+    { key: 'complainsWritingIsHard', label: 'Complains writing is hard' },
+    { key: 'getsFrustratedQuickly', label: 'Gets frustrated quickly' },
+    { key: 'lowWritingStamina', label: 'Low writing stamina' },
+    { key: 'givesUpInMiddleOfTask', label: 'Gives up in the middle of task' },
+    { key: 'lowConfidenceWriting', label: 'Low confidence' },
+    { key: 'inconsistentPerformanceAcrossDays', label: 'Inconsistent performance across days' },
+  ],
+};
+
+export function WritingSkillAssessment({ studentId, onSuccess, onCancel }: WritingSkillAssessmentProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<Record<string, boolean>>({});
+  const [questionAnswers, setQuestionAnswers] = useState<Record<string, string>>({});
+  const [additionalNotes, setAdditionalNotes] = useState('');
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [showPreview, setShowPreview] = useState(false);
+  const [savedAssessment, setSavedAssessment] = useState<any>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  // Get student and educator details from saved assessment response
+  const studentDetails = savedAssessment?.student || null;
+  const educatorDetails = savedAssessment?.specialEducator || null;
+
+  const toggleSection = (section: string) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const toggleSymptom = (key: string) => {
+    setSelectedSymptoms(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleSubmit = async () => {
+    // Validate that at least one symptom is selected or there are additional notes
+    const hasSelectedSymptoms = Object.values(selectedSymptoms).some(value => value === true);
+    const hasQuestionAnswers = Object.values(questionAnswers).some(value => value && value.trim() !== '');
+    
+    if (!hasSelectedSymptoms && !hasQuestionAnswers && !additionalNotes.trim()) {
+      toast.error('Please select at least one symptom, answer questions, or add notes before saving.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      const data = {
+        studentId,
+        ...selectedSymptoms,
+        ...questionAnswers,
+        additionalNotes,
+      };
+
+      const response = await apiClient.createWritingSkillAssessment(data);
+      // Store the full response data which includes student and specialEducator
+      setSavedAssessment(response.data || response);
+      setShowPreview(true);
+      toast.success('Writing skill assessment created successfully!');
+    } catch (error: any) {
+      console.error('Create writing assessment error:', error);
+      toast.error(error.response?.data?.error || 'Failed to create writing assessment');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const downloadPDF = async () => {
+    if (!reportRef.current) return;
+    
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const element = reportRef.current;
+      
+      // Generate filename with student name, grade, educator name, date and time
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+      
+      // Use available data or fallback values
+      const studentName = studentDetails?.fullName ? studentDetails.fullName.replace(/\s+/g, '_') : 'student';
+      const grade = studentDetails?.grade ? `grade_${studentDetails.grade}` : 'grade_unknown';
+      const educatorName = educatorDetails?.fullName ? educatorDetails.fullName.replace(/\s+/g, '_') : 'educator';
+      
+      const filename = `${studentName}_${grade}_${educatorName}_${dateStr}_${timeStr}.pdf`;
+      
+      const opt = {
+        margin: 10,
+        filename: filename,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+      };
+      
+      html2pdf().from(element).set(opt).save();
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      console.error('Failed to download PDF:', error);
+      toast.error('Failed to download PDF');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Assessment Questions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Writing Assessment Questions</CardTitle>
+          <p className="text-sm text-gray-600">Answer the following questions about the student's writing abilities</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {WRITING_QUESTIONS.map((q) => (
+            <div key={q.id} className="space-y-2">
+              <Label className="text-sm font-medium">{q.question}</Label>
+              <Select 
+                value={questionAnswers[q.id] || ''} 
+                onValueChange={(value) => setQuestionAnswers(prev => ({ ...prev, [q.id]: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select response" />
+                </SelectTrigger>
+                <SelectContent>
+                  {q.options.map((option) => (
+                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Detailed Symptoms */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Detailed Writing Symptoms</CardTitle>
+          <p className="text-sm text-gray-600">Select all symptoms that apply to the student</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {Object.entries(WRITING_SYMPTOMS).map(([category, symptoms]) => (
+            <Collapsible
+              key={category}
+              open={openSections[category]}
+              onOpenChange={() => toggleSection(category)}
+            >
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <span className="font-medium text-left">{category}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">
+                    {symptoms.filter(s => selectedSymptoms[s.key]).length} / {symptoms.length}
+                  </span>
+                  {openSections[category] ? (
+                    <ChevronDown className="h-5 w-5" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5" />
+                  )}
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-3 pb-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4">
+                  {symptoms.map((symptom) => (
+                    <div key={symptom.key} className="flex items-start space-x-2">
+                      <input
+                        type="checkbox"
+                        id={symptom.key}
+                        checked={selectedSymptoms[symptom.key] || false}
+                        onChange={() => toggleSymptom(symptom.key)}
+                        className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <Label
+                        htmlFor={symptom.key}
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        {symptom.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          ))}
+
+          <div className="pt-4">
+            <Label htmlFor="additionalNotes">Additional Notes</Label>
+            <Textarea
+              id="additionalNotes"
+              value={additionalNotes}
+              onChange={(e) => setAdditionalNotes(e.target.value)}
+              placeholder="Add any additional observations or notes..."
+              rows={4}
+              className="mt-2"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end space-x-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} disabled={isSubmitting}>
+          {isSubmitting ? 'Saving...' : 'Save Assessment'}
+        </Button>
+      </div>
+
+      {/* Preview Modal */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Assessment Preview</DialogTitle>
+            <p className="text-sm text-gray-600">
+              Your writing assessment has been saved successfully. You can now download it as PDF.
+            </p>
+          </DialogHeader>
+          
+          <div ref={reportRef} className="p-6 bg-white">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-green-800">Writing Skill Assessment</h2>
+              <p className="text-gray-600">Assessment Date: {new Date().toLocaleDateString()}</p>
+              
+              {/* Student and Educator Details */}
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="bg-blue-50 p-3 rounded">
+                  <h4 className="font-semibold text-blue-800">Student Information</h4>
+                  {studentDetails ? (
+                    <>
+                      <p><span className="font-medium">Name:</span> {studentDetails.fullName || 'N/A'}</p>
+                      <p><span className="font-medium">Grade:</span> {studentDetails.grade || 'N/A'}</p>
+                      {studentDetails.age && <p><span className="font-medium">Age:</span> {studentDetails.age}</p>}
+                    </>
+                  ) : (
+                    <p className="text-gray-500">Loading student information...</p>
+                  )}
+                </div>
+                
+                <div className="bg-green-50 p-3 rounded">
+                  <h4 className="font-semibold text-green-800">Special Educator Information</h4>
+                  {educatorDetails ? (
+                    <>
+                      <p><span className="font-medium">Name:</span> {educatorDetails.fullName || 'N/A'}</p>
+                      <p><span className="font-medium">Role:</span> Special Educator</p>
+                      <p><span className="font-medium">Date & Time:</span> {new Date().toLocaleString()}</p>
+                    </>
+                  ) : (
+                    <p className="text-gray-500">Loading educator information...</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Assessment Summary */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">Assessment Summary</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-green-50 p-3 rounded">
+                  <p className="font-medium">Total Symptoms Selected:</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    {Object.values(selectedSymptoms).filter(val => val).length}
+                  </p>
+                </div>
+                <div className="bg-blue-50 p-3 rounded">
+                  <p className="font-medium">Questions Answered:</p>
+                  <p className="text-2xl font-bold text-blue-700">
+                    {Object.values(questionAnswers).filter(val => val && val.trim()).length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Selected Symptoms */}
+            {Object.values(selectedSymptoms).some(val => val) && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Selected Symptoms</h3>
+                <div className="bg-gray-50 p-4 rounded">
+                  <ul className="list-disc list-inside space-y-1">
+                    {Object.entries(WRITING_SYMPTOMS).flatMap(([category, symptoms]) =>
+                      symptoms
+                        .filter(symptom => selectedSymptoms[symptom.key])
+                        .map(symptom => (
+                          <li key={symptom.key} className="text-sm">
+                            <span className="font-medium">{category}:</span> {symptom.label}
+                          </li>
+                        ))
+                    )}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* Question Answers */}
+            {Object.values(questionAnswers).some(val => val && val.trim()) && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Question Responses</h3>
+                <div className="bg-gray-50 p-4 rounded">
+                  {WRITING_QUESTIONS.map(q => 
+                    questionAnswers[q.id] && (
+                      <div key={q.id} className="mb-2">
+                        <p className="font-medium">{q.question}</p>
+                        <p className="text-green-700">{questionAnswers[q.id]}</p>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Additional Notes */}
+            {additionalNotes.trim() && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Additional Notes</h3>
+                <div className="bg-gray-50 p-4 rounded">
+                  <p className="whitespace-pre-wrap">{additionalNotes}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end space-x-4 pt-4">
+            <Button variant="outline" onClick={() => setShowPreview(false)}>
+              Close
+            </Button>
+            <Button 
+              onClick={downloadPDF}
+              disabled={!studentDetails || !educatorDetails}
+              title={!studentDetails || !educatorDetails ? 'Waiting for student and educator information to load...' : ''}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {!studentDetails || !educatorDetails ? 'Loading...' : 'Download PDF'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+

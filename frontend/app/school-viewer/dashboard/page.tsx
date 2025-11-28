@@ -22,7 +22,9 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
-  Loader2
+  Loader2,
+  BarChart3,
+  ClipboardCheck
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -32,6 +34,10 @@ interface DashboardStats {
   studentsByStatus: Record<string, number>;
   iepGoalsByStatus: Record<string, number>;
   sessionNotesThisMonth: number;
+  totalReports: number;
+  reportsByType: Record<string, number>;
+  complianceRate: number;
+  interventionProgress: number;
 }
 
 interface School {
@@ -209,15 +215,51 @@ export default function SchoolViewerDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">IEP Goals</CardTitle>
+            <CardTitle className="text-sm font-medium">IEP Progress</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Object.values(data.stats.iepGoalsByStatus).reduce((sum, count) => sum + count, 0)}
+              {data.stats.interventionProgress}%
+            </div>
+            <div className="flex items-center space-x-2 mt-1">
+              <div className="flex-1 bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full" 
+                  style={{ width: `${data.stats.interventionProgress}%` }}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Goals in Progress: {data.stats.iepGoalsByStatus.IN_PROGRESS || 0}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Compliance Rate</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {data.stats.complianceRate}%
             </div>
             <p className="text-xs text-muted-foreground">
-              In Progress: {data.stats.iepGoalsByStatus.IN_PROGRESS || 0}
+              Appropriate interventions
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.stats.totalReports}</div>
+            <p className="text-xs text-muted-foreground">
+              All report types
             </p>
           </CardContent>
         </Card>
@@ -244,6 +286,21 @@ export default function SchoolViewerDashboard() {
             <div className="text-2xl font-bold">{data.assignedEducators.length}</div>
             <p className="text-xs text-muted-foreground">
               Special educators working
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Report Types</CardTitle>
+            <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {data.stats.reportsByType ? Object.keys(data.stats.reportsByType).length : 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Different report categories
             </p>
           </CardContent>
         </Card>

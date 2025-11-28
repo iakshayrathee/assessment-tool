@@ -377,6 +377,128 @@ export interface IEPProgress {
   createdAt: string;
 }
 
+// New IEP Types for Updated Format
+export enum IEPDocumentStatus {
+  DRAFT = 'DRAFT',
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  ARCHIVED = 'ARCHIVED'
+}
+
+export enum TeacherAssistanceLevel {
+  INDEPENDENT = 'INDEPENDENT',
+  MINIMAL_ASSISTANCE = 'MINIMAL_ASSISTANCE',
+  MODERATE_ASSISTANCE = 'MODERATE_ASSISTANCE',
+  MAXIMAL_ASSISTANCE = 'MAXIMAL_ASSISTANCE',
+  PHYSICAL_PROMPT = 'PHYSICAL_PROMPT'
+}
+
+export enum BehavioralAttentionLevel {
+  EXCELLENT = 'EXCELLENT',
+  GOOD = 'GOOD',
+  FAIR = 'FAIR',
+  POOR = 'POOR',
+  VERY_POOR = 'VERY_POOR'
+}
+
+export enum BehavioralSittingTolerance {
+  EXCELLENT = 'EXCELLENT',
+  GOOD = 'GOOD',
+  FAIR = 'FAIR',
+  POOR = 'POOR',
+  VERY_POOR = 'VERY_POOR'
+}
+
+export enum BehavioralTaskCompletion {
+  EXCELLENT = 'EXCELLENT',
+  GOOD = 'GOOD',
+  FAIR = 'FAIR',
+  POOR = 'POOR',
+  VERY_POOR = 'VERY_POOR'
+}
+
+export interface IEPDocument {
+  id: string;
+  title: string;
+  studentId: string;
+  student?: Student;
+  specialEducatorId: string;
+  specialEducator?: EducatorProfile;
+  
+  durationMonths: number;
+  startDate: string;
+  endDate: string;
+  areasOfRemediation: string[];
+  status: IEPDocumentStatus;
+  
+  subjectSections?: IEPSubjectSection[];
+  weeklyEvaluations?: WeeklyEvaluation[];
+  
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IEPSubjectSection {
+  id: string;
+  iepDocumentId: string;
+  iepDocument?: IEPDocument;
+  
+  subject: string;
+  presentLevelReceptive: string;
+  presentLevelExpressive: string;
+  
+  longTermGoals: IEPLongTermGoal[];
+  shortTermGoals: IEPShortTermGoal[];
+  
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IEPLongTermGoal {
+  id: string;
+  subjectSectionId: string;
+  subjectSection?: IEPSubjectSection;
+  
+  objective: string;
+  durationMonths: number;
+  measurableCriteria: string;
+  
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IEPShortTermGoal {
+  id: string;
+  subjectSectionId: string;
+  subjectSection?: IEPSubjectSection;
+  
+  steppingStone: string;
+  teacherAssistanceLevel: TeacherAssistanceLevel;
+  
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WeeklyEvaluation {
+  id: string;
+  iepDocumentId: string;
+  iepDocument?: IEPDocument;
+  
+  weekNumber: number;
+  evaluationDate: string;
+  
+  dailyActivities: string;
+  strategyEffectiveness: string;
+  subjectObservations: string;
+  behavioralAttention: BehavioralAttentionLevel;
+  behavioralSittingTolerance: BehavioralSittingTolerance;
+  behavioralTaskCompletion: BehavioralTaskCompletion;
+  wasAbleToDo: string;
+  
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SessionNote {
   id: string;
   studentId: string;

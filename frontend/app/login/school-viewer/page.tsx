@@ -56,7 +56,7 @@ export default function SchoolViewerLoginPage() {
   };
 
   const fillDemoCredentials = () => {
-    setEmail('schoolviewer@knowled.com');
+    setEmail('viewer@knowled.com');
     setPassword('viewer123');
     setErrors({});
   };

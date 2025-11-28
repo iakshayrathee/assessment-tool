@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthUtils } from '../utils/auth';
 import { UserRole } from '../models';
+import { AIReportController } from '../controllers/AIReportController';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -9,11 +10,58 @@ const prisma = new PrismaClient();
 // Apply authentication to all routes
 router.use(AuthUtils.authenticateToken);
 
+// GET /api/reports - Get reports by student ID (query param)
+router.get('/', async (req, res) => {
+  try {
+    const { studentId } = req.query;
+
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Student ID is required'
+      });
+    }
+
+    const reports = await prisma.report.findMany({
+      where: { studentId: studentId as string },
+      include: {
+        student: {
+          select: {
+            id: true,
+            fullName: true,
+            grade: true
+          }
+        },
+        specialEducator: {
+          select: {
+            id: true,
+            fullName: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json({
+      success: true,
+      data: reports
+    });
+  } catch (error) {
+    console.error('Get reports error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get reports'
+    });
+  }
+});
+
 // GET /api/reports/:id - Get report by ID
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const report = await prisma.report.findUnique({
       where: { id },
       include: {
@@ -66,7 +114,7 @@ router.get('/:id', async (req, res) => {
 
     // Add mock data for different report types
     let reportData: any = { ...report };
-    
+
     if (report.type === 'ASSESSMENT') {
       reportData.assessmentData = {
         domains: [
@@ -151,7 +199,7 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/download', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const report = await prisma.report.findUnique({
       where: { id },
       include: {
@@ -174,7 +222,7 @@ router.get('/:id/download', async (req, res) => {
     // For now, return a mock PDF response
     // In a real implementation, you would generate a PDF using libraries like puppeteer or pdfkit
     const mockPdfContent = `Mock PDF content for ${report.type} report for ${report.student.fullName}`;
-    
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${report.type}_${report.student.fullName}_${new Date().toISOString().split('T')[0]}.pdf"`);
     res.send(Buffer.from(mockPdfContent));
@@ -186,5 +234,11 @@ router.get('/:id/download', async (req, res) => {
     });
   }
 });
+
+// POST /api/reports/ai/generate/:studentId - Generate AI-powered comprehensive report
+router.post('/ai/generate/:studentId', AuthUtils.requireRole([UserRole.SPECIAL_EDUCATOR, UserRole.SUPER_SPECIAL_EDUCATOR]), AIReportController.generateAIReport);
+
+// GET /api/reports/ai/preview/:studentId - Preview AI report without saving
+router.get('/ai/preview/:studentId', AuthUtils.requireRole([UserRole.SPECIAL_EDUCATOR, UserRole.SUPER_SPECIAL_EDUCATOR]), AIReportController.previewAIReport);
 
 export default router;

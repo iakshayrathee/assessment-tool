@@ -7,7 +7,6 @@ import { PrismaClient } from '@prisma/client';
 // Import routes
 import authRoutes from './routes/auth';
 import studentRoutes from './routes/students';
-import assessmentRoutes from './routes/assessments';
 import centerRoutes from './routes/centers';
 import schoolRoutes from './routes/schools';
 import parentRoutes from './routes/parents';
@@ -17,6 +16,9 @@ import specialEducatorRoutes from './routes/specialEducators';
 import superSpecialEducatorRoutes from './routes/superSpecialEducators';
 import reportRoutes from './routes/reports';
 import schoolViewerRoutes from './routes/schoolViewers';
+import iepRoutes from './routes/iep';
+import newAssessmentRoutes from './routes/newAssessments';
+import lessonPlansHomeworkRoutes from './routes/lessonPlansHomework';
 
 // Load environment variables
 dotenv.config();
@@ -52,7 +54,7 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
-app.use('/api/assessments', assessmentRoutes);
+app.use('/api/assessments', newAssessmentRoutes);
 app.use('/api/centers', centerRoutes);
 app.use('/api/schools', schoolRoutes);
 app.use('/api/parents', parentRoutes);
@@ -62,6 +64,8 @@ app.use('/api/special-educators', specialEducatorRoutes);
 app.use('/api/super-special-educators', superSpecialEducatorRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/school-viewers', schoolViewerRoutes);
+app.use('/api/iep', iepRoutes);
+app.use('/api/lesson-plans', lessonPlansHomeworkRoutes);
 
 // Global error handler
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
