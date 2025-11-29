@@ -90,6 +90,12 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       icon: Brain,
       description: 'Conduct and manage assessments'
     },
+     {
+      title: 'Lesson Plans',
+      href: '/educator/lesson-plans-new',
+      icon: Calendar,
+      description: 'Create and manage lesson plans'
+    },
     {
       title: 'IEP Management',
       href: '/educator/iep-management',
@@ -101,12 +107,6 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       href: '/educator/reports',
       icon: BarChart3,
       description: 'Generate and view reports'
-    },
-    {
-      title: 'Lesson Plans',
-      href: '/educator/lesson-plans-new',
-      icon: Calendar,
-      description: 'Create and manage lesson plans'
     }
   ],
   ADMIN: [

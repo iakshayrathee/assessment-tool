@@ -394,27 +394,32 @@ export enum TeacherAssistanceLevel {
 }
 
 export enum BehavioralAttentionLevel {
-  EXCELLENT = 'EXCELLENT',
-  GOOD = 'GOOD',
-  FAIR = 'FAIR',
   POOR = 'POOR',
-  VERY_POOR = 'VERY_POOR'
+  FAIR = 'FAIR',
+  GOOD = 'GOOD',
+  EXCELLENT = 'EXCELLENT'
 }
 
 export enum BehavioralSittingTolerance {
-  EXCELLENT = 'EXCELLENT',
-  GOOD = 'GOOD',
-  FAIR = 'FAIR',
   POOR = 'POOR',
-  VERY_POOR = 'VERY_POOR'
+  FAIR = 'FAIR',
+  GOOD = 'GOOD',
+  EXCELLENT = 'EXCELLENT'
 }
 
 export enum BehavioralTaskCompletion {
-  EXCELLENT = 'EXCELLENT',
-  GOOD = 'GOOD',
-  FAIR = 'FAIR',
-  POOR = 'POOR',
-  VERY_POOR = 'VERY_POOR'
+  NOT_COMPLETED = 'NOT_COMPLETED',
+  PARTIALLY_COMPLETED = 'PARTIALLY_COMPLETED',
+  COMPLETED_WITH_ASSISTANCE = 'COMPLETED_WITH_ASSISTANCE',
+  COMPLETED_INDEPENDENTLY = 'COMPLETED_INDEPENDENTLY'
+}
+
+export enum IEPSubject {
+  ORAL_LANGUAGE = 'ORAL_LANGUAGE',
+  READING = 'READING',
+  WRITING = 'WRITING',
+  SPELLING = 'SPELLING',
+  MATH = 'MATH'
 }
 
 export interface IEPDocument {

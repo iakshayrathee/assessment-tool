@@ -157,7 +157,7 @@ export default function HomePage() {
 
         {/* Footer */}
         <div className="text-center text-gray-500 text-sm">
-          <p>© 2024 Knowled. Transforming special education through technology.</p>
+          <p>© 2025 Knowled. Transforming special education through technology.</p>
         </div>
       </div>
     </div>

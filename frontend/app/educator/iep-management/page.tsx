@@ -153,8 +153,7 @@ export default function IEPManagementPage() {
   };
 
   const handleExportDocument = (document: IEPDocument) => {
-    // TODO: Implement PDF export functionality
-    toast.success('PDF export functionality coming soon!');
+    // PDF export is handled by IEPDocumentViewer component
   };
 
   if (isLoading) {
@@ -317,24 +316,6 @@ export default function IEPManagementPage() {
                         >
                           <Calendar className="h-4 w-4 mr-1" />
                           Weekly Plan
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePrintDocument(document)}
-                        >
-                          <Printer className="h-4 w-4 mr-1" />
-                          Print
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleExportDocument(document)}
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          Export
                         </Button>
                       </div>
                     </div>

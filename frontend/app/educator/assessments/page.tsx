@@ -175,9 +175,7 @@ export default function AssessmentsPage() {
                           <li>• Attention & Behavior (7 symptoms)</li>
                           <li>• Mechanics & Punctuation (4 symptoms)</li>
                         </ul>
-                        <div className="mt-4 text-center">
-                          <span className="text-xs font-semibold text-blue-600">50+ Symptoms</span>
-                        </div>
+                     
                       </CardContent>
                     </Card>
 
@@ -204,9 +202,7 @@ export default function AssessmentsPage() {
                           <li>• Sentence Formation (9 symptoms)</li>
                           <li>• Copying & Organization (12 symptoms)</li>
                         </ul>
-                        <div className="mt-4 text-center">
-                          <span className="text-xs font-semibold text-green-600">60+ Symptoms</span>
-                        </div>
+                       
                       </CardContent>
                     </Card>
 
@@ -233,9 +229,7 @@ export default function AssessmentsPage() {
                           <li>• Symbol Confusion (6 symptoms)</li>
                           <li>• Behavioral Indicators (7 symptoms)</li>
                         </ul>
-                        <div className="mt-4 text-center">
-                          <span className="text-xs font-semibold text-purple-600">60+ Symptoms</span>
-                        </div>
+                       
                       </CardContent>
                     </Card>
                   </div>

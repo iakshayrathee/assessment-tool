@@ -13,12 +13,12 @@ router.use(AuthUtils.authenticateToken);
 router.use(attachProfileId);
 
 // Lesson Plans
-router.post('/lesson-plans', controller.createLessonPlan);
-router.get('/lesson-plans/:id', controller.getLessonPlan);
-router.get('/lesson-plans/student/:studentId', controller.getLessonPlansByStudent);
-router.get('/lesson-plans/educator/me', controller.getLessonPlansByEducator);
-router.put('/lesson-plans/:id', controller.updateLessonPlan);
-router.delete('/lesson-plans/:id', controller.deleteLessonPlan);
+router.post('/', controller.createLessonPlan);
+router.get('/educator/me', controller.getLessonPlansByEducator);
+router.get('/student/:studentId', controller.getLessonPlansByStudent);
+router.get('/:id', controller.getLessonPlan);
+router.put('/:id', controller.updateLessonPlan);
+router.delete('/:id', controller.deleteLessonPlan);
 
 // Homework
 router.post('/homework', controller.createHomework);

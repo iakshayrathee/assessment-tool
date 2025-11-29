@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Sparkles } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -17,17 +18,19 @@ import { toast } from 'react-hot-toast';
 import {
   BehavioralAttentionLevel,
   BehavioralSittingTolerance,
-  BehavioralTaskCompletion
+  BehavioralTaskCompletion,
+  IEPSubject
 } from '@/types';
 
 const BEHAVIORAL_ATTENTION_LEVELS = Object.values(BehavioralAttentionLevel) as [string, ...string[]];
 const BEHAVIORAL_SITTING_TOLERANCE = Object.values(BehavioralSittingTolerance) as [string, ...string[]];
 const BEHAVIORAL_TASK_COMPLETION = Object.values(BehavioralTaskCompletion) as [string, ...string[]];
+const IEP_SUBJECTS = Object.values(IEPSubject) as [string, ...string[]];
 
 const DAYS_OF_WEEK = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY'] as const;
 
 const activitySchema = z.object({
-  subject: z.string().min(1, 'Subject is required'),
+  subject: z.enum(IEP_SUBJECTS),
   testGoalActivity: z.string().min(1, 'Test goal/activity is required'),
   analysis: z.string().min(1, 'Analysis is required'),
   assessment: z.string().min(1, 'Assessment is required'),
@@ -37,8 +40,14 @@ const activitySchema = z.object({
 });
 
 const formSchema = z.object({
-  weekStartDate: z.date({
-    required_error: 'Week start date is required',
+  weekNumber: z.number({
+    required_error: 'Week number is required',
+  }).min(1, 'Week number must be at least 1'),
+  startDate: z.date({
+    required_error: 'Start date is required',
+  }),
+  endDate: z.date({
+    required_error: 'End date is required',
   }),
   activities: z.record(z.enum(DAYS_OF_WEEK), activitySchema),
 });
@@ -52,13 +61,63 @@ interface WeeklyLessonPlanFormProps {
 export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: WeeklyLessonPlanFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const loadDemoData = () => {
+    const demoActivities = {
+      MONDAY: {
+        subject: 'READING',
+        testGoalActivity: 'Read and comprehend grade-level text with 80% accuracy',
+        analysis: 'Student showed good comprehension but struggled with fluency',
+        assessment: 'Scored 75% on reading comprehension assessment',
+        behavioralAttention: 'GOOD',
+        behavioralSittingTolerance: 'GOOD',
+        behavioralTaskCompletion: 'COMPLETED_WITH_ASSISTANCE'
+      },
+      TUESDAY: {
+        subject: 'MATH',
+        testGoalActivity: 'Solve basic addition and subtraction problems',
+        analysis: 'Student understands concepts but needs practice with speed',
+        assessment: 'Completed 15/20 problems correctly in 10 minutes',
+        behavioralAttention: 'EXCELLENT',
+        behavioralSittingTolerance: 'GOOD',
+        behavioralTaskCompletion: 'COMPLETED_INDEPENDENTLY'
+      },
+      WEDNESDAY: {
+        subject: 'WRITING',
+        testGoalActivity: 'Write a complete sentence with proper punctuation',
+        analysis: 'Student has good ideas but struggles with sentence structure',
+        assessment: 'Wrote 3 complete sentences with minimal errors',
+        behavioralAttention: 'FAIR',
+        behavioralSittingTolerance: 'FAIR',
+        behavioralTaskCompletion: 'COMPLETED_WITH_ASSISTANCE'
+      },
+      THURSDAY: {
+        subject: 'SPELLING',
+        testGoalActivity: 'Spell weekly vocabulary words correctly',
+        analysis: 'Student remembers most words but mixes up similar sounds',
+        assessment: 'Spelled 8/10 words correctly on practice test',
+        behavioralAttention: 'GOOD',
+        behavioralSittingTolerance: 'EXCELLENT',
+        behavioralTaskCompletion: 'COMPLETED_INDEPENDENTLY'
+      }
+    };
+
+    form.setValue('weekNumber', 1);
+    form.setValue('startDate', new Date());
+    form.setValue('endDate', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+    form.setValue('activities', demoActivities);
+    
+    toast.success('Demo data loaded! Review and adjust as needed.');
+  };
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      weekStartDate: new Date(),
+      weekNumber: 1,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
       activities: {
         MONDAY: {
-          subject: '',
+          subject: 'READING',
           testGoalActivity: '',
           analysis: '',
           assessment: '',
@@ -67,7 +126,7 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
           behavioralTaskCompletion: 'COMPLETED_WITH_ASSISTANCE',
         },
         TUESDAY: {
-          subject: '',
+          subject: 'READING',
           testGoalActivity: '',
           analysis: '',
           assessment: '',
@@ -76,7 +135,7 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
           behavioralTaskCompletion: 'COMPLETED_WITH_ASSISTANCE',
         },
         WEDNESDAY: {
-          subject: '',
+          subject: 'READING',
           testGoalActivity: '',
           analysis: '',
           assessment: '',
@@ -85,7 +144,7 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
           behavioralTaskCompletion: 'COMPLETED_WITH_ASSISTANCE',
         },
         THURSDAY: {
-          subject: '',
+          subject: 'READING',
           testGoalActivity: '',
           analysis: '',
           assessment: '',
@@ -101,9 +160,23 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
     try {
       setIsSubmitting(true);
       
+      // Transform activities object into array for backend
+      const activitiesArray = Object.entries(values.activities).map(([day, activity]) => ({
+        subject: activity.subject,
+        activity: activity.testGoalActivity, // Map testGoalActivity to activity
+        analysis: activity.analysis,
+        assessment: activity.assessment,
+        attentionLevel: activity.behavioralAttention, // Map to backend field name
+        sittingTolerance: activity.behavioralSittingTolerance, // Map to backend field name
+        taskCompletion: activity.behavioralTaskCompletion, // Map to backend field name
+        day: day as 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY'
+      }));
+      
       await apiClient.addWeeklyEvaluation(iepDocumentId, {
         ...values,
-        weekStartDate: values.weekStartDate.toISOString(),
+        startDate: values.startDate.toISOString(),
+        endDate: values.endDate.toISOString(),
+        activities: activitiesArray,
       });
       toast.success('Weekly lesson plan created successfully!');
       onSuccess?.();
@@ -122,23 +195,62 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
             <CardTitle>Weekly Lesson Plan</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="weekStartDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Week Start Date</FormLabel>
-                  <FormControl>
-                    <ProfessionalDatePicker
-                      date={field.value}
-                      setDate={field.onChange}
-                      placeholder="Select week start date"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="weekNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Week Number</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Week number"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Date</FormLabel>
+                    <FormControl>
+                      <ProfessionalDatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select start date"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Date</FormLabel>
+                    <FormControl>
+                      <ProfessionalDatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select end date"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="space-y-6">
               {DAYS_OF_WEEK.map((day) => (
@@ -154,9 +266,20 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Subject</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Subject name" {...field} />
-                          </FormControl>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select subject" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="ORAL_LANGUAGE">Oral Language</SelectItem>
+                              <SelectItem value="READING">Reading</SelectItem>
+                              <SelectItem value="WRITING">Writing</SelectItem>
+                              <SelectItem value="SPELLING">Spelling</SelectItem>
+                              <SelectItem value="MATH">Math</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -229,11 +352,10 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="EXCELLENT">Excellent</SelectItem>
-                              <SelectItem value="GOOD">Good</SelectItem>
-                              <SelectItem value="FAIR">Fair</SelectItem>
                               <SelectItem value="POOR">Poor</SelectItem>
-                              <SelectItem value="VERY_POOR">Very Poor</SelectItem>
+                              <SelectItem value="FAIR">Fair</SelectItem>
+                              <SelectItem value="GOOD">Good</SelectItem>
+                              <SelectItem value="EXCELLENT">Excellent</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -254,11 +376,10 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="EXCELLENT">Excellent</SelectItem>
-                              <SelectItem value="GOOD">Good</SelectItem>
-                              <SelectItem value="FAIR">Fair</SelectItem>
                               <SelectItem value="POOR">Poor</SelectItem>
-                              <SelectItem value="VERY_POOR">Very Poor</SelectItem>
+                              <SelectItem value="FAIR">Fair</SelectItem>
+                              <SelectItem value="GOOD">Good</SelectItem>
+                              <SelectItem value="EXCELLENT">Excellent</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -296,13 +417,25 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
           </CardContent>
         </Card>
 
-        <div className="flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
+        <div className="flex justify-between">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={loadDemoData}
+            className="flex items-center gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            Load Demo Data
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Creating...' : 'Create Weekly Plan'}
-          </Button>
+          
+          <div className="flex space-x-4">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating...' : 'Create Weekly Plan'}
+            </Button>
+          </div>
         </div>
       </form>
     </Form>

@@ -217,6 +217,27 @@ export class IEPRepository {
 
   // Add subject section to IEP document
   async addSubjectSection(iepDocumentId: string, sectionData: IEPSubjectSectionData): Promise<IEPSubjectSection> {
+    // console.log('Backend - Received subject section data:', JSON.stringify(sectionData, null, 2));
+    
+    // Generate goal numbers for long-term goals if not provided
+    const longTermGoalsWithNumbers = sectionData.longTermGoals?.map((goal, index) => ({
+      goalNumber: goal.goalNumber || index + 1,
+      description: goal.description || (goal as any).objective || '', // Handle both description and objective fields
+      durationMonths: goal.durationMonths
+    })) || [];
+
+    // console.log('Backend - Processed long-term goals:', JSON.stringify(longTermGoalsWithNumbers, null, 2));
+
+    // Generate goal numbers for short-term goals if not provided
+    const shortTermGoalsWithNumbers = sectionData.shortTermGoals?.map((goal, index) => ({
+      goalNumber: goal.goalNumber || index + 1,
+      description: goal.description || (goal as any).objective || '', // Handle both description and objective fields
+      teacherAssistance: goal.teacherAssistance,
+      targetDate: goal.targetDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Default: 30 days from now
+    })) || [];
+
+    // console.log('Backend - Processed short-term goals:', JSON.stringify(shortTermGoalsWithNumbers, null, 2));
+
     return this.prisma.iEPSubjectSection.create({
       data: {
         iepDocumentId,
@@ -224,19 +245,10 @@ export class IEPRepository {
         presentLevelReceptive: sectionData.presentLevelReceptive,
         presentLevelExpressive: sectionData.presentLevelExpressive,
         longTermGoals: {
-          create: sectionData.longTermGoals?.map(goal => ({
-            goalNumber: goal.goalNumber,
-            description: goal.description,
-            durationMonths: goal.durationMonths
-          })) || []
+          create: longTermGoalsWithNumbers
         },
         shortTermGoals: {
-          create: sectionData.shortTermGoals?.map(goal => ({
-            goalNumber: goal.goalNumber,
-            description: goal.description,
-            teacherAssistance: goal.teacherAssistance,
-            targetDate: goal.targetDate
-          })) || []
+          create: shortTermGoalsWithNumbers
         }
       },
       include: {

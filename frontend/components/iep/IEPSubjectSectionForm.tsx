@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Sparkles } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -52,6 +53,46 @@ interface IEPSubjectSectionFormProps {
 export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IEPSubjectSectionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const loadDemoData = () => {
+    const demoData = {
+      subject: 'READING',
+      presentLevelReceptive: 'Student demonstrates age-appropriate receptive language skills. Can follow 2-step directions and understand basic concepts. Shows good listening comprehension for stories at grade level.',
+      presentLevelExpressive: 'Student expresses ideas clearly but struggles with complex sentence structures. Vocabulary is developing appropriately. Occasionally needs prompts to expand on ideas.',
+      longTermGoals: [
+        {
+          objective: 'Improve reading comprehension skills to grade level proficiency',
+          durationMonths: 6
+        },
+        {
+          objective: 'Increase reading fluency to 60 words per minute with 95% accuracy',
+          durationMonths: 8
+        }
+      ],
+      shortTermGoals: [
+        {
+          objective: 'Identify main idea and supporting details in grade-level text',
+          teacherAssistanceLevel: 'MODERATE_ASSISTANCE'
+        },
+        {
+          objective: 'Use context clues to determine word meanings',
+          teacherAssistanceLevel: 'MINIMAL_ASSISTANCE'
+        },
+        {
+          objective: 'Make predictions based on text evidence',
+          teacherAssistanceLevel: 'MODERATE_ASSISTANCE'
+        }
+      ]
+    };
+
+    form.setValue('subject', demoData.subject);
+    form.setValue('presentLevelReceptive', demoData.presentLevelReceptive);
+    form.setValue('presentLevelExpressive', demoData.presentLevelExpressive);
+    form.setValue('longTermGoals', demoData.longTermGoals);
+    form.setValue('shortTermGoals', demoData.shortTermGoals);
+    
+    toast.success('Demo data loaded! Review and adjust as needed.');
+  };
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -67,10 +108,13 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
     try {
       setIsSubmitting(true);
       
+      // console.log('Frontend - Submitting subject section data:', JSON.stringify(values, null, 2));
+      
       await apiClient.addSubjectSection(iepDocumentId, values);
       toast.success('Subject section added successfully!');
       onSuccess?.();
     } catch (error: any) {
+      // console.error('Frontend - Error submitting subject section:', error);
       toast.error(error.response?.data?.message || 'Failed to add subject section');
     } finally {
       setIsSubmitting(false);
@@ -294,13 +338,25 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
           </CardContent>
         </Card>
 
-        <div className="flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
+        <div className="flex justify-between">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={loadDemoData}
+            className="flex items-center gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            Load Demo Data
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Adding...' : 'Add Subject Section'}
-          </Button>
+          
+          <div className="flex space-x-4">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Adding...' : 'Add Subject Section'}
+            </Button>
+          </div>
         </div>
       </form>
     </Form>

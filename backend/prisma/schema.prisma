@@ -890,6 +890,7 @@ model IEPWeeklyEvaluation {
 model IEPWeeklyActivity {
   id                 String                      @id @default(cuid())
   weeklyEvaluationId String
+  day                DayOfWeek?
   subject            IEPSubject
   activity           String
   analysis           String?
@@ -1178,4 +1179,12 @@ enum HomeworkStatus {
   SUBMITTED
   REVIEWED
   COMPLETED
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
 }
