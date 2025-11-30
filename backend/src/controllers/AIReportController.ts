@@ -22,12 +22,15 @@ export class AIReportController {
   static async generateAIReport(req: AuthenticatedRequest, res: Response) {
     try {
       const { studentId } = req.params;
+      const { reportType } = req.body; // 'ASSESSMENT' or 'LESSON_PLAN'
+      
       // Extract userId from authenticated user
       const user = req.user;
       const userId = user?.profileId || user?.id;
 
       console.log('Generate AI Report - User:', user);
       console.log('Generate AI Report - User ID:', userId);
+      console.log('Generate AI Report - Report Type:', reportType);
 
       if (!userId) {
         console.error('No user ID found in request');
@@ -37,6 +40,10 @@ export class AIReportController {
       if (!studentId) {
         return res.status(400).json({ error: 'Student ID is required' });
       }
+
+      // Validate report type
+      const validReportTypes = ['ASSESSMENT', 'LESSON_PLAN'];
+      const selectedReportType = reportType && validReportTypes.includes(reportType) ? reportType : 'ASSESSMENT';
 
       // Fetch the actual SpecialEducatorProfile ID from the user
       const educator = await prisma.specialEducatorProfile.findFirst({
@@ -51,8 +58,8 @@ export class AIReportController {
       const specialEducatorId = educator.id;
       console.log('Special Educator ID:', specialEducatorId);
 
-      // Generate comprehensive AI report
-      const aiReport = await aiReportService.generateComprehensiveReport(studentId, specialEducatorId);
+      // Generate comprehensive AI report with specified type
+      const aiReport = await aiReportService.generateComprehensiveReport(studentId, specialEducatorId, selectedReportType);
 
       // Save the generated report to database
       const savedReport = await assessmentRepo.createReport(specialEducatorId, aiReport);
@@ -75,12 +82,15 @@ export class AIReportController {
   static async previewAIReport(req: AuthenticatedRequest, res: Response) {
     try {
       const { studentId } = req.params;
+      const { reportType } = req.query; // 'ASSESSMENT' or 'LESSON_PLAN'
+      
       // Extract userId from authenticated user
       const user = req.user;
       const userId = user?.profileId || user?.id;
 
       console.log('Preview AI Report - User:', user);
       console.log('Preview AI Report - User ID:', userId);
+      console.log('Preview AI Report - Report Type:', reportType);
 
       if (!userId) {
         console.error('No user ID found in request');
@@ -90,6 +100,10 @@ export class AIReportController {
       if (!studentId) {
         return res.status(400).json({ error: 'Student ID is required' });
       }
+
+      // Validate report type
+      const validReportTypes = ['ASSESSMENT', 'LESSON_PLAN'];
+      const selectedReportType = reportType && validReportTypes.includes(reportType as string) ? reportType as 'ASSESSMENT' | 'LESSON_PLAN' : 'ASSESSMENT';
 
       // Fetch the actual SpecialEducatorProfile ID from the user
       const educator = await prisma.specialEducatorProfile.findFirst({
@@ -105,7 +119,7 @@ export class AIReportController {
       console.log('Special Educator ID:', specialEducatorId);
 
       // Generate report without saving to database
-      const aiReport = await aiReportService.generateComprehensiveReport(studentId, specialEducatorId);
+      const aiReport = await aiReportService.generateComprehensiveReport(studentId, specialEducatorId, selectedReportType);
 
       res.status(200).json({
         success: true,

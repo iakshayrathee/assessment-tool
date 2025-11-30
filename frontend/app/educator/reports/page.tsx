@@ -22,7 +22,9 @@ import {
   CheckCircle,
   Loader2,
   Users,
-  FileDown
+  FileDown,
+  Plus,
+  Sparkles
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -30,7 +32,8 @@ import toast from 'react-hot-toast';
 import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
 
 const REPORT_TYPES = [
-  { value: 'AI_COMPREHENSIVE', label: 'AI Comprehensive Report', description: 'AI-generated comprehensive progress analysis' }
+  { value: 'ASSESSMENT', label: 'Assessment Report', description: 'AI-generated report based on assessment data and intake form' },
+  { value: 'LESSON_PLAN', label: 'Lesson Plan Report', description: 'AI-generated report based on lesson plans with teacher observations' }
 ];
 
 
@@ -42,8 +45,7 @@ function ReportsPageContent() {
   const router = useRouter();
   const studentId = searchParams.get('studentId');
   const [selectedStudent, setSelectedStudent] = useState<string>(studentId || '');
-
-
+  const [selectedReportType, setSelectedReportType] = useState<'ASSESSMENT' | 'LESSON_PLAN'>('ASSESSMENT');
 
   // Modals & AI Preview
   const [showAIPreview, setShowAIPreview] = useState(false);
@@ -98,10 +100,10 @@ function ReportsPageContent() {
       return;
     }
 
-    console.log('Generating AI report for student:', selectedStudent);
+    console.log('Generating AI report for student:', selectedStudent, 'Type:', selectedReportType);
     setIsGeneratingAI(true);
     try {
-      const result = await apiClient.generateAIReport(selectedStudent);
+      const result = await apiClient.generateAIReport(selectedStudent, selectedReportType);
       console.log('AI report generation successful:', result);
 
       // Show the generated report in modal for preview and save
@@ -126,7 +128,7 @@ function ReportsPageContent() {
 
     setIsGeneratingAI(true);
     try {
-      const preview = await apiClient.previewAIReport(selectedStudent);
+      const preview = await apiClient.previewAIReport(selectedStudent, selectedReportType);
       console.log('AI preview response:', preview);
       setAiPreview(preview);
       setShowAIPreview(true);
@@ -164,7 +166,7 @@ function ReportsPageContent() {
       const opt = {
         margin: 10,
         filename: `${selectedStudentName.replace(/\s+/g, '-').toLowerCase()}-report-${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
@@ -409,7 +411,7 @@ function ReportsPageContent() {
       const opt = {
         margin: 15,
         filename: `${selectedStudentName.replace(/\s+/g, '-').toLowerCase()}-${new Date(report.createdAt).toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { 
           scale: 2,
           useCORS: true,
@@ -498,6 +500,25 @@ function ReportsPageContent() {
               Select Student
             </Button>
           )}
+
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-gray-600">Report Type</Label>
+            <Select value={selectedReportType} onValueChange={(value: 'ASSESSMENT' | 'LESSON_PLAN') => setSelectedReportType(value)}>
+              <SelectTrigger className="w-[280px] min-w-0 h-[60px] overflow-hidden">
+                <SelectValue placeholder="Select report type" className="truncate" />
+              </SelectTrigger>
+              <SelectContent className="min-w-[280px] max-w-sm">
+                {REPORT_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{type.label}</span>
+                      <span className="text-xs text-gray-500 break-words whitespace-normal">{type.description}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <Button
             onClick={handleGenerateAIReport}

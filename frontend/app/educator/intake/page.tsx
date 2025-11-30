@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { useIntakeForm } from '@/hooks/useAssessments';
 import { useEducatorStudents } from '@/hooks/useEducator';
 import { useStudent } from '@/hooks/useStudents';
+import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -144,6 +146,8 @@ function IntakeFormPageContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState<FormData>({
     // Section 1: Socio Demographic Data
     name: '',
@@ -248,7 +252,7 @@ function IntakeFormPageContent() {
         ...prev,
         name: selectedStudentData.fullName || '',
         age: selectedStudentData.age?.toString() || '',
-        gender: selectedStudentData.gender || '',
+        gender: selectedStudentData.gender ? convertGenderCase(selectedStudentData.gender) : '',
         class: selectedStudentData.grade || '',
         motherTongue: selectedStudentData.motherTongue || '',
         syllabus: selectedStudentData.syllabus || '',
@@ -509,8 +513,31 @@ function IntakeFormPageContent() {
     }
   };
 
-  const handleDownloadPDF = () => {
-    console.log('Download PDF functionality to be implemented');
+  const handleDownloadPDF = async () => {
+    if (!pdfRef.current || !selectedStudentId || !isFormComplete()) {
+      toast.error('Please complete the form before downloading PDF');
+      return;
+    }
+    
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const element = pdfRef.current;
+      const studentName = selectedStudentData?.fullName || 'intake-form';
+      const opt = {
+        margin: 10,
+        filename: `${studentName.replace(/\s+/g, '-').toLowerCase()}-intake-form-${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      html2pdf().from(element).set(opt).save();
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      console.error('Failed to download PDF:', error);
+      toast.error('Failed to download PDF');
+    }
   };
 
   const handleStudentSelect = (studentId: string) => {
@@ -1222,140 +1249,144 @@ function IntakeFormPageContent() {
 
       case 'review':
         return (
-          <div className="space-y-6">
-            <div className="text-center py-4">
-              <h3 className="text-lg font-semibold mb-2">Review Your Information</h3>
-              <p className="text-gray-600">Please review all the information before submitting the form.</p>
+          <div className="space-y-4">
+            <div className="text-center pb-2">
+              <h3 className="text-lg font-semibold mb-1">Review Your Information</h3>
+              <p className="text-gray-600 text-xs">Please review all information before submitting. Click on any section to view details.</p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Compact Section Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Demographics Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+              <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('demographics')}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
                     <User className="h-4 w-4" />
                     Demographics
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                  <p><strong>Name:</strong> {formData.name || 'Not specified'}</p>
-                  <p><strong>Age:</strong> {formData.age || 'Not specified'}</p>
-                  <p><strong>Gender:</strong> {formData.gender || 'Not specified'}</p>
-                  <p><strong>Class:</strong> {formData.class || 'Not specified'}</p>
-                  <p><strong>School/Center:</strong> {formData.schoolCenter || 'Not specified'}</p>
-                  <p><strong>Address:</strong> {formData.address || 'Not specified'}</p>
-                  <p><strong>Mother Tongue:</strong> {formData.motherTongue || 'Not specified'}</p>
-                  <p><strong>Syllabus:</strong> {formData.syllabus || 'Not specified'}</p>
+                <CardContent className="text-xs space-y-1">
+                  <p className="truncate"><span className="font-medium">Name:</span> {formData.name || '-'}</p>
+                  <p className="truncate"><span className="font-medium">Age:</span> {formData.age || '-'}</p>
+                  <p className="truncate"><span className="font-medium">Gender:</span> {formData.gender || '-'}</p>
+                  <p className="truncate"><span className="font-medium">Class:</span> {formData.class || '-'}</p>
+                  <div className="mt-2 text-center">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                      isTabCompleted('demographics') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {isTabCompleted('demographics') ? '✓ Complete' : 'Incomplete'}
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Family History Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+              <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('family')}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     Family History
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                  <p><strong>Father's Name:</strong> {formData.fatherName || 'Not specified'}</p>
-                  <p><strong>Mother's Name:</strong> {formData.motherName || 'Not specified'}</p>
-                  <p><strong>Guardian's Name:</strong> {formData.guardianName || 'Not specified'}</p>
-                  <p><strong>Family Income:</strong> {formData.familyIncome || 'Not specified'}</p>
-                  <p><strong>Family Type:</strong> {formData.familyType || 'Not specified'}</p>
-                  <p><strong>Digital Resources at Home:</strong> {formData.digitalResourcesAtHome ? 'Yes' : 'No'}</p>
-                  <p><strong>Daily Digital Use:</strong> {formData.dailyDigitalUse || 'Not specified'}</p>
-                  <p><strong>Enjoys School:</strong> {formData.enjoysSchool ? 'Yes' : 'No'}</p>
-                  <p><strong>Study Assistant:</strong> {formData.studyAssistant || 'Not specified'}</p>
-                  <p><strong>External Academic Support:</strong> {formData.externalAcademicSupport ? 'Yes' : 'No'}</p>
-                  <p><strong>Enjoys Reading:</strong> {formData.enjoysReading ? 'Yes' : 'No'}</p>
-                  <p><strong>Daily Parent-Child Time:</strong> {formData.dailyParentChildTime || 'Not specified'}</p>
-                  <p><strong>Child Type:</strong> {formData.childType || 'Not specified'}</p>
+                <CardContent className="text-xs space-y-1">
+                  <p className="truncate"><span className="font-medium">Parents:</span> {formData.fatherName || formData.motherName ? 'Provided' : '-'}</p>
+                  <p className="truncate"><span className="font-medium">Income:</span> {formData.familyIncome || '-'}</p>
+                  <p className="truncate"><span className="font-medium">Digital:</span> {formData.digitalResourcesAtHome ? 'Yes' : 'No'}</p>
+                  <div className="mt-2 text-center">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                      isTabCompleted('family') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {isTabCompleted('family') ? '✓ Complete' : 'Incomplete'}
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Prenatal History Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+              <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('prenatal')}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
                     <Baby className="h-4 w-4" />
-                    Prenatal History
+                    Prenatal
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                  <p><strong>Pregnancy Normal:</strong> {formData.pregnancyNormal ? 'Yes' : 'No'}</p>
-                  <p><strong>Medications During Pregnancy:</strong> {formData.medicationsDuringPregnancy ? 'Yes' : 'No'}</p>
-                  {formData.medicationsDuringPregnancyDetails && (
-                    <p><strong>Medication Details:</strong> {formData.medicationsDuringPregnancyDetails}</p>
-                  )}
-                  <p><strong>Miscarriages/Abortions:</strong> {formData.miscarriagesAbortions ? 'Yes' : 'No'}</p>
-                  <p><strong>Full Term or Premature:</strong> {formData.fullTermOrPremature || 'Not specified'}</p>
-                  <p><strong>Delivery Type:</strong> {formData.deliveryType || 'Not specified'}</p>
+                <CardContent className="text-xs space-y-1">
+                  <p className="truncate"><span className="font-medium">Pregnancy:</span> {formData.pregnancyNormal ? 'Normal' : 'Not normal'}</p>
+                  <p className="truncate"><span className="font-medium">Delivery:</span> {formData.deliveryType || '-'}</p>
+                  <p className="truncate"><span className="font-medium">Term:</span> {formData.fullTermOrPremature || '-'}</p>
+                  <div className="mt-2 text-center">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                      isTabCompleted('prenatal') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {isTabCompleted('prenatal') ? '✓ Complete' : 'Incomplete'}
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Postnatal History Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+              <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('postnatal')}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
                     <Heart className="h-4 w-4" />
-                    Postnatal History
+                    Postnatal
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                  <p><strong>Breast Fed:</strong> {formData.breastFed ? 'Yes' : 'No'}</p>
-                  <p><strong>Infant Jaundice:</strong> {formData.infantJaundice ? 'Yes' : 'No'}</p>
-                  <p><strong>Incubation:</strong> {formData.incubation ? 'Yes' : 'No'}</p>
-                  <p><strong>Immunization Done:</strong> {formData.immunizationDone ? 'Yes' : 'No'}</p>
-                  <p><strong>Consanguineous Marriage:</strong> {formData.consanguineousMarriage ? 'Yes' : 'No'}</p>
-                  <p><strong>Birth Cry:</strong> {formData.birthCry || 'Not specified'}</p>
-                  <p><strong>Delay in Neck Standing:</strong> {formData.delayInNeckStanding ? 'Yes' : 'No'}</p>
-                  {formData.delayInNeckStandingDetails && (
-                    <p><strong>Neck Standing Details:</strong> {formData.delayInNeckStandingDetails}</p>
-                  )}
-                  <p><strong>Age of Walking:</strong> {formData.ageOfWalking ? `${formData.ageOfWalking} months` : 'Not specified'}</p>
-                  <p><strong>Age of Two Word Speech:</strong> {formData.ageOfTwoWordSpeech ? `${formData.ageOfTwoWordSpeech} months` : 'Not specified'}</p>
+                <CardContent className="text-xs space-y-1">
+                  <p className="truncate"><span className="font-medium">Breastfed:</span> {formData.breastFed ? 'Yes' : 'No'}</p>
+                  <p className="truncate"><span className="font-medium">Immunization:</span> {formData.immunizationDone ? 'Done' : 'No'}</p>
+                  <p className="truncate"><span className="font-medium">Walking:</span> {formData.ageOfWalking ? `${formData.ageOfWalking}m` : '-'}</p>
+                  <div className="mt-2 text-center">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                      isTabCompleted('postnatal') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {isTabCompleted('postnatal') ? '✓ Complete' : 'Incomplete'}
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Medical History Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+              <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('medical')}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
                     <Stethoscope className="h-4 w-4" />
-                    Medical History
+                    Medical
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                  <p><strong>Health Concerns:</strong> {formData.healthConcerns || 'None specified'}</p>
-                  <p><strong>Epileptic History:</strong> {formData.epilepticHistory ? 'Yes' : 'No'}</p>
-                  <p><strong>On Medication:</strong> {formData.onMedication ? 'Yes' : 'No'}</p>
-                  {formData.medicationDetails && (
-                    <p><strong>Medication Details:</strong> {formData.medicationDetails}</p>
-                  )}
-                  <p><strong>Asthma/Wheezing:</strong> {formData.asthmaWheezing ? 'Yes' : 'No'}</p>
-                  <p><strong>Wears Glasses:</strong> {formData.wearsGlasses ? 'Yes' : 'No'}</p>
-                  <p><strong>Vision Test Done:</strong> {formData.visionTestDone ? 'Yes' : 'No'}</p>
-                  <p><strong>Hearing Test Done:</strong> {formData.hearingTestDone ? 'Yes' : 'No'}</p>
+                <CardContent className="text-xs space-y-1">
+                  <p className="truncate"><span className="font-medium">Health:</span> {formData.healthConcerns ? 'Concerns' : 'Good'}</p>
+                  <p className="truncate"><span className="font-medium">Medication:</span> {formData.onMedication ? 'Yes' : 'No'}</p>
+                  <p className="truncate"><span className="font-medium">Vision:</span> {formData.wearsGlasses ? 'Glasses' : 'Normal'}</p>
+                  <div className="mt-2 text-center">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                      isTabCompleted('medical') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {isTabCompleted('medical') ? '✓ Complete' : 'Incomplete'}
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Educational History Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+              <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('educational')}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
                     <GraduationCap className="h-4 w-4" />
-                    Educational History
+                    Education
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                  <p><strong>Attended Preschool:</strong> {formData.attendedPreschool ? 'Yes' : 'No'}</p>
-                  <p><strong>Repeated Grades:</strong> {formData.repeatedGrades ? 'Yes' : 'No'}</p>
-                  {formData.whichGradeRepeated && (
-                    <p><strong>Which Grade Repeated:</strong> {formData.whichGradeRepeated}</p>
-                  )}
-                  <p><strong>Dominant Writing Hand:</strong> {formData.dominantWritingHand || 'Not specified'}</p>
-                  <p><strong>Struggles in Languages:</strong> {formData.strugglesInLanguages ? 'Yes' : 'No'}</p>
+                <CardContent className="text-xs space-y-1">
+                  <p className="truncate"><span className="font-medium">Preschool:</span> {formData.attendedPreschool ? 'Yes' : 'No'}</p>
+                  <p className="truncate"><span className="font-medium">Repeated:</span> {formData.repeatedGrades ? 'Yes' : 'No'}</p>
+                  <p className="truncate"><span className="font-medium">Hand:</span> {formData.dominantWritingHand || '-'}</p>
+                  <div className="mt-2 text-center">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                      isTabCompleted('educational') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {isTabCompleted('educational') ? '✓ Complete' : 'Incomplete'}
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -1459,43 +1490,41 @@ function IntakeFormPageContent() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             {/* Top Row - Navigation and Child Selector */}
             <div className="flex items-center justify-between lg:justify-start gap-4 flex-1 min-w-0">
-              <Link href="/educator/students">
-                <Button variant="ghost" size="sm" className="rounded-md px-3 py-2 h-9">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Button>
-              </Link>
-              
               {/* Child Selector */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Child:</span>
                 {selectedStudentId ? (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md min-w-0 flex-1 max-w-xs">
-                    <User className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                    <span className="text-sm font-medium text-blue-900 truncate">
-                      {selectedStudentData?.fullName || 'Loading...'} 
-                      {selectedStudentData?.grade && ` (Grade ${selectedStudentData.grade})`}
-                    </span>
+                  <div 
+                    className="flex items-center gap-4 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200 min-w-[250px] cursor-pointer hover:bg-blue-100 transition-colors"
+                    onClick={() => setShowStudentModal(true)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-blue-900 text-sm truncate">
+                        {selectedStudentData?.fullName || 'Loading...'}
+                      </p>
+                      <p className="text-xs text-blue-700">
+                        Grade {selectedStudentData?.grade || 'N/A'}
+                      </p>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="h-8 w-8 p-0 flex-shrink-0"
+                      title="Change student"
+                    >
+                      <Users className="h-4 w-4" />
+                    </Button>
                   </div>
                 ) : (
-                  <Select onValueChange={handleStudentSelect} disabled={isFormCompleted}>
-                    <SelectTrigger className="w-full max-w-xs rounded-md h-9">
-                      <SelectValue placeholder="Select Child" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {students?.map((student) => (
-                        <SelectItem key={student.id} value={student.id}>
-                          {student.fullName} - Grade {student.grade}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="new-child" className="border-t border-gray-200 mt-2 pt-2">
-                        <div className="flex items-center gap-2 text-blue-600 font-medium">
-                          <Plus className="h-4 w-4" />
-                          Add New Child
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowStudentModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 min-w-[140px]"
+                    disabled={isFormCompleted}
+                  >
+                    <Users className="h-4 w-4" />
+                    Select Student
+                  </Button>
                 )}
               </div>
             </div>
@@ -1616,7 +1645,7 @@ function IntakeFormPageContent() {
 
         {/* Form Content */}
         {selectedStudentId && !isLoadingStudentData && (
-          <div className="space-y-6">
+          <div ref={pdfRef} className="space-y-6">
             {selectedStudentData && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-green-800 text-sm font-medium">
@@ -1769,6 +1798,14 @@ function IntakeFormPageContent() {
           </div>
         </div>
       )}
+
+      {/* Student Selection Modal */}
+      <StudentSelectionModal
+        isOpen={showStudentModal}
+        onClose={() => setShowStudentModal(false)}
+        onSelect={handleStudentSelect}
+        selectedStudentId={selectedStudentId}
+      />
     </>
   );
 }

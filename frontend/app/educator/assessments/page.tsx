@@ -1,49 +1,301 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useEducatorStudents } from '@/hooks/useEducator';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BookOpen, PenTool, Calculator, FileText, Plus, Users } from 'lucide-react';
-import Link from 'next/link';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { BookOpen, PenTool, Calculator, FileText, Plus, Users, Loader2, Eye, Pencil } from 'lucide-react';
 import { FormalAssessmentForm } from '@/components/assessments/FormalAssessmentForm';
 import { ReadingSkillAssessment } from '@/components/assessments/ReadingSkillAssessment';
 import { WritingSkillAssessment } from '@/components/assessments/WritingSkillAssessment';
 import { MathSkillAssessment } from '@/components/assessments/MathSkillAssessment';
 import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
+import { MaxAssessmentsWarningDialog } from '@/components/assessments/MaxAssessmentsWarningDialog';
+import { apiClient } from '@/lib/api';
+import { toast } from 'react-hot-toast';
+import { format } from 'date-fns';
+
+const MAX_ASSESSMENTS = 3;
+
+const getVersionLabel = (version?: number, isFirst?: boolean) => {
+  if (isFirst) return 'Initial Assessment';
+  if (!version || version === 1) return 'Reassessment';
+  return `Reassessment V${version}`;
+};
 
 export default function AssessmentsPage() {
   const { user } = useAuth();
   const { students, isLoading: studentsLoading } = useEducatorStudents();
-  
+
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
-  const [studentSearch, setStudentSearch] = useState<string>('');
   const [assessmentTab, setAssessmentTab] = useState('formal');
   const [showFormalForm, setShowFormalForm] = useState(false);
   const [showSkillAssessment, setShowSkillAssessment] = useState<'reading' | 'writing' | 'math' | null>(null);
   const [showStudentModal, setShowStudentModal] = useState(false);
 
+  const [formalAssessments, setFormalAssessments] = useState<any[]>([]);
+  const [readingAssessments, setReadingAssessments] = useState<any[]>([]);
+  const [writingAssessments, setWritingAssessments] = useState<any[]>([]);
+  const [mathAssessments, setMathAssessments] = useState<any[]>([]);
+  const [loadingAssessments, setLoadingAssessments] = useState(false);
+
+  const [editingAssessment, setEditingAssessment] = useState<any>(null);
+
+  const [showMaxWarning, setShowMaxWarning] = useState(false);
+  const [pendingAssessmentType, setPendingAssessmentType] = useState<'formal' | 'reading' | 'writing' | 'math' | null>(null);
+  const [oldestAssessment, setOldestAssessment] = useState<any>(null);
+
   const selectedStudent = students?.find(s => s.id === selectedStudentId);
+
+  useEffect(() => {
+    if (selectedStudentId) {
+      fetchAssessments();
+    } else {
+      setFormalAssessments([]);
+      setReadingAssessments([]);
+      setWritingAssessments([]);
+      setMathAssessments([]);
+    }
+  }, [selectedStudentId]);
+
+  const fetchAssessments = async () => {
+    setLoadingAssessments(true);
+    try {
+      const [formal, reading, writing, math] = await Promise.all([
+        apiClient.getFormalAssessmentsByStudent(selectedStudentId),
+        apiClient.getReadingSkillAssessmentsByStudent(selectedStudentId),
+        apiClient.getWritingSkillAssessmentsByStudent(selectedStudentId),
+        apiClient.getMathSkillAssessmentsByStudent(selectedStudentId),
+      ]);
+
+      setFormalAssessments(formal || []);
+      setReadingAssessments(reading || []);
+      setWritingAssessments(writing || []);
+      setMathAssessments(math || []);
+    } catch (error) {
+      console.error('Error fetching assessments:', error);
+      toast.error('Failed to load assessments');
+    } finally {
+      setLoadingAssessments(false);
+    }
+  };
+
+  const handleCreateAssessment = (type: 'formal' | 'reading' | 'writing' | 'math') => {
+    let assessments: any[] = [];
+    let assessmentTypeName = '';
+
+    switch (type) {
+      case 'formal':
+        assessments = formalAssessments;
+        assessmentTypeName = 'Formal';
+        break;
+      case 'reading':
+        assessments = readingAssessments;
+        assessmentTypeName = 'Reading';
+        break;
+      case 'writing':
+        assessments = writingAssessments;
+        assessmentTypeName = 'Writing';
+        break;
+      case 'math':
+        assessments = mathAssessments;
+        assessmentTypeName = 'Math';
+        break;
+    }
+
+    if (assessments.length >= MAX_ASSESSMENTS) {
+      const oldest = assessments.reduce((prev, current) => {
+        const prevDate = new Date(prev.createdAt);
+        const currentDate = new Date(current.createdAt);
+        return prevDate < currentDate ? prev : current;
+      });
+
+      setOldestAssessment({ ...oldest, type: assessmentTypeName });
+      setPendingAssessmentType(type);
+      setShowMaxWarning(true);
+    } else {
+      openAssessmentForm(type);
+    }
+  };
+
+  const handleMaxWarningConfirm = async () => {
+    if (!oldestAssessment || !pendingAssessmentType) return;
+
+    try {
+      switch (pendingAssessmentType) {
+        case 'formal':
+          await apiClient.deleteFormalAssessment(oldestAssessment.id);
+          break;
+        case 'reading':
+        case 'writing':
+        case 'math':
+          await apiClient.deleteFormalAssessment(oldestAssessment.id);
+          break;
+      }
+
+      toast.success('Oldest assessment deleted');
+      await fetchAssessments();
+      setShowMaxWarning(false);
+      openAssessmentForm(pendingAssessmentType);
+    } catch (error) {
+      console.error('Error deleting assessment:', error);
+      toast.error('Failed to delete oldest assessment');
+    }
+  };
+
+  const openAssessmentForm = (type: 'formal' | 'reading' | 'writing' | 'math') => {
+    setEditingAssessment(null);
+    switch (type) {
+      case 'formal':
+        setShowFormalForm(true);
+        break;
+      case 'reading':
+      case 'writing':
+      case 'math':
+        setShowSkillAssessment(type);
+        break;
+    }
+  };
+
+  const handleViewAssessment = (assessment: any, type: string) => {
+    setEditingAssessment({ ...assessment, type, mode: 'view' });
+
+    switch (type) {
+      case 'formal':
+        setShowFormalForm(true);
+        break;
+      case 'reading':
+      case 'writing':
+      case 'math':
+        setShowSkillAssessment(type as 'reading' | 'writing' | 'math');
+        break;
+    }
+  };
+
+  const handleEditAssessment = (assessment: any, type: string) => {
+    setEditingAssessment({ ...assessment, type, mode: 'edit' });
+
+    switch (type) {
+      case 'formal':
+        setShowFormalForm(true);
+        break;
+      case 'reading':
+      case 'writing':
+      case 'math':
+        setShowSkillAssessment(type as 'reading' | 'writing' | 'math');
+        break;
+    }
+  };
+
+  const handleAssessmentSuccess = () => {
+    fetchAssessments();
+    setShowFormalForm(false);
+    setShowSkillAssessment(null);
+    setEditingAssessment(null);
+  };
+
+  const renderAssessmentTable = (assessments: any[], type: string) => {
+    if (loadingAssessments) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        </div>
+      );
+    }
+
+    if (assessments.length === 0) {
+      return (
+        <p className="text-center text-gray-500 py-8">No {type} assessments yet</p>
+      );
+    }
+
+    const sortedAssessments = [...assessments].sort((a, b) =>
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Type/Version</TableHead>
+            {type === 'formal' && <TableHead>Assessment Type</TableHead>}
+            {type === 'formal' && <TableHead>Diagnosis</TableHead>}
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedAssessments.map((assessment, index) => (
+            <TableRow key={assessment.id}>
+              <TableCell className="font-medium">
+                {format(new Date(assessment.createdAt), 'MMM dd, yyyy')}
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline">
+                  {getVersionLabel(assessment.version, index === 0)}
+                </Badge>
+              </TableCell>
+              {type === 'formal' && (
+                <>
+                  <TableCell>{assessment.assessmentType || 'N/A'}</TableCell>
+                  <TableCell>{assessment.diagnosis || 'Pending'}</TableCell>
+                </>
+              )}
+              <TableCell>
+                <Badge variant={assessment.completed ? 'default' : 'secondary'}>
+                  {assessment.completed ? 'Completed' : 'In Progress'}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleViewAssessment(assessment, type)}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEditAssessment(assessment, type)}
+                  >
+                    <Pencil className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-6 pb-12">
-      {/* Header with student selection in top right */}
       <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Comprehensive Assessments</h1>
             <p className="text-gray-600">Formal referrals and detailed skill assessments</p>
           </div>
-          
-          {/* Student Selection - Top Right with more width */}
+
           <div className="flex items-center gap-4">
             {selectedStudent ? (
-              <div className="flex items-center gap-4 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200 min-w-[250px]">
-                <div className="flex-1 min-w-0">
+              <Button
+                variant="outline"
+                onClick={() => setShowStudentModal(true)}
+                className="flex items-center gap-4 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200 min-w-[250px] hover:bg-blue-100"
+              >
+                <div className="flex-1 min-w-0 text-left">
                   <p className="font-medium text-blue-900 text-sm truncate">
                     {selectedStudent.fullName || selectedStudent.name || 'Unknown'}
                   </p>
@@ -51,19 +303,11 @@ export default function AssessmentsPage() {
                     Grade {selectedStudent.grade || 'N/A'}
                   </p>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setShowStudentModal(true)}
-                  className="h-8 w-8 p-0 flex-shrink-0"
-                  title="Change student"
-                >
-                  <Users className="h-4 w-4" />
-                </Button>
-              </div>
+                <Users className="h-4 w-4 flex-shrink-0" />
+              </Button>
             ) : (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setShowStudentModal(true)}
                 className="flex items-center gap-2 px-4 py-2 min-w-[140px]"
               >
@@ -73,187 +317,161 @@ export default function AssessmentsPage() {
             )}
           </div>
         </div>
+      </div>
 
-        {/* Assessment Tabs */}
-        {selectedStudentId ? (
-          <Tabs value={assessmentTab} onValueChange={setAssessmentTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="formal">
-                <FileText className="h-4 w-4 mr-2" />
-                Formal Assessments
-              </TabsTrigger>
-              <TabsTrigger value="skill">
-                <BookOpen className="h-4 w-4 mr-2" />
-                Skill Assessments
-              </TabsTrigger>
-            </TabsList>
+      {selectedStudentId ? (
+        <Tabs value={assessmentTab} onValueChange={setAssessmentTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="formal">
+              <FileText className="h-4 w-4 mr-2" />
+              Formal Assessments
+            </TabsTrigger>
+            <TabsTrigger value="skill">
+              <BookOpen className="h-4 w-4 mr-2" />
+              Skill Assessments
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Formal Assessments Tab */}
-            <TabsContent value="formal" className="mt-6">
-              <Card className="flex-1">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Formal Assessment Referrals</CardTitle>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Create referrals for psychological, educational, or specialized assessments
-                      </p>
-                    </div>
-                    <Button onClick={() => setShowFormalForm(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Referral
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-4">No formal assessments yet</p>
-                    <Button onClick={() => setShowFormalForm(true)} variant="outline">
-                      Create First Referral
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Skill Assessments Tab */}
-            <TabsContent value="skill" className="mt-6">
-              {showSkillAssessment ? (
-                <div>
-                  {showSkillAssessment === 'reading' && (
-                    <ReadingSkillAssessment
-                      studentId={selectedStudentId}
-                      onSuccess={() => setShowSkillAssessment(null)}
-                      onCancel={() => setShowSkillAssessment(null)}
-                    />
-                  )}
-                  {showSkillAssessment === 'writing' && (
-                    <WritingSkillAssessment
-                      studentId={selectedStudentId}
-                      onSuccess={() => setShowSkillAssessment(null)}
-                      onCancel={() => setShowSkillAssessment(null)}
-                    />
-                  )}
-                  {showSkillAssessment === 'math' && (
-                    <MathSkillAssessment
-                      studentId={selectedStudentId}
-                      onSuccess={() => setShowSkillAssessment(null)}
-                      onCancel={() => setShowSkillAssessment(null)}
-                    />
-                  )}
-                </div>
-              ) : (
-                <div className="flex-1">
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-2">Choose Assessment Type</h3>
-                    <p className="text-sm text-gray-600">
-                      Select a skill area to conduct a detailed symptom-based assessment
+          <TabsContent value="formal" className="mt-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Formal Assessment Referrals</CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Create referrals for psychological, educational, or specialized assessments ({formalAssessments.length}/{MAX_ASSESSMENTS})
                     </p>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Reading Assessment Card */}
-                    <Card 
-                      className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-blue-500"
-                      onClick={() => setShowSkillAssessment('reading')}
-                    >
-                      <CardHeader>
-                        <div className="flex items-center justify-center mb-4">
-                          <div className="p-4 bg-blue-100 rounded-full">
-                            <BookOpen className="h-8 w-8 text-blue-600" />
-                          </div>
-                        </div>
-                        <CardTitle className="text-center">Reading Assessment</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="text-sm text-gray-600 space-y-2">
-                          <li>• Decoding & Word Reading (17 symptoms)</li>
-                          <li>• Fluency & Reading Flow (10 symptoms)</li>
-                          <li>• Eye Tracking & Visual Skills (8 symptoms)</li>
-                          <li>• Comprehension (3 symptoms)</li>
-                          <li>• Attention & Behavior (7 symptoms)</li>
-                          <li>• Mechanics & Punctuation (4 symptoms)</li>
-                        </ul>
-                     
-                      </CardContent>
-                    </Card>
-
-                    {/* Writing Assessment Card */}
-                    <Card 
-                      className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-green-500"
-                      onClick={() => setShowSkillAssessment('writing')}
-                    >
-                      <CardHeader>
-                        <div className="flex items-center justify-center mb-4">
-                          <div className="p-4 bg-green-100 rounded-full">
-                            <PenTool className="h-8 w-8 text-green-600" />
-                          </div>
-                        </div>
-                        <CardTitle className="text-center">Writing Assessment</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="text-sm text-gray-600 space-y-2">
-                          <li>• Fine Motor & Grip (8 symptoms)</li>
-                          <li>• Letter Formation (7 symptoms)</li>
-                          <li>• Spacing & Alignment (9 symptoms)</li>
-                          <li>• Handwriting Fluency (7 symptoms)</li>
-                          <li>• Dictation & Spelling (9 symptoms)</li>
-                          <li>• Sentence Formation (9 symptoms)</li>
-                          <li>• Copying & Organization (12 symptoms)</li>
-                        </ul>
-                       
-                      </CardContent>
-                    </Card>
-
-                    {/* Math Assessment Card */}
-                    <Card 
-                      className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-purple-500"
-                      onClick={() => setShowSkillAssessment('math')}
-                    >
-                      <CardHeader>
-                        <div className="flex items-center justify-center mb-4">
-                          <div className="p-4 bg-purple-100 rounded-full">
-                            <Calculator className="h-8 w-8 text-purple-600" />
-                          </div>
-                        </div>
-                        <CardTitle className="text-center">Math Assessment</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="text-sm text-gray-600 space-y-2">
-                          <li>• Number Sense (15 symptoms)</li>
-                          <li>• Basic Operations (10 symptoms)</li>
-                          <li>• Concepts & Pre-Math (9 symptoms)</li>
-                          <li>• Math Fluency (7 symptoms)</li>
-                          <li>• Visual-Spatial (7 symptoms)</li>
-                          <li>• Symbol Confusion (6 symptoms)</li>
-                          <li>• Behavioral Indicators (7 symptoms)</li>
-                        </ul>
-                       
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <Button onClick={() => handleCreateAssessment('formal')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Referral
+                  </Button>
                 </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        ) : (
-          <Card className="flex-1">
-            <CardContent className="py-12">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Plus className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Student Selected</h3>
-                <p className="text-gray-600">
-                  Please select a student from above to begin an assessment
-                </p>
+              </CardHeader>
+              <CardContent>
+                {renderAssessmentTable(formalAssessments, 'formal')}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="skill" className="mt-6">
+            {showSkillAssessment ? (
+              <div>
+                {showSkillAssessment === 'reading' && (
+                  <ReadingSkillAssessment
+                    studentId={selectedStudentId}
+                    assessmentId={editingAssessment?.type === 'reading' ? editingAssessment?.id : undefined}
+                    initialData={editingAssessment?.type === 'reading' ? editingAssessment : undefined}
+                    mode={editingAssessment?.type === 'reading' ? (editingAssessment?.mode || 'edit') : 'create'}
+                    onSuccess={handleAssessmentSuccess}
+                    onCancel={() => {
+                      setShowSkillAssessment(null);
+                      setEditingAssessment(null);
+                    }}
+                  />
+                )}
+                {showSkillAssessment === 'writing' && (
+                  <WritingSkillAssessment
+                    studentId={selectedStudentId}
+                    assessmentId={editingAssessment?.type === 'writing' ? editingAssessment?.id : undefined}
+                    initialData={editingAssessment?.type === 'writing' ? editingAssessment : undefined}
+                    mode={editingAssessment?.type === 'writing' ? (editingAssessment?.mode || 'edit') : 'create'}
+                    onSuccess={handleAssessmentSuccess}
+                    onCancel={() => {
+                      setShowSkillAssessment(null);
+                      setEditingAssessment(null);
+                    }}
+                  />
+                )}
+                {showSkillAssessment === 'math' && (
+                  <MathSkillAssessment
+                    studentId={selectedStudentId}
+                    assessmentId={editingAssessment?.type === 'math' ? editingAssessment?.id : undefined}
+                    initialData={editingAssessment?.type === 'math' ? editingAssessment : undefined}
+                    mode={editingAssessment?.type === 'math' ? (editingAssessment?.mode || 'edit') : 'create'}
+                    onSuccess={handleAssessmentSuccess}
+                    onCancel={() => {
+                      setShowSkillAssessment(null);
+                      setEditingAssessment(null);
+                    }}
+                  />
+                )}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5 text-blue-600" />
+                        Reading Assessments ({readingAssessments.length}/{MAX_ASSESSMENTS})
+                      </CardTitle>
+                      <Button onClick={() => handleCreateAssessment('reading')} size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        New
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderAssessmentTable(readingAssessments, 'reading')}
+                  </CardContent>
+                </Card>
 
-      {/* Student Selection Modal */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <PenTool className="h-5 w-5 text-green-600" />
+                        Writing Assessments ({writingAssessments.length}/{MAX_ASSESSMENTS})
+                      </CardTitle>
+                      <Button onClick={() => handleCreateAssessment('writing')} size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        New
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderAssessmentTable(writingAssessments, 'writing')}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <Calculator className="h-5 w-5 text-purple-600" />
+                        Math Assessments ({mathAssessments.length}/{MAX_ASSESSMENTS})
+                      </CardTitle>
+                      <Button onClick={() => handleCreateAssessment('math')} size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        New
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderAssessmentTable(mathAssessments, 'math')}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <Card className="flex-1">
+          <CardContent className="py-12">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Plus className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Student Selected</h3>
+              <p className="text-gray-600">
+                Please select a student from above to begin an assessment
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <StudentSelectionModal
         isOpen={showStudentModal}
         onClose={() => setShowStudentModal(false)}
@@ -261,27 +479,47 @@ export default function AssessmentsPage() {
         selectedStudentId={selectedStudentId}
       />
 
-      {/* Formal Assessment Form Modal */}
       <Dialog open={showFormalForm} onOpenChange={setShowFormalForm}>
         <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0">
           <div className="sticky top-0 bg-white z-10 px-6 pt-6 pb-4 border-b">
             <DialogHeader>
-              <DialogTitle>New Formal Assessment Referral</DialogTitle>
+              <DialogTitle>
+                {editingAssessment?.mode === 'view' 
+                  ? 'View Formal Assessment' 
+                  : editingAssessment 
+                    ? 'Edit Formal Assessment' 
+                    : 'New Formal Assessment Referral'}
+              </DialogTitle>
             </DialogHeader>
           </div>
           <div className="px-6 pb-6">
             <FormalAssessmentForm
               studentId={selectedStudentId}
               referredBy={user?.profile?.fullName || 'Educator'}
-              onSuccess={() => {
+              assessmentId={editingAssessment?.id}
+              initialData={editingAssessment}
+              mode={editingAssessment?.mode || (editingAssessment ? 'edit' : 'create')}
+              onSuccess={handleAssessmentSuccess}
+              onCancel={() => {
                 setShowFormalForm(false);
-                // Could add refresh logic here
+                setEditingAssessment(null);
               }}
-              onCancel={() => setShowFormalForm(false)}
             />
           </div>
         </DialogContent>
       </Dialog>
+
+      <MaxAssessmentsWarningDialog
+        isOpen={showMaxWarning}
+        onClose={() => {
+          setShowMaxWarning(false);
+          setPendingAssessmentType(null);
+          setOldestAssessment(null);
+        }}
+        onConfirm={handleMaxWarningConfirm}
+        oldestAssessment={oldestAssessment}
+        assessmentTypeName={pendingAssessmentType || ''}
+      />
     </div>
   );
 }

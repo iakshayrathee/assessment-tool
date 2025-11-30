@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api';
@@ -29,7 +29,9 @@ import {
   RefreshCw,
   Download,
   CheckCircle,
-  XCircle
+  XCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
@@ -69,37 +71,45 @@ export default function CentersSchoolsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       
       // Load centers from backend API
       const centersResponse = await apiClient.getAllCenters({ 
-        page: 1, 
-        limit: 100,
+        page: currentPage, 
+        limit: itemsPerPage,
         search: searchQuery || undefined 
       });
       
       console.log('Centers API response:', centersResponse);
-      console.log('Available centers:', centersResponse.centers?.length || 0);
+      console.log('Available centers:', centersResponse.data?.length || 0);
       
-      // Transform centers data - extract from nested centerProfile
+      // Update pagination state from API response
+      if (centersResponse.pagination) {
+        setTotalItems(centersResponse.pagination.total || 0);
+        setTotalPages(centersResponse.pagination.totalPages || 1);
+      }
+      
+      // Transform centers data - the API returns CenterProfile objects directly
+      // Each center object contains the center data directly, not nested under centerProfile
       interface CenterResponse {
         id: string;
+        centerName?: string;
+        address?: string;
+        contactPerson?: string;
         email?: string;
+        phone?: string;
         isActive?: boolean;
         createdAt: string;
-        centerProfile?: {
-          centerName?: string;
-          address?: string;
-          contactPerson?: string;
-          email?: string;
-          phone?: string;
-          assignments?: unknown[];
-          students?: unknown[];
-          schools?: SchoolResponse[];
-        };
+        assignments?: unknown[];
+        students?: unknown[];
+        schools?: SchoolResponse[];
       }
 
       interface SchoolResponse {
@@ -112,30 +122,27 @@ export default function CentersSchoolsPage() {
         createdAt: string;
       }
 
-      const transformedCenters: Center[] = (centersResponse.centers || []).map((center: CenterResponse) => {
-        const profile = center.centerProfile || {};
-        return {
-          id: center.id,
-          name: profile.centerName || 'Unknown Center',
-          location: profile.address || 'Location not specified',
-          contactPerson: profile.contactPerson || 'Not specified',
-          email: profile.email || center.email || '',
-          phone: profile.phone || 'Not specified',
-          isActive: center.isActive ?? true,
-          linkedUsers: profile.assignments?.length || 0,
-          linkedStudents: profile.students?.length || 0,
-          createdAt: center.createdAt
-        };
-      });
+      const transformedCenters: Center[] = (centersResponse.data || []).map((center: CenterResponse) => ({
+        id: center.id,
+        name: center.centerName || 'Unknown Center',
+        location: center.address || 'Location not specified',
+        contactPerson: center.contactPerson || 'Not specified',
+        email: center.email || '',
+        phone: center.phone || 'Not specified',
+        isActive: center.isActive ?? true,
+        linkedUsers: center.assignments?.length || 0,
+        linkedStudents: center.students?.length || 0,
+        createdAt: center.createdAt
+      }));
 
       // Extract schools data from centers response since separate endpoint doesn't exist
       let transformedSchools: School[] = [];
       try {
         // Flatten all schools from all centers
-        const allSchools = (centersResponse.centers || []).flatMap((center: CenterResponse) => 
-          (center.centerProfile?.schools || []).map((school: SchoolResponse) => ({
+        const allSchools = (centersResponse.data || []).flatMap((center: CenterResponse) => 
+          (center.schools || []).map((school: SchoolResponse) => ({
             ...school,
-            centerName: center.centerProfile?.centerName || 'Unknown Center'
+            centerName: center.centerName || 'Unknown Center'
           }))
         );
         
@@ -165,11 +172,11 @@ export default function CentersSchoolsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery]);
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [currentPage, itemsPerPage]);
 
   const handleToggleStatus = async (id: string, type: 'center' | 'school', currentStatus: boolean) => {
     try {
@@ -558,6 +565,49 @@ export default function CentersSchoolsPage() {
               </CardHeader>
               <CardContent>
                 <CentersTable data={filterCenters(centers)} />
+                {totalPages > 1 && (
+                  <div className="mt-6 flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} centers
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Previous
+                      </Button>
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className="h-8 w-8"
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

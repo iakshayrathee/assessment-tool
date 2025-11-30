@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
+import { VersionSelectionDialog } from './VersionSelectionDialog';
 import { apiClient } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { Upload, X } from 'lucide-react';
@@ -42,9 +43,7 @@ const DIAGNOSIS_OPTIONS = [
 const formSchema = z.object({
   assessmentType: z.string().min(1, 'Assessment type is required'),
   referralReason: z.string().optional(),
-  referralDate: z.date({
-    required_error: 'Referral date is required',
-  }),
+  referredBy: z.string().optional(),
   conductedBy: z.string().optional(),
   credentials: z.string().optional(),
   clinicName: z.string().optional(),
@@ -57,25 +56,41 @@ const formSchema = z.object({
 interface FormalAssessmentFormProps {
   studentId: string;
   referredBy: string; // Educator name
+  assessmentId?: string; // For edit mode
+  initialData?: any; // Pre-populated data for edit mode
+  mode?: 'create' | 'edit' | 'view';
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCancel }: FormalAssessmentFormProps) {
+export function FormalAssessmentForm({
+  studentId,
+  referredBy,
+  assessmentId,
+  initialData,
+  mode = 'create',
+  onSuccess,
+  onCancel
+}: FormalAssessmentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>(initialData?.uploadedFiles || []);
+  const [showVersionDialog, setShowVersionDialog] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<any>(null);
+  
+  const isViewMode = mode === 'view';
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      assessmentType: '',
-      referralReason: '',
-      conductedBy: '',
-      credentials: '',
-      clinicName: '',
-      keyFindings: '',
-      diagnosis: '',
-      recommendations: '',
+      assessmentType: initialData?.assessmentType || '',
+      referralReason: initialData?.referralReason || '',
+      referredBy: initialData?.referredBy || referredBy || '',
+      conductedBy: initialData?.conductedBy || '',
+      credentials: initialData?.credentials || '',
+      clinicName: initialData?.clinicName || '',
+      keyFindings: initialData?.keyFindings || '',
+      diagnosis: initialData?.diagnosis || '',
+      recommendations: initialData?.recommendations || '',
     },
   });
 
@@ -95,33 +110,61 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    const data = {
+      studentId,
+      referredBy,
+      assessmentType: values.assessmentType,
+      referralReason: values.referralReason,
+      conductedBy: values.conductedBy,
+      credentials: values.credentials,
+      clinicName: values.clinicName,
+      assessmentDate: values.assessmentDate?.toISOString(),
+      keyFindings: values.keyFindings,
+      diagnosis: values.diagnosis,
+      recommendations: values.recommendations,
+      uploadedFiles,
+    };
+
+    if (mode === 'edit') {
+      // Show version selection dialog for edit mode
+      setPendingFormData(data);
+      setShowVersionDialog(true);
+    } else {
+      // Direct save for create mode
+      await saveAssessment(data, 'new-version', 1);
+    }
+  };
+
+  const saveAssessment = async (data: any, action: 'new-version' | 'overwrite', version?: number) => {
     try {
       setIsSubmitting(true);
-      
-      const data = {
-        studentId,
-        referredBy,
-        assessmentType: values.assessmentType,
-        referralReason: values.referralReason,
-        referralDate: values.referralDate.toISOString(),
-        conductedBy: values.conductedBy,
-        credentials: values.credentials,
-        clinicName: values.clinicName,
-        assessmentDate: values.assessmentDate?.toISOString(),
-        keyFindings: values.keyFindings,
-        diagnosis: values.diagnosis,
-        recommendations: values.recommendations,
-        uploadedFiles,
+
+      const payload = {
+        ...data,
+        version,
       };
 
-      await apiClient.createFormalAssessment(data);
-      toast.success('Formal assessment created successfully!');
+      if (mode === 'edit' && assessmentId) {
+        await apiClient.updateFormalAssessment(assessmentId, payload);
+        toast.success('Formal assessment updated successfully!');
+      } else {
+        await apiClient.createFormalAssessment(payload);
+        toast.success('Formal assessment created successfully!');
+      }
+
+      setShowVersionDialog(false);
       onSuccess?.();
     } catch (error: any) {
-      console.error('Create formal assessment error:', error);
-      toast.error(error.response?.data?.error || 'Failed to create formal assessment');
+      console.error('Save formal assessment error:', error);
+      toast.error(error.response?.data?.error || 'Failed to save formal assessment');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleVersionSelection = (action: 'new-version' | 'overwrite', version?: number) => {
+    if (pendingFormData) {
+      saveAssessment(pendingFormData, action, version);
     }
   };
 
@@ -140,7 +183,7 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Assessment Type *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isViewMode}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select assessment type" />
@@ -170,6 +213,7 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
                       placeholder="Describe the reason for referral..."
                       {...field}
                       rows={3}
+                      disabled={isViewMode}
                     />
                   </FormControl>
                   <FormMessage />
@@ -179,26 +223,17 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
 
             <FormField
               control={form.control}
-              name="referralDate"
+              name="referredBy"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Referral Date *</FormLabel>
+                  <FormLabel>Referred By</FormLabel>
                   <FormControl>
-                    <ProfessionalDatePicker
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Select referral date"
-                    />
+                    <Input placeholder="Name of person making the referral" {...field} disabled={isViewMode} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <div>
-              <Label>Referred By</Label>
-              <Input value={referredBy} disabled className="bg-gray-50" />
-            </div>
 
             <FormField
               control={form.control}
@@ -207,7 +242,7 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
                 <FormItem>
                   <FormLabel>Conducted By</FormLabel>
                   <FormControl>
-                    <Input placeholder="Name of professional conducting assessment" {...field} />
+                    <Input placeholder="Name of professional conducting assessment" {...field} disabled={isViewMode} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -221,7 +256,7 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
                 <FormItem>
                   <FormLabel>Credentials</FormLabel>
                   <FormControl>
-                    <Input placeholder="Professional credentials (e.g., PhD, M.Ed)" {...field} />
+                    <Input placeholder="Professional credentials (e.g., PhD, M.Ed)" {...field} disabled={isViewMode} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -235,7 +270,7 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
                 <FormItem>
                   <FormLabel>Clinic Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Name of clinic or institution" {...field} />
+                    <Input placeholder="Name of clinic or institution" {...field} disabled={isViewMode} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -250,9 +285,10 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
                   <FormLabel>Assessment Date</FormLabel>
                   <FormControl>
                     <ProfessionalDatePicker
-                      value={field.value}
+                      value={field.value || null}
                       onChange={field.onChange}
                       placeholder="Select assessment date"
+                      disabled={isViewMode}
                     />
                   </FormControl>
                   <FormMessage />
@@ -279,6 +315,7 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
                       placeholder="Summarize the key findings from the assessment..."
                       {...field}
                       rows={4}
+                      disabled={isViewMode}
                     />
                   </FormControl>
                   <FormMessage />
@@ -292,7 +329,7 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Diagnosis</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isViewMode}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select diagnosis" />
@@ -322,6 +359,7 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
                       placeholder="Provide recommendations based on the assessment..."
                       {...field}
                       rows={4}
+                      disabled={isViewMode}
                     />
                   </FormControl>
                   <FormMessage />
@@ -332,28 +370,29 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
         </Card>
 
         {/* Upload Files */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload Files</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="file-upload" className="cursor-pointer">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm text-gray-600">Click to upload PDF or images</p>
-                  <p className="text-xs text-gray-500 mt-1">Multiple files supported</p>
-                </div>
-              </Label>
-              <input
-                id="file-upload"
-                type="file"
-                multiple
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </div>
+        {!isViewMode && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload Files</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="file-upload" className="cursor-pointer">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-600">Click to upload PDF or images</p>
+                    <p className="text-xs text-gray-500 mt-1">Multiple files supported</p>
+                  </div>
+                </Label>
+                <input
+                  id="file-upload"
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </div>
 
             {uploadedFiles.length > 0 && (
               <div className="space-y-2">
@@ -375,16 +414,47 @@ export function FormalAssessmentForm({ studentId, referredBy, onSuccess, onCance
             )}
           </CardContent>
         </Card>
+        )}
+        
+        {isViewMode && uploadedFiles.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Uploaded Files</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {uploadedFiles.map((file, index) => (
+                  <div key={index} className="flex items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm">{file}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex justify-end space-x-4">
           <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
+            {isViewMode ? 'Close' : 'Cancel'}
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Save Assessment'}
-          </Button>
+          {!isViewMode && (
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : mode === 'edit' ? 'Update Assessment' : 'Save Assessment'}
+            </Button>
+          )}
         </div>
       </form>
+
+      {/* Version Selection Dialog */}
+      <VersionSelectionDialog
+        isOpen={showVersionDialog}
+        onClose={() => {
+          setShowVersionDialog(false);
+          setPendingFormData(null);
+        }}
+        onConfirm={handleVersionSelection}
+        currentVersion={initialData?.version || 0}
+      />
     </Form>
   );
 }

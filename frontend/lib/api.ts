@@ -996,16 +996,16 @@ class ApiClient {
     return response.data.data;
   }
 
-  async generateAIReport(studentId: string): Promise<any> {
-    console.log(`Generating AI report for student: ${studentId}`);
-    const response = await this.client.post<ApiResponse<any>>(`/reports/ai/generate/${studentId}`);
+  async generateAIReport(studentId: string, reportType: 'ASSESSMENT' | 'LESSON_PLAN' = 'ASSESSMENT'): Promise<any> {
+    console.log(`Generating AI report for student: ${studentId}, type: ${reportType}`);
+    const response = await this.client.post<ApiResponse<any>>(`/reports/ai/generate/${studentId}`, { reportType });
     console.log('AI report generation response:', response.data);
     return response.data.report || response.data.data;
   }
 
-  async previewAIReport(studentId: string): Promise<any> {
-    console.log(`Previewing AI report for student: ${studentId}`);
-    const response = await this.client.get<ApiResponse<any>>(`/reports/ai/preview/${studentId}`);
+  async previewAIReport(studentId: string, reportType: 'ASSESSMENT' | 'LESSON_PLAN' = 'ASSESSMENT'): Promise<any> {
+    console.log(`Previewing AI report for student: ${studentId}, type: ${reportType}`);
+    const response = await this.client.get<ApiResponse<any>>(`/reports/ai/preview/${studentId}?reportType=${reportType}`);
     console.log('AI report preview response:', response.data);
     return response.data.report || response.data.data;
   }

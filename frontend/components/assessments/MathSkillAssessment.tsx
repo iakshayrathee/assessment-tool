@@ -14,6 +14,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 
 interface MathSkillAssessmentProps {
   studentId: string;
+  assessmentId?: string;
+  initialData?: any;
+  mode?: 'create' | 'edit' | 'view';
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -114,15 +117,54 @@ const MATH_SYMPTOMS = {
   ],
 };
 
-export function MathSkillAssessment({ studentId, onSuccess, onCancel }: MathSkillAssessmentProps) {
+// Helper functions to extract data from saved assessment
+function extractSymptoms(data: any): Record<string, boolean> {
+  const symptoms: Record<string, boolean> = {};
+  const allSymptomKeys = Object.values(MATH_SYMPTOMS).flat().map(s => s.key);
+  
+  allSymptomKeys.forEach(key => {
+    if (data[key] === true) {
+      symptoms[key] = true;
+    }
+  });
+  
+  return symptoms;
+}
+
+function extractQuestionAnswers(data: any): Record<string, string> {
+  const answers: Record<string, string> = {};
+  
+  MATH_QUESTIONS.forEach(q => {
+    if (data[q.id]) {
+      answers[q.id] = data[q.id];
+    }
+  });
+  
+  return answers;
+}
+
+export function MathSkillAssessment({ 
+  studentId, 
+  assessmentId,
+  initialData,
+  mode = 'create',
+  onSuccess, 
+  onCancel 
+}: MathSkillAssessmentProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedSymptoms, setSelectedSymptoms] = useState<Record<string, boolean>>({});
-  const [questionAnswers, setQuestionAnswers] = useState<Record<string, string>>({});
-  const [additionalNotes, setAdditionalNotes] = useState('');
+  const [selectedSymptoms, setSelectedSymptoms] = useState<Record<string, boolean>>(
+    initialData ? extractSymptoms(initialData) : {}
+  );
+  const [questionAnswers, setQuestionAnswers] = useState<Record<string, string>>(
+    initialData ? extractQuestionAnswers(initialData) : {}
+  );
+  const [additionalNotes, setAdditionalNotes] = useState(initialData?.additionalNotes || '');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
-  const [showPreview, setShowPreview] = useState(false);
-  const [savedAssessment, setSavedAssessment] = useState<any>(null);
+  const [showPreview, setShowPreview] = useState(mode === 'view');
+  const [savedAssessment, setSavedAssessment] = useState<any>(initialData || null);
   const reportRef = useRef<HTMLDivElement>(null);
+  
+  const isViewMode = mode === 'view';
 
   // Get student and educator details from saved assessment response
   const studentDetails = savedAssessment?.student || null;
@@ -156,14 +198,22 @@ export function MathSkillAssessment({ studentId, onSuccess, onCancel }: MathSkil
         additionalNotes,
       };
 
-      const response = await apiClient.createMathSkillAssessment(data);
+      let response;
+      if (mode === 'edit' && assessmentId) {
+        response = await apiClient.updateMathSkillAssessment(assessmentId, data);
+        toast.success('Math skill assessment updated successfully!');
+      } else {
+        response = await apiClient.createMathSkillAssessment(data);
+        toast.success('Math skill assessment created successfully!');
+      }
+      
       // Store the full response data which includes student and specialEducator
       setSavedAssessment(response.data || response);
       setShowPreview(true);
-      toast.success('Math skill assessment created successfully!');
+      onSuccess?.();
     } catch (error: any) {
-      console.error('Create math assessment error:', error);
-      toast.error(error.response?.data?.error || 'Failed to create math assessment');
+      console.error('Save math assessment error:', error);
+      toast.error(error.response?.data?.error || 'Failed to save math assessment');
     } finally {
       setIsSubmitting(false);
     }
@@ -220,6 +270,7 @@ export function MathSkillAssessment({ studentId, onSuccess, onCancel }: MathSkil
               <Select 
                 value={questionAnswers[q.id] || ''} 
                 onValueChange={(value) => setQuestionAnswers(prev => ({ ...prev, [q.id]: value }))}
+                disabled={isViewMode}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select response" />
@@ -270,6 +321,7 @@ export function MathSkillAssessment({ studentId, onSuccess, onCancel }: MathSkil
                         id={symptom.key}
                         checked={selectedSymptoms[symptom.key] || false}
                         onChange={() => toggleSymptom(symptom.key)}
+                        disabled={isViewMode}
                         className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                       <Label
@@ -294,19 +346,34 @@ export function MathSkillAssessment({ studentId, onSuccess, onCancel }: MathSkil
               placeholder="Add any additional observations or notes..."
               rows={4}
               className="mt-2"
+              disabled={isViewMode}
             />
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end space-x-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : 'Save Assessment'}
-        </Button>
-      </div>
+      {!isViewMode && (
+        <div className="flex justify-end space-x-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : mode === 'edit' ? 'Update Assessment' : 'Save Assessment'}
+          </Button>
+        </div>
+      )}
+      
+      {isViewMode && (
+        <div className="flex justify-end space-x-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Close
+          </Button>
+          <Button onClick={() => setShowPreview(true)}>
+            <Eye className="h-4 w-4 mr-2" />
+            View Full Report
+          </Button>
+        </div>
+      )}
 
       {/* Preview Modal */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
@@ -421,7 +488,12 @@ export function MathSkillAssessment({ studentId, onSuccess, onCancel }: MathSkil
           </div>
 
           <div className="flex justify-end space-x-4 pt-4">
-            <Button variant="outline" onClick={() => setShowPreview(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowPreview(false);
+              if (!isViewMode) {
+                onSuccess?.();
+              }
+            }}>
               Close
             </Button>
             <Button 

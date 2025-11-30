@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2, GraduationCap, Users, BookOpen, Building2, Heart, Eye, Shield } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -130,10 +131,9 @@ export default function HomePage() {
             {userTypes.map((userType, index) => {
               const IconComponent = userType.icon;
               return (
-                <div key={userType.title}>
+                <Link key={userType.title} href={userType.route}>
                   <Card 
-                    className={`cursor-pointer transition-all duration-300 hover:shadow-lg border-2 hover:border-blue-300 ${userType.bgColor}`}
-                    onClick={() => router.push(userType.route)}
+                    className={`cursor-pointer transition-all duration-300 hover:shadow-lg border-2 hover:border-blue-300 ${userType.bgColor} h-full`}
                   >
                     <CardHeader className="text-center pb-4">
                       <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${userType.color} flex items-center justify-center`}>
@@ -149,7 +149,7 @@ export default function HomePage() {
                       </CardDescription>
                     </CardContent>
                   </Card>
-                </div>
+                </Link>
               );
             })}
           </div>

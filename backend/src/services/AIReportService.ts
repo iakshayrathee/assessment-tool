@@ -24,23 +24,24 @@ export class AIReportService {
     this.skillAssessmentRepo = skillAssessmentRepo;
   }
 
-  async generateComprehensiveReport(studentId: string, educatorId: string) {
+  async generateComprehensiveReport(studentId: string, educatorId: string, reportType: 'ASSESSMENT' | 'LESSON_PLAN' = 'ASSESSMENT') {
     try {
-      console.log(`Starting AI report generation for student: ${studentId}, educator: ${educatorId}`);
-      
+      console.log(`Starting AI report generation for student: ${studentId}, educator: ${educatorId}, type: ${reportType}`);
+
       // Fetch all student data including detailed skill assessments
-      const [assessments, lessonPlans, iepGoalsResult, iepDocuments, readingAssessments, writingAssessments, mathAssessments] = await Promise.all([
+      const [assessments, lessonPlans, iepGoalsResult, iepDocuments, readingAssessments, writingAssessments, mathAssessments, intakeForms] = await Promise.all([
         this.assessmentRepo.findAssessmentsByStudent(studentId),
         this.lessonPlanRepo.findByStudent(studentId).then(result => result.lessonPlans),
         this.assessmentRepo.findIEPGoalsByStudent(studentId),
         this.iepRepo.findIEPDocumentsByStudent(studentId),
         this.skillAssessmentRepo.findReadingAssessmentsByStudent(studentId),
         this.skillAssessmentRepo.findWritingAssessmentsByStudent(studentId),
-        this.skillAssessmentRepo.findMathAssessmentsByStudent(studentId)
+        this.skillAssessmentRepo.findMathAssessmentsByStudent(studentId),
+        this.assessmentRepo.findIntakeFormsByStudent(studentId)
       ]);
-      
-      console.log(`Fetched data: ${assessments.length} assessments, ${lessonPlans.length} lesson plans, ${iepGoalsResult.iepGoals.length} IEP goals, ${iepDocuments.length} IEP documents, ${readingAssessments.length} reading assessments, ${writingAssessments.length} writing assessments, ${mathAssessments.length} math assessments`);
-      
+
+      console.log(`Fetched data: ${assessments.length} assessments, ${lessonPlans.length} lesson plans, ${iepGoalsResult.iepGoals.length} IEP goals, ${iepDocuments.length} IEP documents, ${readingAssessments.length} reading assessments, ${writingAssessments.length} writing assessments, ${mathAssessments.length} math assessments, ${intakeForms.length} intake forms`);
+
       const iepGoals = iepGoalsResult.iepGoals;
 
       // Prepare data for AI analysis
@@ -49,6 +50,7 @@ export class AIReportService {
         lessonPlans: lessonPlans.slice(0, 10), // Limit to recent lesson plans
         iepGoals: iepGoals.filter(goal => goal.status !== 'ACHIEVED'), // Only active goals
         iepDocuments: iepDocuments.slice(0, 5), // Recent documents
+        intakeForms: intakeForms.slice(0, 1), // Most recent intake form
         skillAssessments: {
           reading: readingAssessments.slice(0, 5), // Recent reading assessments
           writing: writingAssessments.slice(0, 5), // Recent writing assessments
@@ -56,32 +58,38 @@ export class AIReportService {
         }
       };
 
-      // Generate AI prompt
-      const prompt = this.buildAIPrompt(studentData);
+      // Generate AI prompt based on report type
+      const prompt = reportType === 'ASSESSMENT' 
+        ? this.buildAssessmentReportPrompt(studentData)
+        : this.buildLessonPlanReportPrompt(studentData);
 
       // Call Gemini API
       console.log('Calling Gemini AI API with prompt...');
       const model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-      
+
       // Combine system prompt with user prompt for Gemini
-      const fullPrompt = `You are an expert special education analyst. Generate comprehensive, professional reports that analyze student progress, identify patterns, and provide actionable recommendations. Use clear educational terminology and maintain a supportive, constructive tone.
+      const systemPrompt = reportType === 'ASSESSMENT'
+        ? 'You are an expert special education analyst. Generate comprehensive, professional assessment reports that analyze student progress, identify patterns from assessment data and intake forms, and provide actionable recommendations. Use clear educational terminology and maintain a supportive, constructive tone.'
+        : 'You are an expert special education analyst. Generate comprehensive, professional lesson plan reports that analyze teaching effectiveness, student responses, and learning outcomes. Include symptom observations in natural sentences and teacher comments. Use clear educational terminology and maintain a supportive, constructive tone.';
+
+      const fullPrompt = `${systemPrompt}
 
 ${prompt}`;
-      
+
       console.log('AI Prompt length:', fullPrompt.length);
-      
+
       const result = await model.generateContent(fullPrompt);
       const aiResponse = result.response.text();
-      
+
       if (!aiResponse) {
         console.error('AI response was empty');
         throw new Error('AI response was empty');
       }
 
       console.log('AI response received, length:', aiResponse.length);
-      
+
       // Parse AI response into structured report
-      return this.parseAIResponse(aiResponse, studentId, educatorId);
+      return this.parseAIResponse(aiResponse, studentId, educatorId, reportType);
 
     } catch (error) {
       console.error('AI Report Generation Error:', error);
@@ -89,44 +97,35 @@ ${prompt}`;
     }
   }
 
-  private buildAIPrompt(studentData: any): string {
+  private buildAssessmentReportPrompt(studentData: any): string {
     // Extract detailed symptom information from skill assessments
     const readingSymptoms = this.extractSymptomData(studentData.skillAssessments.reading, 'reading');
     const writingSymptoms = this.extractSymptomData(studentData.skillAssessments.writing, 'writing');
     const mathSymptoms = this.extractSymptomData(studentData.skillAssessments.math, 'math');
 
+    // Extract intake form data
+    const intakeData = studentData.intakeForms.length > 0 ? this.extractIntakeData(studentData.intakeForms[0]) : 'No intake form available';
+
     // Optimize data for minimal token usage
     const optimizedAssessments = studentData.assessments.slice(0, 3).map((assessment: any) => ({
-      type: assessment.type,
+      type: assessment.assessmentType,
       date: assessment.createdAt,
-      overallScore: assessment.overallScore,
+      readingLevel: assessment.readingLevel,
+      writingLevel: assessment.writingLevel,
+      mathLevel: assessment.mathLevel,
       status: assessment.status
     }));
 
-    const optimizedIEPGoals = studentData.iepGoals.slice(0, 3).map((goal: any) => ({
-      objective: goal.objective,
-      status: goal.status,
-      progress: goal.progressPercent,
-      targetDate: goal.targetDate
-    }));
-
-    // Extract lesson plan effectiveness data
-    const lessonPlanEffectiveness = studentData.lessonPlans.slice(0, 3).map((plan: any) => ({
-      skillArea: plan.skillArea,
-      topic: plan.specificTopic,
-      motivation: plan.motivationLevel,
-      outcome: plan.outcome ? plan.outcome.substring(0, 100) + '...' : null
-    }));
-
     return `
-Generate a comprehensive special education progress report using detailed assessment data. Analyze symptom patterns, progress trends, and provide specific recommendations.
+Generate a comprehensive ASSESSMENT REPORT using detailed assessment data and intake form information. Analyze symptom patterns, developmental history, and provide specific recommendations.
 
 STUDENT DATA SUMMARY:
 - Formal Assessments: ${studentData.assessments.length} total
 - Skill Assessments: ${studentData.skillAssessments.reading.length + studentData.skillAssessments.writing.length + studentData.skillAssessments.math.length} total
-- Lesson Plans: ${studentData.lessonPlans.length} total
-- Active IEP Goals: ${studentData.iepGoals.length}
-- IEP Documents: ${studentData.iepDocuments.length} total
+- Intake Forms: ${studentData.intakeForms.length}
+
+INTAKE FORM DATA:
+${intakeData}
 
 DETAILED SYMPTOM ANALYSIS:
 Reading Symptoms (${readingSymptoms.total} observed):
@@ -139,45 +138,99 @@ Math Symptoms (${mathSymptoms.total} observed):
 ${mathSymptoms.summary}
 
 RECENT ASSESSMENTS:
-${JSON.stringify(optimizedAssessments)}
+${JSON.stringify(optimizedAssessments, null, 2)}
 
-ACTIVE IEP GOALS:
-${JSON.stringify(optimizedIEPGoals)}
+Please generate a detailed ASSESSMENT REPORT with these sections:
+1. Executive Summary - Overall assessment findings and current status
+2. Developmental & Background Information - Key findings from intake form
+3. Symptom Pattern Analysis - Detailed analysis of reading, writing, and math symptoms with specific examples
+4. Assessment Results - Comprehensive analysis of formal and skill assessments
+5. Strengths and Challenges - Specific areas of strength and concern
+6. Evidence-Based Recommendations - 5-7 specific, actionable recommendations with rationale
+7. Next Steps - Detailed plan for intervention and follow-up assessments
 
-LESSON PLAN EFFECTIVENESS:
-${JSON.stringify(lessonPlanEffectiveness)}
-
-Please generate a detailed report with these sections:
-1. Executive Summary - Overall progress and current status
-2. Symptom Pattern Analysis - Detailed analysis of reading, writing, and math symptoms
-3. Progress Tracking - Improvement trends and areas needing attention
-4. IEP Goal Progress - Current status of active goals and achievements
-5. Lesson Plan Effectiveness - What interventions are working best
-6. Key Challenges - Specific difficulties and barriers to progress
-7. Evidence-Based Recommendations - 5-7 specific, actionable recommendations with rationale
-8. Next Steps - Detailed plan for next assessment period
-
-Use professional educational terminology, cite specific symptom observations, and provide data-driven recommendations. Focus on patterns across multiple assessments and be specific about symptom severity and frequency.
+Use professional educational terminology, cite specific symptom observations from assessments, and provide data-driven recommendations. Focus on patterns across multiple assessments and be specific about symptom severity and frequency.
     `;
   }
 
-  private parseAIResponse(aiResponse: string, studentId: string, educatorId: string): any {
+  private buildLessonPlanReportPrompt(studentData: any): string {
+    // Extract lesson plan data with observations
+    const lessonPlanDetails = studentData.lessonPlans.slice(0, 10).map((plan: any) => ({
+      date: plan.date,
+      skillArea: plan.skillArea,
+      topic: plan.specificTopic,
+      areasOfRemediation: plan.areasOfRemediation,
+      activityStrategy: plan.activityStrategy,
+      resourcesUsed: plan.resourcesUsed,
+      expectedTime: plan.expectedTime,
+      actualTimeTaken: plan.actualTimeTaken,
+      motivationLevel: plan.motivationLevel,
+      outcome: plan.outcome,
+      nextStep: plan.nextStep
+    }));
+
+    // Extract symptom data for context
+    const readingSymptoms = this.extractSymptomData(studentData.skillAssessments.reading, 'reading');
+    const writingSymptoms = this.extractSymptomData(studentData.skillAssessments.writing, 'writing');
+    const mathSymptoms = this.extractSymptomData(studentData.skillAssessments.math, 'math');
+
+    return `
+Generate a comprehensive LESSON PLAN REPORT analyzing teaching effectiveness, student responses, and learning outcomes. Include symptom observations in natural, flowing sentences and incorporate teacher comments from lesson outcomes.
+
+STUDENT DATA SUMMARY:
+- Total Lesson Plans: ${studentData.lessonPlans.length}
+- Reading Skill Assessments: ${studentData.skillAssessments.reading.length}
+- Writing Skill Assessments: ${studentData.skillAssessments.writing.length}
+- Math Skill Assessments: ${studentData.skillAssessments.math.length}
+
+SYMPTOM CONTEXT (for natural language integration):
+Reading: ${readingSymptoms.total} symptoms observed
+Writing: ${writingSymptoms.total} symptoms observed
+Math: ${mathSymptoms.total} symptoms observed
+
+DETAILED LESSON PLAN DATA:
+${JSON.stringify(lessonPlanDetails, null, 2)}
+
+Please generate a detailed LESSON PLAN REPORT with these sections:
+1. Executive Summary - Overview of teaching sessions and overall student engagement
+2. Lesson Plan Analysis - Detailed analysis of each lesson plan with:
+   - Symptom observations written in natural, flowing sentences (e.g., "During reading activities, the student demonstrated difficulty with letter-sound correspondence and frequently reversed letters b and d")
+   - Teacher's observations and comments from the outcome field
+   - Student motivation and engagement levels
+   - Time management and pacing effectiveness
+3. Teaching Strategies Effectiveness - What worked well and what needs adjustment
+4. Student Progress Patterns - Trends in student responses across multiple sessions
+5. Areas of Remediation - Specific skills targeted and progress made
+6. Teacher Reflections - Incorporate teacher comments and observations from lesson outcomes
+7. Recommendations - Specific suggestions for future lesson planning
+8. Next Steps - Detailed plan for upcoming sessions
+
+IMPORTANT: 
+- Write symptom observations in complete, natural sentences within the narrative
+- Include specific teacher comments and observations from lesson outcomes
+- Use a narrative style that flows naturally, not bullet points for symptoms
+- Connect symptoms to specific lesson activities and student responses
+- Maintain professional educational terminology while being descriptive and specific
+    `;
+  }
+
+  private parseAIResponse(aiResponse: string, studentId: string, educatorId: string, reportType: 'ASSESSMENT' | 'LESSON_PLAN'): any {
     // Extract sections from AI response
     const sections = {
-      summary: this.extractSection(aiResponse, 'Executive Summary', 'Assessment Analysis'),
-      assessmentAnalysis: this.extractSection(aiResponse, 'Assessment Analysis', 'IEP Goal Progress'),
-      iepProgress: this.extractSection(aiResponse, 'IEP Goal Progress', 'Lesson Plan Effectiveness'),
-      lessonAnalysis: this.extractSection(aiResponse, 'Lesson Plan Effectiveness', 'Strengths and Challenges'),
-      strengthsChallenges: this.extractSection(aiResponse, 'Strengths and Challenges', 'Recommendations'),
+      summary: this.extractSection(aiResponse, 'Executive Summary', reportType === 'ASSESSMENT' ? 'Developmental' : 'Lesson Plan Analysis'),
       recommendations: this.extractSection(aiResponse, 'Recommendations', 'Next Steps'),
       nextSteps: this.extractSection(aiResponse, 'Next Steps')
     };
 
+    const title = reportType === 'ASSESSMENT' 
+      ? `Assessment Report - ${new Date().toLocaleDateString()}`
+      : `Lesson Plan Report - ${new Date().toLocaleDateString()}`;
+
     return {
       studentId,
       specialEducatorId: educatorId,
-      type: 'ASSESSMENT',
-      title: `Comprehensive Progress Report - ${new Date().toLocaleDateString()}`,
+      type: reportType === 'ASSESSMENT' ? 'ASSESSMENT' : 'LESSON_PLAN',
+      title,
       content: aiResponse,
       summary: sections.summary,
       recommendations: sections.recommendations,
@@ -185,6 +238,41 @@ Use professional educational terminology, cite specific symptom observations, an
       createdAt: new Date(),
       updatedAt: new Date()
     };
+  }
+
+  private extractIntakeData(intakeForm: any): string {
+    if (!intakeForm) return 'No intake data available';
+
+    const relevantFields = [];
+
+    // Family and background
+    if (intakeForm.familyType) relevantFields.push(`Family Type: ${intakeForm.familyType}`);
+    if (intakeForm.familyIncome) relevantFields.push(`Family Income: ${intakeForm.familyIncome}`);
+    
+    // Developmental history
+    if (intakeForm.pregnancyNormal !== null) relevantFields.push(`Pregnancy: ${intakeForm.pregnancyNormal ? 'Normal' : 'Complications noted'}`);
+    if (intakeForm.deliveryType) relevantFields.push(`Delivery: ${intakeForm.deliveryType}`);
+    if (intakeForm.ageOfWalking) relevantFields.push(`Age of Walking: ${intakeForm.ageOfWalking} months`);
+    if (intakeForm.ageOfTwoWordSpeech) relevantFields.push(`Age of Two-Word Speech: ${intakeForm.ageOfTwoWordSpeech} months`);
+    
+    // Medical history
+    if (intakeForm.healthConcerns) relevantFields.push(`Health Concerns: ${intakeForm.healthConcerns}`);
+    if (intakeForm.epilepticHistory) relevantFields.push(`Epileptic History: Yes`);
+    if (intakeForm.onMedication && intakeForm.medicationDetails) relevantFields.push(`Medication: ${intakeForm.medicationDetails}`);
+    if (intakeForm.wearsGlasses) relevantFields.push(`Vision: Wears glasses`);
+    
+    // Educational history
+    if (intakeForm.attendedPreschool !== null) relevantFields.push(`Preschool: ${intakeForm.attendedPreschool ? 'Yes' : 'No'}`);
+    if (intakeForm.repeatedGrades && intakeForm.whichGradeRepeated) relevantFields.push(`Repeated Grade: ${intakeForm.whichGradeRepeated}`);
+    if (intakeForm.strugglesInLanguages) relevantFields.push(`Language Struggles: Yes`);
+    if (intakeForm.dominantWritingHand) relevantFields.push(`Dominant Hand: ${intakeForm.dominantWritingHand}`);
+    
+    // Social and behavioral
+    if (intakeForm.enjoysSchool !== null) relevantFields.push(`Enjoys School: ${intakeForm.enjoysSchool ? 'Yes' : 'No'}`);
+    if (intakeForm.enjoysReading !== null) relevantFields.push(`Enjoys Reading: ${intakeForm.enjoysReading ? 'Yes' : 'No'}`);
+    if (intakeForm.childType) relevantFields.push(`Child Type: ${intakeForm.childType}`);
+
+    return relevantFields.join('\n');
   }
 
   private extractSymptomData(assessments: any[], skillType: string): { total: number; summary: string } {
@@ -198,7 +286,7 @@ Use professional educational terminology, cite specific symptom observations, an
 
     assessments.forEach((assessment, index) => {
       const assessmentSymptoms: string[] = [];
-      
+
       // Count boolean symptoms (true values)
       Object.entries(assessment).forEach(([key, value]) => {
         if (typeof value === 'boolean' && value === true) {

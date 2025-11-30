@@ -1143,6 +1143,8 @@ enum ReportType {
   ASSESSMENT
   IEP
   PROGRESS
+  LESSON_PLAN
+  AI_COMPREHENSIVE
 }
 
 enum StudentStatus {

@@ -52,7 +52,9 @@ export enum ReportType {
   INTAKE = 'INTAKE',
   ASSESSMENT = 'ASSESSMENT',
   IEP = 'IEP',
-  PROGRESS = 'PROGRESS'
+  PROGRESS = 'PROGRESS',
+  LESSON_PLAN = 'LESSON_PLAN',
+  AI_COMPREHENSIVE = 'AI_COMPREHENSIVE'
 }
 
 export enum StudentStatus {
@@ -167,19 +169,19 @@ export interface IntakeFormData {
   enjoysReading?: boolean;
   dailyParentChildTime?: number;
   childType?: string;
-  
+
   // Family History
   fatherName?: string;
   motherName?: string;
   guardianName?: string;
-  
+
   // Prenatal, Natal & Delivery
   pregnancyNormal?: boolean;
   medicationsDuringPregnancy?: string;
   miscarriagesAbortions?: boolean;
   fullTermOrPremature?: string;
   deliveryType?: string;
-  
+
   // Post Natal Factors
   breastFed?: boolean;
   infantJaundice?: boolean;
@@ -191,7 +193,7 @@ export interface IntakeFormData {
   delayInNeckStandingDetails?: string;
   ageOfWalking?: number;
   ageOfTwoWordSpeech?: number;
-  
+
   // Medical History
   healthConcerns?: string;
   epilepticHistory?: boolean;
@@ -201,7 +203,7 @@ export interface IntakeFormData {
   wearsGlasses?: boolean;
   visionTestDone?: boolean;
   hearingTestDone?: boolean;
-  
+
   // Educational History
   attendedPreschool?: boolean;
   repeatedGrades?: boolean;

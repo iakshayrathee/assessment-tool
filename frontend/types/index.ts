@@ -49,7 +49,9 @@ export enum ReportType {
   INTAKE = 'INTAKE',
   ASSESSMENT = 'ASSESSMENT',
   IEP = 'IEP',
-  PROGRESS = 'PROGRESS'
+  PROGRESS = 'PROGRESS',
+  LESSON_PLAN = 'LESSON_PLAN',
+  AI_COMPREHENSIVE = 'AI_COMPREHENSIVE'
 }
 
 export enum StudentStatus {

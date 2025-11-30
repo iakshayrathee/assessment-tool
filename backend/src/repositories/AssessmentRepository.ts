@@ -89,6 +89,21 @@ export class AssessmentRepository {
     });
   }
 
+  async findIntakeFormsByStudent(studentId: string): Promise<IntakeForm[]> {
+    return this.prisma.intakeForm.findMany({
+      where: { studentId },
+      include: {
+        student: true,
+        specialEducator: {
+          include: {
+            user: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
   // Assessment methods
   async createAssessment(specialEducatorId: string, assessmentData: AssessmentData): Promise<Assessment> {
     return this.prisma.assessment.create({

@@ -91,7 +91,7 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       description: 'Conduct and manage assessments'
     },
      {
-      title: 'Lesson Plans',
+      title: 'Remediation',
       href: '/educator/lesson-plans-new',
       icon: Calendar,
       description: 'Create and manage lesson plans'

@@ -369,8 +369,35 @@ export class AdminService {
         });
         break;
       case UserRole.SCHOOL_VIEWER:
+        // Handle school name - create school if it doesn't exist
+        let schoolViewerData = { ...convertedData };
+        if (convertedData.schoolName && !convertedData.schoolId) {
+          // Try to find existing school by name
+          let school = await tx.school.findFirst({
+            where: { name: convertedData.schoolName }
+          });
+          
+          // If school doesn't exist, create a new one
+          if (!school) {
+            // Get a default center ID (you might want to handle this differently)
+            const defaultCenter = await tx.centerProfile.findFirst();
+            if (!defaultCenter) {
+              throw new Error('No center found to associate with new school');
+            }
+            
+            school = await tx.school.create({
+              data: {
+                name: convertedData.schoolName,
+                centerId: defaultCenter.id
+              }
+            });
+          }
+          
+          schoolViewerData.schoolId = school.id;
+          delete schoolViewerData.schoolName;
+        }
         await tx.schoolViewerProfile.create({
-          data: { userId, ...convertedData }
+          data: { userId, ...schoolViewerData }
         });
         break;
     }
@@ -411,9 +438,36 @@ export class AdminService {
         });
         break;
       case UserRole.SCHOOL_VIEWER:
+        // Handle school name - create school if it doesn't exist
+        let schoolViewerData = { ...convertedData };
+        if (convertedData.schoolName && !convertedData.schoolId) {
+          // Try to find existing school by name
+          let school = await tx.school.findFirst({
+            where: { name: convertedData.schoolName }
+          });
+          
+          // If school doesn't exist, create a new one
+          if (!school) {
+            // Get a default center ID (you might want to handle this differently)
+            const defaultCenter = await tx.centerProfile.findFirst();
+            if (!defaultCenter) {
+              throw new Error('No center found to associate with new school');
+            }
+            
+            school = await tx.school.create({
+              data: {
+                name: convertedData.schoolName,
+                centerId: defaultCenter.id
+              }
+            });
+          }
+          
+          schoolViewerData.schoolId = school.id;
+          delete schoolViewerData.schoolName;
+        }
         await tx.schoolViewerProfile.update({
           where: { userId },
-          data: convertedData
+          data: schoolViewerData
         });
         break;
     }

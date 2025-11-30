@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { 
   UserPlus, 
   Save,
+  Eye ,
   User,
   Mail,
   Lock,
@@ -156,6 +157,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -202,7 +204,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
         if (!profileData.centerName) newErrors.centerName = 'Center name is required';
         break;
       case UserRole.SCHOOL_VIEWER:
-        if (!profileData.schoolId) newErrors.schoolId = 'School selection is required';
+        if (!profileData.schoolName) newErrors.schoolName = 'School name is required';
         break;
       default:
         if (!profileData.fullName) newErrors.fullName = 'Full name is required';
@@ -216,9 +218,15 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    // Filter out address field for SCHOOL_VIEWER role since it's not in the schema
+    const filteredProfileData = { ...profileData };
+    if (userData.role === UserRole.SCHOOL_VIEWER) {
+      delete filteredProfileData.address;
+    }
+
     const payload = {
       ...userData,
-      profileData
+      profileData: filteredProfileData
     };
 
     createUserMutation.mutate(payload, {
@@ -270,14 +278,27 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
         
         <div className="space-y-2">
           <Label htmlFor="password">Password *</Label>
-          <Input
-            id="password"
-            type="password"
-            value={userData.password}
-            onChange={(e) => setUserData(prev => ({ ...prev, password: e.target.value }))}
-            placeholder="Minimum 6 characters"
-            className={errors.password ? 'border-destructive' : ''}
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              value={userData.password}
+              onChange={(e) => setUserData(prev => ({ ...prev, password: e.target.value }))}
+              placeholder="Minimum 6 characters"
+              className={errors.password ? 'border-destructive pr-10' : 'pr-10'}
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <Eye className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
           {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
         </div>
       </div>
@@ -454,23 +475,15 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="schoolId">School *</Label>
-        <Select
-          value={profileData.schoolId || ''}
-          onValueChange={(value) => setProfileData(prev => ({ ...prev, schoolId: value }))}
-        >
-          <SelectTrigger className={errors.schoolId ? 'border-destructive' : ''}>
-            <SelectValue placeholder="Select a school" />
-          </SelectTrigger>
-          <SelectContent>
-            {schools.map((school) => (
-              <SelectItem key={school.id} value={school.id}>
-                {school.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {errors.schoolId && <p className="text-sm text-destructive">{errors.schoolId}</p>}
+        <Label htmlFor="schoolName">School Name *</Label>
+        <Input
+          id="schoolName"
+          value={profileData.schoolName || ''}
+          onChange={(e) => setProfileData(prev => ({ ...prev, schoolName: e.target.value }))}
+          placeholder="Enter school name"
+          className={errors.schoolName ? 'border-destructive' : ''}
+        />
+        {errors.schoolName && <p className="text-sm text-destructive">{errors.schoolName}</p>}
       </div>
     </div>
   );
