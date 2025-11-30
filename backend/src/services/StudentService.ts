@@ -52,7 +52,7 @@ export class StudentService {
     const centerExists = await this.studentRepository.prismaClient.centerProfile.findUnique({
       where: { id: studentData.centerId }
     });
-    
+
     if (!centerExists) {
       throw new Error(`Center with ID ${studentData.centerId} not found`);
     }
@@ -68,7 +68,7 @@ export class StudentService {
     if (!parentId && studentData.parentName && studentData.parentPhone) {
       // Hash the temporary password
       const hashedPassword = await bcrypt.hash('temp_password_123', 12);
-      
+
       // Create parent user and profile
       const parentProfile = await this.studentRepository.prismaClient.parentProfile.create({
         data: {
@@ -163,7 +163,7 @@ export class StudentService {
 
   async getStudentsByCenter(centerId: string, page: number = 1, limit: number = 10): Promise<{ students: any[], total: number }> {
     const result = await this.studentRepository.findByCenter(centerId, page, limit);
-    
+
     // Transform students to include computed fields that frontend expects
     const transformedStudents = result.students.map((student: any) => ({
       id: student.id,
@@ -241,18 +241,69 @@ export class StudentService {
 
   async getStudentDashboardData(studentId: string): Promise<{
     student: any;
-    recentAssessments: any[];
+    iepDocuments: any[];
+    assessments: any[];
+    lessonPlans: any[];
+    reports: any[];
     activeIEPGoals: any[];
     recentSessionNotes: any[];
     upcomingGoalDeadlines: any[];
   }> {
     const student: any = await this.getStudentById(studentId);
 
-    // Get recent assessments (last 3)
-    const recentAssessments = student.assessments?.slice(0, 3) || [];
+    // Get all IEP documents for the student
+    const iepDocuments = await this.studentRepository.prismaClient.iEPDocument.findMany({
+      where: { studentId },
+      include: {
+        subjectSections: {
+          orderBy: { createdAt: 'desc' }
+        },
+        specialEducator: {
+          select: {
+            id: true,
+            fullName: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Get all assessments for the student
+    const assessments = await this.studentRepository.prismaClient.assessment.findMany({
+      where: { studentId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Get all lesson plans for the student
+    const lessonPlans = await this.studentRepository.prismaClient.lessonPlan.findMany({
+      where: { studentId },
+      include: {
+        specialEducator: {
+          select: {
+            id: true,
+            fullName: true
+          }
+        }
+      },
+      orderBy: { date: 'desc' }
+    });
+
+    // Get all reports for the student
+    const reports = await this.studentRepository.prismaClient.report.findMany({
+      where: { studentId },
+      include: {
+        specialEducator: {
+          select: {
+            id: true,
+            fullName: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     // Get active IEP goals
-    const activeIEPGoals = student.iepGoals?.filter((goal: any) => 
+    const activeIEPGoals = student.iepGoals?.filter((goal: any) =>
       goal.status === 'IN_PROGRESS' || goal.status === 'NOT_STARTED'
     ) || [];
 
@@ -262,14 +313,17 @@ export class StudentService {
     // Get upcoming goal deadlines (goals due within 30 days)
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    
-    const upcomingGoalDeadlines = activeIEPGoals.filter((goal: any) => 
+
+    const upcomingGoalDeadlines = activeIEPGoals.filter((goal: any) =>
       new Date(goal.targetDate) <= thirtyDaysFromNow
     ).sort((a: any, b: any) => new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime());
 
     return {
       student,
-      recentAssessments,
+      iepDocuments,
+      assessments,
+      lessonPlans,
+      reports,
       activeIEPGoals,
       recentSessionNotes,
       upcomingGoalDeadlines
@@ -283,7 +337,7 @@ export class StudentService {
     progressTrend: any[];
   }> {
     const student: any = await this.getStudentById(studentId);
-    
+
     if (!student.iepGoals || student.iepGoals.length === 0) {
       return {
         overallProgress: 0,
@@ -390,27 +444,27 @@ export class StudentService {
 
   async assignStudentToEducator(studentId: string, specialEducatorId: string): Promise<void> {
     console.log('🎯 assignStudentToEducator called with:', { studentId, specialEducatorId });
-    
+
     // Validate that student exists
     const student = await this.studentRepository.prismaClient.student.findUnique({
       where: { id: studentId }
     });
-    
+
     if (!student) {
       throw new Error(`Student with ID ${studentId} not found`);
     }
-    
+
     // Validate that special educator exists
     const specialEducator = await this.studentRepository.prismaClient.specialEducatorProfile.findUnique({
       where: { id: specialEducatorId }
     });
-    
+
     if (!specialEducator) {
       throw new Error(`Special educator with ID ${specialEducatorId} not found`);
     }
-    
+
     console.log('✅ Student and educator validation passed');
-    
+
     // Check if assignment already exists
     const existingAssignment = await this.studentRepository.prismaClient.studentAssignment.findUnique({
       where: {

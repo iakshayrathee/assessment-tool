@@ -69,20 +69,20 @@ export default function LoginPage() {
     }
   };
 
-  const demoCredentials = [
-    { role: 'Admin', email: 'admin@knowled.com', password: 'admin123' },
-    { role: 'Super Special Educator', email: 'super.educator@knowled.com', password: 'super123' },
-    { role: 'Special Educator', email: 'educator@knowled.com', password: 'educator123' },
-    { role: 'Center Manager', email: 'center@knowled.com', password: 'center123' },
-    { role: 'Parent', email: 'parent@knowled.com', password: 'parent123' },
-    { role: 'School Viewer', email: 'viewer@knowled.com', password: 'viewer123' },
-  ];
+  // const demoCredentials = [
+  //   { role: 'Admin', email: 'admin@knowled.com', password: 'admin123' },
+  //   { role: 'Super Special Educator', email: 'super.educator@knowled.com', password: 'super123' },
+  //   { role: 'Special Educator', email: 'educator@knowled.com', password: 'educator123' },
+  //   { role: 'Center Manager', email: 'center@knowled.com', password: 'center123' },
+  //   { role: 'Parent', email: 'parent@knowled.com', password: 'parent123' },
+  //   { role: 'School Viewer', email: 'viewer@knowled.com', password: 'viewer123' },
+  // ];
 
-  const fillDemoCredentials = (email: string, password: string) => {
-    setEmail(email);
-    setPassword(password);
-    setErrors({});
-  };
+  // const fillDemoCredentials = (email: string, password: string) => {
+  //   setEmail(email);
+  //   setPassword(password);
+  //   setErrors({});
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
@@ -227,8 +227,8 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Demo Credentials */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            {/* Demo Credentials - Commented out */}
+            {/* <div className="mt-8 pt-6 border-t border-gray-200">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</h3>
               <div className="grid grid-cols-1 gap-2 text-xs">
                 {demoCredentials.map((cred, index) => (
@@ -242,7 +242,7 @@ export default function LoginPage() {
                   </button>
                 ))}
               </div>
-            </div>
+            </div> */}
           </div>
         </motion.div>
       </div>

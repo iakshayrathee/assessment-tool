@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  MessageCircle, 
-  Plus, 
-  Search, 
+import {
+  MessageCircle,
+  Plus,
+  Search,
   Filter,
   ArrowLeft,
   AlertCircle,
@@ -57,7 +57,7 @@ export default function ParentConcerns() {
         page: pagination.page,
         limit: pagination.limit
       };
-      
+
       if (statusFilter) {
         params.status = statusFilter;
       }
@@ -221,7 +221,7 @@ export default function ParentConcerns() {
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Status</SelectItem>
+                    <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="Open">Open</SelectItem>
                     <SelectItem value="In Progress">In Progress</SelectItem>
                     <SelectItem value="Resolved">Resolved</SelectItem>
@@ -240,8 +240,8 @@ export default function ParentConcerns() {
                 <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No concerns found</h3>
                 <p className="text-gray-600 mb-4">
-                  {searchTerm || statusFilter 
-                    ? 'No concerns match your current filters.' 
+                  {searchTerm || statusFilter
+                    ? 'No concerns match your current filters.'
                     : 'You haven\'t submitted any concerns yet.'}
                 </p>
                 <Link href="/parent/concerns/new">

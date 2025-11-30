@@ -584,7 +584,14 @@ class ApiClient {
 
   async getSpecialEducatorDashboard(): Promise<any> {
     const response = await this.client.get<ApiResponse<any>>('/special-educators/dashboard');
-    return response.data.data;
+    // Backend returns { success: true, data: dashboardData }
+    return response.data.data || {
+      assignedStudents: 0,
+      pendingAssessments: 0,
+      activeIEPGoals: 0,
+      completedReports: 0,
+      recentActivities: []
+    };
   }
 
   // Center endpoints
@@ -1551,7 +1558,17 @@ class ApiClient {
     status?: string;
   }): Promise<PaginatedResponse<any>> {
     const response = await this.client.get('/special-educators/students', { params });
-    return response.data;
+    // Backend returns { success: true, data: students[], pagination: {...} }
+    return {
+      data: response.data.data || [],
+      pagination: response.data.pagination || {
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: response.data.data?.length || 0,
+        hasNext: false,
+        hasPrev: false
+      }
+    };
   }
 
   // Admin methods

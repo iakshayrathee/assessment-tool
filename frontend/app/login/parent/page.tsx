@@ -55,11 +55,11 @@ export default function ParentLoginPage() {
     }
   };
 
-  const fillDemoCredentials = () => {
-    setEmail('parent@knowled.com');
-    setPassword('parent123');
-    setErrors({});
-  };
+  // const fillDemoCredentials = () => {
+  //   setEmail('parent@knowled.com');
+  //   setPassword('parent123');
+  //   setErrors({});
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center p-4">
@@ -217,8 +217,8 @@ export default function ParentLoginPage() {
               </button>
             </form>
 
-            {/* Demo Credentials */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            {/* Demo Credentials - Commented out */}
+            {/* <div className="mt-8 pt-6 border-t border-gray-200">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</h3>
               <button
                 onClick={fillDemoCredentials}
@@ -227,7 +227,7 @@ export default function ParentLoginPage() {
                 <div className="font-medium text-orange-900">Parent Account</div>
                 <div className="text-orange-700 text-sm">parent@knowled.com</div>
               </button>
-            </div>
+            </div> */}
           </div>
         </motion.div>
       </div>

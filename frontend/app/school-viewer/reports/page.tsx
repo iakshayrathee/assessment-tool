@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useSchoolViewerReports } from '@/hooks/useSchoolViewer';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useSchoolViewerReports, useSchoolViewerStudents } from '@/hooks/useSchoolViewer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,8 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { Users } from 'lucide-react';
+import { StudentSelectionModal } from '@/components/school-viewer/StudentSelectionModal';
 
 interface Report {
   id: string;
@@ -54,12 +57,20 @@ interface Report {
 }
 
 export default function SchoolViewerReports() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const urlStudentId = searchParams.get('studentId');
+  
   const [page, setPage] = useState(1);
   const [type, setType] = useState('');
   const [status, setStatus] = useState('');
-  const [studentId, setStudentId] = useState('');
+  const [studentId, setStudentId] = useState(urlStudentId || '');
   const [showFilters, setShowFilters] = useState(false);
+  const [showStudentModal, setShowStudentModal] = useState(false);
 
+  // Fetch students for selection
+  const { students: allStudents, isLoading: isLoadingStudents } = useSchoolViewerStudents();
+  
   const { 
     reports, 
     pagination, 
@@ -73,6 +84,20 @@ export default function SchoolViewerReports() {
     status: status || undefined,
     studentId: studentId || undefined
   });
+  
+  // Get selected student details
+  const selectedStudent = allStudents?.find(s => s.id === studentId);
+  const selectedStudentName = selectedStudent?.fullName || 'Selected Student';
+  const selectedStudentGrade = selectedStudent?.grade || '';
+  
+  // Sync URL with selected student
+  useEffect(() => {
+    if (studentId && studentId !== urlStudentId) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('studentId', studentId);
+      router.replace(`/school-viewer/reports?${params.toString()}`);
+    }
+  }, [studentId, urlStudentId, searchParams, router]);
 
   const handleTypeChange = (value: string) => {
     setType(value === 'all' ? '' : value);
@@ -158,6 +183,38 @@ export default function SchoolViewerReports() {
           <p className="text-gray-600">View and download reports for students from your school</p>
         </div>
         <div className="flex items-center space-x-2">
+          {/* Student Selection */}
+          {studentId ? (
+            <div className="flex items-center gap-4 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200 min-w-[250px]">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-blue-900 text-sm truncate">
+                  {selectedStudentName}
+                </p>
+                <p className="text-xs text-blue-700">
+                  Grade {selectedStudentGrade || 'N/A'}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowStudentModal(true)}
+                className="h-8 w-8 p-0 flex-shrink-0"
+                title="Change student"
+              >
+                <Users className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => setShowStudentModal(true)}
+              className="flex items-center gap-2 px-4 py-2 min-w-[140px]"
+            >
+              <Users className="h-4 w-4" />
+              Select Student
+            </Button>
+          )}
+          
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
@@ -368,6 +425,13 @@ export default function SchoolViewerReports() {
           )}
         </>
       )}
+
+      <StudentSelectionModal
+        isOpen={showStudentModal}
+        onClose={() => setShowStudentModal(false)}
+        onSelect={setStudentId}
+        selectedStudentId={studentId}
+      />
     </div>
   );
 }

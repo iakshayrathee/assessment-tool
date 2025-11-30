@@ -59,11 +59,11 @@ export default function SuperSpecialEducatorLoginPage() {
     }
   };
 
-  const fillDemoCredentials = () => {
-    setEmail('super.educator@knowled.com');
-    setPassword('super123');
-    setErrors({});
-  };
+  // const fillDemoCredentials = () => {
+  //   setEmail('super.educator@knowled.com');
+  //   setPassword('super123');
+  //   setErrors({});
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
@@ -227,8 +227,8 @@ export default function SuperSpecialEducatorLoginPage() {
               </button>
             </form>
 
-            {/* Demo Credentials */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            {/* Demo Credentials - Commented out */}
+            {/* <div className="mt-8 pt-6 border-t border-gray-200">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</h3>
               <button
                 onClick={fillDemoCredentials}
@@ -237,7 +237,7 @@ export default function SuperSpecialEducatorLoginPage() {
                 <div className="font-medium text-green-900">Super Special Educator</div>
                 <div className="text-green-700 text-sm">super.educator@knowled.com</div>
               </button>
-            </div>
+            </div> */}
           </div>
 
           {/* Footer with Terms and Privacy Policy */}

@@ -22,6 +22,10 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { useRef } from 'react';
+import ReactDOMServer from 'react-dom/server';
+import toast from 'react-hot-toast';
+import { safeMarkdownToHtml } from '@/lib/markdown';
 
 interface ReportDetails {
   id: string;
@@ -60,6 +64,7 @@ export default function ReportDetailPage() {
   const reportId = params.id as string;
 
   const { report, isLoading, error, refetch } = useSchoolViewerReport(reportId);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   if (isLoading) {
     return (
@@ -94,6 +99,29 @@ export default function ReportDetailPage() {
   }
 
   const reportData = report as ReportDetails;
+
+  const downloadPDF = async () => {
+    if (!reportRef.current) return;
+    
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const element = reportRef.current;
+      const opt = {
+        margin: 10,
+        filename: `${reportData.student.fullName.replace(/\\s+/g, '-').toLowerCase()}-${reportData.type.toLowerCase()}-report-${new Date(reportData.createdAt).toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      html2pdf().from(element).set(opt).save();
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      console.error('Failed to download PDF:', error);
+      toast.error('Failed to download PDF');
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -175,7 +203,7 @@ export default function ReportDetailPage() {
             {formatStatus(reportData.status)}
           </Badge>
           {(reportData.status === 'COMPLETED' || reportData.status === 'REVIEWED') && (
-            <Button variant="outline">
+            <Button variant="outline" onClick={downloadPDF}>
               <Download className="h-4 w-4 mr-2" />
               Download PDF
             </Button>
@@ -309,7 +337,7 @@ export default function ReportDetailPage() {
       </div>
 
       {/* Report Content */}
-      <div className="grid grid-cols-1 gap-6">
+      <div ref={reportRef} className="grid grid-cols-1 gap-6">
         {/* Summary */}
         {reportData.summary && (
           <Card>
@@ -335,7 +363,7 @@ export default function ReportDetailPage() {
             <div className="prose max-w-none">
               <div 
                 className="text-gray-700 leading-relaxed whitespace-pre-wrap"
-                dangerouslySetInnerHTML={{ __html: reportData.content }}
+                dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(reportData.content) }}
               />
             </div>
           </CardContent>
@@ -387,7 +415,7 @@ export default function ReportDetailPage() {
             </Button>
           </Link>
           {(reportData.status === 'COMPLETED' || reportData.status === 'REVIEWED') && (
-            <Button>
+            <Button onClick={downloadPDF}>
               <Download className="h-4 w-4 mr-2" />
               Download Report
             </Button>

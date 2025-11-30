@@ -55,11 +55,11 @@ export default function SpecialEducatorLoginPage() {
     }
   };
 
-  const fillDemoCredentials = () => {
-    setEmail('educator@knowled.com');
-    setPassword('educator123');
-    setErrors({});
-  };
+  // const fillDemoCredentials = () => {
+  //   setEmail('educator@knowled.com');
+  //   setPassword('educator123');
+  //   setErrors({});
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-50 flex items-center justify-center p-4">
@@ -217,8 +217,8 @@ export default function SpecialEducatorLoginPage() {
               </button>
             </form>
 
-            {/* Demo Credentials */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            {/* Demo Credentials - Commented out */}
+            {/* <div className="mt-8 pt-6 border-t border-gray-200">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</h3>
               <button
                 onClick={fillDemoCredentials}
@@ -227,7 +227,7 @@ export default function SpecialEducatorLoginPage() {
                 <div className="font-medium text-purple-900">Special Educator</div>
                 <div className="text-purple-700 text-sm">educator@knowled.com</div>
               </button>
-            </div>
+            </div> */}
           </div>
         </motion.div>
       </div>

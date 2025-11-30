@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   Users, 
   Search, 
@@ -221,7 +222,7 @@ export default function SchoolViewerStudents() {
         </CardContent>
       </Card>
 
-      {/* Students Grid */}
+      {/* Students Table */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
@@ -242,122 +243,153 @@ export default function SchoolViewerStudents() {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {students.map((student: Student) => (
-              <Card key={student.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{student.fullName}</CardTitle>
-                      <CardDescription className="flex items-center space-x-2 mt-1">
-                        <span>Grade {student.grade}</span>
-                        <span>•</span>
-                        <span>Age {student.age}</span>
-                      </CardDescription>
-                    </div>
-                    <Badge className={getStatusColor(student.status)}>
-                      {formatStatus(student.status)}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Student Info */}
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      <span>Enrolled: {format(new Date(student.registrationDate), 'MMM dd, yyyy')}</span>
-                    </div>
-                    {student.motherTongue && (
-                      <div className="flex items-center text-sm text-gray-600">
-                        <span className="w-4 h-4 mr-2 text-center">🗣️</span>
-                        <span>Language: {student.motherTongue}</span>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Student Details</TableHead>
+                  <TableHead>Parent Contact</TableHead>
+                  <TableHead>Assigned Educator</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead>Latest Activity</TableHead>
+                  <TableHead>Enrollment</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {students.map((student: Student) => (
+                  <TableRow key={student.id} className="hover:bg-muted/50">
+                    {/* Student Details */}
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                          <User className="h-5 w-5 text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{student.fullName}</p>
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <span>Grade {student.grade}</span>
+                            <span>•</span>
+                            <span>Age {student.age}</span>
+                          </div>
+                          <Badge className={`mt-1 ${getStatusColor(student.status)}`}>
+                            {formatStatus(student.status)}
+                          </Badge>
+                        </div>
                       </div>
-                    )}
-                  </div>
+                    </TableCell>
 
-                  {/* Parent Info */}
-                  {student.parent && (
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-medium text-gray-900">{student.parent.fullName}</p>
-                      <div className="flex items-center space-x-4 mt-1">
-                        {student.parent.phone && (
+                    {/* Parent Contact */}
+                    <TableCell>
+                      {student.parent ? (
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-gray-900">{student.parent.fullName}</p>
+                          {student.parent.phone && (
+                            <div className="flex items-center text-xs text-gray-600">
+                              <Phone className="h-3 w-3 mr-1" />
+                              <span>{student.parent.phone}</span>
+                            </div>
+                          )}
                           <div className="flex items-center text-xs text-gray-600">
-                            <Phone className="h-3 w-3 mr-1" />
-                            <span>{student.parent.phone}</span>
+                            <Mail className="h-3 w-3 mr-1" />
+                            <span>{student.parent.user.email}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500">No parent info</span>
+                      )}
+                    </TableCell>
+
+                    {/* Assigned Educator */}
+                    <TableCell>
+                      {student.assignments.length > 0 ? (
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-gray-900">
+                            {student.assignments[0].specialEducator.fullName}
+                          </p>
+                          <p className="text-xs text-gray-600">Special Educator</p>
+                          {student.assignments[0].specialEducator.phone && (
+                            <div className="flex items-center text-xs text-gray-600">
+                              <Phone className="h-3 w-3 mr-1" />
+                              <span>{student.assignments[0].specialEducator.phone}</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500">Not assigned</span>
+                      )}
+                    </TableCell>
+
+                    {/* Progress */}
+                    <TableCell>
+                      <div className="space-y-2">
+                        <div className="flex items-center">
+                          <Target className="h-4 w-4 mr-2 text-indigo-600" />
+                          <span className={`text-sm font-medium ${getProgressColor(student.iepProgress)}`}>
+                            {student.iepProgress}% IEP Progress
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <TrendingUp className="h-4 w-4 mr-2 text-green-600" />
+                          <span className="text-sm text-gray-900">
+                            {student.activeGoalsCount} Active Goals
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Latest Activity */}
+                    <TableCell>
+                      <div className="space-y-1">
+                        {student.latestAssessment && (
+                          <div className="flex items-center text-xs">
+                            <FileText className="h-3 w-3 mr-1 text-blue-600" />
+                            <Badge variant="outline" className="text-xs">
+                              {formatStatus(student.latestAssessment.status)}
+                            </Badge>
                           </div>
                         )}
-                        <div className="flex items-center text-xs text-gray-600">
-                          <Mail className="h-3 w-3 mr-1" />
-                          <span>{student.parent.user.email}</span>
-                        </div>
+                        {student.latestReport && (
+                          <div className="flex items-center text-xs">
+                            <FileText className="h-3 w-3 mr-1 text-purple-600" />
+                            <Badge variant="outline" className="text-xs">
+                              {formatStatus(student.latestReport.status)}
+                            </Badge>
+                          </div>
+                        )}
+                        {!student.latestAssessment && !student.latestReport && (
+                          <span className="text-xs text-gray-500">No recent activity</span>
+                        )}
                       </div>
-                    </div>
-                  )}
+                    </TableCell>
 
-                  {/* Assigned Educator */}
-                  {student.assignments.length > 0 && (
-                    <div className="p-3 bg-indigo-50 rounded-lg">
-                      <p className="text-sm font-medium text-indigo-900">
-                        {student.assignments[0].specialEducator.fullName}
-                      </p>
-                      <p className="text-xs text-indigo-700">Special Educator</p>
-                      {student.assignments[0].specialEducator.phone && (
-                        <div className="flex items-center text-xs text-indigo-600 mt-1">
-                          <Phone className="h-3 w-3 mr-1" />
-                          <span>{student.assignments[0].specialEducator.phone}</span>
+                    {/* Enrollment */}
+                    <TableCell>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        <span>{format(new Date(student.registrationDate), 'MMM dd, yyyy')}</span>
+                      </div>
+                      {student.motherTongue && (
+                        <div className="flex items-center text-xs text-gray-600 mt-1">
+                          <span className="w-4 h-4 mr-1 text-center">🗣️</span>
+                          <span>{student.motherTongue}</span>
                         </div>
                       )}
-                    </div>
-                  )}
+                    </TableCell>
 
-                  {/* Progress Summary */}
-                  <div className="grid grid-cols-2 gap-4 pt-3 border-t">
-                    <div className="text-center">
-                      <div className={`text-lg font-bold ${getProgressColor(student.iepProgress)}`}>
-                        {student.iepProgress}%
-                      </div>
-                      <p className="text-xs text-gray-600">IEP Progress</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">
-                        {student.activeGoalsCount}
-                      </div>
-                      <p className="text-xs text-gray-600">Active Goals</p>
-                    </div>
-                  </div>
-
-                  {/* Latest Assessment/Report */}
-                  {(student.latestAssessment || student.latestReport) && (
-                    <div className="space-y-2">
-                      {student.latestAssessment && (
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Latest Assessment:</span>
-                          <Badge variant="outline" className="text-xs">
-                            {formatStatus(student.latestAssessment.status)}
-                          </Badge>
-                        </div>
-                      )}
-                      {student.latestReport && (
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Latest Report:</span>
-                          <Badge variant="outline" className="text-xs">
-                            {formatStatus(student.latestReport.status)}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* View Details Button */}
-                  <Link href={`/school-viewer/students/${student.id}`}>
-                    <Button variant="outline" className="w-full mt-4">
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Details
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
+                    {/* Actions */}
+                    <TableCell className="text-right">
+                      <Link href={`/school-viewer/students/${student.id}`}>
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
 
           {/* Pagination */}

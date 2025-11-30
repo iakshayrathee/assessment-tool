@@ -22,7 +22,8 @@ import {
   Loader2,
   CheckCircle,
   XCircle,
-  Users
+  Users,
+  Eye 
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -195,9 +196,17 @@ export default function StudentDetailPage() {
             <p className="text-gray-600">Grade {studentData.grade} • Age {studentData.age}</p>
           </div>
         </div>
-        <Badge className={getStatusColor(studentData.status)}>
-          {formatStatus(studentData.status)}
-        </Badge>
+        <div className="flex items-center space-x-2">
+          <Link href={`/school-viewer/reports?studentId=${studentData.id}`}>
+            <Button variant="outline" size="sm">
+              <FileText className="h-4 w-4 mr-2" />
+              View All Reports
+            </Button>
+          </Link>
+          <Badge className={getStatusColor(studentData.status)}>
+            {formatStatus(studentData.status)}
+          </Badge>
+        </div>
       </div>
 
       {/* Student Overview */}
@@ -429,15 +438,21 @@ export default function StudentDetailPage() {
                           Created: {format(new Date(report.createdAt), 'MMM dd, yyyy')}
                         </p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right space-y-2">
                         <Badge className={getStatusColor(report.status)}>
                           {formatStatus(report.status)}
                         </Badge>
                         {report.submittedAt && (
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-gray-500">
                             Submitted: {format(new Date(report.submittedAt), 'MMM dd, yyyy')}
                           </p>
                         )}
+                        <Link href={`/school-viewer/reports/${report.id}`}>
+                          <Button variant="outline" size="sm" className="mt-2">
+                            <Eye className="h-4 w-4 mr-1" />
+                            View Report
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   ))}

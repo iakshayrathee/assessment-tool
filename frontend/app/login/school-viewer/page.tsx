@@ -55,11 +55,11 @@ export default function SchoolViewerLoginPage() {
     }
   };
 
-  const fillDemoCredentials = () => {
-    setEmail('viewer@knowled.com');
-    setPassword('viewer123');
-    setErrors({});
-  };
+  // const fillDemoCredentials = () => {
+  //   setEmail('viewer@knowled.com');
+  //   setPassword('viewer123');
+  //   setErrors({});
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 flex items-center justify-center p-4">
@@ -217,8 +217,8 @@ export default function SchoolViewerLoginPage() {
               </button>
             </form>
 
-            {/* Demo Credentials */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            {/* Demo Credentials - Commented out */}
+            {/* <div className="mt-8 pt-6 border-t border-gray-200">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</h3>
               <button
                 onClick={fillDemoCredentials}
@@ -227,7 +227,7 @@ export default function SchoolViewerLoginPage() {
                 <div className="font-medium text-teal-900">School Viewer Account</div>
                 <div className="text-teal-700 text-sm">schoolviewer@knowled.com</div>
               </button>
-            </div>
+            </div> */}
           </div>
         </motion.div>
       </div>

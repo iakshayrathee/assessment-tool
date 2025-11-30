@@ -208,7 +208,7 @@ export class SpecialEducatorService {
     params: PaginationParams
   ): Promise<{ students: StudentWithProgress[]; pagination: any }> {
     try {
-      // console.log('🎯 getAssignedStudents called with:', { educatorId, params });
+      console.log('🎯 getAssignedStudents called with:', { educatorId, params });
       
       const { page, limit, search, status } = params;
       const skip = (page - 1) * limit;
@@ -223,7 +223,7 @@ export class SpecialEducatorService {
         }
       };
       
-      // console.log('🔍 Where clause for student query:', JSON.stringify(whereClause, null, 2));
+      console.log('🔍 Where clause for student query:', JSON.stringify(whereClause, null, 2));
 
       if (search) {
         whereClause.fullName = {
@@ -280,8 +280,8 @@ export class SpecialEducatorService {
         }
       });
 
-      // console.log('🔍 Raw students found:', students.length);
-      // console.log('🔍 Student IDs found:', students.map(s => ({ id: s.id, name: s.fullName })));
+      console.log('🔍 Raw students found:', students.length);
+      console.log('🔍 Student IDs found:', students.map(s => ({ id: s.id, name: s.fullName })));
 
       // Calculate progress summary for each student
       const studentsWithProgress: StudentWithProgress[] = students.map(student => {

@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  FileText, 
-  Upload, 
-  Search, 
+import {
+  FileText,
+  Upload,
+  Search,
   Filter,
   ArrowLeft,
   Download,
@@ -57,7 +57,7 @@ export default function ParentDocuments() {
         page: pagination.page,
         limit: pagination.limit
       };
-      
+
       if (categoryFilter) {
         params.category = categoryFilter;
       }
@@ -225,7 +225,7 @@ export default function ParentDocuments() {
                     <SelectValue placeholder="Filter by category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     <SelectItem value="Medical">Medical</SelectItem>
                     <SelectItem value="Academic">Academic</SelectItem>
                     <SelectItem value="Therapy">Therapy</SelectItem>
@@ -246,8 +246,8 @@ export default function ParentDocuments() {
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No documents found</h3>
                 <p className="text-gray-600 mb-4">
-                  {searchTerm || categoryFilter 
-                    ? 'No documents match your current filters.' 
+                  {searchTerm || categoryFilter
+                    ? 'No documents match your current filters.'
                     : 'You haven\'t uploaded any documents yet.'}
                 </p>
                 <Link href="/parent/documents/upload">
@@ -289,8 +289,8 @@ export default function ParentDocuments() {
                           {new Date(document.createdAt).toLocaleDateString()}
                         </div>
                         <div className="flex space-x-2 mt-4">
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
                             onClick={() => handleDownload(document)}
                             className="flex-1"

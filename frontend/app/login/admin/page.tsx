@@ -55,11 +55,11 @@ export default function AdminLoginPage() {
     }
   };
 
-  const fillDemoCredentials = () => {
-    setEmail('admin@knowled.com');
-    setPassword('admin123');
-    setErrors({});
-  };
+  // const fillDemoCredentials = () => {
+  //   setEmail('admin@knowled.com');
+  //   setPassword('admin123');
+  //   setErrors({});
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-red-100 to-orange-50 flex items-center justify-center p-4">
@@ -217,8 +217,8 @@ export default function AdminLoginPage() {
               </button>
             </form>
 
-            {/* Demo Credentials */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            {/* Demo Credentials - Commented out */}
+            {/* <div className="mt-8 pt-6 border-t border-gray-200">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</h3>
               <button
                 onClick={fillDemoCredentials}
@@ -227,7 +227,7 @@ export default function AdminLoginPage() {
                 <div className="font-medium text-red-900">Admin Account</div>
                 <div className="text-red-700 text-sm">admin@knowled.com</div>
               </button>
-            </div>
+            </div> */}
           </div>
         </motion.div>
       </div>
