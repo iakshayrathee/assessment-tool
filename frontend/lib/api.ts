@@ -286,7 +286,7 @@ class ApiClient {
   }
 
   async completeIntakeForm(id: string): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>(`/assessments/intake/${id}/complete`);
+    const response = await this.client.put<ApiResponse<any>>(`/assessments/intake/${id}/complete`);
     return response.data.data;
   }
 

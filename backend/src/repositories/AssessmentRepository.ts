@@ -104,6 +104,43 @@ export class AssessmentRepository {
     });
   }
 
+  // Center methods
+  async findCenterByName(centerName: string): Promise<any> {
+    return this.prisma.centerProfile.findFirst({
+      where: { centerName }
+    });
+  }
+
+  // Student methods
+  async updateStudent(studentId: string, studentData: any): Promise<any> {
+    // Convert string values to appropriate types for Prisma
+    const processedData = { ...studentData };
+    
+    // Convert numeric fields
+    if (processedData.age !== undefined) {
+      processedData.age = parseInt(processedData.age, 10);
+    }
+    
+    // Convert date fields
+    if (processedData.dateOfBirth !== undefined && typeof processedData.dateOfBirth === 'string') {
+      processedData.dateOfBirth = new Date(processedData.dateOfBirth);
+    }
+    
+    // Convert enum fields
+    if (processedData.gender !== undefined && typeof processedData.gender === 'string') {
+      processedData.gender = processedData.gender.toUpperCase();
+    }
+    
+    if (processedData.status !== undefined && typeof processedData.status === 'string') {
+      processedData.status = processedData.status.toUpperCase();
+    }
+    
+    return this.prisma.student.update({
+      where: { id: studentId },
+      data: processedData
+    });
+  }
+
   // Assessment methods
   async createAssessment(specialEducatorId: string, assessmentData: AssessmentData): Promise<Assessment> {
     return this.prisma.assessment.create({

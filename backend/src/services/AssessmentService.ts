@@ -10,7 +10,7 @@ export class AssessmentService {
   }
 
   // Intake Form Services
-  async createIntakeForm(specialEducatorId: string, intakeData: IntakeFormData): Promise<IntakeForm> {
+  async createIntakeForm(specialEducatorId: string, intakeData: any): Promise<IntakeForm> {
     // Validate required fields
     if (!intakeData.studentId) {
       throw new Error('Student ID is required');
@@ -22,10 +22,30 @@ export class AssessmentService {
       throw new Error('Completed intake form already exists for this student');
     }
 
-    return await this.assessmentRepository.createIntakeForm(specialEducatorId, intakeData);
+    // Extract student data and update student record if provided
+    const studentData = this.extractStudentData(intakeData);
+    if (Object.keys(studentData).length > 0) {
+      // If center name is provided instead of center ID, look up the actual center ID
+      if (studentData.centerId && typeof studentData.centerId === 'string' && !studentData.centerId.startsWith('c')) {
+        const center = await this.assessmentRepository.findCenterByName(studentData.centerId);
+        if (center) {
+          studentData.centerId = center.id;
+        } else {
+          // If center not found, remove centerId to avoid foreign key constraint violation
+          delete studentData.centerId;
+        }
+      }
+      
+      await this.assessmentRepository.updateStudent(intakeData.studentId, studentData);
+    }
+
+    // Extract only the intake form data that matches the IntakeFormData interface
+    const intakeFormData = this.extractIntakeFormData(intakeData);
+
+    return await this.assessmentRepository.createIntakeForm(specialEducatorId, intakeFormData);
   }
 
-  async updateIntakeForm(id: string, intakeData: Partial<IntakeFormData>): Promise<IntakeForm> {
+  async updateIntakeForm(id: string, intakeData: any): Promise<IntakeForm> {
     const existingIntake = await this.assessmentRepository.findIntakeFormById(id);
     if (!existingIntake) {
       throw new Error('Intake form not found');
@@ -35,7 +55,27 @@ export class AssessmentService {
       throw new Error('Cannot update completed intake form');
     }
 
-    return await this.assessmentRepository.updateIntakeForm(id, intakeData);
+    // Extract student data and update student record if provided
+    const studentData = this.extractStudentData(intakeData);
+    if (Object.keys(studentData).length > 0) {
+      // If center name is provided instead of center ID, look up the actual center ID
+      if (studentData.centerId && typeof studentData.centerId === 'string' && !studentData.centerId.startsWith('c')) {
+        const center = await this.assessmentRepository.findCenterByName(studentData.centerId);
+        if (center) {
+          studentData.centerId = center.id;
+        } else {
+          // If center not found, remove centerId to avoid foreign key constraint violation
+          delete studentData.centerId;
+        }
+      }
+      
+      await this.assessmentRepository.updateStudent(existingIntake.studentId, studentData);
+    }
+
+    // Extract only the intake form data that matches the IntakeFormData interface
+    const intakeFormData = this.extractIntakeFormData(intakeData);
+
+    return await this.assessmentRepository.updateIntakeForm(id, intakeFormData);
   }
 
   async completeIntakeForm(id: string): Promise<IntakeForm> {
@@ -61,6 +101,51 @@ export class AssessmentService {
       throw new Error('Intake form not found');
     }
     return intakeForm;
+  }
+
+  // Helper methods for data extraction
+  private extractStudentData(data: any): any {
+    const studentFields = [
+      'name', 'age', 'gender', 'schoolCenter', 'class', 'motherTongue', 'syllabus',
+      'fullName', 'dateOfBirth', 'grade'
+    ];
+    
+    const studentData: any = {};
+    for (const key of studentFields) {
+      if (data[key] !== undefined) {
+        // Map frontend field names to backend field names
+        if (key === 'name') studentData.fullName = data[key];
+        else if (key === 'class') studentData.grade = data[key];
+        else if (key === 'schoolCenter') studentData.centerId = data[key]; // This might need adjustment
+        else studentData[key] = data[key];
+      }
+    }
+    
+    return studentData;
+  }
+
+  private extractIntakeFormData(data: any): IntakeFormData {
+    // Extract only fields that belong to IntakeFormData interface
+    const intakeFormData: any = { studentId: data.studentId };
+    
+    const intakeFormFields = [
+      'address', 'familyIncome', 'familyType', 'digitalResourcesAtHome', 'dailyDigitalUse',
+      'enjoysSchool', 'studyAssistant', 'externalAcademicSupport', 'enjoysReading', 'dailyParentChildTime',
+      'childType', 'fatherName', 'motherName', 'guardianName', 'pregnancyNormal', 'medicationsDuringPregnancy',
+      'miscarriagesAbortions', 'fullTermOrPremature', 'deliveryType', 'breastFed', 'infantJaundice',
+      'incubation', 'immunizationDone', 'consanguineousMarriage', 'birthCry', 'delayInNeckStanding',
+      'delayInNeckStandingDetails', 'ageOfWalking', 'ageOfTwoWordSpeech', 'healthConcerns', 'epilepticHistory',
+      'onMedication', 'medicationDetails', 'asthmaWheezing', 'wearsGlasses', 'visionTestDone', 'hearingTestDone',
+      'attendedPreschool', 'repeatedGrades', 'whichGradeRepeated', 'dominantWritingHand', 'strugglesInLanguages'
+    ];
+    
+    for (const key of intakeFormFields) {
+      if (data[key] !== undefined) {
+        intakeFormData[key] = data[key];
+      }
+    }
+    
+    return intakeFormData as IntakeFormData;
   }
 
   // Assessment Services

@@ -42,5 +42,12 @@ router.get('/skill/math/student/:studentId', controller.getMathAssessmentsByStud
 router.put('/skill/math/:id', controller.updateMathAssessment);
 router.put('/skill/math/:id/complete', controller.completeMathAssessment);
 
+// Intake Forms
+router.post('/intake', controller.createIntakeForm);
+router.get('/intake/:id', controller.getIntakeFormById);
+router.get('/intake/student/:studentId', controller.getIntakeFormByStudent);
+router.put('/intake/:id', controller.updateIntakeForm);
+router.put('/intake/:id/complete', controller.completeIntakeForm);
+
 export default router;
 

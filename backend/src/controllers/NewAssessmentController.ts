@@ -1,21 +1,24 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { NewAssessmentService } from '../services/NewAssessmentService';
+import { AssessmentService } from '../services/AssessmentService';
 import { AuthenticatedRequest } from '../utils/auth';
 import { ResponseHelper } from '../utils/helpers';
 
 export class NewAssessmentController {
   private assessmentService: NewAssessmentService;
+  private intakeFormService: AssessmentService;
 
   constructor(prisma: PrismaClient) {
     this.assessmentService = new NewAssessmentService(prisma);
+    this.intakeFormService = new AssessmentService(prisma);
   }
 
   // Formal Assessment Controllers
   createFormalAssessment = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
     try {
       const specialEducatorId = req.user?.profileId || (req as any).profileId;
-      
+
       if (!specialEducatorId) {
         return ResponseHelper.error(res, 'Special educator profile ID is required', 400);
       }
@@ -52,7 +55,7 @@ export class NewAssessmentController {
       const specialEducatorId = req.user?.profileId || (req as any).profileId;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      
+
       const result = await this.assessmentService.getFormalAssessmentsByEducator(specialEducatorId, page, limit);
       return ResponseHelper.success(res, result);
     } catch (error: any) {
@@ -94,7 +97,7 @@ export class NewAssessmentController {
   createReadingAssessment = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
     try {
       const specialEducatorId = req.user?.profileId || (req as any).profileId;
-      
+
       if (!specialEducatorId) {
         return ResponseHelper.error(res, 'Special educator profile ID is required', 400);
       }
@@ -150,7 +153,7 @@ export class NewAssessmentController {
   createWritingAssessment = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
     try {
       const specialEducatorId = req.user?.profileId || (req as any).profileId;
-      
+
       if (!specialEducatorId) {
         return ResponseHelper.error(res, 'Special educator profile ID is required', 400);
       }
@@ -206,7 +209,7 @@ export class NewAssessmentController {
   createMathAssessment = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
     try {
       const specialEducatorId = req.user?.profileId || (req as any).profileId;
-      
+
       if (!specialEducatorId) {
         return ResponseHelper.error(res, 'Special educator profile ID is required', 400);
       }
@@ -255,6 +258,62 @@ export class NewAssessmentController {
       return ResponseHelper.success(res, assessment, 'Math assessment completed successfully');
     } catch (error: any) {
       return ResponseHelper.error(res, error.message, 400);
+    }
+  };
+
+  // Intake Form Controllers
+  createIntakeForm = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+    try {
+      const specialEducatorId = req.user?.profileId || (req as any).profileId;
+
+      if (!specialEducatorId) {
+        return ResponseHelper.error(res, 'Special educator profile ID is required', 400);
+      }
+
+      const intakeForm = await this.intakeFormService.createIntakeForm(specialEducatorId, req.body);
+      return ResponseHelper.success(res, intakeForm, 'Intake form created successfully');
+    } catch (error: any) {
+      return ResponseHelper.error(res, error.message, 400);
+    }
+  };
+
+  updateIntakeForm = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+    try {
+      const { id } = req.params;
+      const intakeForm = await this.intakeFormService.updateIntakeForm(id, req.body);
+      return ResponseHelper.success(res, intakeForm, 'Intake form updated successfully');
+    } catch (error: any) {
+      return ResponseHelper.error(res, error.message, 400);
+    }
+  };
+
+  completeIntakeForm = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+    try {
+      const { id } = req.params;
+      const intakeForm = await this.intakeFormService.completeIntakeForm(id);
+      return ResponseHelper.success(res, intakeForm, 'Intake form completed successfully');
+    } catch (error: any) {
+      return ResponseHelper.error(res, error.message, 400);
+    }
+  };
+
+  getIntakeFormByStudent = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+    try {
+      const { studentId } = req.params;
+      const intakeForm = await this.intakeFormService.getIntakeFormByStudent(studentId);
+      return ResponseHelper.success(res, intakeForm);
+    } catch (error: any) {
+      return ResponseHelper.error(res, error.message, 404);
+    }
+  };
+
+  getIntakeFormById = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+    try {
+      const { id } = req.params;
+      const intakeForm = await this.intakeFormService.getIntakeFormById(id);
+      return ResponseHelper.success(res, intakeForm);
+    } catch (error: any) {
+      return ResponseHelper.error(res, error.message, 404);
     }
   };
 }
