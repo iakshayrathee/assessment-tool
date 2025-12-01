@@ -198,11 +198,11 @@ model School {
   phone         String?
   email         String?
   principalName String?
-  centerId      String
+  centerId      String?
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
   viewers       SchoolViewerProfile[]
-  center        CenterProfile         @relation(fields: [centerId], references: [id])
+  center        CenterProfile?        @relation(fields: [centerId], references: [id])
   students      Student[]
   assignments   SchoolAssignment[]
 

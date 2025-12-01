@@ -2,7 +2,7 @@ import { PrismaClient, UserRole, AssessmentStatus, StudentStatus } from '@prisma
 import { AuthUtils } from '../utils/auth';
 
 export class AdminService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClient) { }
 
   // Dashboard Overview
   async getDashboardOverview() {
@@ -91,7 +91,7 @@ export class AdminService {
 
   async createUser(userData: any) {
     const { email, password, role, profileData } = userData;
-    
+
     // Check if user exists
     const existingUser = await this.prisma.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -156,7 +156,7 @@ export class AdminService {
   }
 
   async deleteUser(userId: string) {
-    const user = await this.prisma.user.findUnique({ 
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
         specialEducatorProfile: true,
@@ -169,37 +169,37 @@ export class AdminService {
       // If user is a special educator, handle all related data
       if (user.specialEducatorProfile) {
         const specialEducatorId = user.specialEducatorProfile.id;
-        
+
         // Delete all assessments created by this educator
         await tx.assessment.deleteMany({
           where: { specialEducatorId }
         });
-        
+
         // Delete all intake forms created by this educator
         await tx.intakeForm.deleteMany({
           where: { specialEducatorId }
         });
-        
+
         // Delete all IEP goals created by this educator
         await tx.iEPGoal.deleteMany({
           where: { specialEducatorId }
         });
-        
+
         // Delete all session notes created by this educator
         await tx.sessionNote.deleteMany({
           where: { specialEducatorId }
         });
-        
+
         // Delete all reports created by this educator
         await tx.report.deleteMany({
           where: { specialEducatorId }
         });
-        
+
         // Delete student assignments
         await tx.studentAssignment.deleteMany({
           where: { specialEducatorId }
         });
-        
+
         // Delete center assignments
         await tx.centerAssignment.deleteMany({
           where: { specialEducatorId }
@@ -209,12 +209,12 @@ export class AdminService {
       // If user is a super special educator, remove their center assignments and reports
       if (user.superSpecialEducatorProfile) {
         const superSpecialEducatorId = user.superSpecialEducatorProfile.id;
-        
+
         // Delete center assignments
         await tx.centerAssignment.deleteMany({
           where: { superSpecialEducatorId }
         });
-        
+
         // Delete reports reviewed by this super special educator
         await tx.report.deleteMany({
           where: { superSpecialEducatorId }
@@ -279,7 +279,7 @@ export class AdminService {
 
   async createCenter(centerData: any) {
     const { email, password, centerName, address, phone, contactPerson, operatingHours, description } = centerData;
-    
+
     const hashedPassword = await AuthUtils.hashPassword(password);
 
     return await this.prisma.$transaction(async (tx) => {
@@ -316,7 +316,7 @@ export class AdminService {
       where: { id: centerId },
       include: { user: true }
     });
-    
+
     if (!center) throw new Error('Center not found');
 
     await this.prisma.user.delete({ where: { id: center.userId } });
@@ -325,23 +325,23 @@ export class AdminService {
   // Helper methods for role profiles
   private convertDateFields(data: any): any {
     const converted = { ...data };
-    
+
     // Convert date string fields to Date objects
     const dateFields = ['dateOfBirth', 'rciValidityDate', 'startDate', 'targetDate', 'sessionDate', 'registrationDate'];
-    
+
     dateFields.forEach(field => {
       if (converted[field] && typeof converted[field] === 'string') {
         // Convert date string to Date object
         converted[field] = new Date(converted[field]);
       }
     });
-    
+
     return converted;
   }
 
   private async createRoleProfile(tx: any, userId: string, role: UserRole, profileData: any) {
     const convertedData = this.convertDateFields(profileData);
-    
+
     switch (role) {
       case UserRole.ADMIN:
         await tx.adminProfile.create({
@@ -359,8 +359,19 @@ export class AdminService {
         });
         break;
       case UserRole.CENTER:
+        // For center profiles, handle fullName field mapping
+        const centerProfileData = { ...convertedData };
+
+        // If fullName is provided but centerName is not, use fullName as centerName
+        if (centerProfileData.fullName && !centerProfileData.centerName) {
+          centerProfileData.centerName = centerProfileData.fullName;
+        }
+
+        // Always remove fullName as it's not a valid field for CenterProfile
+        delete centerProfileData.fullName;
+
         await tx.centerProfile.create({
-          data: { userId, ...convertedData }
+          data: { userId, ...centerProfileData }
         });
         break;
       case UserRole.PARENT:
@@ -376,23 +387,27 @@ export class AdminService {
           let school = await tx.school.findFirst({
             where: { name: convertedData.schoolName }
           });
-          
+
           // If school doesn't exist, create a new one
           if (!school) {
-            // Get a default center ID (you might want to handle this differently)
+            // Get a default center ID if available, but make center optional
             const defaultCenter = await tx.centerProfile.findFirst();
-            if (!defaultCenter) {
-              throw new Error('No center found to associate with new school');
+
+            // Create school with optional center association
+            const schoolData: any = {
+              name: convertedData.schoolName
+            };
+
+            // Only include centerId if a default center exists
+            if (defaultCenter) {
+              schoolData.centerId = defaultCenter.id;
             }
-            
+
             school = await tx.school.create({
-              data: {
-                name: convertedData.schoolName,
-                centerId: defaultCenter.id
-              }
+              data: schoolData
             });
           }
-          
+
           schoolViewerData.schoolId = school.id;
           delete schoolViewerData.schoolName;
         }
@@ -405,7 +420,7 @@ export class AdminService {
 
   private async updateRoleProfile(tx: any, userId: string, role: UserRole, profileData: any) {
     const convertedData = this.convertDateFields(profileData);
-    
+
     switch (role) {
       case UserRole.ADMIN:
         await tx.adminProfile.update({
@@ -445,23 +460,27 @@ export class AdminService {
           let school = await tx.school.findFirst({
             where: { name: convertedData.schoolName }
           });
-          
+
           // If school doesn't exist, create a new one
           if (!school) {
-            // Get a default center ID (you might want to handle this differently)
+            // Get a default center ID if available, but make center optional
             const defaultCenter = await tx.centerProfile.findFirst();
-            if (!defaultCenter) {
-              throw new Error('No center found to associate with new school');
+
+            // Create school with optional center association
+            const schoolData: any = {
+              name: convertedData.schoolName
+            };
+
+            // Only include centerId if a default center exists
+            if (defaultCenter) {
+              schoolData.centerId = defaultCenter.id;
             }
-            
+
             school = await tx.school.create({
-              data: {
-                name: convertedData.schoolName,
-                centerId: defaultCenter.id
-              }
+              data: schoolData
             });
           }
-          
+
           schoolViewerData.schoolId = school.id;
           delete schoolViewerData.schoolName;
         }
@@ -530,16 +549,23 @@ export class AdminService {
 
   async createSchool(schoolData: any) {
     const { name, address, phone, email, principalName, centerId } = schoolData;
-    
+
+    // Prepare data object, only include centerId if provided
+    const data: any = {
+      name,
+      address,
+      phone,
+      email,
+      principalName
+    };
+
+    // Only include centerId if it's provided and not empty
+    if (centerId && centerId.trim() !== '') {
+      data.centerId = centerId;
+    }
+
     return await this.prisma.school.create({
-      data: {
-        name,
-        address,
-        phone,
-        email,
-        principalName,
-        centerId
-      },
+      data,
       include: { center: true }
     });
   }
@@ -557,9 +583,9 @@ export class AdminService {
       where: { id: schoolId },
       include: { students: true }
     });
-    
+
     if (!school) throw new Error('School not found');
-    
+
     if (school.students.length > 0) {
       throw new Error('Cannot delete school with enrolled students');
     }
@@ -756,10 +782,10 @@ export class AdminService {
 
   // Audit Logs
   async getAuditLogs(
-    page: number, 
-    limit: number, 
-    action?: string, 
-    userId?: string, 
+    page: number,
+    limit: number,
+    action?: string,
+    userId?: string,
     resource?: string,
     startDate?: string,
     endDate?: string
@@ -807,7 +833,7 @@ export class AdminService {
   // Role Assignments
   async assignEducatorToCenter(assignmentData: any) {
     const { centerId, educatorId, educatorType } = assignmentData;
-    
+
     // First, get the educator's profile ID based on their user ID
     let profileId: string;
     if (educatorType === 'SPECIAL_EDUCATOR') {
@@ -827,7 +853,7 @@ export class AdminService {
       }
       profileId = profile.id;
     }
-    
+
     // Check if assignment already exists
     const existingAssignment = await this.prisma.centerAssignment.findFirst({
       where: {
@@ -868,7 +894,7 @@ export class AdminService {
 
   async assignStudentToEducator(assignmentData: any) {
     const { studentId, specialEducatorId } = assignmentData;
-    
+
     // Check if assignment already exists
     const existingAssignment = await this.prisma.studentAssignment.findUnique({
       where: {
@@ -960,7 +986,7 @@ export class AdminService {
   async exportData(type: string, format: string, filters?: any) {
     // This would generate export files
     const exportId = `export_${Date.now()}`;
-    
+
     return {
       exportId,
       type,

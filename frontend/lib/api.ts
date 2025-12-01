@@ -61,12 +61,29 @@ class ApiClient {
           // Don't clear auth on login endpoint failures
           if (error.config?.url !== '/auth/login') {
             if (typeof window !== 'undefined') {
+              // Get current user role before clearing auth
+              const currentUser = useAuthStore.getState().user;
+              const userRole = currentUser?.role;
+              
               // Clear auth state from Zustand store
               useAuthStore.getState().clearAuth();
 
-              // Redirect to home page if not already there
+              // Redirect to role-specific login page if not already there
               if (!window.location.pathname.includes('/login') && window.location.pathname !== '/') {
-                window.location.href = '/';
+                let loginRedirect = '/login';
+                if (userRole) {
+                  // Map user roles to their specific login pages
+                  const roleLoginMap: Record<string, string> = {
+                    'ADMIN': '/login/admin',
+                    'SUPER_SPECIAL_EDUCATOR': '/login/super-special-educator',
+                    'SPECIAL_EDUCATOR': '/login/special-educator',
+                    'CENTER': '/login/center',
+                    'PARENT': '/login/parent',
+                    'SCHOOL_VIEWER': '/login/school-viewer'
+                  };
+                  loginRedirect = roleLoginMap[userRole] || '/login';
+                }
+                window.location.href = loginRedirect;
               }
             }
           }

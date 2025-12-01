@@ -41,15 +41,23 @@ export function useAuth() {
   const logoutMutation = useMutation({
     mutationFn: () => apiClient.logout(),
     onSuccess: () => {
+      // Capture user role before clearing data
+      const userRole = user?.role;
       queryClient.clear();
       toast.success('Logged out successfully');
-      router.push('/');
+      // Redirect to role-specific login page
+      const loginRedirect = userRole ? getRoleBasedLoginRedirect(userRole) : '/login';
+      router.push(loginRedirect);
     },
     onError: () => {
+      // Capture user role before clearing data
+      const userRole = user?.role;
       // Clear local data even if API call fails
       queryClient.clear();
       // Auth store will be cleared by the API client
-      router.push('/');
+      // Redirect to role-specific login page
+      const loginRedirect = userRole ? getRoleBasedLoginRedirect(userRole) : '/login';
+      router.push(loginRedirect);
     },
   });
 
@@ -127,6 +135,25 @@ export function useAuth() {
     }
   };
 
+  const getRoleBasedLoginRedirect = (role: string): string => {
+    switch (role) {
+      case 'ADMIN':
+        return '/login/admin';
+      case 'SUPER_SPECIAL_EDUCATOR':
+        return '/login/super-special-educator';
+      case 'SPECIAL_EDUCATOR':
+        return '/login/special-educator';
+      case 'CENTER':
+        return '/login/center';
+      case 'PARENT':
+        return '/login/parent';
+      case 'SCHOOL_VIEWER':
+        return '/login/school-viewer';
+      default:
+        return '/login';
+    }
+  };
+
   // Use the auth store for authentication state
   const authState = useAuthStore();
   const isAuthenticated = authState.isAuthenticated && !!profileQuery.data && !profileQuery.isError;
@@ -152,5 +179,6 @@ export function useAuth() {
     
     // Utilities
     getRoleBasedRedirect,
+    getRoleBasedLoginRedirect,
   };
 }
