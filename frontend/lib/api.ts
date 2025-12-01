@@ -568,6 +568,31 @@ class ApiClient {
     return response.data;
   }
 
+  async getUserById(userId: string): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/admin/users/${userId}`);
+    return response.data.data;
+  }
+
+  async updateUser(userId: string, userData: any): Promise<any> {
+    const response = await this.client.put<ApiResponse<any>>(`/admin/users/${userId}`, userData);
+    return response.data.data;
+  }
+
+  async deleteUser(userId: string): Promise<any> {
+    const response = await this.client.delete<ApiResponse<any>>(`/admin/users/${userId}`);
+    return response.data;
+  }
+
+  async activateUser(userId: string): Promise<any> {
+    const response = await this.client.patch<ApiResponse<any>>(`/admin/users/${userId}/activate`);
+    return response.data;
+  }
+
+  async deactivateUser(userId: string): Promise<any> {
+    const response = await this.client.patch<ApiResponse<any>>(`/admin/users/${userId}/deactivate`);
+    return response.data;
+  }
+
   async getSystemConfig(): Promise<any> {
     const response = await this.client.get<ApiResponse<any>>('/admin/config');
     return response.data.data;

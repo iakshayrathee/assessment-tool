@@ -110,13 +110,16 @@ export default function CenterDetailPage() {
   const loadCenterDetail = async () => {
     try {
       setLoading(true);
+      console.log('Loading center details for ID:', id);
       const response = await apiClient.getCenter(id as string);
+      console.log('Center details response:', response);
       setCenterDetail(response);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load center detail:', error);
+      console.error('Error response:', error.response?.data);
       toast({
         title: "Error",
-        description: "Failed to load center details. Please try again.",
+        description: error.response?.data?.error || "Failed to load center details. Please try again.",
         variant: "destructive",
       });
     } finally {

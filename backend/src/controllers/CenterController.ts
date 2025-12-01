@@ -172,55 +172,59 @@ export class CenterController {
     try {
       const { id } = req.params;
 
-      const center = await this.prisma.user.findFirst({
+      const center = await this.prisma.centerProfile.findUnique({
         where: {
-          id,
-          role: 'CENTER'
+          id
         },
         include: {
-          centerProfile: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              isActive: true,
+              createdAt: true,
+              role: true
+            }
+          },
+          schools: {
             include: {
-              schools: {
-                include: {
-                  students: {
-                    select: {
-                      id: true,
-                      fullName: true,
-                      status: true
-                    }
-                  }
-                }
-              },
               students: {
-                include: {
-                  assignments: {
-                    include: {
-                      specialEducator: {
-                        select: {
-                          id: true,
-                          fullName: true
-                        }
-                      }
-                    }
-                  }
+                select: {
+                  id: true,
+                  fullName: true,
+                  status: true
                 }
-              },
+              }
+            }
+          },
+          students: {
+            include: {
               assignments: {
                 include: {
                   specialEducator: {
                     select: {
                       id: true,
-                      fullName: true,
-                      yearsOfExperience: true
-                    }
-                  },
-                  superSpecialEducator: {
-                    select: {
-                      id: true,
-                      fullName: true,
-                      yearsOfExperience: true
+                      fullName: true
                     }
                   }
+                }
+              }
+            }
+          },
+          assignments: {
+            include: {
+              specialEducator: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  yearsOfExperience: true
+                }
+              },
+              superSpecialEducator: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  yearsOfExperience: true
                 }
               }
             }
@@ -235,12 +239,30 @@ export class CenterController {
         });
       }
 
-      // Remove password from response
-      const { password, ...centerWithoutPassword } = center;
+      // Format the response to match frontend expectations
+      const responseData = {
+        id: center.user.id,
+        email: center.user.email,
+        isActive: center.user.isActive,
+        createdAt: center.user.createdAt,
+        centerProfile: {
+          id: center.id,
+          centerName: center.centerName,
+          address: center.address,
+          phone: center.phone,
+          email: center.email,
+          contactPerson: center.contactPerson,
+          operatingHours: center.operatingHours,
+          description: center.description,
+          schools: center.schools,
+          students: center.students,
+          assignments: center.assignments
+        }
+      };
 
       res.json({
         success: true,
-        data: centerWithoutPassword
+        data: responseData
       });
     } catch (error: any) {
       console.error('Get center by ID error:', error);

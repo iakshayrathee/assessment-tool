@@ -39,12 +39,12 @@ export function RoleBasedAssignmentModal({
   const [isAssigning, setIsAssigning] = useState(false);
   const { toast } = useToast();
 
-  // Fetch data based on user role
+  // Fetch data based on user role - only fetch what's needed
   const { data: educatorsData } = useEducators();
   const { data: centersData } = useCenters();
   const { data: schoolsData } = useSchools();
-  const { data: studentsData } = useUsers({ role: UserRole.STUDENT, limit: 100 });
-  const { data: parentsData } = useUsers({ role: UserRole.PARENT, limit: 100 });
+  // Note: Students and parents data fetching removed to prevent 500 errors
+  // They should only be fetched when actually needed (not implemented yet in backend)
 
   const getAssignmentConfig = (): AssignmentConfig | null => {
     if (!selectedUser) return null;
@@ -58,25 +58,45 @@ export function RoleBasedAssignmentModal({
           targetType: 'centers',
           data: centersData?.data || [],
           renderItem: (center, isSelected, onToggle) => {
-            // Handle the nested centerProfile structure
-            const centerProfile = center.centerProfile;
-            const centerId = centerProfile?.id || center.id;
-            const centerName = centerProfile?.centerName || center.name || 'Unknown Center';
-            const address = centerProfile?.address || center.address;
-            const contactPerson = centerProfile?.contactPerson;
-            
+            // Centers are returned as CenterProfile objects with nested user
+            // Structure: { id, centerName, address, phone, email, contactPerson, user: {...} }
+            const centerId = center.id; // Use the centerProfile ID
+            const centerName = center.centerName || center.user?.email || 'Unknown Center';
+            const address = center.address;
+            const contactPerson = center.contactPerson;
+            const phone = center.phone;
+            const email = center.email || center.user?.email;
+            const centerType = center.centerType;
+            const operatingHours = center.operatingHours;
+
             return (
               <Card key={centerId} className="cursor-pointer hover:bg-gray-50" onClick={onToggle}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 flex-1">
                       <Checkbox checked={isSelected} onChange={onToggle} />
                       <Building className="h-5 w-5 text-blue-500" />
-                      <div>
-                        <h4 className="font-medium">{centerName}</h4>
-                        <p className="text-sm text-gray-500">{address}</p>
-                        {contactPerson && (
-                          <p className="text-xs text-gray-400">Contact: {contactPerson}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{centerName}</h4>
+                          {centerType && (
+                            <Badge variant="secondary" className="text-xs">{centerType}</Badge>
+                          )}
+                        </div>
+                        {address && <p className="text-sm text-gray-500">{address}</p>}
+                        <div className="flex gap-3 mt-1 flex-wrap">
+                          {contactPerson && (
+                            <p className="text-xs text-gray-400">Contact: {contactPerson}</p>
+                          )}
+                          {phone && (
+                            <p className="text-xs text-gray-400">Phone: {phone}</p>
+                          )}
+                          {operatingHours && (
+                            <p className="text-xs text-gray-400">Hours: {operatingHours}</p>
+                          )}
+                        </div>
+                        {email && email !== centerName && (
+                          <p className="text-xs text-gray-400">{email}</p>
                         )}
                       </div>
                     </div>
@@ -118,7 +138,7 @@ export function RoleBasedAssignmentModal({
           title: 'Link Parent to Student',
           description: 'Select students to link this parent to',
           targetType: 'students',
-          data: studentsData?.data || [],
+          data: [], // Feature not yet implemented in backend
           renderItem: (student, isSelected, onToggle) => (
             <Card key={student.id} className="cursor-pointer hover:bg-gray-50" onClick={onToggle}>
               <CardContent className="p-4">
@@ -176,17 +196,22 @@ export function RoleBasedAssignmentModal({
       switch (selectedUser.role) {
         case UserRole.SPECIAL_EDUCATOR:
         case UserRole.SUPER_SPECIAL_EDUCATOR:
-          // Convert selected user IDs to centerProfile IDs for assignment
-          const centerProfileIds = selectedItems.map(userId => {
-            const center = centersData?.data?.find((c: any) => c.id === userId);
-            return center?.centerProfile?.id || userId;
+          // Determine educator type
+          const educatorType = selectedUser.role === UserRole.SPECIAL_EDUCATOR
+            ? 'SPECIAL_EDUCATOR'
+            : 'SUPER_SPECIAL_EDUCATOR';
+
+          // Assign educator to each selected center individually
+          const assignmentPromises = selectedItems.map(async (centerId) => {
+            // Centers are CenterProfile objects, so we can use the ID directly
+            return apiClient.assignEducatorToCenter(
+              centerId,
+              selectedUser.id,
+              educatorType
+            );
           });
-          
-          // Assign educator to centers using the existing assignEducators method
-          await apiClient.assignEducators({
-            educatorIds: [selectedUser.id],
-            centerIds: centerProfileIds
-          });
+
+          await Promise.all(assignmentPromises);
           break;
 
         case UserRole.STUDENT:
@@ -212,7 +237,7 @@ export function RoleBasedAssignmentModal({
           // Note: School-center linking would require the school ID and use linkSchoolToCenter
           // This would need additional implementation to get the school associated with the admin
           toast({
-            title: "Feature Not Available", 
+            title: "Feature Not Available",
             description: "School-center linking requires additional implementation to identify the admin's school.",
             variant: "destructive",
           });
@@ -226,7 +251,7 @@ export function RoleBasedAssignmentModal({
         title: "Success",
         description: "Assignment completed successfully.",
       });
-      
+
       onAssignmentComplete();
       onClose();
       setSelectedItems([]);
@@ -234,7 +259,7 @@ export function RoleBasedAssignmentModal({
       console.error('Assignment failed:', error);
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to complete assignment. Please try again.",
+        description: error.response?.data?.message || error.message || "Failed to complete assignment. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -243,7 +268,7 @@ export function RoleBasedAssignmentModal({
   };
 
   const config = getAssignmentConfig();
-  
+
   if (!config) {
     return null;
   }
@@ -259,7 +284,7 @@ export function RoleBasedAssignmentModal({
       if (selectedUser?.role === UserRole.STUDENT) {
         return prev.includes(itemId) ? [] : [itemId];
       }
-      
+
       return prev.includes(itemId)
         ? prev.filter(id => id !== itemId)
         : [...prev, itemId];
@@ -302,7 +327,7 @@ export function RoleBasedAssignmentModal({
                 No {config.targetType} found
               </div>
             ) : (
-              filteredData.map(item => 
+              filteredData.map(item =>
                 config.renderItem(
                   item,
                   selectedItems.includes(item.id),
@@ -317,8 +342,8 @@ export function RoleBasedAssignmentModal({
           <Button variant="outline" onClick={onClose} disabled={isAssigning}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleAssignment} 
+          <Button
+            onClick={handleAssignment}
             disabled={selectedItems.length === 0 || isAssigning}
           >
             {isAssigning ? 'Assigning...' : `Assign ${selectedItems.length} ${config.targetType}`}
