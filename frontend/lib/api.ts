@@ -692,6 +692,14 @@ class ApiClient {
     return response.data.data;
   }
 
+  async assignEducator(centerId: string, educatorId: string, educatorType: string): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/centers/${centerId}/assign-educator`, {
+      educatorId,
+      educatorType
+    });
+    return response.data.data;
+  }
+
   async assignEducatorToCenter(centerId: string, educatorId: string, educatorType: string): Promise<any> {
     const response = await this.client.post<ApiResponse<any>>('/admin/assignments/educator-to-center', {
       centerId,

@@ -176,22 +176,6 @@ export default function CenterSchools() {
       newErrors.name = 'School name is required';
     }
 
-    if (!formData.address.trim()) {
-      newErrors.address = 'Address is required';
-    }
-
-    if (!formData.principalName.trim()) {
-      newErrors.principalName = 'Principal name is required';
-    }
-
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (formData.phone && !/^[\+]?[0-9\-\s\(\)]{10,}$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -208,13 +192,20 @@ export default function CenterSchools() {
         throw new Error('Center ID not found');
       }
 
-      await apiClient.linkSchoolToCenter(centerId, {
+      // First search for existing schools with the provided name
+      const existingSchools = await apiClient.searchSchools({
         name: formData.name.trim(),
-        address: formData.address.trim(),
-        phone: formData.phone.trim() || undefined,
-        email: formData.email.trim() || undefined,
-        principalName: formData.principalName.trim()
+        exactMatch: true
       });
+
+      if (existingSchools.length === 0) {
+        setErrors({ name: 'No school found with this name. Please check the school name or contact support.' });
+        return;
+      }
+
+      // Link the first matching school to the center
+      const schoolToLink = existingSchools[0];
+      await apiClient.linkSchoolToCenter(centerId, schoolToLink.id);
 
       toast({
         title: "Success",
@@ -237,8 +228,10 @@ export default function CenterSchools() {
     } catch (error: any) {
       console.error('Failed to link school:', error);
       // Handle specific error cases
-      if (error.response?.data?.error?.includes('already exists')) {
-        setErrors({ name: 'A school with this name already exists in your center' });
+      if (error.response?.data?.error?.includes('already linked')) {
+        setErrors({ name: 'This school is already linked to your center' });
+      } else if (error.response?.data?.error?.includes('not found')) {
+        setErrors({ name: 'School not found. Please check the school name.' });
       } else {
         setErrors({ name: 'Failed to link school. Please try again.' });
       }
@@ -535,10 +528,10 @@ export default function CenterSchools() {
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
               <School className="h-5 w-5 text-blue-600" />
-              <span>Link New School</span>
+              <span>Link Existing School</span>
             </DialogTitle>
             <DialogDescription>
-              Enter the details of the school you want to link to your center
+              Enter the name of an existing school to link it to your center
             </DialogDescription>
           </DialogHeader>
 
@@ -551,7 +544,7 @@ export default function CenterSchools() {
               <Input
                 id="modal-name"
                 type="text"
-                placeholder="Enter school name"
+                placeholder="Enter exact school name"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 className={errors.name ? 'border-red-500' : ''}
@@ -559,87 +552,28 @@ export default function CenterSchools() {
               {errors.name && (
                 <p className="text-sm text-red-600">{errors.name}</p>
               )}
+              <p className="text-xs text-gray-600">
+                Enter the exact name of an existing school. The system will search for and link the school to your center.
+              </p>
             </div>
 
-            {/* Address */}
-            <div className="space-y-2">
-              <Label htmlFor="modal-address" className="text-sm font-medium flex items-center">
-                <MapPin className="h-4 w-4 mr-1" />
-                Address *
-              </Label>
-              <Textarea
-                id="modal-address"
-                placeholder="Enter complete school address"
-                value={formData.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                className={errors.address ? 'border-red-500' : ''}
-                rows={3}
-              />
-              {errors.address && (
-                <p className="text-sm text-red-600">{errors.address}</p>
-              )}
-            </div>
-
-            {/* Principal Name */}
-            <div className="space-y-2">
-              <Label htmlFor="modal-principal" className="text-sm font-medium flex items-center">
-                <User className="h-4 w-4 mr-1" />
-                Principal Name *
-              </Label>
-              <Input
-                id="modal-principal"
-                type="text"
-                placeholder="Enter principal's full name"
-                value={formData.principalName}
-                onChange={(e) => handleInputChange('principalName', e.target.value)}
-                className={errors.principalName ? 'border-red-500' : ''}
-              />
-              {errors.principalName && (
-                <p className="text-sm text-red-600">{errors.principalName}</p>
-              )}
-            </div>
-
-            {/* Contact Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="modal-phone" className="text-sm font-medium flex items-center">
-                  <Phone className="h-4 w-4 mr-1" />
-                  Phone Number
-                </Label>
-                <Input
-                  id="modal-phone"
-                  type="tel"
-                  placeholder="+91-11-12345678"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className={errors.phone ? 'border-red-500' : ''}
-                />
-                {errors.phone && (
-                  <p className="text-sm text-red-600">{errors.phone}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="modal-email" className="text-sm font-medium flex items-center">
-                  <Mail className="h-4 w-4 mr-1" />
-                  Email Address
-                </Label>
-                <Input
-                  id="modal-email"
-                  type="email"
-                  placeholder="school@example.com"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className={errors.email ? 'border-red-500' : ''}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email}</p>
-                )}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <School className="h-5 w-5 text-blue-600 mt-0.5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-blue-900 mb-1">How linking works</h4>
+                  <p className="text-xs text-blue-700">
+                    Centers can only link existing schools. If you need to add a new school to the system, 
+                    please contact your administrator or support team.
+                  </p>
+                </div>
               </div>
             </div>
 
             <div className="text-sm text-gray-600">
-              * Required fields
+              * Required field
             </div>
           </div>
 

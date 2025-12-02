@@ -34,22 +34,46 @@ import { toast } from '@/hooks/use-toast';
 
 interface PendingRequest {
   id: string;
-  type: 'USER_CREATION' | 'ROLE_ASSIGNMENT';
+  type: 'USER_CREATION' | 'ROLE_ASSIGNMENT' | 'CENTER_CREATION' | 'SCHOOL_CREATION';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  requestedById: string;
+  targetUserId?: string;
+  targetCenterId?: string;
+  targetSchoolId?: string;
+  requestedRole?: string;
+  requestedData: any;
+  comments?: string;
+  rejectionReason?: string;
+  approvedById?: string;
+  rejectedById?: string;
+  createdAt: string;
+  updatedAt: string;
+  approvedAt?: string;
+  rejectedAt?: string;
   requestedBy: {
-    name: string;
+    id: string;
+    email: string;
+    role: string;
+    adminProfile?: { fullName: string };
+    centerProfile?: { centerName: string };
+    specialEducatorProfile?: { fullName: string };
+    superSpecialEducatorProfile?: { fullName: string };
+    parentProfile?: { fullName: string };
+    schoolViewerProfile?: { fullName: string };
+  };
+  targetUser?: {
+    id: string;
     email: string;
     role: string;
   };
-  targetUser?: {
-    name: string;
+  approvedBy?: {
+    id: string;
     email: string;
-    phone?: string;
   };
-  requestedRole?: string;
-  requestedCenter?: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  createdAt: string;
-  notes?: string;
+  rejectedBy?: {
+    id: string;
+    email: string;
+  };
 }
 
 export default function PendingApprovalsPage() {
@@ -75,28 +99,8 @@ export default function PendingApprovalsPage() {
         type: activeTab !== 'all' ? activeTab : undefined
       });
       
-      // Transform backend data to match frontend interface
-      const transformedRequests: PendingRequest[] = (response.data || []).map((request: any) => ({
-        id: request.id,
-        type: request.type || 'USER_CREATION',
-        requestedBy: {
-          name: request.requestedBy || 'System',
-          email: request.requestedBy || '',
-          role: 'ADMIN'
-        },
-        targetUser: {
-          name: request.title || 'New User',
-          email: request.requestedBy || '',
-          phone: ''
-        },
-        requestedRole: 'SPECIAL_EDUCATOR',
-        requestedCenter: request.requestedBy || '',
-        status: request.status || 'PENDING',
-        createdAt: request.createdAt,
-        notes: request.title || ''
-      }));
-      
-      setRequests(transformedRequests);
+      // Use actual data from backend
+      setRequests(response.data || []);
     } catch (error) {
       console.error('Failed to load pending requests:', error);
       // Set empty array on error
@@ -109,15 +113,16 @@ export default function PendingApprovalsPage() {
   const handleApproveRequest = async (requestId: string) => {
     try {
       // API call to approve request
+      await apiClient.approveRequest(requestId, { comments: "Approved by admin" });
       toast({
         title: "Request Approved",
         description: "The request has been approved successfully.",
       });
       loadPendingRequests();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to approve request. Please try again.",
+        description: error.response?.data?.error || "Failed to approve request. Please try again.",
         variant: "destructive",
       });
     }
@@ -126,15 +131,16 @@ export default function PendingApprovalsPage() {
   const handleRejectRequest = async (requestId: string) => {
     try {
       // API call to reject request
+      await apiClient.rejectRequest(requestId, { reason: "Rejected by admin" });
       toast({
         title: "Request Rejected",
         description: "The request has been rejected.",
       });
       loadPendingRequests();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to reject request. Please try again.",
+        description: error.response?.data?.error || "Failed to reject request. Please try again.",
         variant: "destructive",
       });
     }
@@ -160,12 +166,76 @@ export default function PendingApprovalsPage() {
     }
   };
 
+  const getRequestedByName = (request: PendingRequest) => {
+    if (request.requestedBy.adminProfile?.fullName) return request.requestedBy.adminProfile.fullName;
+    if (request.requestedBy.centerProfile?.centerName) return request.requestedBy.centerProfile.centerName;
+    if (request.requestedBy.specialEducatorProfile?.fullName) return request.requestedBy.specialEducatorProfile.fullName;
+    if (request.requestedBy.superSpecialEducatorProfile?.fullName) return request.requestedBy.superSpecialEducatorProfile.fullName;
+    if (request.requestedBy.parentProfile?.fullName) return request.requestedBy.parentProfile.fullName;
+    if (request.requestedBy.schoolViewerProfile?.fullName) return request.requestedBy.schoolViewerProfile.fullName;
+    return request.requestedBy.email || 'Unknown';
+  };
+
+  const getTargetUserName = (request: PendingRequest) => {
+    if (request.targetUser) {
+      return request.targetUser.email;
+    }
+    
+    // For user creation requests, get name from requestedData
+    if (request.type === 'USER_CREATION' && request.requestedData) {
+      const profileData = request.requestedData.profileData;
+      if (profileData) {
+        return profileData.fullName || profileData.centerName || request.requestedData.email;
+      }
+    }
+    
+    return 'New User';
+  };
+
+  const getTargetUserEmail = (request: PendingRequest) => {
+    if (request.targetUser) {
+      return request.targetUser.email;
+    }
+    
+    // For user creation requests, get email from requestedData
+    if (request.type === 'USER_CREATION' && request.requestedData) {
+      return request.requestedData.email;
+    }
+    
+    return '';
+  };
+
+  const getRequestedCenter = (request: PendingRequest) => {
+    // For center-related requests
+    if (request.type === 'CENTER_CREATION' && request.requestedData) {
+      return request.requestedData.centerName || '';
+    }
+    return '';
+  };
+
+  const getRequestedRole = (request: PendingRequest) => {
+    if (request.requestedRole) {
+      return request.requestedRole;
+    }
+    
+    // For user creation requests, get role from requestedData
+    if (request.type === 'USER_CREATION' && request.requestedData) {
+      return request.requestedData.role;
+    }
+    
+    return '';
+  };
+
+  const getNotes = (request: PendingRequest) => {
+    return request.comments || '';
+  };
+
   const filteredRequests = requests.filter(request => {
     const matchesFilter = filter === 'all' || request.type === filter;
     const matchesSearch = !searchQuery || 
-      request.targetUser?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.targetUser?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.requestedBy.name.toLowerCase().includes(searchQuery.toLowerCase());
+      getTargetUserName(request).toLowerCase().includes(searchQuery.toLowerCase()) ||
+      getTargetUserEmail(request).toLowerCase().includes(searchQuery.toLowerCase()) ||
+      getRequestedByName(request).toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 

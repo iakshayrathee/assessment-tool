@@ -24,6 +24,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
+import CenterSchoolSelectionModal from '@/components/modals/CenterSchoolSelectionModal';
 
 interface StudentFormData {
   fullName: string;
@@ -35,8 +36,9 @@ interface StudentFormData {
   schoolId?: string;
   parentFullName: string;
   parentPhone: string;
-  parentEmail?: string;
+  parentEmail: string; // Changed from optional to required
   parentAddress?: string;
+  parentPassword: string;
   relationship: string;
 }
 
@@ -56,10 +58,13 @@ export default function NewStudentPage() {
     parentPhone: '',
     parentEmail: '',
     parentAddress: '',
+    parentPassword: '',
     relationship: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSchoolModalOpen, setIsSchoolModalOpen] = useState(false);
+  const [selectedSchoolName, setSelectedSchoolName] = useState('');
 
   const calculateAge = (dateOfBirth: string): number => {
     if (!dateOfBirth) return 0;
@@ -100,10 +105,39 @@ export default function NewStudentPage() {
       newErrors.grade = 'Grade/Standard is required';
     }
 
-    // Syllabus is optional now
-    // if (!formData.syllabus) {
-    //   newErrors.syllabus = 'Syllabus is required';
-    // }
+    // Parent/Guardian validation - phone is required for parent user creation
+    if (!formData.parentFullName.trim()) {
+      newErrors.parentFullName = 'Parent/Guardian name is required';
+    }
+
+    if (!formData.parentPhone.trim()) {
+      newErrors.parentPhone = 'Phone number is required for parent account creation';
+    } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(formData.parentPhone.replace(/\D/g, ''))) {
+      newErrors.parentPhone = 'Please enter a valid phone number';
+    }
+
+    if (!formData.relationship) {
+      newErrors.relationship = 'Relationship is required';
+    }
+
+    // School validation - now required
+    if (!formData.schoolId) {
+      newErrors.schoolId = 'School selection is required';
+    }
+
+    // Parent email validation - now required
+    if (!formData.parentEmail.trim()) {
+      newErrors.parentEmail = 'Email address is required for parent account';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.parentEmail)) {
+      newErrors.parentEmail = 'Please enter a valid email address';
+    }
+
+    // Parent password validation - required
+    if (!formData.parentPassword.trim()) {
+      newErrors.parentPassword = 'Password is required for parent account';
+    } else if (formData.parentPassword.length < 6) {
+      newErrors.parentPassword = 'Password must be at least 6 characters long';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -133,7 +167,7 @@ export default function NewStudentPage() {
     setIsSubmitting(true);
 
     try {
-      // Create student data
+      // Create student data with parent information for automatic parent user creation
       const studentData = {
         fullName: formData.fullName,
         dateOfBirth: formData.dateOfBirth,
@@ -143,6 +177,12 @@ export default function NewStudentPage() {
         syllabus: formData.syllabus || '',
         schoolId: formData.schoolId || null,
         centerId: user?.profile?.id || '', // Auto-filled from educator's center
+        // Parent information for automatic parent user creation
+        parentName: formData.parentFullName,
+        parentPhone: formData.parentPhone,
+        parentEmail: formData.parentEmail || '',
+        address: formData.parentAddress || '',
+        relationship: formData.relationship, // Relationship for parent profile
       };
 
       const response = await apiClient.createStudent(studentData);
@@ -164,6 +204,15 @@ export default function NewStudentPage() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSchoolSelect = (schoolId: string, schoolName: string) => {
+    setFormData(prev => ({ ...prev, schoolId }));
+    setSelectedSchoolName(schoolName);
+    // Clear any existing school-related errors
+    if (errors.schoolId) {
+      setErrors(prev => ({ ...prev, schoolId: '' }));
     }
   };
 
@@ -385,15 +434,42 @@ export default function NewStudentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="parentEmail">Email Address</Label>
+                    <Label htmlFor="parentEmail">Email Address *</Label>
                     <Input
                       id="parentEmail"
                       type="email"
                       value={formData.parentEmail}
                       onChange={(e) => handleInputChange('parentEmail', e.target.value)}
-                      placeholder="Enter email address (optional)"
+                      placeholder="Enter email address for parent account"
+                      className={errors.parentEmail ? 'border-red-500' : ''}
                     />
+                    {errors.parentEmail && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.parentEmail}
+                      </p>
+                    )}
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="parentPassword">Password *</Label>
+                    <Input
+                      id="parentPassword"
+                      type="password"
+                      value={formData.parentPassword}
+                      onChange={(e) => handleInputChange('parentPassword', e.target.value)}
+                      placeholder="Enter password for parent account"
+                      className={errors.parentPassword ? 'border-red-500' : ''}
+                    />
+                    {errors.parentPassword && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.parentPassword}
+                      </p>
+                    )}
+                  </div>
+
+
 
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="parentAddress">Address</Label>
@@ -429,14 +505,6 @@ export default function NewStudentPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Assigned Center</Label>
-                    <div className="p-3 bg-gray-50 rounded-md">
-                      <p className="font-medium">{user?.profile?.centerName || 'Current Center'}</p>
-                      <p className="text-sm text-gray-600">Auto-assigned based on your login</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
                     <Label>Assigned Educator</Label>
                     <div className="p-3 bg-gray-50 rounded-md">
                       <p className="font-medium">{user?.profile?.fullName || 'You'}</p>
@@ -446,15 +514,32 @@ export default function NewStudentPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="schoolId">School Name (Optional)</Label>
-                  <Input
-                    id="schoolId"
-                    value={formData.schoolId}
-                    onChange={(e) => handleInputChange('schoolId', e.target.value)}
-                    placeholder="Enter school name if applicable"
-                  />
+                  <Label htmlFor="schoolId">School Name *</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="schoolId"
+                      value={selectedSchoolName}
+                      placeholder="Select a school from your assigned centers"
+                      readOnly
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsSchoolModalOpen(true)}
+                    >
+                      <School className="h-4 w-4 mr-2" />
+                      Select School
+                    </Button>
+                  </div>
+                  {errors.schoolId && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.schoolId}
+                    </p>
+                  )}
                   <p className="text-sm text-gray-500">
-                    Leave blank if the student is not enrolled in a specific school
+                    School selection is now required. Choose from your assigned centers.
                   </p>
                 </div>
               </CardContent>
@@ -488,6 +573,13 @@ export default function NewStudentPage() {
             </Button>
           </motion.div>
         </form>
+
+        {/* School Selection Modal */}
+        <CenterSchoolSelectionModal
+          isOpen={isSchoolModalOpen}
+          onClose={() => setIsSchoolModalOpen(false)}
+          onSchoolSelected={handleSchoolSelect}
+        />
       </div>
     </>
   );

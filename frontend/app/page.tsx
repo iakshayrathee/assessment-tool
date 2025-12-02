@@ -22,7 +22,7 @@ export default function HomePage() {
   const getRoleBasedRedirect = (role: string): string => {
     switch (role) {
       case 'ADMIN':
-        return '/admin/dashboard';
+        return '/admin/overview';
       case 'SUPER_SPECIAL_EDUCATOR':
         return '/super-special-educator/centers';
       case 'SPECIAL_EDUCATOR':

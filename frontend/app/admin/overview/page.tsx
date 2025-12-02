@@ -348,19 +348,7 @@ export default function GlobalOverviewPage() {
                 </a>
               </Button>
               
-              <Button variant="outline" className="h-20 flex-col gap-2" asChild>
-                <a href="/admin/educators">
-                  <GraduationCap className="h-6 w-6" />
-                  <span>Manage Educators</span>
-                </a>
-              </Button>
-              
-              <Button variant="outline" className="h-20 flex-col gap-2" asChild>
-                <a href="/admin/centers-schools">
-                  <Building className="h-6 w-6" />
-                  <span>Centers & Schools</span>
-                </a>
-              </Button>
+
               
               <Button variant="outline" className="h-20 flex-col gap-2" asChild>
                 <a href="/admin/reports">

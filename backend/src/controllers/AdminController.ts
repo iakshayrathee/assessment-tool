@@ -221,7 +221,7 @@ export class AdminController {
   async removeEducatorFromCenter(req: AuthenticatedRequest, res: Response): Promise<Response> {
     try {
       const { assignmentId } = req.params;
-      await this.adminService.removeEducatorFromCenter(assignmentId);
+      await this.adminService.removeEducatorFromCenter(assignmentId, req.user);
       return ResponseHelper.success(res, null, 'Educator removed from center successfully');
     } catch (error: any) {
       return ResponseHelper.error(res, error.message, 400);

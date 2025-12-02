@@ -119,7 +119,7 @@ export function useAuth() {
   const getRoleBasedRedirect = (role: string): string => {
     switch (role) {
       case 'ADMIN':
-        return '/admin/dashboard';
+        return '/admin/overview';
       case 'SUPER_SPECIAL_EDUCATOR':
         return '/super-special-educator';
       case 'SPECIAL_EDUCATOR':

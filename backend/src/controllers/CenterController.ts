@@ -536,9 +536,33 @@ export class CenterController {
       };
 
       if (educatorType === 'SPECIAL_EDUCATOR') {
-        assignmentData.specialEducatorId = educatorId;
+        // Find the special educator profile for this user
+        const specialEducatorProfile = await this.prisma.specialEducatorProfile.findUnique({
+          where: { userId: educatorId }
+        });
+        
+        if (!specialEducatorProfile) {
+          return res.status(404).json({
+            success: false,
+            error: 'Special educator profile not found for this user'
+          });
+        }
+        
+        assignmentData.specialEducatorId = specialEducatorProfile.id;
       } else if (educatorType === 'SUPER_SPECIAL_EDUCATOR') {
-        assignmentData.superSpecialEducatorId = educatorId;
+        // Find the super special educator profile for this user
+        const superSpecialEducatorProfile = await this.prisma.superSpecialEducatorProfile.findUnique({
+          where: { userId: educatorId }
+        });
+        
+        if (!superSpecialEducatorProfile) {
+          return res.status(404).json({
+            success: false,
+            error: 'Super special educator profile not found for this user'
+          });
+        }
+        
+        assignmentData.superSpecialEducatorId = superSpecialEducatorProfile.id;
       } else {
         return res.status(400).json({
           success: false,
@@ -848,6 +872,32 @@ export class CenterController {
       return res.status(500).json({
         success: false,
         error: 'Failed to fetch cities and centers data'
+      });
+    }
+  }
+
+  // Get all special educators (both assigned and unassigned)
+  async getAllSpecialEducators(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    try {
+      const { page = 1, limit = 20, search, centerId } = req.query;
+      
+      const result = await this.centerService.getAllSpecialEducators({
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
+        search: search as string,
+        centerId: centerId as string
+      });
+
+      return res.json({
+        success: true,
+        data: result.educators,
+        pagination: result.pagination
+      });
+    } catch (error: any) {
+      console.error('Get all special educators error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch special educators'
       });
     }
   }

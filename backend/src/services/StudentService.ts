@@ -66,8 +66,25 @@ export class StudentService {
 
     // If parentId is not provided and parent information is available, create a new parent
     if (!parentId && studentData.parentName && studentData.parentPhone) {
-      // Hash the temporary password
-      const hashedPassword = await bcrypt.hash('temp_password_123', 12);
+      // Require parent password - no fallback to temporary password
+      if (!studentData.parentPassword) {
+        throw new Error('Parent password is required when creating a new parent account');
+      }
+      
+      // Hash the provided password
+      const hashedPassword = await bcrypt.hash(studentData.parentPassword, 12);
+
+      // Determine the email to use
+      const parentEmail = studentData.parentEmail || `parent_${Date.now()}_${Math.random().toString(36).substring(2, 8)}@temp.com`;
+
+      // Check if a user with this email already exists
+      const existingUser = await this.studentRepository.prismaClient.user.findUnique({
+        where: { email: parentEmail }
+      });
+
+      if (existingUser) {
+        throw new Error(`A user with email ${parentEmail} already exists. Please use a different email address.`);
+      }
 
       // Create parent user and profile
       const parentProfile = await this.studentRepository.prismaClient.parentProfile.create({
@@ -79,7 +96,7 @@ export class StudentService {
           relationship: 'Parent', // Default relationship
           user: {
             create: {
-              email: studentData.parentEmail || `parent_${Date.now()}@temp.com`, // Generate temp email if not provided
+              email: parentEmail,
               password: hashedPassword, // Hashed temporary password - parent should reset
               role: 'PARENT',
               isActive: true
@@ -92,8 +109,10 @@ export class StudentService {
     }
 
     // Create student with the parentId (can be null if no parent info provided)
+    // Remove address field since Student model doesn't have it - address is only for parent
+    const { address, ...studentDataWithoutAddress } = studentData;
     const finalStudentData: StudentData = {
-      ...studentData,
+      ...studentDataWithoutAddress,
       parentId: parentId || null
     };
 

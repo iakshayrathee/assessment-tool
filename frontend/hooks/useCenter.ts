@@ -131,7 +131,6 @@ export function useCenterEducators(centerId?: string, params?: {
           queryClient.invalidateQueries({ queryKey });
         });
       }
-      toast.success('Educator removed successfully!');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error || 'Failed to remove educator');
@@ -141,7 +140,7 @@ export function useCenterEducators(centerId?: string, params?: {
   // Assign educator mutation
   const assignEducatorMutation = useMutation({
     mutationFn: ({ educatorId, role }: { educatorId: string; role: string }) => 
-      apiClient.assignEducatorToCenter(centerId!, educatorId, role),
+      apiClient.assignEducator(centerId!, educatorId, role),
     onSuccess: () => {
       if (centerId) {
         invalidationPatterns.center(centerId).forEach(queryKey => {

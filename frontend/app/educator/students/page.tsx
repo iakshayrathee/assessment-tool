@@ -348,8 +348,8 @@ export default function StudentsPage() {
   };
 
   const handleStudentRegistered = (studentId: string) => {
-    // Redirect to intake form for the newly registered student
-    router.push(`/educator/intake?studentId=${studentId}`);
+    // Redirect to student profile page for the newly registered student
+    router.push(`/educator/students/${studentId}`);
   };
 
   if (isLoading) {
@@ -371,7 +371,12 @@ export default function StudentsPage() {
             <h1 className="text-2xl font-bold text-gray-900">My Students</h1>
             <p className="text-gray-600">Manage and track progress of your assigned students</p>
           </div>
-          <StudentRegistrationModal onStudentRegistered={handleStudentRegistered} />
+          <Link href="/educator/students/new">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Register New Student
+            </Button>
+          </Link>
         </div>
 
         {/* Stats Cards */}

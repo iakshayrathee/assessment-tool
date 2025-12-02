@@ -146,11 +146,6 @@ export default function EducatorDetailPage() {
 
       await apiClient.removeEducatorFromCenter(centerId, educator.assignmentId);
       
-      toast({
-        title: "Success",
-        description: "Educator removed from center successfully.",
-      });
-      
       router.push('/center/educators');
     } catch (error) {
       console.error('Failed to remove educator:', error);

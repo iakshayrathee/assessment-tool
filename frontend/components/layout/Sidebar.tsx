@@ -54,7 +54,7 @@ const roleMenus: Record<string, MenuItem[]> = {
   ADMIN: [
     {
       title: 'Dashboard',
-      href: '/admin/dashboard',
+      href: '/admin/overview',
       icon: LayoutDashboard,
     },
     {

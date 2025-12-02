@@ -321,4 +321,29 @@ export class UserRepository {
       activeUsers
     };
   }
+
+  async createApprovalRequest(data: {
+    type: 'USER_CREATION' | 'ROLE_ASSIGNMENT' | 'CENTER_CREATION' | 'SCHOOL_CREATION';
+    requestedById: string;
+    targetUserId?: string;
+    targetCenterId?: string;
+    targetSchoolId?: string;
+    requestedRole?: UserRole;
+    requestedData: any;
+    comments?: string;
+  }) {
+    return this.prisma.approvalRequest.create({
+      data: {
+        type: data.type,
+        status: 'PENDING',
+        requestedById: data.requestedById,
+        targetUserId: data.targetUserId,
+        targetCenterId: data.targetCenterId,
+        targetSchoolId: data.targetSchoolId,
+        requestedRole: data.requestedRole,
+        requestedData: data.requestedData,
+        comments: data.comments
+      }
+    });
+  }
 }

@@ -160,12 +160,88 @@ export class AdminService {
       where: { id: userId },
       include: {
         specialEducatorProfile: true,
-        superSpecialEducatorProfile: true
+        superSpecialEducatorProfile: true,
+        centerProfile: true
       }
     });
     if (!user) throw new Error('User not found');
 
     return await this.prisma.$transaction(async (tx) => {
+      // If user is a center user, handle all students and related data first
+      if (user.centerProfile) {
+        const centerId = user.centerProfile.id;
+
+        // First, handle all students associated with this center
+        // We need to delete or reassign students before deleting the center
+        await tx.studentAssignment.deleteMany({
+          where: {
+            student: {
+              centerId: centerId
+            }
+          }
+        });
+
+        // Delete all assessments for students in this center
+        await tx.assessment.deleteMany({
+          where: {
+            student: {
+              centerId: centerId
+            }
+          }
+        });
+
+        // Delete all intake forms for students in this center
+        await tx.intakeForm.deleteMany({
+          where: {
+            student: {
+              centerId: centerId
+            }
+          }
+        });
+
+        // Delete all IEP goals for students in this center
+        await tx.iEPGoal.deleteMany({
+          where: {
+            student: {
+              centerId: centerId
+            }
+          }
+        });
+
+        // Delete all session notes for students in this center
+        await tx.sessionNote.deleteMany({
+          where: {
+            student: {
+              centerId: centerId
+            }
+          }
+        });
+
+        // Delete all reports for students in this center
+        await tx.report.deleteMany({
+          where: {
+            student: {
+              centerId: centerId
+            }
+          }
+        });
+
+        // Delete all students associated with this center
+        await tx.student.deleteMany({
+          where: { centerId: centerId }
+        });
+
+        // Delete all schools associated with this center
+        await tx.school.deleteMany({
+          where: { centerId: centerId }
+        });
+
+        // Delete all center assignments
+        await tx.centerAssignment.deleteMany({
+          where: { centerId: centerId }
+        });
+      }
+
       // If user is a special educator, handle all related data
       if (user.specialEducatorProfile) {
         const specialEducatorId = user.specialEducatorProfile.id;
@@ -886,7 +962,36 @@ export class AdminService {
     });
   }
 
-  async removeEducatorFromCenter(assignmentId: string) {
+  async removeEducatorFromCenter(assignmentId: string, user?: any) {
+    // First get the assignment to check permissions
+    const assignment = await this.prisma.centerAssignment.findUnique({
+      where: { id: assignmentId },
+      include: {
+        center: true
+      }
+    });
+
+    if (!assignment) {
+      throw new Error('Assignment not found');
+    }
+
+    // If user is a CENTER, verify they can only unlink educators from their own center
+    if (user && user.role === 'CENTER') {
+      // Get the center profile for the current user
+      const centerProfile = await this.prisma.centerProfile.findUnique({
+        where: { userId: user.userId }
+      });
+
+      if (!centerProfile) {
+        throw new Error('Center profile not found');
+      }
+
+      // Check if the assignment belongs to the center
+      if (assignment.centerId !== centerProfile.id) {
+        throw new Error('Insufficient permissions: You can only unlink educators from your own center');
+      }
+    }
+
     await this.prisma.centerAssignment.delete({
       where: { id: assignmentId }
     });
@@ -920,33 +1025,251 @@ export class AdminService {
 
   // Approval System
   async getPendingApprovals(page: number, limit: number, type?: string) {
-    // This would be implemented based on your approval system
-    // For now, returning mock data structure
-    const mockApprovals = [
-      {
-        id: '1',
-        type: 'USER_CREATION',
-        title: 'New Special Educator Registration',
-        requestedBy: 'Mumbai Learning Center',
-        createdAt: new Date(),
-        status: 'PENDING'
-      }
-    ];
+    const skip = (page - 1) * limit;
+    
+    const where: any = {
+      status: 'PENDING'
+    };
+    
+    if (type && type !== 'all') {
+      where.type = type;
+    }
+
+    const [approvals, total] = await Promise.all([
+      this.prisma.approvalRequest.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          requestedBy: {
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              adminProfile: true,
+              centerProfile: true,
+              specialEducatorProfile: true,
+              superSpecialEducatorProfile: true,
+              parentProfile: true,
+              schoolViewerProfile: true
+            }
+          },
+          targetUser: {
+            select: {
+              id: true,
+              email: true,
+              role: true
+            }
+          },
+          approvedBy: {
+            select: {
+              id: true,
+              email: true
+            }
+          },
+          rejectedBy: {
+            select: {
+              id: true,
+              email: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.approvalRequest.count({ where })
+    ]);
 
     return {
-      approvals: mockApprovals.slice((page - 1) * limit, page * limit),
-      total: mockApprovals.length
+      approvals,
+      total
     };
   }
 
   async approveRequest(requestId: string, adminId: string, comments?: string) {
-    // Implementation depends on your approval system design
-    throw new Error('Approval system not yet implemented');
+    const request = await this.prisma.approvalRequest.findUnique({
+      where: { id: requestId }
+    });
+
+    if (!request) {
+      throw new Error('Approval request not found');
+    }
+
+    if (request.status !== 'PENDING') {
+      throw new Error('Request is not in pending status');
+    }
+
+    // Process the approval based on request type
+    switch (request.type) {
+      case 'USER_CREATION':
+        await this.processUserCreationApproval(request, adminId, comments);
+        break;
+      case 'ROLE_ASSIGNMENT':
+        await this.processRoleAssignmentApproval(request, adminId, comments);
+        break;
+      default:
+        throw new Error('Unsupported approval type');
+    }
+
+    // Update the approval request status
+    return await this.prisma.approvalRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'APPROVED',
+        approvedById: adminId,
+        approvedAt: new Date(),
+        comments: comments || null
+      },
+      include: {
+        requestedBy: true,
+        targetUser: true,
+        approvedBy: true
+      }
+    });
   }
 
   async rejectRequest(requestId: string, adminId: string, reason?: string) {
-    // Implementation depends on your approval system design
-    throw new Error('Approval system not yet implemented');
+    const request = await this.prisma.approvalRequest.findUnique({
+      where: { id: requestId }
+    });
+
+    if (!request) {
+      throw new Error('Approval request not found');
+    }
+
+    if (request.status !== 'PENDING') {
+      throw new Error('Request is not in pending status');
+    }
+
+    return await this.prisma.approvalRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'REJECTED',
+        rejectedById: adminId,
+        rejectedAt: new Date(),
+        rejectionReason: reason || null
+      },
+      include: {
+        requestedBy: true,
+        targetUser: true,
+        rejectedBy: true
+      }
+    });
+  }
+
+  private async processUserCreationApproval(request: any, adminId: string, comments?: string) {
+    const requestData = request.requestedData as any;
+    
+    // Create the user account
+    const user = await this.prisma.user.create({
+      data: {
+        email: requestData.email,
+        password: requestData.password,
+        role: requestData.role,
+        isActive: true
+      }
+    });
+
+    // Create the appropriate profile based on role
+    if (requestData.profileData) {
+      await this.createRoleProfileWithoutTx(user.id, requestData.role, requestData.profileData);
+    }
+  }
+
+  private async processRoleAssignmentApproval(request: any, adminId: string, comments?: string) {
+    if (!request.targetUserId) {
+      throw new Error('Target user ID is required for role assignment');
+    }
+
+    const requestData = request.requestedData as any;
+    
+    // Update user role
+    await this.prisma.user.update({
+      where: { id: request.targetUserId },
+      data: {
+        role: requestData.role
+      }
+    });
+
+    // Update or create profile if profile data is provided
+    if (requestData.profileData) {
+      await this.updateRoleProfileWithoutTx(request.targetUserId, requestData.role, requestData.profileData);
+    }
+  }
+
+  private async createRoleProfileWithoutTx(userId: string, role: string, profileData: any) {
+    switch (role) {
+      case 'ADMIN':
+        await this.prisma.adminProfile.create({
+          data: { userId, ...profileData }
+        });
+        break;
+      case 'SPECIAL_EDUCATOR':
+        await this.prisma.specialEducatorProfile.create({
+          data: { userId, ...profileData }
+        });
+        break;
+      case 'SUPER_SPECIAL_EDUCATOR':
+        await this.prisma.superSpecialEducatorProfile.create({
+          data: { userId, ...profileData }
+        });
+        break;
+      case 'CENTER':
+        await this.prisma.centerProfile.create({
+          data: { userId, ...profileData }
+        });
+        break;
+      case 'PARENT':
+        await this.prisma.parentProfile.create({
+          data: { userId, ...profileData }
+        });
+        break;
+      case 'SCHOOL_VIEWER':
+        await this.prisma.schoolViewerProfile.create({
+          data: { userId, ...profileData }
+        });
+        break;
+    }
+  }
+
+  private async updateRoleProfileWithoutTx(userId: string, role: string, profileData: any) {
+    switch (role) {
+      case 'ADMIN':
+        await this.prisma.adminProfile.update({
+          where: { userId },
+          data: profileData
+        });
+        break;
+      case 'SPECIAL_EDUCATOR':
+        await this.prisma.specialEducatorProfile.update({
+          where: { userId },
+          data: profileData
+        });
+        break;
+      case 'SUPER_SPECIAL_EDUCATOR':
+        await this.prisma.superSpecialEducatorProfile.update({
+          where: { userId },
+          data: profileData
+        });
+        break;
+      case 'CENTER':
+        await this.prisma.centerProfile.update({
+          where: { userId },
+          data: profileData
+        });
+        break;
+      case 'PARENT':
+        await this.prisma.parentProfile.update({
+          where: { userId },
+          data: profileData
+        });
+        break;
+      case 'SCHOOL_VIEWER':
+        await this.prisma.schoolViewerProfile.update({
+          where: { userId },
+          data: profileData
+        });
+        break;
+    }
   }
 
   // System Configuration

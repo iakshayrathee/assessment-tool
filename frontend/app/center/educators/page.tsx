@@ -83,6 +83,9 @@ interface AvailableEducator {
   bio?: string;
   specialization?: string;
   assignedStudentCount?: number;
+  centerCount?: number;
+  schoolCount?: number;
+  studentCount?: number;
   specialEducatorProfile?: {
     id: string;
     specialization?: string;
@@ -143,6 +146,12 @@ export default function CenterEducators() {
   
   // Modal states
   const [availableEducators, setAvailableEducators] = useState<AvailableEducator[]>([]);
+  const [availablePagination, setAvailablePagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0
+  });
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [selectedEducatorStudents, setSelectedEducatorStudents] = useState<AssignedStudent[]>([]);
   const [selectedEducatorSchools, setSelectedEducatorSchools] = useState<School[]>([]);
@@ -197,14 +206,21 @@ export default function CenterEducators() {
     });
   }
 
-  const loadAvailableEducators = async () => {
+  const loadAvailableEducators = async (searchTerm: string = '', page: number = 1) => {
     try {
       setLoadingAvailable(true);
       const centerId = user?.profile?.id;
       if (!centerId) return;
 
-      // Use the updated available-educators API that only returns unassigned educators
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/centers/available-educators?page=1&limit=1000`, {
+      // Use the new all-educators API that returns all educators but filters out those already assigned to this center
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
+        centerId: centerId,
+        ...(searchTerm && { search: searchTerm })
+      });
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/centers/all-educators?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
@@ -216,11 +232,21 @@ export default function CenterEducators() {
       }
       
       const data = await response.json();
-      const unassignedEducators = data.data || [];
+      const availableEducatorsData = data.data || [];
       
-      console.log('Available (unassigned) educators:', unassignedEducators.length);
+      console.log('Available educators:', availableEducatorsData.length);
       
-      setAvailableEducators(unassignedEducators);
+      setAvailableEducators(availableEducatorsData);
+      
+      // Update pagination info if available
+      if (data.pagination) {
+        setAvailablePagination({
+          page: data.pagination.page,
+          limit: data.pagination.limit,
+          total: data.pagination.total,
+          pages: data.pagination.pages
+        });
+      }
     } catch (error) {
       console.error('Failed to load available educators:', error);
       toast({
@@ -236,19 +262,11 @@ export default function CenterEducators() {
   const handleAssignEducator = async (educatorId: string) => {
     try {
       await assignEducator({ educatorId, role: 'SPECIAL_EDUCATOR' });
-      toast({
-        title: "Success",
-        description: "Educator assigned successfully",
-      });
       setShowLinkModal(false);
       refetchEducators();
     } catch (error) {
       console.error('Failed to assign educator:', error);
-      toast({
-        title: "Error",
-        description: "Failed to assign educator",
-        variant: "destructive"
-      });
+      // Error toast is handled by the mutation's onError callback
     }
   };
 
@@ -484,7 +502,7 @@ export default function CenterEducators() {
             disabled: loading
           },
           {
-            label: 'Add Educator',
+            label: 'Link Educator',
             onClick: () => {
               loadAvailableEducators();
               setShowLinkModal(true);
@@ -570,7 +588,7 @@ export default function CenterEducators() {
       <Dialog open={showLinkModal} onOpenChange={setShowLinkModal}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Special Educator</DialogTitle>
+            <DialogTitle>Link Special Educator</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
@@ -622,6 +640,22 @@ export default function CenterEducators() {
                           <div className="flex items-center">
                             <BookOpen className="h-4 w-4 mr-2" />
                             {educator.qualifications?.length || 0} qualifications
+                          </div>
+                        </div>
+
+                        {/* Assignment Statistics */}
+                        <div className="grid grid-cols-3 gap-2 text-xs text-gray-500 mb-3">
+                          <div className="flex items-center justify-center p-2 bg-gray-50 rounded">
+                            <Building className="h-3 w-3 mr-1" />
+                            {educator.centerCount || 0} Centers
+                          </div>
+                          <div className="flex items-center justify-center p-2 bg-gray-50 rounded">
+                            <School className="h-3 w-3 mr-1" />
+                            {educator.schoolCount || 0} Schools
+                          </div>
+                          <div className="flex items-center justify-center p-2 bg-gray-50 rounded">
+                            <Users className="h-3 w-3 mr-1" />
+                            {educator.studentCount || 0} Students
                           </div>
                         </div>
 

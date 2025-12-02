@@ -141,6 +141,7 @@ export interface StudentData {
   parentPhone?: string;
   parentEmail?: string;
   parentAddress?: string;
+  parentPassword?: string;
   address?: string; // Student address
   emergencyContact?: string;
   relationship?: string;

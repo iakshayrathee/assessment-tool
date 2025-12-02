@@ -66,14 +66,42 @@ export class AuthService {
     };
   }
 
-  async register(email: string, password: string, role: UserRole, profileData: any): Promise<UserProfile> {
+  async register(email: string, password: string, role: UserRole, profileData: any, requestedById?: string): Promise<UserProfile> {
     // Check if user already exists
     const existingUser = await this.userRepository.findByEmail(email);
     if (existingUser) {
       throw new Error('User with this email already exists');
     }
 
-    // Hash password
+    // For roles that require approval, create an approval request instead of directly creating user
+    const rolesRequiringApproval = [
+      UserRole.SPECIAL_EDUCATOR,
+      UserRole.SUPER_SPECIAL_EDUCATOR,
+      UserRole.CENTER,
+      UserRole.SCHOOL_VIEWER
+    ];
+
+    if (rolesRequiringApproval.includes(role) && !requestedById) {
+      throw new Error('Approval request requires a requesting user ID');
+    }
+
+    if (rolesRequiringApproval.includes(role)) {
+      // Create approval request instead of user
+      await this.userRepository.createApprovalRequest({
+        type: 'USER_CREATION',
+        requestedById: requestedById!,
+        requestedData: {
+          email,
+          password: await AuthUtils.hashPassword(password),
+          role,
+          profileData
+        }
+      });
+
+      throw new Error('User registration requires approval. Your request has been submitted for review.');
+    }
+
+    // For roles that don't require approval (like ADMIN, PARENT), create user directly
     const hashedPassword = await AuthUtils.hashPassword(password);
 
     // Create user

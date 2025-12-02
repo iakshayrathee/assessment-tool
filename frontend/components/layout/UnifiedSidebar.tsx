@@ -111,40 +111,16 @@ const roleNavigations: Record<string, NavigationItem[]> = {
   ],
   ADMIN: [
     {
-      title: 'Dashboard',
-      href: '/admin/dashboard',
-      icon: LayoutDashboard,
-      description: 'System overview and analytics'
-    },
-    {
       title: 'Overview',
       href: '/admin/overview',
       icon: TrendingUp,
       description: 'Platform performance metrics'
     },
     {
-      title: 'Centers & Schools',
-      href: '/admin/centers-schools',
-      icon: Building,
-      description: 'Manage educational institutions'
-    },
-    {
-      title: 'Educators',
-      href: '/admin/educators',
-      icon: GraduationCap,
-      description: 'Manage educator accounts'
-    },
-    {
       title: 'User Management',
       href: '/admin/user-management',
       icon: Users,
       description: 'Manage all user accounts and roles'
-    },
-    {
-      title: 'Child Records',
-      href: '/admin/child-records',
-      icon: ClipboardList,
-      description: 'Student information management'
     },
     {
       title: 'Approvals',

@@ -164,23 +164,55 @@ export function RoleBasedAssignmentModal({
           description: 'Select centers to link this school admin\'s school to',
           targetType: 'centers',
           data: centersData?.data || [],
-          renderItem: (center, isSelected, onToggle) => (
-            <Card key={center.id} className="cursor-pointer hover:bg-gray-50" onClick={onToggle}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox checked={isSelected} onChange={onToggle} />
-                    <Building className="h-5 w-5 text-blue-500" />
-                    <div>
-                      <h4 className="font-medium">{center.name}</h4>
-                      <p className="text-sm text-gray-500">{center.address}</p>
+          renderItem: (center, isSelected, onToggle) => {
+            // Centers are returned as CenterProfile objects with nested user
+            // Structure: { id, centerName, address, phone, email, contactPerson, user: {...} }
+            const centerId = center.id; // Use the centerProfile ID
+            const centerName = center.centerName || center.user?.email || 'Unknown Center';
+            const address = center.address;
+            const contactPerson = center.contactPerson;
+            const phone = center.phone;
+            const email = center.email || center.user?.email;
+            const centerType = center.centerType;
+            const operatingHours = center.operatingHours;
+
+            return (
+              <Card key={centerId} className="cursor-pointer hover:bg-gray-50" onClick={onToggle}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 flex-1">
+                      <Checkbox checked={isSelected} onChange={onToggle} />
+                      <Building className="h-5 w-5 text-blue-500" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{centerName}</h4>
+                          {centerType && (
+                            <Badge variant="secondary" className="text-xs">{centerType}</Badge>
+                          )}
+                        </div>
+                        {address && <p className="text-sm text-gray-500">{address}</p>}
+                        <div className="flex gap-3 mt-1 flex-wrap">
+                          {contactPerson && (
+                            <p className="text-xs text-gray-400">Contact: {contactPerson}</p>
+                          )}
+                          {phone && (
+                            <p className="text-xs text-gray-400">Phone: {phone}</p>
+                          )}
+                          {operatingHours && (
+                            <p className="text-xs text-gray-400">Hours: {operatingHours}</p>
+                          )}
+                        </div>
+                        {email && email !== centerName && (
+                          <p className="text-xs text-gray-400">{email}</p>
+                        )}
+                      </div>
                     </div>
+                    <Badge variant="outline">{centerType || 'Center'}</Badge>
                   </div>
-                  <Badge variant="outline">{center.type || 'Center'}</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          )
+                </CardContent>
+              </Card>
+            );
+          }
         };
 
       default:
@@ -234,14 +266,41 @@ export function RoleBasedAssignmentModal({
           return;
 
         case UserRole.SCHOOL_VIEWER:
-          // Note: School-center linking would require the school ID and use linkSchoolToCenter
-          // This would need additional implementation to get the school associated with the admin
-          toast({
-            title: "Feature Not Available",
-            description: "School-center linking requires additional implementation to identify the admin's school.",
-            variant: "destructive",
+          // Link school to selected centers
+          if (!selectedUser.schoolViewerProfile?.schoolId) {
+            toast({
+              title: "Error",
+              description: "School viewer does not have a school associated with their profile.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          // First get the school details
+          const schoolDetails = await apiClient.getSchool(selectedUser.schoolViewerProfile.schoolId);
+          
+          if (!schoolDetails) {
+            toast({
+              title: "Error",
+              description: "Could not fetch school details. Please try again.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          // Link each selected center to the school by creating a new school instance
+          const linkingPromises = selectedItems.map(async (centerId) => {
+            return apiClient.linkSchoolToCenter(centerId, {
+              name: schoolDetails.name,
+              address: schoolDetails.address,
+              phone: schoolDetails.phone,
+              email: schoolDetails.email,
+              principalName: schoolDetails.principalName
+            });
           });
-          return;
+
+          await Promise.all(linkingPromises);
+          break;
 
         default:
           throw new Error('Unsupported user role for assignment');
@@ -257,9 +316,24 @@ export function RoleBasedAssignmentModal({
       setSelectedItems([]);
     } catch (error: any) {
       console.error('Assignment failed:', error);
+      
+      // Extract error message from backend response
+      let errorMessage = "Failed to complete assignment. Please try again.";
+      
+      if (error.response?.data?.error) {
+        // Backend returns error in 'error' field: {"success":false,"error":"message"}
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.message) {
+        // Some endpoints might use 'message' field
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        // Generic error message
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.response?.data?.message || error.message || "Failed to complete assignment. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -274,7 +348,32 @@ export function RoleBasedAssignmentModal({
   }
 
   const filteredData = config.data.filter(item => {
-    const searchableText = (item.name || item.email || '').toLowerCase();
+    let searchableText = '';
+    
+    // Handle different data structures based on target type
+    switch (config.targetType) {
+      case 'centers':
+        // For centers, use centerName, address, contactPerson, phone, email
+        searchableText = (
+          (item.centerName || '') + ' ' +
+          (item.address || '') + ' ' +
+          (item.contactPerson || '') + ' ' +
+          (item.phone || '') + ' ' +
+          (item.email || item.user?.email || '')
+        ).toLowerCase();
+        break;
+      case 'educators':
+        // For educators, use email and role
+        searchableText = (
+          (item.email || '') + ' ' +
+          (item.role || '')
+        ).toLowerCase();
+        break;
+      default:
+        // Default search for other types
+        searchableText = (item.name || item.email || '').toLowerCase();
+    }
+    
     return searchableText.includes(searchTerm.toLowerCase());
   });
 

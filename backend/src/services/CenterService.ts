@@ -953,4 +953,164 @@ export class CenterService {
       centersByCity
     };
   }
+
+  // Get all special educators (both assigned and unassigned)
+  async getAllSpecialEducators(options: {
+    page: number;
+    limit: number;
+    search?: string;
+    centerId?: string; // Optional: filter educators not assigned to this center
+  }) {
+    const { page, limit, search, centerId } = options;
+    const skip = (page - 1) * limit;
+
+    // Build where clause for search
+    const where: any = {
+      role: 'SPECIAL_EDUCATOR',
+      isActive: true,
+      specialEducatorProfile: {
+        isNot: null
+      }
+    };
+
+    if (search) {
+      where.OR = [
+        {
+          specialEducatorProfile: {
+            fullName: {
+              contains: search,
+              mode: 'insensitive' as const
+            }
+          }
+        },
+        {
+          email: {
+            contains: search,
+            mode: 'insensitive' as const
+          }
+        },
+        {
+          specialEducatorProfile: {
+            specializationAreas: {
+              hasSome: [search]
+            }
+          }
+        }
+      ];
+    }
+
+    // Get all special educators with their assignment counts
+    const [educators, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        include: {
+          specialEducatorProfile: {
+            include: {
+              centerAssignments: {
+                where: {
+                  isActive: true
+                },
+                include: {
+                  center: {
+                    select: {
+                      id: true,
+                      centerName: true,
+                      address: true,
+                      schools: {
+                        select: {
+                          id: true
+                        }
+                      },
+                      students: {
+                        where: {
+                          status: 'ACTIVE'
+                        },
+                        select: {
+                          id: true
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              // Get student assignments count
+              assignedStudents: {
+                where: {
+                  isActive: true
+                },
+                select: {
+                  id: true
+                }
+              }
+            }
+          }
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.user.count({
+        where
+      })
+    ]);
+
+    // Transform the data to include assignment status and counts
+    const transformedEducators = educators.map(educator => {
+      const centerAssignments = educator.specialEducatorProfile?.centerAssignments || [];
+      const studentAssignments = educator.specialEducatorProfile?.assignedStudents || [];
+      
+      // Calculate counts
+      const centerCount = centerAssignments.length;
+      const studentCount = studentAssignments.length;
+      
+      // Calculate unique school count from all assigned centers
+      const schoolCount = new Set(
+        centerAssignments.flatMap(assignment => 
+          assignment.center.schools.map(school => school.id)
+        )
+      ).size;
+
+      return {
+        id: educator.id,
+        email: educator.email,
+        fullName: educator.specialEducatorProfile?.fullName || '',
+        phoneNumber: educator.specialEducatorProfile?.phone || '',
+        yearsOfExperience: educator.specialEducatorProfile?.yearsOfExperience || 0,
+        specializationAreas: educator.specialEducatorProfile?.specializationAreas || [],
+        isActive: educator.isActive,
+        createdAt: educator.createdAt,
+        assignedCenters: centerAssignments.map(assignment => ({
+          id: assignment.center.id,
+          name: assignment.center.centerName,
+          address: assignment.center.address,
+          assignedAt: assignment.createdAt
+        })) || [],
+        isAssigned: centerCount > 0,
+        isAssignedToCurrentCenter: centerId 
+          ? centerAssignments.some(assignment => 
+              assignment.center.id === centerId && assignment.isActive
+            )
+          : false,
+        // Add counts
+        centerCount,
+        schoolCount,
+        studentCount
+      };
+    });
+
+    // Filter out educators already assigned to the current center if centerId is provided
+    const filteredEducators = centerId
+      ? transformedEducators.filter(educator => !educator.isAssignedToCurrentCenter)
+      : transformedEducators;
+
+    return {
+      educators: filteredEducators,
+      pagination: {
+        page,
+        limit,
+        total: filteredEducators.length === transformedEducators.length ? total : filteredEducators.length,
+        pages: Math.ceil((filteredEducators.length === transformedEducators.length ? total : filteredEducators.length) / limit)
+      }
+    };
+  }
 }

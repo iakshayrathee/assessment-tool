@@ -122,10 +122,10 @@ export default function StudentDetailsModal({
                       </Badge>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
+                      {/* <div className="flex items-center gap-1">
                         <User className="h-3 w-3" />
                         <span>ID: {student.id}</span>
-                      </div>
+                      </div> */}
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         <span>Age: {calculateAge(student.dateOfBirth)} years</span>

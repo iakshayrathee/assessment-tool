@@ -24,6 +24,10 @@ model User {
   specialEducatorProfile      SpecialEducatorProfile?
   superSpecialEducatorProfile SuperSpecialEducatorProfile?
   notifications               Notification[]
+  requestedApprovals          ApprovalRequest[]           @relation("RequestedApprovals")
+  targetUserApprovals         ApprovalRequest[]           @relation("TargetUserApprovals")
+  approvedRequests            ApprovalRequest[]           @relation("ApprovedRequests")
+  rejectedRequests            ApprovalRequest[]           @relation("RejectedRequests")
 
   @@map("users")
 }
@@ -1189,4 +1193,46 @@ enum DayOfWeek {
   WEDNESDAY
   THURSDAY
   FRIDAY
+}
+
+enum ApprovalRequestType {
+  USER_CREATION
+  ROLE_ASSIGNMENT
+  CENTER_CREATION
+  SCHOOL_CREATION
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model ApprovalRequest {
+  id               String               @id @default(cuid())
+  type             ApprovalRequestType
+  status           ApprovalStatus       @default(PENDING)
+  requestedById    String
+  targetUserId     String?              // For user creation/role assignment
+  targetCenterId   String?              // For center creation
+  targetSchoolId   String?              // For school creation
+  requestedRole    UserRole?            // For role assignment requests
+  requestedData    Json                 // Store the full request data
+  comments         String?
+  rejectionReason  String?
+  approvedById     String?
+  rejectedById     String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  approvedAt       DateTime?
+  rejectedAt       DateTime?
+
+  // Relations
+  requestedBy      User                 @relation("RequestedApprovals", fields: [requestedById], references: [id])
+  targetUser       User?                @relation("TargetUserApprovals", fields: [targetUserId], references: [id])
+  approvedBy       User?                @relation("ApprovedRequests", fields: [approvedById], references: [id])
+  rejectedBy       User?                @relation("RejectedRequests", fields: [rejectedById], references: [id])
+
+  @@map("approval_requests")
 }

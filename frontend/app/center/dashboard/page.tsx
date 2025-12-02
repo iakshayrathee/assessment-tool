@@ -134,13 +134,13 @@ export default function CenterDashboard() {
         actions={[
           {
             label: 'Link School',
-            href: '/center/schools/new',
+            href: '/center/schools',
             icon: Building,
             variant: 'outline'
           },
           {
             label: 'Add Student',
-            href: '/center/students/new',
+            href: '/center/students',
             icon: Plus
           }
         ]}
@@ -287,20 +287,6 @@ export default function CenterDashboard() {
                           >
                             {student.status.toLowerCase()}
                           </Badge>
-                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Link href={`/center/students/${student.id}`}>
-                              <Button variant="outline" size="sm" className="group/btn">
-                                <Eye className="h-3 w-3 mr-1 group-hover/btn:scale-110 transition-transform" />
-                                View
-                              </Button>
-                            </Link>
-                            <Link href={`/center/students/${student.id}/assign`}>
-                              <Button size="sm" className="group/btn">
-                                <UserCheck className="h-3 w-3 mr-1 group-hover/btn:scale-110 transition-transform" />
-                                Assign
-                              </Button>
-                            </Link>
-                          </div>
                         </div>
                       </motion.div>
                     ))}
