@@ -1127,7 +1127,10 @@ export class CenterService {
 
     // Build where clause for unlinked schools
     const where: any = {
-      centerId: null
+      OR: [
+        { centerId: null },
+        { centerId: '' }
+      ]
     };
 
     // Add search filter if provided

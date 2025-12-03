@@ -611,17 +611,7 @@ export default function CenterSchools() {
                                 <Users className="h-4 w-4 mr-2" />
                                 View Students
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => {
-                                // Handle edit action
-                                toast({
-                                  title: "Coming Soon",
-                                  description: "Edit functionality will be available soon.",
-                                });
-                              }}>
-                                <User className="h-4 w-4 mr-2" />
-                                Edit School
-                              </DropdownMenuItem>
+
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

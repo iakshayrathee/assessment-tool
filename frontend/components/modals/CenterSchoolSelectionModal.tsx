@@ -123,9 +123,13 @@ export default function CenterSchoolSelectionModal({
   const loadSchools = async (centerId: string) => {
     try {
       setLoading(true);
-      const schoolsData = await apiClient.getCenterSchools(centerId);
-      setSchools(schoolsData);
-      setFilteredSchools(schoolsData); // Initialize filtered schools with all schools
+      const response = await apiClient.getCenterSchools(centerId);
+      // Extract schools data from response.data
+      const schoolsData = response?.data || [];
+      // Ensure we always work with an array, even if API returns null/undefined
+      const schoolsArray = Array.isArray(schoolsData) ? schoolsData : [];
+      setSchools(schoolsArray);
+      setFilteredSchools(schoolsArray); // Initialize filtered schools with all schools
     } catch (error) {
       console.error('Failed to load schools:', error);
       toast({
@@ -139,10 +143,10 @@ export default function CenterSchoolSelectionModal({
   };
 
   // Pagination calculations
-  const totalPages = Math.ceil(filteredSchools.length / itemsPerPage);
+  const totalPages = Math.ceil((filteredSchools || []).length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentSchools = filteredSchools.slice(startIndex, endIndex);
+  const currentSchools = (filteredSchools || []).slice(startIndex, endIndex);
 
   const handleSchoolSelect = (school: School) => {
     onSchoolSelected(school.id, school.name);
@@ -260,10 +264,10 @@ export default function CenterSchoolSelectionModal({
                 </div>
 
                 {/* Pagination */}
-                {filteredSchools.length > itemsPerPage && (
+                {(filteredSchools || []).length > itemsPerPage && (
                   <div className="flex items-center justify-between p-4 border-t bg-gray-50">
                     <div className="text-sm text-gray-500">
-                      Showing {startIndex + 1}-{Math.min(endIndex, filteredSchools.length)} of {filteredSchools.length} schools
+                      Showing {startIndex + 1}-{Math.min(endIndex, (filteredSchools || []).length)} of {(filteredSchools || []).length} schools
                     </div>
                     <div className="flex items-center gap-2">
                       <Button

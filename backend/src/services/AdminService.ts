@@ -469,15 +469,18 @@ export class AdminService {
             // Get a default center ID if available, but make center optional
             const defaultCenter = await tx.centerProfile.findFirst();
 
-            // Create school with optional center association
+            // Create school with all available details
             const schoolData: any = {
-              name: convertedData.schoolName
+              name: convertedData.schoolName,
+              address: convertedData.schoolAddress,
+              phone: convertedData.schoolPhone,
+              email: convertedData.schoolEmail,
+              principalName: convertedData.schoolPrincipalName,
+              centerId: convertedData.centerId // Only if explicitly provided
             };
 
-            // Only include centerId if a default center exists
-            if (defaultCenter) {
-              schoolData.centerId = defaultCenter.id;
-            }
+            // Do NOT automatically assign centerId - keep schools unlinked by default
+            // Schools should only be linked to centers when explicitly specified
 
             school = await tx.school.create({
               data: schoolData
