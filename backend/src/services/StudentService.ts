@@ -109,10 +109,10 @@ export class StudentService {
     }
 
     // Create student with the parentId (can be null if no parent info provided)
-    // Remove address field since Student model doesn't have it - address is only for parent
-    const { address, ...studentDataWithoutAddress } = studentData;
+    // Remove parent-specific fields since they're only used for parent account creation
+    const { address, parentPassword, parentName, parentPhone, parentEmail, relationship, ...studentDataWithoutParentFields } = studentData;
     const finalStudentData: StudentData = {
-      ...studentDataWithoutAddress,
+      ...studentDataWithoutParentFields,
       parentId: parentId || null
     };
 
@@ -155,6 +155,87 @@ export class StudentService {
     // Validate date of birth if provided
     if (studentData.dateOfBirth && new Date(studentData.dateOfBirth) > new Date()) {
       throw new Error('Date of birth cannot be in the future');
+    }
+
+    // Handle parent creation/update if parent details are provided
+    let parentId = existingStudent.parentId;
+    
+    if (studentData.parentName && studentData.parentPhone) {
+      // Check if we need to create a new parent or update existing
+      if (!parentId) {
+        // Create new parent account
+        if (!studentData.parentPassword) {
+          throw new Error('Parent password is required when creating a new parent account');
+        }
+        
+        const hashedPassword = await bcrypt.hash(studentData.parentPassword, 12);
+        const parentEmail = studentData.parentEmail || `parent_${Date.now()}_${Math.random().toString(36).substring(2, 8)}@temp.com`;
+        
+        // Check if email already exists
+        const existingUser = await this.studentRepository.prismaClient.user.findUnique({
+          where: { email: parentEmail }
+        });
+        if (existingUser) {
+          throw new Error(`A user with email ${parentEmail} already exists. Please use a different email address.`);
+        }
+        
+        // Create parent profile with user account
+        const parentProfile = await this.studentRepository.prismaClient.parentProfile.create({
+          data: {
+            fullName: studentData.parentName,
+            phone: studentData.parentPhone,
+            address: studentData.address || '',
+            emergencyContact: studentData.parentPhone,
+            relationship: 'Parent',
+            user: {
+              create: {
+                email: parentEmail,
+                password: hashedPassword,
+                role: 'PARENT',
+                isActive: true
+              }
+            }
+          }
+        });
+        parentId = parentProfile.id;
+        
+        // Update student data with new parent ID
+        studentData.parentId = parentId;
+      } else {
+        // Update existing parent profile
+        await this.studentRepository.prismaClient.parentProfile.update({
+          where: { id: parentId },
+          data: {
+            fullName: studentData.parentName,
+            phone: studentData.parentPhone,
+            address: studentData.address || undefined,
+            emergencyContact: studentData.emergencyContact || studentData.parentPhone || undefined
+          }
+        });
+        
+        // If parent email is provided and different from current, update user email
+        if (studentData.parentEmail) {
+          const parentProfile = await this.studentRepository.prismaClient.parentProfile.findUnique({
+            where: { id: parentId },
+            include: { user: true }
+          });
+          
+          if (parentProfile && parentProfile.user.email !== studentData.parentEmail) {
+            // Check if new email already exists
+            const existingUser = await this.studentRepository.prismaClient.user.findUnique({
+              where: { email: studentData.parentEmail }
+            });
+            if (existingUser) {
+              throw new Error(`A user with email ${studentData.parentEmail} already exists. Please use a different email address.`);
+            }
+            
+            await this.studentRepository.prismaClient.user.update({
+              where: { id: parentProfile.userId },
+              data: { email: studentData.parentEmail }
+            });
+          }
+        }
+      }
     }
 
     return await this.studentRepository.update(id, studentData);

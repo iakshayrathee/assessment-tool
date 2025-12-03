@@ -181,6 +181,7 @@ export default function NewStudentPage() {
         parentName: formData.parentFullName,
         parentPhone: formData.parentPhone,
         parentEmail: formData.parentEmail || '',
+        parentPassword: formData.parentPassword, // Include parent password for account creation
         address: formData.parentAddress || '',
         relationship: formData.relationship, // Relationship for parent profile
       };

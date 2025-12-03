@@ -1,6 +1,23 @@
 import { body, param, query, ValidationChain } from 'express-validator';
 import { UserRole, Gender } from '../models';
 
+// Custom validation for CUID format (used by Prisma)
+const isCUID = (value: string): boolean => {
+  // CUID format: starts with 'c', followed by 24 alphanumeric characters
+  const cuidRegex = /^c[0-9a-z]{24}$/i;
+  return cuidRegex.test(value);
+};
+
+// Custom validation for either UUID or CUID format
+const isValidId = (value: string): boolean => {
+  // UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  // CUID format
+  const cuidRegex = /^c[0-9a-z]{24}$/i;
+  
+  return uuidRegex.test(value) || cuidRegex.test(value);
+};
+
 export class ValidationRules {
   // Authentication validations
   static login(): ValidationChain[] {
@@ -83,14 +100,26 @@ export class ValidationRules {
         .optional()
         .isEmail()
         .normalizeEmail()
-        .withMessage('Please provide a valid email address (e.g., parent@example.com)')
+        .withMessage('Please provide a valid email address (e.g., parent@example.com)'),
+      body('address')
+        .optional()
+        .isLength({ max: 500 })
+        .withMessage('Address must be less than 500 characters'),
+      body('parentPassword')
+        .optional()
+        .isLength({ min: 6 })
+        .withMessage('Parent password must be at least 6 characters long'),
+      body('parentEmergencyContact')
+        .optional()
+        .isMobilePhone('any')
+        .withMessage('Please provide a valid emergency contact phone number')
     ];
   }
 
   static updateStudent(): ValidationChain[] {
     return [
       param('id')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid student ID is required'),
       body('fullName')
         .optional()
@@ -132,7 +161,7 @@ export class ValidationRules {
   static createIntakeForm(): ValidationChain[] {
     return [
       body('studentId')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid student ID is required'),
       body('dailyDigitalUse')
         .optional()
@@ -157,7 +186,7 @@ export class ValidationRules {
   static createAssessment(): ValidationChain[] {
     return [
       body('studentId')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid student ID is required'),
       body('assessmentType')
         .optional()
@@ -170,7 +199,7 @@ export class ValidationRules {
   static createIEPGoal(): ValidationChain[] {
     return [
       body('studentId')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid student ID is required'),
       body('domain')
         .isLength({ min: 1, max: 50 })
@@ -197,7 +226,7 @@ export class ValidationRules {
   static createSessionNote(): ValidationChain[] {
     return [
       body('studentId')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid student ID is required'),
       body('sessionDate')
         .isISO8601()
@@ -216,7 +245,7 @@ export class ValidationRules {
   static createReport(): ValidationChain[] {
     return [
       body('studentId')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid student ID is required'),
       body('type')
         .isIn(['INTAKE', 'ASSESSMENT', 'IEP', 'PROGRESS'])
@@ -271,7 +300,7 @@ export class ValidationRules {
         .isLength({ min: 2, max: 100 })
         .withMessage('School name must be between 2 and 100 characters'),
       body('centerId')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid center ID is required'),
       body('email')
         .optional()
@@ -289,7 +318,7 @@ export class ValidationRules {
   static updateCenter(): ValidationChain[] {
     return [
       param('id')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid center ID is required'),
       body('centerName')
         .optional()
@@ -389,7 +418,7 @@ export class ValidationRules {
   static updateUser(): ValidationChain[] {
     return [
       param('userId')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid user ID is required'),
       body('email')
         .optional()
@@ -406,10 +435,10 @@ export class ValidationRules {
   static assignEducatorToCenter(): ValidationChain[] {
     return [
       body('centerId')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid center ID is required'),
       body('educatorId')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid educator ID is required'),
       body('educatorType')
         .isIn(['SPECIAL_EDUCATOR', 'SUPER_SPECIAL_EDUCATOR'])
@@ -420,10 +449,10 @@ export class ValidationRules {
   static assignStudentToEducator(): ValidationChain[] {
     return [
       body('studentId')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid student ID is required'),
       body('specialEducatorId')
-        .isUUID()
+        .custom(isValidId)
         .withMessage('Valid special educator ID is required')
     ];
   }

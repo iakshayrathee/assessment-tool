@@ -64,7 +64,11 @@ export class StudentRepository {
       include: {
         center: true,
         school: true,
-        parent: true,
+        parent: {
+          include: {
+            user: true
+          }
+        },
         assignments: {
           include: {
             specialEducator: true
@@ -80,7 +84,11 @@ export class StudentRepository {
       include: {
         center: true,
         school: true,
-        parent: true,
+        parent: {
+          include: {
+            user: true
+          }
+        },
         assignments: {
           where: { isActive: true },
           include: {
@@ -112,7 +120,11 @@ export class StudentRepository {
   }
 
   async update(id: string, studentData: Partial<StudentData>): Promise<Student> {
-    const updateData: any = { ...studentData };
+    // Filter out parent-related fields that shouldn't be passed to Prisma student update
+    const { 
+      parentName, parentPhone, parentEmail, parentAddress, parentPassword, emergencyContact,
+      ...updateData 
+    } = studentData;
     
     if (studentData.dateOfBirth) {
       // Ensure dateOfBirth is a proper Date object
@@ -124,9 +136,17 @@ export class StudentRepository {
       updateData.age = DateHelper.calculateAge(dateOfBirth);
     }
 
+    // Prepare the data object for Prisma update, handling null values
+    const prismaUpdateData: any = { ...updateData };
+    
+    // Handle schoolId field for Prisma compatibility
+    if (prismaUpdateData.schoolId === null || prismaUpdateData.schoolId === undefined) {
+      delete prismaUpdateData.schoolId;
+    }
+
     return this.prisma.student.update({
       where: { id },
-      data: updateData,
+      data: prismaUpdateData as any,
       include: {
         center: true,
         school: true,

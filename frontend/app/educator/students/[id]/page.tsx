@@ -2,13 +2,19 @@
 
 import { useParams } from 'next/navigation';
 import { useEducatorStudentDetails } from '@/hooks/useEducator';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 // Use route-level UnifiedLayout; remove page-level EducatorLayout
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -38,12 +44,143 @@ import { motion } from 'framer-motion';
 export default function StudentDetailPage() {
   const params = useParams();
   const studentId = params.id as string;
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Edit student modal state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    fullName: '',
+    dateOfBirth: '',
+    age: 0,
+    gender: '',
+    grade: '',
+    motherTongue: '',
+    syllabus: '',
+    status: 'ACTIVE',
+    parentName: '',
+    parentPhone: '',
+    parentEmail: '',
+    address: '',
+    parentEmergencyContact: '',
+    parentPassword: ''
+  });
+
+  // Handler to open edit modal with current student data
+  const handleEditClick = () => {
+    if (student) {
+      const formData = {
+        fullName: student.fullName || '',
+        dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : '',
+        age: calculateAge(student.dateOfBirth) || 0,
+        gender: student.gender || '',
+        grade: student.grade || '',
+        motherTongue: student.motherTongue || '',
+        syllabus: student.syllabus || '',
+        status: student.status || 'ACTIVE',
+        parentName: student.parent?.fullName || '',
+        parentPhone: student.parent?.phone || '',
+        parentEmail: student.parent?.user?.email || '',
+        parentAddress: student.parent?.address || '',
+        parentEmergencyContact: student.parent?.emergencyContact || '',
+        parentPassword: '',
+        // Indicate that parent has an existing account (for UI logic)
+        parentHasAccount: !!student.parent?.userId
+      };
+      
+      console.log('Student data:', student);
+      console.log('Parent data:', student.parent);
+      console.log('Form data being set:', formData);
+      
+      setEditFormData(formData);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  // Calculate age from date of birth
+  const calculateAge = (dateOfBirth: string): number => {
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
+  // Handler for form input changes
+  const handleInputChange = (field: string, value: string) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Handler for form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Filter out empty parent fields to avoid validation errors
+    const filteredData = { ...editFormData };
+    
+    // Remove empty parent fields and UI-only fields
+    if (!filteredData.parentName) delete filteredData.parentName;
+    if (!filteredData.parentPhone) delete filteredData.parentPhone;
+    if (!filteredData.parentEmail) delete filteredData.parentEmail;
+    if (!filteredData.parentAddress) delete filteredData.parentAddress;
+    if (!filteredData.parentEmergencyContact) delete filteredData.parentEmergencyContact;
+    if (!filteredData.parentPassword) delete filteredData.parentPassword;
+    // Remove UI-only field that shouldn't be sent to backend
+    delete filteredData.parentHasAccount;
+    
+    console.log('Data being sent to backend:', filteredData);
+    
+    updateStudentMutation.mutate(filteredData);
+  };
 
   // Comprehensive data fetching using the dashboard endpoint
   const { data: dashboardData, isLoading: isDashboardLoading } = useQuery({
     queryKey: ['studentDashboard', studentId],
     queryFn: () => apiClient.getStudentDashboard(studentId),
     enabled: !!studentId,
+  });
+
+  // Update student mutation
+  const updateStudentMutation = useMutation({
+    mutationFn: (studentData: any) => apiClient.updateStudent(studentId, studentData),
+    onSuccess: () => {
+      setIsEditModalOpen(false);
+      // Invalidate and refetch student data
+      queryClient.invalidateQueries({ queryKey: ['studentDashboard', studentId] });
+      toast({
+        title: 'Success',
+        description: 'Student updated successfully',
+        variant: 'default'
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to update student:', error);
+      
+      // Show validation errors as toast messages
+      if (error.response?.data?.details) {
+        error.response.data.details.forEach((detail: any) => {
+          toast({
+            title: 'Validation Error',
+            description: `${detail.field}: ${detail.message}`,
+            variant: 'destructive'
+          });
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to update student',
+          variant: 'destructive'
+        });
+      }
+    }
   });
 
   // Use student data from dashboard for complete information
@@ -134,13 +271,9 @@ export default function StudentDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleEditClick}>
             <Edit className="h-4 w-4 mr-2" />
             Edit Profile
-          </Button>
-          <Button>
-            <Download className="h-4 w-4 mr-2" />
-            Generate Report
           </Button>
         </div>
       </div>
@@ -891,6 +1024,203 @@ export default function StudentDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Student Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Student Profile</DialogTitle>
+            <DialogDescription>
+              Update the student's information. Changes will be saved immediately.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name *</Label>
+                <Input
+                  id="fullName"
+                  value={editFormData.fullName}
+                  onChange={(e) => handleInputChange('fullName', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={editFormData.dateOfBirth}
+                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="age">Age *</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  value={editFormData.age}
+                  onChange={(e) => handleInputChange('age', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender *</Label>
+                <Select
+                  value={editFormData.gender}
+                  onValueChange={(value) => handleInputChange('gender', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">Male</SelectItem>
+                    <SelectItem value="FEMALE">Female</SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="grade">Grade *</Label>
+                <Input
+                  id="grade"
+                  value={editFormData.grade}
+                  onChange={(e) => handleInputChange('grade', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="motherTongue">Mother Tongue</Label>
+                <Input
+                  id="motherTongue"
+                  value={editFormData.motherTongue}
+                  onChange={(e) => handleInputChange('motherTongue', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="syllabus">Syllabus</Label>
+                <Input
+                  id="syllabus"
+                  value={editFormData.syllabus}
+                  onChange={(e) => handleInputChange('syllabus', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Status *</Label>
+                <Select
+                  value={editFormData.status}
+                  onValueChange={(value) => handleInputChange('status', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="INACTIVE">Inactive</SelectItem>
+                    <SelectItem value="COMPLETED">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Parent Information Fields */}
+              <div className="space-y-2">
+                <Label htmlFor="parentName">Parent Name</Label>
+                <Input
+                  id="parentName"
+                  value={editFormData.parentName}
+                  onChange={(e) => handleInputChange('parentName', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="parentPhone">Parent Phone</Label>
+                <Input
+                  id="parentPhone"
+                  value={editFormData.parentPhone}
+                  onChange={(e) => handleInputChange('parentPhone', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="parentEmail">Parent Email</Label>
+                <Input
+                  id="parentEmail"
+                  type="email"
+                  value={editFormData.parentEmail}
+                  onChange={(e) => handleInputChange('parentEmail', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="parentAddress">Parent Address</Label>
+                <Input
+                  id="parentAddress"
+                  value={editFormData.parentAddress}
+                  onChange={(e) => handleInputChange('parentAddress', e.target.value)}
+                  placeholder="Enter parent address"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="parentEmergencyContact">Emergency Contact</Label>
+                <Input
+                  id="parentEmergencyContact"
+                  value={editFormData.parentEmergencyContact}
+                  onChange={(e) => handleInputChange('parentEmergencyContact', e.target.value)}
+                  placeholder="Emergency contact information"
+                />
+              </div>
+
+              {editFormData.parentHasAccount ? (
+                <div className="space-y-2 p-3 bg-blue-50 rounded-md">
+                  <Label className="text-blue-800">Parent Account</Label>
+                  <p className="text-sm text-blue-600">
+                    This parent already has an account. To update password, please use the password reset feature.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="parentPassword">Parent Password (required for new account)</Label>
+                  <Input
+                    id="parentPassword"
+                    type="password"
+                    value={editFormData.parentPassword}
+                    onChange={(e) => handleInputChange('parentPassword', e.target.value)}
+                    placeholder="Enter password for new parent account"
+                    required
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditModalOpen(false)}
+                disabled={updateStudentMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={updateStudentMutation.isPending}
+              >
+                {updateStudentMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

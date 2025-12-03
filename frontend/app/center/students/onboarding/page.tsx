@@ -270,7 +270,6 @@ export default function StudentOnboarding() {
         motherTongue: formData.motherTongue,
         syllabus: formData.syllabus,
         schoolId: formData.schoolId || null,
-        specialEducatorId: selectedEducatorId || null,
         previousSchool: formData.previousSchool,
         medicalConditions: formData.medicalConditions,
         specialNeeds: formData.specialNeeds,
@@ -279,11 +278,27 @@ export default function StudentOnboarding() {
         status: 'ACTIVE',
       };
 
-      await apiClient.createStudent(studentData);
+      // Create the student first
+      const createdStudent = await apiClient.createStudent(studentData);
+
+      // Assign educator to the student if one is selected
+      if (selectedEducatorId) {
+        try {
+          await apiClient.assignStudentToEducator(createdStudent.id, selectedEducatorId);
+        } catch (assignmentError: any) {
+          // Log the assignment error but don't fail the entire onboarding
+          console.warn('Failed to assign educator to student:', assignmentError);
+          toast({
+            title: 'Warning',
+            description: 'Student created successfully but educator assignment failed. You can assign an educator later.',
+            variant: 'default',
+          });
+        }
+      }
 
       toast({
         title: 'Success',
-        description: 'Student onboarded successfully!',
+        description: 'Student onboarded successfully!' + (selectedEducatorId ? ' Educator assigned.' : ''),
       });
       router.push('/center/students');
     } catch (error: any) {

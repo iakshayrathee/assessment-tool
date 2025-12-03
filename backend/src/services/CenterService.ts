@@ -199,7 +199,11 @@ export class CenterService {
             select: { id: true, name: true }
           },
           parent: {
-            select: { id: true, fullName: true, phone: true }
+            include: {
+              user: {
+                select: { id: true, email: true }
+              }
+            }
           },
           assignments: {
             where: { isActive: true },
