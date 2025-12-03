@@ -1113,4 +1113,72 @@ export class CenterService {
       }
     };
   }
+
+  /**
+   * Get unlinked schools (schools not associated with any center)
+   */
+  async getUnlinkedSchools(options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }) {
+    const { page = 1, limit = 50, search } = options || {};
+    const skip = (page - 1) * limit;
+
+    // Build where clause for unlinked schools
+    const where: any = {
+      centerId: null
+    };
+
+    // Add search filter if provided
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { address: { contains: search, mode: 'insensitive' as const } },
+        { principalName: { contains: search, mode: 'insensitive' as const } }
+      ];
+    }
+
+    const [schools, total] = await Promise.all([
+      this.prisma.school.findMany({
+        where,
+        include: {
+          students: {
+            select: {
+              id: true,
+              fullName: true,
+              status: true,
+              grade: true
+            }
+          },
+          viewers: {
+            include: {
+              user: {
+                select: { id: true, email: true, isActive: true }
+              }
+            }
+          }
+        },
+        skip,
+        take: limit,
+        orderBy: { name: 'asc' }
+      }),
+      this.prisma.school.count({ where })
+    ]);
+
+    return {
+      data: schools.map(school => ({
+        ...school,
+        studentCount: school.students.length,
+        activeStudentCount: school.students.filter(s => s.status === 'ACTIVE').length,
+        viewerCount: school.viewers.length
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
 }

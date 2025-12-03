@@ -459,7 +459,14 @@ export class CenterController {
       }
 
       const { id: centerId } = req.params;
-      const { name, address, phone, email, principalName } = req.body;
+      const { schoolId } = req.body;
+
+      if (!schoolId) {
+        return res.status(400).json({
+          success: false,
+          error: 'School ID is required'
+        });
+      }
 
       // Verify center exists - try both id and userId
       let center = await this.prisma.centerProfile.findUnique({
@@ -480,20 +487,29 @@ export class CenterController {
         });
       }
 
-      const school = await this.prisma.school.create({
+      // Verify school exists
+      const school = await this.prisma.school.findUnique({
+        where: { id: schoolId }
+      });
+
+      if (!school) {
+        return res.status(404).json({
+          success: false,
+          error: 'School not found'
+        });
+      }
+
+      // Update the school to link it to the center
+      const updatedSchool = await this.prisma.school.update({
+        where: { id: schoolId },
         data: {
-          name,
-          address,
-          phone,
-          email,
-          principalName,
           centerId: center.id
         }
       });
 
-      res.status(201).json({
+      res.status(200).json({
         success: true,
-        data: school,
+        data: updatedSchool,
         message: 'School linked to center successfully'
       });
     } catch (error: any) {
@@ -898,6 +914,39 @@ export class CenterController {
       return res.status(500).json({
         success: false,
         error: 'Failed to fetch special educators'
+      });
+    }
+  }
+
+  // Get unlinked schools (schools not associated with any center)
+  async getUnlinkedSchools(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { page = 1, limit = 50, search } = req.query;
+      
+      const result = await this.centerService.getUnlinkedSchools({
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
+        search: search as string
+      });
+
+      res.json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination
+      });
+    } catch (error: any) {
+      console.error('Get unlinked schools error:', error);
+      
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          error: error.message
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch unlinked schools'
       });
     }
   }

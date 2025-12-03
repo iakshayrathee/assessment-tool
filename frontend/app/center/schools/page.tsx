@@ -11,15 +11,16 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { 
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
-  School, 
+import {
+  School,
   Plus,
   Users,
   MapPin,
@@ -88,6 +89,20 @@ export default function CenterSchools() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkingSchool, setLinkingSchool] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalSchools, setTotalSchools] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Unlinked schools search state
+  const [unlinkedSchools, setUnlinkedSchools] = useState<any[]>([]);
+  const [unlinkedSearchTerm, setUnlinkedSearchTerm] = useState('');
+  const [unlinkedCurrentPage, setUnlinkedCurrentPage] = useState(1);
+  const [unlinkedTotalPages, setUnlinkedTotalPages] = useState(1);
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
+  const [searchingSchools, setSearchingSchools] = useState(false);
   const [formData, setFormData] = useState<SchoolFormData>({
     name: '',
     address: '',
@@ -106,16 +121,91 @@ export default function CenterSchools() {
     loadSchools();
   }, []);
 
-  const loadSchools = async () => {
+  // Debounced search effect
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page when search changes
+      loadSchools(1, itemsPerPage, searchTerm);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+  // Search unlinked schools when modal opens or search term changes
+  useEffect(() => {
+    if (showLinkModal) {
+      const handler = setTimeout(() => {
+        searchUnlinkedSchools(1, unlinkedSearchTerm);
+      }, 300);
+
+      return () => {
+        clearTimeout(handler);
+      };
+    }
+  }, [showLinkModal, unlinkedSearchTerm]);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    loadSchools(page, itemsPerPage, searchTerm);
+  };
+
+  // Search for unlinked schools
+  const searchUnlinkedSchools = async (page = 1, search = '') => {
+    try {
+      setSearchingSchools(true);
+
+      // Use the actual backend API to get unlinked schools
+      const response = await apiClient.getUnlinkedSchools({
+        page,
+        limit: 10, // Show 10 schools per page
+        search: search || undefined
+      });
+
+      setUnlinkedSchools(response.data);
+      setUnlinkedTotalPages(response.pagination.totalPages);
+      setUnlinkedCurrentPage(response.pagination.page);
+
+    } catch (error) {
+      console.error('Failed to search unlinked schools:', error);
+      setUnlinkedSchools([]);
+    } finally {
+      setSearchingSchools(false);
+    }
+  };
+
+  // Handle unlinked school selection
+  const handleSchoolSelect = (school: any) => {
+    setSelectedSchoolId(school.id);
+    setFormData(prev => ({
+      ...prev,
+      name: school.name,
+      address: school.address || '',
+      phone: school.phone || '',
+      email: school.email || '',
+      principalName: school.principalName || ''
+    }));
+    // Clear any previous errors
+    setErrors({});
+  };
+
+  const loadSchools = async (page = currentPage, limit = itemsPerPage, search = searchTerm) => {
     try {
       setLoading(true);
-      const centerId = user?.profile?.id;
+      // For CENTER role, the profile.id IS the centerProfile.id
+      const centerId = user?.profile?.id || user?.centerProfile?.id;
       if (!centerId) return;
 
-      const schoolsData = await apiClient.getCenterSchools(centerId);
-      
+      const response = await apiClient.getCenterSchools(centerId, {
+        page,
+        limit,
+        search: search || undefined
+      });
+
       // Transform backend data to match frontend interface
-      const transformedSchools = schoolsData.map((school: any) => ({
+      const transformedSchools = response.data.map((school: any) => ({
         id: school.id,
         name: school.name,
         address: school.address,
@@ -146,8 +236,10 @@ export default function CenterSchools() {
           }
         })) || []
       }));
-      
+
       setSchools(transformedSchools);
+      setTotalSchools(response.pagination?.total || 0);
+      setTotalPages(response.pagination?.totalPages || 1);
     } catch (error) {
       console.error('Failed to load schools:', error);
       setSchools([]);
@@ -172,8 +264,8 @@ export default function CenterSchools() {
   const validateForm = (): boolean => {
     const newErrors: Partial<SchoolFormData> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'School name is required';
+    if (!selectedSchoolId) {
+      newErrors.name = 'Please select a school from the list above';
     }
 
     setErrors(newErrors);
@@ -187,25 +279,24 @@ export default function CenterSchools() {
 
     try {
       setLinkingSchool(true);
-      const centerId = user?.profile?.id;
+      // For CENTER role, the profile.id IS the centerProfile.id
+      const centerId = user?.profile?.id || user?.centerProfile?.id;
       if (!centerId) {
-        throw new Error('Center ID not found');
-      }
-
-      // First search for existing schools with the provided name
-      const existingSchools = await apiClient.searchSchools({
-        name: formData.name.trim(),
-        exactMatch: true
-      });
-
-      if (existingSchools.length === 0) {
-        setErrors({ name: 'No school found with this name. Please check the school name or contact support.' });
+        toast({
+          title: "Error",
+          description: "Center ID not found. Please refresh and try again.",
+          variant: "destructive"
+        });
         return;
       }
 
-      // Link the first matching school to the center
-      const schoolToLink = existingSchools[0];
-      await apiClient.linkSchoolToCenter(centerId, schoolToLink.id);
+      if (!selectedSchoolId) {
+        setErrors({ name: 'Please select a school from the list above' });
+        return;
+      }
+
+      // Link the selected school to the center
+      await apiClient.linkSchoolToCenter(centerId, selectedSchoolId);
 
       toast({
         title: "Success",
@@ -213,31 +304,53 @@ export default function CenterSchools() {
       });
 
       // Reset form and close modal
-      setFormData({
-        name: '',
-        address: '',
-        phone: '',
-        email: '',
-        principalName: ''
-      });
-      setErrors({});
+      resetModalState();
       setShowLinkModal(false);
-      
+
       // Reload schools
       loadSchools();
     } catch (error: any) {
       console.error('Failed to link school:', error);
       // Handle specific error cases
       if (error.response?.data?.error?.includes('already linked')) {
-        setErrors({ name: 'This school is already linked to your center' });
+        toast({
+          title: "Error",
+          description: "This school is already linked to your center",
+          variant: "destructive"
+        });
       } else if (error.response?.data?.error?.includes('not found')) {
-        setErrors({ name: 'School not found. Please check the school name.' });
+        toast({
+          title: "Error",
+          description: "School not found. Please try again.",
+          variant: "destructive"
+        });
       } else {
-        setErrors({ name: 'Failed to link school. Please try again.' });
+        toast({
+          title: "Error",
+          description: "Failed to link school. Please try again.",
+          variant: "destructive"
+        });
       }
     } finally {
       setLinkingSchool(false);
     }
+  };
+
+  // Reset modal state
+  const resetModalState = () => {
+    setFormData({
+      name: '',
+      address: '',
+      phone: '',
+      email: '',
+      principalName: ''
+    });
+    setErrors({});
+    setSelectedSchoolId(null);
+    setUnlinkedSchools([]);
+    setUnlinkedSearchTerm('');
+    setUnlinkedCurrentPage(1);
+    setUnlinkedTotalPages(1);
   };
 
   const handleViewDetails = (school: SchoolData) => {
@@ -264,9 +377,9 @@ export default function CenterSchools() {
       INACTIVE: { label: 'Inactive', variant: 'secondary' as const, className: 'bg-gray-100 text-gray-800' },
       PENDING: { label: 'Pending', variant: 'outline' as const, className: 'bg-yellow-100 text-yellow-800' },
     };
-    
+
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.INACTIVE;
-    
+
     return (
       <Badge variant={config.variant} className={config.className}>
         {config.label}
@@ -399,7 +512,7 @@ export default function CenterSchools() {
                   {searchTerm ? 'No schools found' : 'No schools linked yet'}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  {searchTerm 
+                  {searchTerm
                     ? 'Try adjusting your search terms'
                     : 'Start by linking your first school to the center'
                   }
@@ -516,6 +629,41 @@ export default function CenterSchools() {
                     ))}
                   </TableBody>
                 </Table>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-6 flex justify-center">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          />
+                        </PaginationItem>
+
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              isActive={page === currentPage}
+                              onClick={() => handlePageChange(page)}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -531,30 +679,116 @@ export default function CenterSchools() {
               <span>Link Existing School</span>
             </DialogTitle>
             <DialogDescription>
-              Enter the name of an existing school to link it to your center
+              Search and select an existing school to link it to your center
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* School Name */}
+            {/* School Search */}
             <div className="space-y-2">
-              <Label htmlFor="modal-name" className="text-sm font-medium">
-                School Name *
+              <Label htmlFor="modal-search" className="text-sm font-medium">
+                Search Schools
               </Label>
               <Input
-                id="modal-name"
+                id="modal-search"
                 type="text"
-                placeholder="Enter exact school name"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                className={errors.name ? 'border-red-500' : ''}
+                placeholder="Search for schools by name..."
+                value={unlinkedSearchTerm}
+                onChange={(e) => setUnlinkedSearchTerm(e.target.value)}
               />
+              <p className="text-xs text-gray-600">
+                Search for schools that are not currently linked to any center
+              </p>
+            </div>
+
+            {/* School List */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Select School *
+              </Label>
+
+              {searchingSchools ? (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                </div>
+              ) : unlinkedSchools.length === 0 ? (
+                <div className="text-center py-4 text-gray-500">
+                  {unlinkedSearchTerm ? 'No schools found matching your search' : 'No unlinked schools available'}
+                </div>
+              ) : (
+                <div className="border rounded-lg divide-y">
+                  {unlinkedSchools.map((school) => (
+                    <div
+                      key={school.id}
+                      className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors border-l-4 ${selectedSchoolId === school.id
+                        ? 'bg-blue-50 border-l-blue-500 border-blue-200'
+                        : 'border-l-transparent'
+                        }`}
+                      onClick={() => handleSchoolSelect(school)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium flex items-center gap-2">
+                            {school.name}
+                            {selectedSchoolId === school.id && (
+                              <Badge className="bg-blue-600 text-white text-xs">Selected</Badge>
+                            )}
+                          </div>
+                          {school.address && (
+                            <div className="text-sm text-gray-600 mt-1">{school.address}</div>
+                          )}
+                          {(school.phone || school.email) && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {school.phone && <span>Phone: {school.phone}</span>}
+                              {school.phone && school.email && <span className="mx-1">•</span>}
+                              {school.email && <span>Email: {school.email}</span>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Pagination for unlinked schools */}
+              {unlinkedTotalPages > 1 && (
+                <div className="flex justify-center mt-2">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() => searchUnlinkedSchools(unlinkedCurrentPage - 1, unlinkedSearchTerm)}
+                          className={unlinkedCurrentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: unlinkedTotalPages }, (_, i) => i + 1).map((page) => (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            isActive={page === unlinkedCurrentPage}
+                            onClick={() => searchUnlinkedSchools(page, unlinkedSearchTerm)}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() => searchUnlinkedSchools(unlinkedCurrentPage + 1, unlinkedSearchTerm)}
+                          className={unlinkedCurrentPage === unlinkedTotalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+
               {errors.name && (
                 <p className="text-sm text-red-600">{errors.name}</p>
               )}
-              <p className="text-xs text-gray-600">
-                Enter the exact name of an existing school. The system will search for and link the school to your center.
-              </p>
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -565,7 +799,7 @@ export default function CenterSchools() {
                 <div>
                   <h4 className="text-sm font-medium text-blue-900 mb-1">How linking works</h4>
                   <p className="text-xs text-blue-700">
-                    Centers can only link existing schools. If you need to add a new school to the system, 
+                    Centers can only link existing schools. If you need to add a new school to the system,
                     please contact your administrator or support team.
                   </p>
                 </div>
@@ -578,26 +812,19 @@ export default function CenterSchools() {
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setShowLinkModal(false);
-                setFormData({
-                  name: '',
-                  address: '',
-                  phone: '',
-                  email: '',
-                  principalName: ''
-                });
-                setErrors({});
+                resetModalState();
               }}
               disabled={linkingSchool}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleLinkSchool}
-              disabled={linkingSchool}
+              disabled={linkingSchool || !selectedSchoolId}
             >
               {linkingSchool ? (
                 <>
@@ -646,7 +873,7 @@ export default function CenterSchools() {
                       <p className="text-lg">{selectedSchool.principalName || 'Not specified'}</p>
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label className="text-sm font-medium text-gray-600">Address</Label>
                     <p className="text-base">{selectedSchool.address || 'Not specified'}</p>
@@ -731,8 +958,8 @@ export default function CenterSchools() {
                       ))}
                       {selectedSchool.students.length > 5 && (
                         <div className="text-center py-2">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => {
                               setShowDetailsModal(false);

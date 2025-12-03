@@ -687,8 +687,8 @@ class ApiClient {
     await this.client.delete(`/admin/centers/${id}`);
   }
 
-  async linkSchoolToCenter(centerId: string, schoolData: any): Promise<any> {
-    const response = await this.client.post<ApiResponse<any>>(`/centers/${centerId}/schools`, schoolData);
+  async linkSchoolToCenter(centerId: string, schoolId: string): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/centers/${centerId}/schools`, { schoolId });
     return response.data.data;
   }
 
@@ -721,9 +721,13 @@ class ApiClient {
     return response.data;
   }
 
-  async getCenterSchools(centerId: string): Promise<any[]> {
-    const response = await this.client.get<ApiResponse<any[]>>(`/centers/${centerId}/schools`);
-    return response.data.data!;
+  async getCenterSchools(centerId: string, params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get<PaginatedResponse<any>>(`/centers/${centerId}/schools`, { params });
+    return response.data;
   }
 
   async getCenterEducators(centerId: string, params?: {
@@ -732,6 +736,15 @@ class ApiClient {
     search?: string;
   }): Promise<PaginatedResponse<any>> {
     const response = await this.client.get<PaginatedResponse<any>>(`/centers/${centerId}/educators`, { params });
+    return response.data;
+  }
+
+  async getUnlinkedSchools(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get<PaginatedResponse<any>>('/centers/unlinked-schools', { params });
     return response.data;
   }
 
@@ -1260,6 +1273,18 @@ class ApiClient {
   async getSchool(schoolId: string): Promise<any> {
     const response = await this.client.get<ApiResponse<any>>(`/schools/${schoolId}`);
     return response.data.data;
+  }
+
+  async searchSchools(params?: {
+    name?: string;
+    exactMatch?: boolean;
+    page?: number;
+    limit?: number;
+    search?: string;
+    unlinkedOnly?: boolean;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get<PaginatedResponse<any>>('/schools/search', { params });
+    return response.data;
   }
 
   async activateSchool(schoolId: string): Promise<void> {

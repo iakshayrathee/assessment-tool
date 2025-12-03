@@ -197,7 +197,7 @@ export function useCenterSchools(centerId?: string) {
   });
 
   return {
-    schools: schoolsQuery.data || [],
+    schools: schoolsQuery.data?.data || [],
     isLoading: schoolsQuery.isLoading,
     error: schoolsQuery.error,
     refetch: schoolsQuery.refetch,

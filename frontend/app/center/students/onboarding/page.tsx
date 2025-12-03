@@ -13,8 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { 
-  User, 
+import {
+  User,
   ArrowLeft,
   Save,
   Calendar,
@@ -57,6 +57,9 @@ interface StudentOnboardingData {
 interface School {
   id: string;
   name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
 }
 
 interface SpecialEducator {
@@ -83,6 +86,8 @@ export default function StudentOnboarding() {
   const [selectedEducatorId, setSelectedEducatorId] = useState<string>('');
   const [showEducatorModal, setShowEducatorModal] = useState(false);
   const [educatorSearchTerm, setEducatorSearchTerm] = useState('');
+  const [showSchoolModal, setShowSchoolModal] = useState(false);
+  const [schoolSearchTerm, setSchoolSearchTerm] = useState('');
 
   const [formData, setFormData] = useState<StudentOnboardingData>({
     fullName: '',
@@ -121,12 +126,12 @@ export default function StudentOnboarding() {
           return;
         }
 
-        const [schoolsData, educatorsData] = await Promise.all([
-          apiClient.getCenterSchools(centerId) as Promise<School[]>,
+        const [schoolsResponse, educatorsData] = await Promise.all([
+          apiClient.getCenterSchools(centerId) as Promise<{ data: School[] }>,
           apiClient.getCenterEducators(centerId) as Promise<{ data: SpecialEducator[] }>,
         ]);
 
-        setSchools(schoolsData || []);
+        setSchools(schoolsResponse?.data || []);
         setEducators(educatorsData?.data || []);
       } catch (error) {
         toast({
@@ -169,6 +174,7 @@ export default function StudentOnboarding() {
       'dateOfBirth',
       'gender',
       'grade',
+      'schoolId',
     ];
 
     for (const field of requiredFields) {
@@ -203,6 +209,12 @@ export default function StudentOnboarding() {
       )
   );
 
+  const filteredSchools = schools.filter(
+    (school) =>
+      school.name.toLowerCase().includes(schoolSearchTerm.toLowerCase()) ||
+      (school.address?.toLowerCase().includes(schoolSearchTerm.toLowerCase()) ?? false)
+  );
+
   const handleEducatorSelect = (educatorId: string) => {
     if (!educatorId || !educators.some((educator) => educator.educatorId === educatorId)) {
       toast({
@@ -215,6 +227,20 @@ export default function StudentOnboarding() {
     setSelectedEducatorId(educatorId);
     setShowEducatorModal(false);
     setEducatorSearchTerm('');
+  };
+
+  const handleSchoolSelect = (schoolId: string) => {
+    if (!schoolId || !schools.some((school) => school.id === schoolId)) {
+      toast({
+        title: 'Error',
+        description: 'Invalid school selected. Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    handleInputChange('schoolId', schoolId);
+    setShowSchoolModal(false);
+    setSchoolSearchTerm('');
   };
 
   const handleSubmit = async () => {
@@ -296,6 +322,29 @@ export default function StudentOnboarding() {
     }
 
     return 'Select a Special Educator';
+  };
+
+  const renderSchoolDisplay = () => {
+    if (loading) {
+      return 'Loading schools...';
+    }
+
+    if (formData.schoolId) {
+      const selectedSchool = schools.find((school) => school.id === formData.schoolId);
+      if (selectedSchool) {
+        return (
+          <div className="flex flex-col gap-1 w-full text-left">
+            <span className="font-medium">{selectedSchool.name}</span>
+            {selectedSchool.address && (
+              <span className="text-sm text-gray-500">{selectedSchool.address}</span>
+            )}
+          </div>
+        );
+      }
+      return 'School not found';
+    }
+
+    return 'Select a School';
   };
 
   return (
@@ -416,33 +465,92 @@ export default function StudentOnboarding() {
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="schoolId">School</Label>
-                    <Select
-                      value={formData.schoolId}
-                      onValueChange={(value) => handleInputChange('schoolId', value)}
-                      disabled={loading}
-                    >
-                      <SelectTrigger id="schoolId">
-                        <SelectValue placeholder={loading ? 'Loading schools...' : 'Select school (optional)'} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {loading ? (
-                          <SelectItem value="loading" disabled>
-                            Loading schools...
-                          </SelectItem>
-                        ) : schools.length === 0 ? (
-                          <SelectItem value="no-schools" disabled>
-                            No schools available
-                          </SelectItem>
-                        ) : (
-                          schools.map((school) => (
-                            <SelectItem key={school.id} value={school.id}>
-                              {school.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="schoolId">School *</Label>
+                    <Dialog open={showSchoolModal} onOpenChange={setShowSchoolModal}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start h-auto py-3" disabled={loading}>
+                          <School className="h-4 w-4 mr-2" />
+                          {renderSchoolDisplay()}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2">
+                            <School className="h-5 w-5" />
+                            Select School
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              id="schoolSearch"
+                              placeholder="Search schools by name or address..."
+                              value={schoolSearchTerm}
+                              onChange={(e) => setSchoolSearchTerm(e.target.value)}
+                              className="pl-10"
+                            />
+                          </div>
+
+                          <div className="border rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>School Name</TableHead>
+                                  <TableHead>Address</TableHead>
+                                  <TableHead>Contact</TableHead>
+                                  <TableHead>Action</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {loading ? (
+                                  <TableRow>
+                                    <TableCell colSpan={4} className="text-center py-8">
+                                      Loading schools...
+                                    </TableCell>
+                                  </TableRow>
+                                ) : filteredSchools.length === 0 ? (
+                                  <TableRow>
+                                    <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                                      {schoolSearchTerm ? 'No schools found matching your search' : 'No schools available'}
+                                    </TableCell>
+                                  </TableRow>
+                                ) : (
+                                  filteredSchools.map((school) => (
+                                    <TableRow key={school.id} className="hover:bg-gray-50">
+                                      <TableCell>
+                                        <div className="font-medium">{school.name}</div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="text-sm text-gray-600">
+                                          {school.address || 'Not specified'}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="text-sm text-gray-600">
+                                          {school.phone && <div>{school.phone}</div>}
+                                          {school.email && <div>{school.email}</div>}
+                                          {!school.phone && !school.email && 'No contact info'}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleSchoolSelect(school.id)}
+                                          variant={formData.schoolId === school.id ? 'default' : 'outline'}
+                                        >
+                                          {formData.schoolId === school.id ? 'Selected' : 'Select'}
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))
+                                )}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
               </CardContent>

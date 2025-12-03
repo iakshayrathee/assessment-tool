@@ -16,6 +16,7 @@ router.get('/dashboard', centerController.getCenterDashboard.bind(centerControll
 router.get('/available-educators', centerController.getAvailableEducators.bind(centerController));
 router.get('/all-educators', centerController.getAllSpecialEducators.bind(centerController));
 router.get('/cities-centers', centerController.getCitiesAndCenters.bind(centerController));
+router.get('/unlinked-schools', centerController.getUnlinkedSchools.bind(centerController));
 router.get('/:id', centerController.getCenterById.bind(centerController));
 router.post('/', centerController.createCenter.bind(centerController));
 router.put('/:id', centerController.updateCenter.bind(centerController));
