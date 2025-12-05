@@ -143,6 +143,11 @@ export class StudentRepository {
     if (prismaUpdateData.schoolId === null || prismaUpdateData.schoolId === undefined) {
       delete prismaUpdateData.schoolId;
     }
+    
+    // Remove parentEmergencyContact if it exists (even though it's not in the type)
+    if ('parentEmergencyContact' in prismaUpdateData) {
+      delete prismaUpdateData.parentEmergencyContact;
+    }
 
     return this.prisma.student.update({
       where: { id },

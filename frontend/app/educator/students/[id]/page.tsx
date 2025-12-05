@@ -142,9 +142,9 @@ export default function StudentDetailPage() {
   };
 
   // Comprehensive data fetching using the dashboard endpoint
-  const { data: dashboardData, isLoading: isDashboardLoading } = useQuery({
-    queryKey: ['studentDashboard', studentId],
-    queryFn: () => apiClient.getStudentDashboard(studentId),
+  const { data: studentData, isLoading: isStudentLoading } = useQuery({
+    queryKey: ['student', studentId],
+    queryFn: () => apiClient.getStudent(studentId),
     enabled: !!studentId,
   });
 
@@ -183,9 +183,17 @@ export default function StudentDetailPage() {
     }
   });
 
-  // Use student data from dashboard for complete information
-  const student = dashboardData?.student;
-  const isLoading = isDashboardLoading;
+  // Use student data for complete information
+  const student = studentData;
+  const isLoading = isStudentLoading;
+
+  // For dashboard components, we need to fetch dashboard data separately
+  // since we're now using the regular student endpoint
+  const { data: dashboardData, isLoading: isDashboardLoading } = useQuery({
+    queryKey: ['studentDashboard', studentId],
+    queryFn: () => apiClient.getStudentDashboard(studentId),
+    enabled: !!studentId,
+  });
 
   // Extract data from dashboard response
   const assessmentsData = dashboardData?.assessments || [];

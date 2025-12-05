@@ -171,12 +171,24 @@ export class StudentService {
         const hashedPassword = await bcrypt.hash(studentData.parentPassword, 12);
         const parentEmail = studentData.parentEmail || `parent_${Date.now()}_${Math.random().toString(36).substring(2, 8)}@temp.com`;
         
-        // Check if email already exists
+        // Check if email already exists and handle existing users
         const existingUser = await this.studentRepository.prismaClient.user.findUnique({
-          where: { email: parentEmail }
+          where: { email: parentEmail },
+          include: { parentProfile: true }
         });
+        
         if (existingUser) {
-          throw new Error(`A user with email ${parentEmail} already exists. Please use a different email address.`);
+          // If user has a parent profile, use that parent instead of creating new one
+          if (existingUser.parentProfile) {
+            parentId = existingUser.parentProfile.id;
+            // Update student data with existing parent ID
+            studentData.parentId = parentId;
+            // Skip parent creation and continue to student update
+            return await this.studentRepository.update(id, studentData);
+          } else {
+            // If user exists but is not a parent, reject the request
+            throw new Error(`A user with email ${parentEmail} already exists as a ${existingUser.role}. Please use a different email address.`);
+          }
         }
         
         // Create parent profile with user account
@@ -185,7 +197,7 @@ export class StudentService {
             fullName: studentData.parentName,
             phone: studentData.parentPhone,
             address: studentData.address || '',
-            emergencyContact: studentData.parentPhone,
+            emergencyContact: studentData.emergencyContact || studentData.parentPhone,
             relationship: 'Parent',
             user: {
               create: {
@@ -223,22 +235,38 @@ export class StudentService {
           if (parentProfile && parentProfile.user.email !== studentData.parentEmail) {
             // Check if new email already exists
             const existingUser = await this.studentRepository.prismaClient.user.findUnique({
-              where: { email: studentData.parentEmail }
+              where: { email: studentData.parentEmail },
+              include: { parentProfile: true }
             });
-            if (existingUser) {
-              throw new Error(`A user with email ${studentData.parentEmail} already exists. Please use a different email address.`);
-            }
             
-            await this.studentRepository.prismaClient.user.update({
-              where: { id: parentProfile.userId },
-              data: { email: studentData.parentEmail }
-            });
+            if (existingUser) {
+              if (!existingUser.parentProfile) {
+                // Email belongs to a non-parent user, reject
+                throw new Error(`A user with email ${studentData.parentEmail} already exists as a ${existingUser.role}. Please use a different email address.`);
+              }
+              // If email belongs to an existing parent (same or different), do nothing - allow same parent for multiple students
+            } else {
+              // Email doesn't exist, safe to update
+              await this.studentRepository.prismaClient.user.update({
+                where: { id: parentProfile.userId },
+                data: { email: studentData.parentEmail }
+              });
+            }
           }
         }
       }
     }
 
-    return await this.studentRepository.update(id, studentData);
+    // Remove parent-specific fields that shouldn't be passed to student update
+    const studentUpdateData = { ...studentData };
+    delete studentUpdateData.emergencyContact;
+    delete studentUpdateData.parentName;
+    delete studentUpdateData.parentPhone;
+    delete studentUpdateData.parentEmail;
+    delete studentUpdateData.parentPassword;
+    delete studentUpdateData.address;
+
+    return await this.studentRepository.update(id, studentUpdateData);
   }
 
   async deleteStudent(id: string): Promise<void> {

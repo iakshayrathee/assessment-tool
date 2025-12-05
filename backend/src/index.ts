@@ -44,8 +44,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     timestamp: new Date().toISOString(),
     service: 'Knowled Backend API'
   });
@@ -70,21 +70,21 @@ app.use('/api/lesson-plans', lessonPlansHomeworkRoutes);
 // Global error handler
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Global error handler:', error);
-  
+
   if (error.code === 'P2002') {
     return res.status(400).json({
       success: false,
       error: 'A record with this information already exists'
     });
   }
-  
+
   if (error.code === 'P2025') {
     return res.status(404).json({
       success: false,
       error: 'Record not found'
     });
   }
-  
+
   return res.status(500).json({
     success: false,
     error: 'Internal server error'

@@ -64,7 +64,7 @@ class ApiClient {
               // Get current user role before clearing auth
               const currentUser = useAuthStore.getState().user;
               const userRole = currentUser?.role;
-              
+
               // Clear auth state from Zustand store
               useAuthStore.getState().clearAuth();
 
