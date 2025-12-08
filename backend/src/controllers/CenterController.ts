@@ -487,9 +487,49 @@ export class CenterController {
         });
       }
 
+      // Handle case where schoolId might be an object instead of string
+      let actualSchoolId: string | undefined;
+      
+      if (typeof schoolId === 'string') {
+        actualSchoolId = schoolId;
+      } else if (schoolId && typeof schoolId === 'object') {
+        // Try to extract ID from different possible object structures
+        actualSchoolId = schoolId.id || schoolId.schoolId || schoolId.value || schoolId._id;
+        
+        // If no ID found but we have school details, we need to create a new school
+        if (!actualSchoolId && schoolId.name) {
+          // Create a new school with the provided details
+          const newSchool = await this.prisma.school.create({
+            data: {
+              name: schoolId.name,
+              address: schoolId.address || null,
+              phone: schoolId.phone || null,
+              email: schoolId.email || null,
+              principalName: schoolId.principalName || null,
+              centerId: center.id
+            }
+          });
+          
+          res.status(200).json({
+            success: true,
+            data: newSchool,
+            message: 'School created and linked to center successfully'
+          });
+          return;
+        }
+      }
+      
+      if (!actualSchoolId) {
+        console.error('Invalid schoolId format:', schoolId);
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid school ID format. Expected string ID or object with id property'
+        });
+      }
+
       // Verify school exists
       const school = await this.prisma.school.findUnique({
-        where: { id: schoolId }
+        where: { id: actualSchoolId }
       });
 
       if (!school) {
@@ -501,7 +541,7 @@ export class CenterController {
 
       // Update the school to link it to the center
       const updatedSchool = await this.prisma.school.update({
-        where: { id: schoolId },
+        where: { id: actualSchoolId },
         data: {
           centerId: center.id
         }
