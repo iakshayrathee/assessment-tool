@@ -6,24 +6,24 @@ interface AuthenticatedRequest extends Request {
 }
 import { PrismaClient } from '@prisma/client';
 import { AssessmentRepository } from '../repositories/AssessmentRepository';
-import { LessonPlanRepository } from '../repositories/LessonPlanRepository';
 import { IEPRepository } from '../repositories/IepRepository';
 import { SkillAssessmentRepository } from '../repositories/SkillAssessmentRepository';
+import { WeeklyLessonPlanRepository } from '../repositories/WeeklyLessonPlanRepository';
 import { AIReportService } from '../services/AIReportService';
 
 const prisma = new PrismaClient();
 const assessmentRepo = new AssessmentRepository(prisma);
-const lessonPlanRepo = new LessonPlanRepository(prisma);
 const iepRepo = new IEPRepository(prisma);
 const skillAssessmentRepo = new SkillAssessmentRepository(prisma);
-const aiReportService = new AIReportService(assessmentRepo, lessonPlanRepo, iepRepo, skillAssessmentRepo);
+const weeklyLessonPlanRepo = new WeeklyLessonPlanRepository(prisma);
+const aiReportService = new AIReportService(assessmentRepo, iepRepo, skillAssessmentRepo, weeklyLessonPlanRepo);
 
 export class AIReportController {
   static async generateAIReport(req: AuthenticatedRequest, res: Response) {
     try {
       const { studentId } = req.params;
       const { reportType } = req.body; // 'ASSESSMENT' or 'LESSON_PLAN'
-      
+
       // Extract userId from authenticated user
       const user = req.user;
       const userId = user?.profileId || user?.id;
@@ -83,7 +83,7 @@ export class AIReportController {
     try {
       const { studentId } = req.params;
       const { reportType } = req.query; // 'ASSESSMENT' or 'LESSON_PLAN'
-      
+
       // Extract userId from authenticated user
       const user = req.user;
       const userId = user?.profileId || user?.id;

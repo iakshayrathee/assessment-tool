@@ -117,5 +117,71 @@ export class HomeworkService {
 
     await this.homeworkRepository.delete(id);
   }
+
+  /**
+   * Upload files to homework and update attachedFiles
+   */
+  async uploadHomeworkFiles(id: string, files: Array<{ buffer: Buffer; originalname: string; mimetype: string }>): Promise<Homework> {
+    const existingHomework = await this.homeworkRepository.findById(id);
+    if (!existingHomework) {
+      throw new Error('Homework not found');
+    }
+
+    // Import S3Service dynamically to avoid circular dependencies
+    const { S3Service } = await import('./s3Service');
+    const s3Service = new S3Service();
+
+    // Upload files to S3
+    const fileKeys = await s3Service.uploadMultipleFiles(files, 'homework');
+
+    // Update homework with new file keys
+    return await this.homeworkRepository.addFiles(id, fileKeys);
+  }
+
+  /**
+   * Get homework files with signed URLs
+   */
+  async getHomeworkFilesWithSignedUrls(id: string): Promise<Array<{ key: string; url: string; fileName: string }>> {
+    const homework = await this.homeworkRepository.findById(id);
+    if (!homework) {
+      throw new Error('Homework not found');
+    }
+
+    if (!homework.attachedFiles || homework.attachedFiles.length === 0) {
+      return [];
+    }
+
+    // Import S3Service dynamically
+    const { S3Service } = await import('./s3Service');
+    const s3Service = new S3Service();
+
+    // Generate signed URLs for all files
+    return await s3Service.getSignedUrls(homework.attachedFiles);
+  }
+
+  /**
+   * Delete a file from homework
+   */
+  async deleteHomeworkFile(id: string, fileKey: string): Promise<Homework> {
+    const existingHomework = await this.homeworkRepository.findById(id);
+    if (!existingHomework) {
+      throw new Error('Homework not found');
+    }
+
+    // Check if file exists in homework
+    if (!existingHomework.attachedFiles.includes(fileKey)) {
+      throw new Error('File not found in homework');
+    }
+
+    // Import S3Service dynamically
+    const { S3Service } = await import('./s3Service');
+    const s3Service = new S3Service();
+
+    // Delete file from S3
+    await s3Service.deleteFile(fileKey);
+
+    // Remove file from homework
+    return await this.homeworkRepository.removeFile(id, fileKey);
+  }
 }
 

@@ -208,8 +208,8 @@ export class SpecialEducatorService {
     params: PaginationParams
   ): Promise<{ students: StudentWithProgress[]; pagination: any }> {
     try {
-      console.log('🎯 getAssignedStudents called with:', { educatorId, params });
-      
+      // console.log('🎯 getAssignedStudents called with:', { educatorId, params });
+
       const { page, limit, search, status } = params;
       const skip = (page - 1) * limit;
 
@@ -222,8 +222,8 @@ export class SpecialEducatorService {
           }
         }
       };
-      
-      console.log('🔍 Where clause for student query:', JSON.stringify(whereClause, null, 2));
+
+      // console.log('🔍 Where clause for student query:', JSON.stringify(whereClause, null, 2));
 
       if (search) {
         whereClause.fullName = {
@@ -280,14 +280,14 @@ export class SpecialEducatorService {
         }
       });
 
-      console.log('🔍 Raw students found:', students.length);
-      console.log('🔍 Student IDs found:', students.map(s => ({ id: s.id, name: s.fullName })));
+      // console.log('🔍 Raw students found:', students.length);
+      // console.log('🔍 Student IDs found:', students.map(s => ({ id: s.id, name: s.fullName })));
 
       // Calculate progress summary for each student
       const studentsWithProgress: StudentWithProgress[] = students.map(student => {
         const totalGoals = student.iepGoals.length;
         const completedGoals = student.iepGoals.filter(goal => goal.status === IEPGoalStatus.ACHIEVED).length;
-        const averageProgress = totalGoals > 0 
+        const averageProgress = totalGoals > 0
           ? Math.round(student.iepGoals.reduce((sum, goal) => sum + goal.progressPercent, 0) / totalGoals)
           : 0;
 
@@ -524,7 +524,7 @@ export class SpecialEducatorService {
   async getStatistics(educatorId: string) {
     try {
       const stats = await this.getDashboardData(educatorId);
-      
+
       // Additional statistics
       const totalSessionsThisMonth = await this.prisma.sessionNote.count({
         where: {
@@ -562,7 +562,7 @@ export class SpecialEducatorService {
       // In a real system, you would have a scheduling/calendar system
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 

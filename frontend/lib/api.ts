@@ -1888,43 +1888,157 @@ class ApiClient {
     return response.data.data;
   }
 
-  // Lesson Plans
-  async createLessonPlan(data: any): Promise<any> {
-    const response = await this.client.post('/lesson-plans/', data);
+  // ========== LONG-TERM PLANS ==========
+  async createLongTermPlan(data: any): Promise<any> {
+    const response = await this.client.post('/lesson-plans/long-term', data);
     return response.data.data;
   }
 
-  async getLessonPlansByStudent(studentId: string, page = 1, limit = 20): Promise<any> {
-    const response = await this.client.get(`/lesson-plans/student/${studentId}`, {
+  async getLongTermPlanById(id: string): Promise<any> {
+    const response = await this.client.get(`/lesson-plans/long-term/${id}`);
+    return response.data.data;
+  }
+
+  async getLongTermPlanWithHierarchy(id: string): Promise<any> {
+    const response = await this.client.get(`/lesson-plans/long-term/${id}/hierarchy`);
+    return response.data.data;
+  }
+
+  async getLongTermPlansByStudent(studentId: string, page = 1, limit = 20): Promise<any> {
+    const response = await this.client.get(`/lesson-plans/long-term/student/${studentId}`, {
       params: { page, limit }
     });
     return response.data.data;
   }
 
-  async getLessonPlansByEducator(params?: {
+  async getLongTermPlansByEducator(params?: {
     page?: number;
     limit?: number;
     studentId?: string;
-    skillArea?: string;
+    status?: string;
+    domain?: string;
+  }): Promise<any> {
+    const response = await this.client.get('/lesson-plans/long-term/educator/me', { params });
+    return response.data.data;
+  }
+
+  async updateLongTermPlan(id: string, data: any): Promise<any> {
+    const response = await this.client.put(`/lesson-plans/long-term/${id}`, data);
+    return response.data.data;
+  }
+
+  async deleteLongTermPlan(id: string): Promise<void> {
+    await this.client.delete(`/lesson-plans/long-term/${id}`);
+  }
+
+  // ========== SHORT-TERM PLANS ==========
+  async createShortTermPlan(data: any): Promise<any> {
+    const response = await this.client.post('/lesson-plans/short-term', data);
+    return response.data.data;
+  }
+
+  async getShortTermPlanById(id: string): Promise<any> {
+    const response = await this.client.get(`/lesson-plans/short-term/${id}`);
+    return response.data.data;
+  }
+
+  async getShortTermPlanWithWeeklyPlans(id: string): Promise<any> {
+    const response = await this.client.get(`/lesson-plans/short-term/${id}/with-weekly`);
+    return response.data.data;
+  }
+
+  async getShortTermPlansByLongTermPlan(ltpId: string, page = 1, limit = 20): Promise<any> {
+    const response = await this.client.get(`/lesson-plans/short-term/long-term/${ltpId}`, {
+      params: { page, limit }
+    });
+    return response.data.data;
+  }
+
+  async getShortTermPlansByStudent(studentId: string, page = 1, limit = 20): Promise<any> {
+    const response = await this.client.get(`/lesson-plans/short-term/student/${studentId}`, {
+      params: { page, limit }
+    });
+    return response.data.data;
+  }
+
+  async getShortTermPlansByEducator(params?: {
+    page?: number;
+    limit?: number;
+    studentId?: string;
+    longTermPlanId?: string;
+    status?: string;
+  }): Promise<any> {
+    const response = await this.client.get('/lesson-plans/short-term/educator/me', { params });
+    return response.data.data;
+  }
+
+  async updateShortTermPlan(id: string, data: any): Promise<any> {
+    const response = await this.client.put(`/lesson-plans/short-term/${id}`, data);
+    return response.data.data;
+  }
+
+  async updateShortTermPlanProgress(id: string): Promise<any> {
+    const response = await this.client.put(`/lesson-plans/short-term/${id}/progress`, {});
+    return response.data.data;
+  }
+
+  async deleteShortTermPlan(id: string): Promise<void> {
+    await this.client.delete(`/lesson-plans/short-term/${id}`);
+  }
+
+  // ========== WEEKLY LESSON PLANS ==========
+  async createWeeklyLessonPlan(data: any): Promise<any> {
+    const response = await this.client.post('/lesson-plans/weekly', data);
+    return response.data.data;
+  }
+
+  async getWeeklyLessonPlanById(id: string): Promise<any> {
+    const response = await this.client.get(`/lesson-plans/weekly/${id}`);
+    return response.data.data;
+  }
+
+  async getWeeklyLessonPlansByShortTermPlan(stpId: string, page = 1, limit = 20): Promise<any> {
+    const response = await this.client.get(`/lesson-plans/weekly/short-term/${stpId}`, {
+      params: { page, limit }
+    });
+    return response.data.data;
+  }
+
+  async getWeeklyLessonPlansByStudent(studentId: string, page = 1, limit = 20): Promise<any> {
+    const response = await this.client.get(`/lesson-plans/weekly/student/${studentId}`, {
+      params: { page, limit }
+    });
+    return response.data.data;
+  }
+
+  async getWeeklyLessonPlansByEducator(params?: {
+    page?: number;
+    limit?: number;
+    studentId?: string;
+    shortTermPlanId?: string;
+    status?: string;
     dateFrom?: string;
     dateTo?: string;
-  }): Promise<PaginatedResponse<any>> {
-    const response = await this.client.get('/lesson-plans/educator/me', { params });
-    return response.data;
-  }
-
-  async getLessonPlanById(id: string): Promise<any> {
-    const response = await this.client.get(`/lesson-plans/${id}`);
+  }): Promise<any> {
+    const response = await this.client.get('/lesson-plans/weekly/educator/me', { params });
     return response.data.data;
   }
 
-  async updateLessonPlan(id: string, data: any): Promise<any> {
-    const response = await this.client.put(`/lesson-plans/${id}`, data);
+  async updateWeeklyLessonPlan(id: string, data: any): Promise<any> {
+    const response = await this.client.put(`/lesson-plans/weekly/${id}`, data);
     return response.data.data;
   }
 
-  async deleteLessonPlan(id: string): Promise<void> {
-    await this.client.delete(`/lesson-plans/${id}`);
+  async completeWeeklyLessonPlan(id: string, actualTime: number, outcome: string): Promise<any> {
+    const response = await this.client.put(`/lesson-plans/weekly/${id}/complete`, {
+      actualTime,
+      outcome
+    });
+    return response.data.data;
+  }
+
+  async deleteWeeklyLessonPlan(id: string): Promise<void> {
+    await this.client.delete(`/lesson-plans/weekly/${id}`);
   }
 
   // Homework
@@ -1942,6 +2056,13 @@ class ApiClient {
 
   async getHomeworkByParent(page = 1, limit = 20): Promise<any> {
     const response = await this.client.get('/lesson-plans/homework/parent/me', {
+      params: { page, limit }
+    });
+    return response.data.data;
+  }
+
+  async getHomeworkByEducator(page = 1, limit = 20): Promise<any> {
+    const response = await this.client.get('/lesson-plans/homework/educator/me', {
       params: { page, limit }
     });
     return response.data.data;
@@ -1969,6 +2090,32 @@ class ApiClient {
 
   async completeHomework(id: string): Promise<any> {
     const response = await this.client.put(`/lesson-plans/homework/${id}/complete`);
+    return response.data.data;
+  }
+
+  // Homework File Management
+  async uploadHomeworkFiles(homeworkId: string, files: File[]): Promise<any> {
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    const response = await this.client.post(`/lesson-plans/homework/${homeworkId}/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data;
+  }
+
+  async getHomeworkFiles(homeworkId: string): Promise<Array<{ key: string; url: string; fileName: string }>> {
+    const response = await this.client.get(`/lesson-plans/homework/${homeworkId}/files`);
+    return response.data.data.files;
+  }
+
+  async deleteHomeworkFile(homeworkId: string, fileKey: string): Promise<any> {
+    const encodedFileKey = encodeURIComponent(fileKey);
+    const response = await this.client.delete(`/lesson-plans/homework/${homeworkId}/files/${encodedFileKey}`);
     return response.data.data;
   }
 

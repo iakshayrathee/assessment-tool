@@ -70,7 +70,7 @@ export class StudentService {
       if (!studentData.parentPassword) {
         throw new Error('Parent password is required when creating a new parent account');
       }
-      
+
       // Hash the provided password
       const hashedPassword = await bcrypt.hash(studentData.parentPassword, 12);
 
@@ -159,7 +159,7 @@ export class StudentService {
 
     // Handle parent creation/update if parent details are provided
     let parentId = existingStudent.parentId;
-    
+
     if (studentData.parentName && studentData.parentPhone) {
       // Check if we need to create a new parent or update existing
       if (!parentId) {
@@ -167,16 +167,16 @@ export class StudentService {
         if (!studentData.parentPassword) {
           throw new Error('Parent password is required when creating a new parent account');
         }
-        
+
         const hashedPassword = await bcrypt.hash(studentData.parentPassword, 12);
         const parentEmail = studentData.parentEmail || `parent_${Date.now()}_${Math.random().toString(36).substring(2, 8)}@temp.com`;
-        
+
         // Check if email already exists and handle existing users
         const existingUser = await this.studentRepository.prismaClient.user.findUnique({
           where: { email: parentEmail },
           include: { parentProfile: true }
         });
-        
+
         if (existingUser) {
           // If user has a parent profile, use that parent instead of creating new one
           if (existingUser.parentProfile) {
@@ -190,7 +190,7 @@ export class StudentService {
             throw new Error(`A user with email ${parentEmail} already exists as a ${existingUser.role}. Please use a different email address.`);
           }
         }
-        
+
         // Create parent profile with user account
         const parentProfile = await this.studentRepository.prismaClient.parentProfile.create({
           data: {
@@ -210,7 +210,7 @@ export class StudentService {
           }
         });
         parentId = parentProfile.id;
-        
+
         // Update student data with new parent ID
         studentData.parentId = parentId;
       } else {
@@ -224,21 +224,21 @@ export class StudentService {
             emergencyContact: studentData.emergencyContact || studentData.parentPhone || undefined
           }
         });
-        
+
         // If parent email is provided and different from current, update user email
         if (studentData.parentEmail) {
           const parentProfile = await this.studentRepository.prismaClient.parentProfile.findUnique({
             where: { id: parentId },
             include: { user: true }
           });
-          
+
           if (parentProfile && parentProfile.user.email !== studentData.parentEmail) {
             // Check if new email already exists
             const existingUser = await this.studentRepository.prismaClient.user.findUnique({
               where: { email: studentData.parentEmail },
               include: { parentProfile: true }
             });
-            
+
             if (existingUser) {
               if (!existingUser.parentProfile) {
                 // Email belongs to a non-parent user, reject
@@ -371,7 +371,7 @@ export class StudentService {
     student: any;
     iepDocuments: any[];
     assessments: any[];
-    lessonPlans: any[];
+    weeklyLessonPlans: any[];
     reports: any[];
     activeIEPGoals: any[];
     recentSessionNotes: any[];
@@ -402,8 +402,8 @@ export class StudentService {
       orderBy: { createdAt: 'desc' }
     });
 
-    // Get all lesson plans for the student
-    const lessonPlans = await this.studentRepository.prismaClient.lessonPlan.findMany({
+    // Get all weekly lesson plans for the student
+    const weeklyLessonPlans = await this.studentRepository.prismaClient.weeklyLessonPlan.findMany({
       where: { studentId },
       include: {
         specialEducator: {
@@ -411,9 +411,17 @@ export class StudentService {
             id: true,
             fullName: true
           }
+        },
+        shortTermPlan: {
+          select: {
+            id: true,
+            stpGoal: true,
+            longTermPlanId: true
+          }
         }
       },
-      orderBy: { date: 'desc' }
+      orderBy: { sessionDate: 'desc' },
+      take: 20 // Limit to recent 20 plans
     });
 
     // Get all reports for the student
@@ -450,7 +458,7 @@ export class StudentService {
       student,
       iepDocuments,
       assessments,
-      lessonPlans,
+      weeklyLessonPlans,
       reports,
       activeIEPGoals,
       recentSessionNotes,

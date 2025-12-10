@@ -90,7 +90,7 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       icon: Brain,
       description: 'Conduct and manage assessments'
     },
-     {
+    {
       title: 'Remediation',
       href: '/educator/lesson-plans-new',
       icon: Calendar,
@@ -101,6 +101,12 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       href: '/educator/iep-management',
       icon: BookOpen,
       description: 'Individual education programs and management'
+    },
+    {
+      title: 'Homework',
+      href: '/educator/homework',
+      icon: ClipboardList,
+      description: 'Assign and track student homework'
     },
     {
       title: 'Reports',
@@ -249,6 +255,12 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       description: 'Important documents and forms'
     },
     {
+      title: 'Homework',
+      href: '/parent/homework',
+      icon: ClipboardList,
+      description: 'View and submit homework'
+    },
+    {
       title: 'Concerns',
       href: '/parent/concerns',
       icon: MessageSquare,
@@ -296,20 +308,20 @@ const getRoleDisplayName = (role: string): string => {
   return roleNames[role] || role;
 };
 
-export function UnifiedSidebar({ 
-  className, 
-  userRole = 'SPECIAL_EDUCATOR', 
-  isOpen = false, 
+export function UnifiedSidebar({
+  className,
+  userRole = 'SPECIAL_EDUCATOR',
+  isOpen = false,
   onClose,
   isCollapsed: controlledCollapsed,
-  onCollapsedChange 
+  onCollapsedChange
 }: SidebarProps) {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const pathname = usePathname();
 
   // Use controlled state if provided, otherwise use internal state
   const isCollapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
-  
+
   const handleToggleCollapse = () => {
     const newCollapsed = !isCollapsed;
     if (onCollapsedChange) {
@@ -325,12 +337,12 @@ export function UnifiedSidebar({
     <>
       {/* Mobile Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
           onClick={onClose}
         />
       )}
-      
+
       {/* Sidebar */}
       <div className={cn(
         "flex flex-col h-screen bg-white border-r border-gray-200 transition-all duration-300",
@@ -344,104 +356,104 @@ export function UnifiedSidebar({
         isOpen ? "w-72" : "", // Mobile width when open
         className
       )}>
-      {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gradient-to-r from-primary/5 to-blue-50">
-        {!isCollapsed && (
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-lg">K</span>
+        {/* Header */}
+        <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gradient-to-r from-primary/5 to-blue-50">
+          {!isCollapsed && (
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-lg">K</span>
+              </div>
+              <div>
+                <h1 className="font-bold text-xl bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                  Knowled
+                </h1>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Special Education Platform
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-bold text-xl bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                Knowled
-              </h1>
-              <p className="text-xs text-muted-foreground font-medium">
-                Special Education Platform
-              </p>
+          )}
+
+          {/* Desktop/Tablet Collapse Button */}
+          <div className="hidden md:block">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleToggleCollapse}
+              className="h-8 w-8 p-0"
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? <Menu className="h-4 w-4" /> : <ChevronDown className="h-4 w-4 rotate-90" />}
+            </Button>
+          </div>
+
+          {/* Mobile Close Button */}
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0"
+              title="Close sidebar"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+
+
+        {/* Navigation */}
+        <div className="flex-1 px-2 overflow-y-auto">
+          <nav className="space-y-1 py-3"> {/* Reduced padding from py-4 to py-3 */}
+            {navigationItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+              const Icon = item.icon;
+
+              return (
+                <Link key={item.href} href={item.href}>
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
+                    className={cn(
+                      "w-full justify-start h-auto min-h-[2.5rem] px-3 py-2 rounded-lg", // Changed to h-auto with min-h and added py-2 for better content-based sizing
+                      isCollapsed && "justify-center px-2",
+                      isActive && "bg-blue-50 text-blue-700 border-blue-200",
+                      !isActive && "hover:bg-gray-50" // Better hover state
+                    )}
+                    title={isCollapsed ? item.title : undefined}
+                  >
+                    <Icon className={cn(
+                      "h-4 w-4 shrink-0", // Added shrink-0
+                      !isCollapsed && "mr-3",
+                      isActive && "text-blue-600"
+                    )} />
+                    {!isCollapsed && (
+                      <div className="flex-1 text-left min-w-0"> {/* Added min-w-0 to prevent overflow */}
+                        <div className="text-sm font-medium leading-tight">{item.title}</div> {/* Added leading-tight */}
+                        {!isActive && item.description && (
+                          <div className="text-xs text-gray-500 mt-0.5 leading-tight"> {/* Added leading-tight */}
+                            {item.description}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Button>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Footer */}
+        <div className="p-3 border-t border-gray-200"> {/* Reduced padding from p-4 to p-3 */}
+          {!isCollapsed && (
+            <div className="text-xs text-gray-500 text-center">
+              <p>Knowled AI Platform</p>
+              <p>Special Education Management</p>
             </div>
-          </div>
-        )}
-        
-        {/* Desktop/Tablet Collapse Button */}
-        <div className="hidden md:block">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleToggleCollapse}
-            className="h-8 w-8 p-0"
-            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isCollapsed ? <Menu className="h-4 w-4" /> : <ChevronDown className="h-4 w-4 rotate-90" />}
-          </Button>
-        </div>
-        
-        {/* Mobile Close Button */}
-        <div className="md:hidden">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-            title="Close sidebar"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          )}
         </div>
       </div>
-
-
-
-      {/* Navigation */}
-      <div className="flex-1 px-2 overflow-y-auto">
-        <nav className="space-y-1 py-3"> {/* Reduced padding from py-4 to py-3 */}
-          {navigationItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-            const Icon = item.icon;
-
-            return (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn(
-                    "w-full justify-start h-auto min-h-[2.5rem] px-3 py-2 rounded-lg", // Changed to h-auto with min-h and added py-2 for better content-based sizing
-                    isCollapsed && "justify-center px-2",
-                    isActive && "bg-blue-50 text-blue-700 border-blue-200",
-                    !isActive && "hover:bg-gray-50" // Better hover state
-                  )}
-                  title={isCollapsed ? item.title : undefined}
-                >
-                  <Icon className={cn(
-                    "h-4 w-4 shrink-0", // Added shrink-0
-                    !isCollapsed && "mr-3",
-                    isActive && "text-blue-600"
-                  )} />
-                  {!isCollapsed && (
-                    <div className="flex-1 text-left min-w-0"> {/* Added min-w-0 to prevent overflow */}
-                      <div className="text-sm font-medium leading-tight">{item.title}</div> {/* Added leading-tight */}
-                      {!isActive && item.description && (
-                        <div className="text-xs text-gray-500 mt-0.5 leading-tight"> {/* Added leading-tight */}
-                          {item.description}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </Button>
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Footer */}
-      <div className="p-3 border-t border-gray-200"> {/* Reduced padding from p-4 to p-3 */}
-        {!isCollapsed && (
-          <div className="text-xs text-gray-500 text-center">
-            <p>Knowled AI Platform</p>
-            <p>Special Education Management</p>
-          </div>
-        )}
-      </div>
-    </div>
     </>
   );
 }

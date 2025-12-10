@@ -21,17 +21,24 @@ export class HomeworkRepository {
   }
 
   async create(specialEducatorId: string, data: HomeworkData): Promise<Homework> {
-    // Get parent ID from student if not provided
-    let parentId = data.parentId;
-    if (!parentId) {
-      const student = await this.prisma.student.findUnique({
-        where: { id: data.studentId },
-        select: { parentId: true },
-      });
-      parentId = student?.parentId || undefined;
-    }
+    // Get student with parent information
+    const student = await this.prisma.student.findUnique({
+      where: { id: data.studentId },
+      select: {
+        parentId: true,
+        fullName: true,
+        parent: {
+          include: {
+            user: true
+          }
+        }
+      },
+    });
 
-    return this.prisma.homework.create({
+    const parentId = data.parentId || student?.parentId || undefined;
+
+    // Create homework
+    const homework = await this.prisma.homework.create({
       data: {
         specialEducatorId,
         studentId: data.studentId,
@@ -69,6 +76,26 @@ export class HomeworkRepository {
         },
       },
     });
+
+    // Send notification to parent if parent exists
+    if (student?.parent?.user) {
+      await this.prisma.notification.create({
+        data: {
+          userId: student.parent.user.id,
+          type: 'HOMEWORK_ASSIGNED',
+          title: 'New Homework Assigned',
+          message: `New ${data.subject.toLowerCase()} homework "${data.title}" has been assigned to ${student.fullName}. Due date: ${new Date(data.dueDate).toLocaleDateString()}`,
+          data: JSON.stringify({
+            homeworkId: homework.id,
+            studentId: data.studentId,
+            subject: data.subject,
+            dueDate: data.dueDate
+          })
+        }
+      });
+    }
+
+    return homework;
   }
 
   async findById(id: string): Promise<Homework | null> {
@@ -101,7 +128,7 @@ export class HomeworkRepository {
 
   async findByStudent(studentId: string, page: number = 1, limit: number = 20): Promise<{ homework: Homework[]; total: number }> {
     const skip = (page - 1) * limit;
-    
+
     const [homework, total] = await Promise.all([
       this.prisma.homework.findMany({
         where: { studentId },
@@ -141,7 +168,7 @@ export class HomeworkRepository {
 
   async findByParent(parentId: string, page: number = 1, limit: number = 20): Promise<{ homework: Homework[]; total: number }> {
     const skip = (page - 1) * limit;
-    
+
     const [homework, total] = await Promise.all([
       this.prisma.homework.findMany({
         where: { parentId },
@@ -185,21 +212,21 @@ export class HomeworkRepository {
     subject?: SkillArea;
   }): Promise<{ homework: Homework[]; total: number }> {
     const skip = (page - 1) * limit;
-    
+
     const where: any = { specialEducatorId };
-    
+
     if (filters?.studentId) {
       where.studentId = filters.studentId;
     }
-    
+
     if (filters?.status) {
       where.status = filters.status;
     }
-    
+
     if (filters?.subject) {
       where.subject = filters.subject;
     }
-    
+
     const [homework, total] = await Promise.all([
       this.prisma.homework.findMany({
         where,
@@ -239,7 +266,7 @@ export class HomeworkRepository {
 
   async update(id: string, data: Partial<HomeworkData & { status?: HomeworkStatus; parentFeedback?: string; educatorFeedback?: string }>): Promise<Homework> {
     const updateData: any = { ...data };
-    
+
     if (data.dueDate) {
       updateData.dueDate = new Date(data.dueDate);
     }
@@ -273,7 +300,7 @@ export class HomeworkRepository {
   }
 
   async submit(id: string, parentFeedback?: string): Promise<Homework> {
-    return this.prisma.homework.update({
+    const homework = await this.prisma.homework.update({
       where: { id },
       data: {
         status: HomeworkStatus.SUBMITTED,
@@ -294,6 +321,9 @@ export class HomeworkRepository {
             id: true,
             fullName: true,
           },
+          include: {
+            user: true
+          }
         },
         parent: {
           select: {
@@ -303,6 +333,24 @@ export class HomeworkRepository {
         },
       },
     });
+
+    // Notify educator when homework is submitted
+    if (homework.specialEducator?.user) {
+      await this.prisma.notification.create({
+        data: {
+          userId: homework.specialEducator.user.id,
+          type: 'HOMEWORK_SUBMITTED',
+          title: 'Homework Submitted',
+          message: `${homework.student.fullName} has submitted homework: "${homework.title}"`,
+          data: JSON.stringify({
+            homeworkId: homework.id,
+            studentId: homework.studentId
+          })
+        }
+      });
+    }
+
+    return homework;
   }
 
   async review(id: string, educatorFeedback: string): Promise<Homework> {
@@ -371,6 +419,88 @@ export class HomeworkRepository {
   async delete(id: string): Promise<void> {
     await this.prisma.homework.delete({
       where: { id },
+    });
+  }
+
+  /**
+   * Add files to homework's attachedFiles array
+   */
+  async addFiles(id: string, fileKeys: string[]): Promise<Homework> {
+    const homework = await this.findById(id);
+    if (!homework) {
+      throw new Error('Homework not found');
+    }
+
+    const updatedFiles = [...homework.attachedFiles, ...fileKeys];
+
+    return this.prisma.homework.update({
+      where: { id },
+      data: {
+        attachedFiles: updatedFiles,
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            fullName: true,
+            grade: true,
+            age: true,
+          },
+        },
+        specialEducator: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+        parent: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Remove a file from homework's attachedFiles array
+   */
+  async removeFile(id: string, fileKey: string): Promise<Homework> {
+    const homework = await this.findById(id);
+    if (!homework) {
+      throw new Error('Homework not found');
+    }
+
+    const updatedFiles = homework.attachedFiles.filter((key) => key !== fileKey);
+
+    return this.prisma.homework.update({
+      where: { id },
+      data: {
+        attachedFiles: updatedFiles,
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            fullName: true,
+            grade: true,
+            age: true,
+          },
+        },
+        specialEducator: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+        parent: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+      },
     });
   }
 }

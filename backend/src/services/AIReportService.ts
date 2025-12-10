@@ -1,27 +1,27 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AssessmentRepository } from '../repositories/AssessmentRepository';
-import { LessonPlanRepository } from '../repositories/LessonPlanRepository';
 import { IEPRepository } from '../repositories/IepRepository';
 import { SkillAssessmentRepository } from '../repositories/SkillAssessmentRepository';
+import { WeeklyLessonPlanRepository } from '../repositories/WeeklyLessonPlanRepository';
 
 export class AIReportService {
   private genAI: GoogleGenerativeAI;
   private assessmentRepo: AssessmentRepository;
-  private lessonPlanRepo: LessonPlanRepository;
   private iepRepo: IEPRepository;
   private skillAssessmentRepo: SkillAssessmentRepository;
+  private weeklyLessonPlanRepo: WeeklyLessonPlanRepository;
 
   constructor(
     assessmentRepo: AssessmentRepository,
-    lessonPlanRepo: LessonPlanRepository,
     iepRepo: IEPRepository,
-    skillAssessmentRepo: SkillAssessmentRepository
+    skillAssessmentRepo: SkillAssessmentRepository,
+    weeklyLessonPlanRepo: WeeklyLessonPlanRepository
   ) {
-    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'AIzaSyA00PCGauAVyqWnhbYeyY1yEFjQaRsFFQ0');
+    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'AIzaSyCiXuKWE7iRtkKNrBu7XqS1a1R7h9lH3zc');
     this.assessmentRepo = assessmentRepo;
-    this.lessonPlanRepo = lessonPlanRepo;
     this.iepRepo = iepRepo;
     this.skillAssessmentRepo = skillAssessmentRepo;
+    this.weeklyLessonPlanRepo = weeklyLessonPlanRepo;
   }
 
   async generateComprehensiveReport(studentId: string, educatorId: string, reportType: 'ASSESSMENT' | 'LESSON_PLAN' = 'ASSESSMENT') {
@@ -29,9 +29,9 @@ export class AIReportService {
       console.log(`Starting AI report generation for student: ${studentId}, educator: ${educatorId}, type: ${reportType}`);
 
       // Fetch all student data including detailed skill assessments
-      const [assessments, lessonPlans, iepGoalsResult, iepDocuments, readingAssessments, writingAssessments, mathAssessments, intakeForms] = await Promise.all([
+      const [assessments, weeklyLessonPlans, iepGoalsResult, iepDocuments, readingAssessments, writingAssessments, mathAssessments, intakeForms] = await Promise.all([
         this.assessmentRepo.findAssessmentsByStudent(studentId),
-        this.lessonPlanRepo.findByStudent(studentId).then(result => result.lessonPlans),
+        this.weeklyLessonPlanRepo.findByStudent(studentId).then(result => result.plans),
         this.assessmentRepo.findIEPGoalsByStudent(studentId),
         this.iepRepo.findIEPDocumentsByStudent(studentId),
         this.skillAssessmentRepo.findReadingAssessmentsByStudent(studentId),
@@ -40,14 +40,14 @@ export class AIReportService {
         this.assessmentRepo.findIntakeFormsByStudent(studentId)
       ]);
 
-      console.log(`Fetched data: ${assessments.length} assessments, ${lessonPlans.length} lesson plans, ${iepGoalsResult.iepGoals.length} IEP goals, ${iepDocuments.length} IEP documents, ${readingAssessments.length} reading assessments, ${writingAssessments.length} writing assessments, ${mathAssessments.length} math assessments, ${intakeForms.length} intake forms`);
+      console.log(`Fetched data: ${assessments.length} assessments, ${weeklyLessonPlans.length} weekly lesson plans, ${iepGoalsResult.iepGoals.length} IEP goals, ${iepDocuments.length} IEP documents, ${readingAssessments.length} reading assessments, ${writingAssessments.length} writing assessments, ${mathAssessments.length} math assessments, ${intakeForms.length} intake forms`);
 
       const iepGoals = iepGoalsResult.iepGoals;
 
       // Prepare data for AI analysis
       const studentData = {
         assessments: assessments.slice(0, 10), // Limit to recent assessments
-        lessonPlans: lessonPlans.slice(0, 10), // Limit to recent lesson plans
+        weeklyLessonPlans: weeklyLessonPlans.slice(0, 10), // Limit to recent weekly lesson plans
         iepGoals: iepGoals.filter(goal => goal.status !== 'ACHIEVED'), // Only active goals
         iepDocuments: iepDocuments.slice(0, 5), // Recent documents
         intakeForms: intakeForms.slice(0, 1), // Most recent intake form
@@ -59,7 +59,7 @@ export class AIReportService {
       };
 
       // Generate AI prompt based on report type
-      const prompt = reportType === 'ASSESSMENT' 
+      const prompt = reportType === 'ASSESSMENT'
         ? this.buildAssessmentReportPrompt(studentData)
         : this.buildLessonPlanReportPrompt(studentData);
 
@@ -154,19 +154,22 @@ Use professional educational terminology, cite specific symptom observations fro
   }
 
   private buildLessonPlanReportPrompt(studentData: any): string {
-    // Extract lesson plan data with observations
-    const lessonPlanDetails = studentData.lessonPlans.slice(0, 10).map((plan: any) => ({
-      date: plan.date,
-      skillArea: plan.skillArea,
-      topic: plan.specificTopic,
+    // Extract weekly lesson plan data with observations
+    const weeklyLessonPlanDetails = studentData.weeklyLessonPlans.slice(0, 10).map((plan: any) => ({
+      sessionDate: plan.sessionDate,
+      weekNumber: plan.weekNumber,
+      topics: plan.topics,
       areasOfRemediation: plan.areasOfRemediation,
-      activityStrategy: plan.activityStrategy,
+      averageTime: plan.averageTime,
+      actualTime: plan.actualTime,
+      motivationStrategy: plan.motivationStrategy,
       resourcesUsed: plan.resourcesUsed,
-      expectedTime: plan.expectedTime,
-      actualTimeTaken: plan.actualTimeTaken,
-      motivationLevel: plan.motivationLevel,
       outcome: plan.outcome,
-      nextStep: plan.nextStep
+      status: plan.status,
+      shortTermPlan: plan.shortTermPlan ? {
+        stpGoal: plan.shortTermPlan.stpGoal,
+        longTermPlanId: plan.shortTermPlan.longTermPlanId
+      } : null
     }));
 
     // Extract symptom data for context
@@ -175,10 +178,11 @@ Use professional educational terminology, cite specific symptom observations fro
     const mathSymptoms = this.extractSymptomData(studentData.skillAssessments.math, 'math');
 
     return `
-Generate a comprehensive LESSON PLAN REPORT analyzing teaching effectiveness, student responses, and learning outcomes. Include symptom observations in natural, flowing sentences and incorporate teacher comments from lesson outcomes.
+Generate a comprehensive LESSON PLAN REPORT analyzing teaching effectiveness, student responses, and learning outcomes based on weekly lesson plans and assessment data.
 
 STUDENT DATA SUMMARY:
-- Total Lesson Plans: ${studentData.lessonPlans.length}
+- Weekly Lesson Plans: ${studentData.weeklyLessonPlans.length}
+- IEP Documents: ${studentData.iepDocuments.length}
 - Reading Skill Assessments: ${studentData.skillAssessments.reading.length}
 - Writing Skill Assessments: ${studentData.skillAssessments.writing.length}
 - Math Skill Assessments: ${studentData.skillAssessments.math.length}
@@ -188,28 +192,29 @@ Reading: ${readingSymptoms.total} symptoms observed
 Writing: ${writingSymptoms.total} symptoms observed
 Math: ${mathSymptoms.total} symptoms observed
 
-DETAILED LESSON PLAN DATA:
-${JSON.stringify(lessonPlanDetails, null, 2)}
+WEEKLY LESSON PLAN DATA:
+${JSON.stringify(weeklyLessonPlanDetails, null, 2)}
 
 Please generate a detailed LESSON PLAN REPORT with these sections:
-1. Executive Summary - Overview of teaching sessions and overall student engagement
-2. Lesson Plan Analysis - Detailed analysis of each lesson plan with:
-   - Symptom observations written in natural, flowing sentences (e.g., "During reading activities, the student demonstrated difficulty with letter-sound correspondence and frequently reversed letters b and d")
-   - Teacher's observations and comments from the outcome field
+1. Executive Summary - Overview of teaching sessions and overall student progress
+2. Weekly Lesson Plan Analysis - Detailed analysis of each weekly lesson plan with:
+   - Symptom observations written in natural, flowing sentences
+   - Teacher's observations and outcomes from each session
    - Student motivation and engagement levels
    - Time management and pacing effectiveness
+   - Connection to short-term and long-term goals
 3. Teaching Strategies Effectiveness - What worked well and what needs adjustment
 4. Student Progress Patterns - Trends in student responses across multiple sessions
 5. Areas of Remediation - Specific skills targeted and progress made
-6. Teacher Reflections - Incorporate teacher comments and observations from lesson outcomes
-7. Recommendations - Specific suggestions for future lesson planning
-8. Next Steps - Detailed plan for upcoming sessions
+6. Recommendations - Specific suggestions for future lesson planning
+7. Next Steps - Detailed plan for upcoming sessions
 
 IMPORTANT: 
 - Write symptom observations in complete, natural sentences within the narrative
-- Include specific teacher comments and observations from lesson outcomes
+- Include specific teacher observations and outcomes from lesson plans
 - Use a narrative style that flows naturally, not bullet points for symptoms
 - Connect symptoms to specific lesson activities and student responses
+- Reference the three-tier planning system (Long-term → Short-term → Weekly plans)
 - Maintain professional educational terminology while being descriptive and specific
     `;
   }
@@ -217,12 +222,12 @@ IMPORTANT:
   private parseAIResponse(aiResponse: string, studentId: string, educatorId: string, reportType: 'ASSESSMENT' | 'LESSON_PLAN'): any {
     // Extract sections from AI response
     const sections = {
-      summary: this.extractSection(aiResponse, 'Executive Summary', reportType === 'ASSESSMENT' ? 'Developmental' : 'Lesson Plan Analysis'),
+      summary: this.extractSection(aiResponse, 'Executive Summary', reportType === 'ASSESSMENT' ? 'Developmental' : 'Weekly Lesson Plan Analysis'),
       recommendations: this.extractSection(aiResponse, 'Recommendations', 'Next Steps'),
       nextSteps: this.extractSection(aiResponse, 'Next Steps')
     };
 
-    const title = reportType === 'ASSESSMENT' 
+    const title = reportType === 'ASSESSMENT'
       ? `Assessment Report - ${new Date().toLocaleDateString()}`
       : `Lesson Plan Report - ${new Date().toLocaleDateString()}`;
 
@@ -248,25 +253,25 @@ IMPORTANT:
     // Family and background
     if (intakeForm.familyType) relevantFields.push(`Family Type: ${intakeForm.familyType}`);
     if (intakeForm.familyIncome) relevantFields.push(`Family Income: ${intakeForm.familyIncome}`);
-    
+
     // Developmental history
     if (intakeForm.pregnancyNormal !== null) relevantFields.push(`Pregnancy: ${intakeForm.pregnancyNormal ? 'Normal' : 'Complications noted'}`);
     if (intakeForm.deliveryType) relevantFields.push(`Delivery: ${intakeForm.deliveryType}`);
     if (intakeForm.ageOfWalking) relevantFields.push(`Age of Walking: ${intakeForm.ageOfWalking} months`);
     if (intakeForm.ageOfTwoWordSpeech) relevantFields.push(`Age of Two-Word Speech: ${intakeForm.ageOfTwoWordSpeech} months`);
-    
+
     // Medical history
     if (intakeForm.healthConcerns) relevantFields.push(`Health Concerns: ${intakeForm.healthConcerns}`);
     if (intakeForm.epilepticHistory) relevantFields.push(`Epileptic History: Yes`);
     if (intakeForm.onMedication && intakeForm.medicationDetails) relevantFields.push(`Medication: ${intakeForm.medicationDetails}`);
     if (intakeForm.wearsGlasses) relevantFields.push(`Vision: Wears glasses`);
-    
+
     // Educational history
     if (intakeForm.attendedPreschool !== null) relevantFields.push(`Preschool: ${intakeForm.attendedPreschool ? 'Yes' : 'No'}`);
     if (intakeForm.repeatedGrades && intakeForm.whichGradeRepeated) relevantFields.push(`Repeated Grade: ${intakeForm.whichGradeRepeated}`);
     if (intakeForm.strugglesInLanguages) relevantFields.push(`Language Struggles: Yes`);
     if (intakeForm.dominantWritingHand) relevantFields.push(`Dominant Hand: ${intakeForm.dominantWritingHand}`);
-    
+
     // Social and behavioral
     if (intakeForm.enjoysSchool !== null) relevantFields.push(`Enjoys School: ${intakeForm.enjoysSchool ? 'Yes' : 'No'}`);
     if (intakeForm.enjoysReading !== null) relevantFields.push(`Enjoys Reading: ${intakeForm.enjoysReading ? 'Yes' : 'No'}`);

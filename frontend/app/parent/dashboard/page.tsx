@@ -7,17 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  User, 
-  FileText, 
-  Target, 
-  MessageCircle, 
-  Upload, 
+import {
+  User,
+  FileText,
+  Target,
+  MessageCircle,
+  Upload,
   TrendingUp,
   AlertCircle,
   CheckCircle,
   Clock,
-  BookOpen
+  BookOpen,
+  ClipboardList
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
@@ -82,9 +83,11 @@ export default function ParentDashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [homeworkStats, setHomeworkStats] = useState({ pending: 0, total: 0 });
 
   useEffect(() => {
     loadDashboardData();
+    loadHomeworkStats();
   }, []);
 
   const loadDashboardData = async () => {
@@ -100,6 +103,28 @@ export default function ParentDashboard() {
       setDashboardData(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadHomeworkStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/lesson-plans/homework/parent/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const homework = data.data.homework || [];
+        setHomeworkStats({
+          total: homework.length,
+          pending: homework.filter((hw: any) => hw.status === 'ASSIGNED').length
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load homework stats:', error);
     }
   };
 
@@ -177,7 +202,7 @@ export default function ParentDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Children</CardTitle>
@@ -232,6 +257,19 @@ export default function ParentDashboard() {
               <p className="text-xs text-muted-foreground">Awaiting response</p>
             </CardContent>
           </Card>
+
+          <Link href="/parent/homework">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Homework</CardTitle>
+                <ClipboardList className="h-4 w-4 text-orange-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{homeworkStats.pending}</div>
+                <p className="text-xs text-muted-foreground">Pending ({homeworkStats.total} total)</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Main Content */}

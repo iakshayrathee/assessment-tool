@@ -24,10 +24,10 @@ model User {
   specialEducatorProfile      SpecialEducatorProfile?
   superSpecialEducatorProfile SuperSpecialEducatorProfile?
   notifications               Notification[]
-  requestedApprovals          ApprovalRequest[]           @relation("RequestedApprovals")
-  targetUserApprovals         ApprovalRequest[]           @relation("TargetUserApprovals")
-  approvedRequests            ApprovalRequest[]           @relation("ApprovedRequests")
-  rejectedRequests            ApprovalRequest[]           @relation("RejectedRequests")
+  requestedApprovals          ApprovalRequest[]            @relation("RequestedApprovals")
+  targetUserApprovals         ApprovalRequest[]            @relation("TargetUserApprovals")
+  approvedRequests            ApprovalRequest[]            @relation("ApprovedRequests")
+  rejectedRequests            ApprovalRequest[]            @relation("RejectedRequests")
 
   @@map("users")
 }
@@ -124,7 +124,9 @@ model SpecialEducatorProfile {
   readingSkillAssessments  ReadingSkillAssessment[]
   writingSkillAssessments  WritingSkillAssessment[]
   mathSkillAssessments     MathSkillAssessment[]
-  lessonPlans              LessonPlan[]
+  longTermPlans            LongTermPlan[]
+  shortTermPlans           ShortTermPlan[]
+  weeklyLessonPlans        WeeklyLessonPlan[]
   homework                 Homework[]
   centerAssignments        CenterAssignment[]
   schoolAssignments        SchoolAssignment[]
@@ -234,7 +236,9 @@ model Student {
   readingSkillAssessments ReadingSkillAssessment[]
   writingSkillAssessments WritingSkillAssessment[]
   mathSkillAssessments    MathSkillAssessment[]
-  lessonPlans             LessonPlan[]
+  longTermPlans           LongTermPlan[]
+  shortTermPlans          ShortTermPlan[]
+  weeklyLessonPlans       WeeklyLessonPlan[]
   homework                Homework[]
   iepGoals                IEPGoal[]
   intakeForms             IntakeForm[]
@@ -743,28 +747,170 @@ model MathSkillAssessment {
   @@map("math_skill_assessments")
 }
 
-// Lesson Plan
-model LessonPlan {
-  id                 String                 @id @default(cuid())
-  studentId          String
-  specialEducatorId  String
-  date               DateTime
-  skillArea          SkillArea // Reading / Writing / Math
-  specificTopic      String // e.g., CVC blending
-  areasOfRemediation String[] // Multi-select from assessment symptoms
-  activityStrategy   String // Description of activity
-  resourcesUsed      String[] // Worksheets, Manipulatives, Videos, Digital content
-  expectedTime       Int? // in minutes
-  actualTimeTaken    Int? // in minutes
-  motivationLevel    MotivationLevel?
-  outcome            String? // Child response and observations
-  nextStep           String? // Next session plan
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
-  specialEducator    SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
-  student            Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+// Long-Term Plan (LTP) - 6-12 months
+model LongTermPlan {
+  id                String @id @default(cuid())
+  studentId         String @map("student_id")
+  specialEducatorId String @map("special_educator_id")
 
-  @@map("lesson_plans")
+  // Student Profile Summary
+  diagnosis         String?
+  suspectedLD       String? @map("suspected_ld")
+  learningStrengths String[] @map("learning_strengths")
+  challengeAreas    String[] @map("challenge_areas")
+
+  // Duration
+  startDate      DateTime @map("start_date")
+  endDate        DateTime @map("end_date")
+  durationMonths Int @map("duration_months") // 6-12 months
+
+  // Domains Covered
+  domains Domain[]
+
+  // Review Cycle
+  reviewCycle    ReviewCycle @default(QUARTERLY) @map("review_cycle")
+  lastReviewDate DateTime? @map("last_review_date")
+  nextReviewDate DateTime @map("next_review_date")
+
+  // Status
+  status PlanStatus @default(ACTIVE)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student         Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  specialEducator SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  goals           LongTermGoal[]
+  shortTermPlans  ShortTermPlan[]
+
+  @@map("long_term_plans")
+}
+
+// Long-Term Goals (3-5 per LTP)
+model LongTermGoal {
+  id             String @id @default(cuid())
+  longTermPlanId String @map("long_term_plan_id")
+
+  goalStatement  String @map("goal_statement") // e.g., "Student will read CVC words with 80% accuracy"
+  domain         Domain
+  targetAccuracy Int    @default(80) @map("target_accuracy") // percentage
+
+  order        Int // for sorting (1-5)
+  isAchieved   Boolean   @default(false) @map("is_achieved")
+  achievedDate DateTime? @map("achieved_date")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  longTermPlan LongTermPlan @relation(fields: [longTermPlanId], references: [id], onDelete: Cascade)
+
+  @@map("long_term_goals")
+}
+
+// Short-Term Plan (STP) - 4-8 weeks
+model ShortTermPlan {
+  id                String @id @default(cuid())
+  longTermPlanId    String @map("long_term_plan_id")
+  studentId         String @map("student_id")
+  specialEducatorId String @map("special_educator_id")
+
+  // Link to LTP Goal
+  linkedLongTermGoalId String? @map("linked_long_term_goal_id")
+  linkedGoalStatement  String @map("linked_goal_statement") // Copy of LTP goal for reference
+
+  // Duration
+  startDate     DateTime @map("start_date")
+  endDate       DateTime @map("end_date")
+  durationWeeks Int @map("duration_weeks") // 4-8 weeks
+
+  // STP Goal
+  stpGoal String @map("stp_goal") // Main STP goal statement
+
+  // Intervention Strategy
+  interventionStrategy String[] @map("intervention_strategy") // ["Multi-sensory", "Tracing", "Flashcards", etc.]
+
+  // Success Metrics
+  weeklyProbes    Boolean @default(true) @map("weekly_probes")
+  targetAccuracy  Int     @default(80) @map("target_accuracy")
+  promptReduction Boolean @default(true) @map("prompt_reduction")
+
+  // Status & Progress
+  status             PlanStatus @default(ACTIVE)
+  progressPercentage Int        @default(0) @map("progress_percentage")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  longTermPlan      LongTermPlan           @relation(fields: [longTermPlanId], references: [id], onDelete: Cascade)
+  student           Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  specialEducator   SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+  subGoals          ShortTermSubGoal[]
+  weeklyLessonPlans WeeklyLessonPlan[]
+
+  @@map("short_term_plans")
+}
+
+// Short-Term Sub-Goals
+model ShortTermSubGoal {
+  id              String @id @default(cuid())
+  shortTermPlanId String @map("short_term_plan_id")
+
+  goalStatement String @map("goal_statement") // e.g., "Recognise A-F"
+  order         Int // for sorting
+  isAchieved    Boolean   @default(false) @map("is_achieved")
+  achievedDate  DateTime? @map("achieved_date")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  shortTermPlan ShortTermPlan @relation(fields: [shortTermPlanId], references: [id], onDelete: Cascade)
+
+  @@map("short_term_sub_goals")
+}
+
+// Weekly Lesson Plan (WLP) - 1 week
+model WeeklyLessonPlan {
+  id                String  @id @default(cuid())
+  shortTermPlanId   String? @map("short_term_plan_id") // Optional link to STP
+  studentId         String @map("student_id")
+  specialEducatorId String @map("special_educator_id")
+
+  // Week Information
+  weekNumber  Int @map("week_number")
+  sessionDate DateTime @map("session_date") // Specific date of session (e.g., 11-11-2025)
+
+  // Topics & Areas
+  topics             String // e.g., "Letter Recognition A-C"
+  areasOfRemediation String[] @map("areas_of_remediation") // e.g., ["Visual Discrimination", "Auditory Processing"]
+
+  // Time Management
+  averageTime Int? @map("average_time") // in minutes (planned)
+  actualTime  Int? @map("actual_time") // in minutes (filled after session)
+
+  // Motivation & Resources
+  motivationStrategy String? @map("motivation_strategy") // e.g., "Token reward, praise"
+  resourcesUsed      String[] @map("resources_used") // e.g., ["Flashcards", "Tracing sheets", "Digital game"]
+
+  // Outcome
+  outcome String? // e.g., "Identified A & B, needed help with C"
+
+  // Status
+  status LessonStatus @default(PLANNED)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  shortTermPlan   ShortTermPlan?         @relation(fields: [shortTermPlanId], references: [id], onDelete: SetNull)
+  student         Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  specialEducator SpecialEducatorProfile @relation(fields: [specialEducatorId], references: [id])
+
+  @@map("weekly_lesson_plans")
 }
 
 // Homework Assignment
@@ -1091,6 +1237,7 @@ enum UserRole {
   CENTER
   PARENT
   SCHOOL_VIEWER
+  STUDENT
 }
 
 enum Gender {
@@ -1210,29 +1357,60 @@ enum ApprovalStatus {
 }
 
 model ApprovalRequest {
-  id               String               @id @default(cuid())
-  type             ApprovalRequestType
-  status           ApprovalStatus       @default(PENDING)
-  requestedById    String
-  targetUserId     String?              // For user creation/role assignment
-  targetCenterId   String?              // For center creation
-  targetSchoolId   String?              // For school creation
-  requestedRole    UserRole?            // For role assignment requests
-  requestedData    Json                 // Store the full request data
-  comments         String?
-  rejectionReason  String?
-  approvedById     String?
-  rejectedById     String?
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  approvedAt       DateTime?
-  rejectedAt       DateTime?
+  id              String              @id @default(cuid())
+  type            ApprovalRequestType
+  status          ApprovalStatus      @default(PENDING)
+  requestedById   String
+  targetUserId    String? // For user creation/role assignment
+  targetCenterId  String? // For center creation
+  targetSchoolId  String? // For school creation
+  requestedRole   UserRole? // For role assignment requests
+  requestedData   Json // Store the full request data
+  comments        String?
+  rejectionReason String?
+  approvedById    String?
+  rejectedById    String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
 
   // Relations
-  requestedBy      User                 @relation("RequestedApprovals", fields: [requestedById], references: [id])
-  targetUser       User?                @relation("TargetUserApprovals", fields: [targetUserId], references: [id])
-  approvedBy       User?                @relation("ApprovedRequests", fields: [approvedById], references: [id])
-  rejectedBy       User?                @relation("RejectedRequests", fields: [rejectedById], references: [id])
+  requestedBy User  @relation("RequestedApprovals", fields: [requestedById], references: [id])
+  targetUser  User? @relation("TargetUserApprovals", fields: [targetUserId], references: [id])
+  approvedBy  User? @relation("ApprovedRequests", fields: [approvedById], references: [id])
+  rejectedBy  User? @relation("RejectedRequests", fields: [rejectedById], references: [id])
 
   @@map("approval_requests")
+}
+
+// Lesson Plan Enums
+enum Domain {
+  READING
+  WRITING
+  MATH
+  COGNITIVE
+  MOTOR
+  BEHAVIOURAL
+}
+
+enum ReviewCycle {
+  MONTHLY
+  QUARTERLY
+  BIANNUAL
+}
+
+enum PlanStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+  ON_HOLD
+}
+
+enum LessonStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }

@@ -14,7 +14,7 @@ export class ParentController {
   // Get parent dashboard data
   async getParentDashboard(req: AuthenticatedRequest, res: Response) {
     try {
-      const parentId = req.user?.role === 'PARENT' ? req.user.userId : req.params.id;
+      const parentId = req.user?.role === 'PARENT' ? req.user.id : req.params.id;
 
       const dashboardData = await this.parentService.getDashboardData(parentId);
 

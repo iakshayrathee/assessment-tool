@@ -73,6 +73,12 @@ const navigationItems = [
     description: 'Individual education programs and management'
   },
   {
+    title: 'Homework',
+    href: '/educator/homework',
+    icon: FileText,
+    description: 'Assign and track student homework'
+  },
+  {
     title: 'Reports',
     href: '/educator/reports',
     icon: BarChart3,

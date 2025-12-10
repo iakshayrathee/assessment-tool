@@ -36,7 +36,7 @@ export class AdminController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const role = req.query.role as UserRole;
+      const role = this.convertStringToUserRole(req.query.role as string);
       const search = req.query.search as string;
       const status = req.query.status as string;
 
@@ -402,5 +402,20 @@ export class AdminController {
     } catch (error: any) {
       return ResponseHelper.error(res, error.message, 500);
     }
+  }
+
+  // Utility method to convert string role to UserRole enum
+  private convertStringToUserRole(roleString: string): UserRole | undefined {
+    if (!roleString) return undefined;
+    
+    // Convert string to uppercase and remove any quotes or special characters
+    const normalizedRole = roleString.toUpperCase().replace(/["']/g, '');
+    
+    // Check if the normalized role exists in UserRole enum
+    if (Object.values(UserRole).includes(normalizedRole as UserRole)) {
+      return normalizedRole as UserRole;
+    }
+    
+    return undefined;
   }
 }
