@@ -87,6 +87,30 @@ router.post('/session-notes', specialEducatorController.createSessionNote.bind(s
  */
 router.get('/students/:studentId/session-notes', specialEducatorController.getSessionNotes.bind(specialEducatorController));
 
+// Document Management Routes
+import { upload, handleMulterError } from '../middleware/upload';
+
+/**
+ * @route POST /api/special-educators/documents/upload
+ * @desc Upload documents to educator's S3 folder
+ * @access Private (Special Educator only)
+ */
+router.post('/documents/upload', upload.array('files', 10), handleMulterError, specialEducatorController.uploadDocuments.bind(specialEducatorController));
+
+/**
+ * @route GET /api/special-educators/documents
+ * @desc Get all documents for the educator
+ * @access Private (Special Educator only)
+ */
+router.get('/documents', specialEducatorController.getDocuments.bind(specialEducatorController));
+
+/**
+ * @route DELETE /api/special-educators/documents/:fileKey
+ * @desc Delete a document from educator's S3 folder
+ * @access Private (Special Educator only)
+ */
+router.delete('/documents/:fileKey', specialEducatorController.deleteDocument.bind(specialEducatorController));
+
 /**
  * @route GET /api/special-educators/check-token
  * @desc Check the token and return the user profile

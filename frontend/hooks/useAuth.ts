@@ -27,7 +27,7 @@ export function useAuth() {
         queryClient.setQueryData(queryKeys.auth.token(), data.token);
       }
       toast.success('Login successful!');
-      
+
       // Redirect based on user role
       const redirectPath = getRoleBasedRedirect(data.user.role);
       router.push(redirectPath);
@@ -41,23 +41,17 @@ export function useAuth() {
   const logoutMutation = useMutation({
     mutationFn: () => apiClient.logout(),
     onSuccess: () => {
-      // Capture user role before clearing data
-      const userRole = user?.role;
       queryClient.clear();
       toast.success('Logged out successfully');
-      // Redirect to role-specific login page
-      const loginRedirect = userRole ? getRoleBasedLoginRedirect(userRole) : '/login';
-      router.push(loginRedirect);
+      // Redirect to root page
+      router.push('/');
     },
     onError: () => {
-      // Capture user role before clearing data
-      const userRole = user?.role;
       // Clear local data even if API call fails
       queryClient.clear();
       // Auth store will be cleared by the API client
-      // Redirect to role-specific login page
-      const loginRedirect = userRole ? getRoleBasedLoginRedirect(userRole) : '/login';
-      router.push(loginRedirect);
+      // Redirect to root page
+      router.push('/');
     },
   });
 
@@ -82,7 +76,7 @@ export function useAuth() {
       queryClient.setQueryData(queryKeys.auth.user(), updatedUser);
       queryClient.setQueryData(queryKeys.auth.profile(), updatedUser);
       useAuthStore.getState().updateUser(updatedUser);
-      
+
       // Invalidate role-specific profile queries
       const userRole = updatedUser.role;
       if (userRole === 'ADMIN') {
@@ -96,7 +90,7 @@ export function useAuth() {
       } else if (userRole === 'CENTER' || userRole === 'SCHOOL_VIEWER') {
         queryClient.invalidateQueries({ queryKey: queryKeys.centers.dashboard() });
       }
-      
+
       toast.success('Profile updated successfully!');
     },
     onError: (error: any) => {
@@ -150,7 +144,7 @@ export function useAuth() {
       case 'SCHOOL_VIEWER':
         return '/login/school-viewer';
       default:
-        return '/login';
+        return '/';
     }
   };
 
@@ -164,19 +158,19 @@ export function useAuth() {
     user,
     isAuthenticated,
     isLoading: profileQuery.isLoading,
-    
+
     // Actions
     login: loginMutation.mutate,
     logout: logoutMutation.mutate,
     updateProfile: updateProfileMutation.mutate,
     changePassword: changePasswordMutation.mutate,
-    
+
     // Loading states
     isLoggingIn: loginMutation.isPending,
     isLoggingOut: logoutMutation.isPending,
     isUpdatingProfile: updateProfileMutation.isPending,
     isChangingPassword: changePasswordMutation.isPending,
-    
+
     // Utilities
     getRoleBasedRedirect,
     getRoleBasedLoginRedirect,

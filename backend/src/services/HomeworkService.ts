@@ -121,7 +121,11 @@ export class HomeworkService {
   /**
    * Upload files to homework and update attachedFiles
    */
-  async uploadHomeworkFiles(id: string, files: Array<{ buffer: Buffer; originalname: string; mimetype: string }>): Promise<Homework> {
+  async uploadHomeworkFiles(
+    id: string,
+    files: Array<{ buffer: Buffer; originalname: string; mimetype: string }>,
+    educatorId: string
+  ): Promise<Homework> {
     const existingHomework = await this.homeworkRepository.findById(id);
     if (!existingHomework) {
       throw new Error('Homework not found');
@@ -131,8 +135,9 @@ export class HomeworkService {
     const { S3Service } = await import('./s3Service');
     const s3Service = new S3Service();
 
-    // Upload files to S3
-    const fileKeys = await s3Service.uploadMultipleFiles(files, 'homework');
+    // Upload files to educator-specific homework folder
+    const folder = `educators/${educatorId}/homework`;
+    const fileKeys = await s3Service.uploadMultipleFiles(files, folder);
 
     // Update homework with new file keys
     return await this.homeworkRepository.addFiles(id, fileKeys);

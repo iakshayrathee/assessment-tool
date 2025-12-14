@@ -70,7 +70,7 @@ class ApiClient {
 
               // Redirect to role-specific login page if not already there
               if (!window.location.pathname.includes('/login') && window.location.pathname !== '/') {
-                let loginRedirect = '/login';
+                let loginRedirect = '/';
                 if (userRole) {
                   // Map user roles to their specific login pages
                   const roleLoginMap: Record<string, string> = {
@@ -81,7 +81,7 @@ class ApiClient {
                     'PARENT': '/login/parent',
                     'SCHOOL_VIEWER': '/login/school-viewer'
                   };
-                  loginRedirect = roleLoginMap[userRole] || '/login';
+                  loginRedirect = roleLoginMap[userRole] || '/';
                 }
                 window.location.href = loginRedirect;
               }
@@ -2151,6 +2151,37 @@ class ApiClient {
 
   async deleteLearningMaterial(id: string): Promise<void> {
     await this.client.delete(`/lesson-plans/materials/${id}`);
+  }
+
+  // Educator Document Management
+  async uploadEducatorDocuments(files: File[]): Promise<any> {
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    const response = await this.client.post('/special-educators/documents/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data;
+  }
+
+  async getEducatorDocuments(): Promise<Array<{
+    key: string;
+    fileName: string;
+    size: number;
+    lastModified: Date;
+    url: string;
+  }>> {
+    const response = await this.client.get('/special-educators/documents');
+    return response.data.data.files;
+  }
+
+  async deleteEducatorDocument(fileKey: string): Promise<void> {
+    const encodedKey = encodeURIComponent(fileKey);
+    await this.client.delete(`/special-educators/documents/${encodedKey}`);
   }
 }
 

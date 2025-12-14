@@ -63,7 +63,7 @@ const stpFormSchema = z.object({
     endDate: z.date(),
     durationWeeks: z.number().min(4).max(8),
     stpGoal: z.string().min(10, 'STP goal must be at least 10 characters'),
-    interventionStrategy: z.array(z.string()).min(1, 'At least one strategy required'),
+    interventionStrategy: z.array(z.string()).optional(),
     targetAccuracy: z.number().min(0).max(100),
     subGoals: z.array(stpSubGoalSchema).min(1, 'At least one sub-goal required'),
 });
@@ -276,34 +276,7 @@ export function STPDialog({ open, onOpenChange, studentId, ltps, editing, onSucc
                         </div>
                     </div>
 
-                    {/* Intervention Strategies */}
-                    <div className="space-y-2 border-b pb-4">
-                        <Label>Intervention Strategies * (select at least one)</Label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {INTERVENTION_STRATEGIES.map((strategy) => (
-                                <label key={strategy} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input
-                                        type="checkbox"
-                                        className="w-4 h-4"
-                                        value={strategy}
-                                        checked={form.watch('interventionStrategy').includes(strategy)}
-                                        onChange={(e) => {
-                                            const current = form.watch('interventionStrategy');
-                                            if (e.target.checked) {
-                                                form.setValue('interventionStrategy', [...current, strategy]);
-                                            } else {
-                                                form.setValue('interventionStrategy', current.filter((s) => s !== strategy));
-                                            }
-                                        }}
-                                    />
-                                    <span className="text-sm">{strategy}</span>
-                                </label>
-                            ))}
-                        </div>
-                        {form.formState.errors.interventionStrategy && (
-                            <p className="text-sm text-red-600">{form.formState.errors.interventionStrategy.message}</p>
-                        )}
-                    </div>
+
 
                     {/* TABULAR SUB-GOALS INPUT */}
                     <div className="space-y-4">

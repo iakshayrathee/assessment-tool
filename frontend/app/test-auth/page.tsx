@@ -14,7 +14,7 @@ const decodeJwt = (token: string) => {
     if (parts.length !== 3) {
       return { error: 'Invalid token format' };
     }
-    
+
     const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
     return payload;
   } catch (e) {
@@ -35,36 +35,36 @@ export default function TestAuthPage() {
   const [showLogs, setShowLogs] = useState<boolean>(false);
   const [decodedToken, setDecodedToken] = useState<any>(null);
   const [tokenDetails, setTokenDetails] = useState<any>(null);
-  
+
   // Get auth from hook
   const { user, isAuthenticated, login } = useAuth();
-  
+
   // Get the token from the Zustand store and debug info
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const token = useAuthStore.getState().getToken();
       setTokenFromStore(token);
-      
+
       if (token) {
         // Decode token
         const decoded = decodeJwt(token);
         setDecodedToken(decoded);
-        
+
         // Get token details
         analyzeToken(token);
       }
-      
+
       // Get debug info
       refreshDebugInfo();
-      
+
       // Get logs
       refreshLogs();
-      
+
       // Check token validity
       checkTokenValidity().then(setTokenValidity);
     }
   }, []);
-  
+
   // Function to refresh debug info
   const refreshDebugInfo = () => {
     const info = {
@@ -75,52 +75,52 @@ export default function TestAuthPage() {
       userInLocalStorage: typeof window !== 'undefined' ? localStorage.getItem('user') !== null : false,
     };
     setDebugInfo(info);
-    
+
     // Update token display
     setTokenFromStore(useAuthStore.getState().getToken());
   };
-  
+
   // Function to refresh logs
   const refreshLogs = () => {
     setLogs(getAuthLogs());
   };
-  
+
   // Function to clear logs
   const handleClearLogs = () => {
     clearAuthLogs();
     refreshLogs();
   };
-  
+
   // Function to check token validity
   const handleCheckToken = async () => {
     const validity = await checkTokenValidity();
     setTokenValidity(validity);
   };
-  
+
   // Function to analyze token
   const analyzeToken = (token: string | null) => {
     if (!token) {
       setTokenDetails(null);
       return;
     }
-    
+
     try {
       // Check token format
       const parts = token.split('.');
       const isJwtFormat = parts.length === 3;
-      
+
       // Try to decode payload
       let payload = null;
       let header = null;
       let isExpired = false;
       let expiryDate = null;
       let timeUntilExpiry = null;
-      
+
       if (isJwtFormat) {
         try {
           header = JSON.parse(atob(parts[0].replace(/-/g, '+').replace(/_/g, '/')));
           payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-          
+
           if (payload.exp) {
             expiryDate = new Date(payload.exp * 1000);
             const now = new Date();
@@ -131,7 +131,7 @@ export default function TestAuthPage() {
           console.error('Error decoding token parts:', e);
         }
       }
-      
+
       setTokenDetails({
         format: {
           isJwtFormat,
@@ -151,7 +151,7 @@ export default function TestAuthPage() {
       setTokenDetails({ error: 'Failed to analyze token' });
     }
   };
-  
+
   // Test API call
   const testApiCall = async () => {
     try {
@@ -162,7 +162,7 @@ export default function TestAuthPage() {
     } catch (err: any) {
       setError(err.message || 'An error occurred');
       console.error('API Error:', err);
-      
+
       // Log more details if available
       if (err.response) {
         console.error('Response data:', err.response.data);
@@ -173,7 +173,7 @@ export default function TestAuthPage() {
       refreshDebugInfo();
     }
   };
-  
+
   // Handle login
   const handleLogin = async () => {
     try {
@@ -186,18 +186,18 @@ export default function TestAuthPage() {
       console.error('Login Error:', err);
     }
   };
-  
+
   // Handle logout
   const handleLogout = () => {
     useAuthStore.getState().clearAuth();
     refreshDebugInfo();
     setLoginStatus('Logged out');
   };
-  
+
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6">Auth Debug Page</h1>
-      
+
       <div className="mb-6 p-4 bg-gray-100 rounded-md">
         <h2 className="text-lg font-semibold mb-2">Current Auth State:</h2>
         <div className="grid grid-cols-2 gap-4">
@@ -213,7 +213,7 @@ export default function TestAuthPage() {
           </div>
         </div>
       </div>
-      
+
       <div className="mb-6 p-4 bg-gray-100 rounded-md">
         <h2 className="text-lg font-semibold mb-2">Token from Zustand Store:</h2>
         {tokenFromStore ? (
@@ -227,38 +227,38 @@ export default function TestAuthPage() {
           <p className="text-red-500">No token found in store</p>
         )}
       </div>
-      
+
       <div className="mb-6 p-4 bg-blue-50 rounded-md">
         <h2 className="text-lg font-semibold mb-2">Login Test:</h2>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Email:</label>
-            <input 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 border rounded"
               placeholder="admin@knowled.com"
             />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Password:</label>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full p-2 border rounded"
               placeholder="admin123"
             />
           </div>
           <div className="flex space-x-2">
-            <button 
+            <button
               onClick={handleLogin}
               className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
             >
               Login
             </button>
-            <button 
+            <button
               onClick={handleLogout}
               className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
             >
@@ -272,23 +272,23 @@ export default function TestAuthPage() {
           )}
         </div>
       </div>
-      
+
       <div className="mb-6">
-        <button 
+        <button
           onClick={testApiCall}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           Test API Call (Admin Dashboard)
         </button>
       </div>
-      
+
       {error && (
         <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-md">
           <h2 className="text-lg font-semibold mb-2">Error:</h2>
           <p>{error}</p>
         </div>
       )}
-      
+
       {apiResponse && (
         <div className="mb-6 p-4 bg-green-100 rounded-md">
           <h2 className="text-lg font-semibold mb-2">API Response:</h2>
@@ -297,7 +297,7 @@ export default function TestAuthPage() {
           </pre>
         </div>
       )}
-      
+
       <div className="mb-6 p-4 bg-gray-100 rounded-md">
         <h2 className="text-lg font-semibold mb-2">Debug Info:</h2>
         {debugInfo ? (
@@ -308,11 +308,11 @@ export default function TestAuthPage() {
           <p>No debug info available</p>
         )}
       </div>
-      
+
       <div className="mb-6 p-4 bg-yellow-100 rounded-md">
         <h2 className="text-lg font-semibold mb-2">Debug Actions:</h2>
         <div className="flex flex-wrap gap-2">
-          <button 
+          <button
             onClick={() => {
               useAuthStore.getState().clearAuth();
               localStorage.clear();
@@ -325,8 +325,8 @@ export default function TestAuthPage() {
           >
             Clear All Auth Data
           </button>
-          
-          <button 
+
+          <button
             onClick={() => {
               refreshDebugInfo();
               refreshLogs();
@@ -336,15 +336,15 @@ export default function TestAuthPage() {
           >
             Refresh All Info
           </button>
-          
-          <button 
+
+          <button
             onClick={handleCheckToken}
             className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
           >
             Check Token Validity
           </button>
-          
-          <button 
+
+          <button
             onClick={() => {
               window.location.href = '/login';
             }}
@@ -354,7 +354,7 @@ export default function TestAuthPage() {
           </button>
         </div>
       </div>
-      
+
       {/* Token Inspection */}
       <div className="mb-6 p-4 bg-blue-50 rounded-md">
         <h2 className="text-lg font-semibold mb-2">Token Inspection:</h2>
@@ -366,7 +366,7 @@ export default function TestAuthPage() {
                 {tokenFromStore}
               </div>
             </div>
-            
+
             {tokenDetails && (
               <div className="bg-white/80 p-3 rounded">
                 <h3 className="font-medium mb-2">Token Analysis:</h3>
@@ -376,7 +376,7 @@ export default function TestAuthPage() {
                     <p><strong>Parts:</strong> {tokenDetails.format?.parts}</p>
                     <p><strong>Length:</strong> {tokenDetails.format?.length} characters</p>
                   </div>
-                  
+
                   {tokenDetails.header && (
                     <div>
                       <h4 className="font-medium">Header:</h4>
@@ -385,7 +385,7 @@ export default function TestAuthPage() {
                       </pre>
                     </div>
                   )}
-                  
+
                   {tokenDetails.payload && (
                     <div>
                       <h4 className="font-medium">Payload:</h4>
@@ -394,7 +394,7 @@ export default function TestAuthPage() {
                       </pre>
                     </div>
                   )}
-                  
+
                   {tokenDetails.expiry && tokenDetails.expiry.expiryDate && (
                     <div>
                       <h4 className="font-medium">Expiration:</h4>
@@ -414,9 +414,9 @@ export default function TestAuthPage() {
                 </div>
               </div>
             )}
-            
+
             <div className="flex space-x-2">
-              <button 
+              <button
                 onClick={() => analyzeToken(tokenFromStore)}
                 className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
               >
@@ -428,7 +428,7 @@ export default function TestAuthPage() {
           <p className="text-gray-500">No token available to inspect</p>
         )}
       </div>
-      
+
       {/* Token Validity */}
       {tokenValidity && (
         <div className={`mb-6 p-4 rounded-md ${tokenValidity.valid ? 'bg-green-100' : 'bg-red-100'}`}>
@@ -445,19 +445,19 @@ export default function TestAuthPage() {
           </div>
         </div>
       )}
-      
+
       {/* Persistent Logs */}
       <div className="mb-6 p-4 bg-gray-100 rounded-md">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-lg font-semibold">Persistent Logs:</h2>
           <div className="space-x-2">
-            <button 
+            <button
               onClick={() => setShowLogs(!showLogs)}
               className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
             >
               {showLogs ? 'Hide Logs' : 'Show Logs'}
             </button>
-            <button 
+            <button
               onClick={handleClearLogs}
               className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
             >
@@ -465,12 +465,12 @@ export default function TestAuthPage() {
             </button>
           </div>
         </div>
-        
+
         {showLogs && logs.length > 0 ? (
           <div className="bg-white/80 p-3 rounded max-h-96 overflow-auto">
             {logs.map((log, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`mb-2 p-2 rounded ${log.level === 'error' ? 'bg-red-50' : log.level === 'warn' ? 'bg-yellow-50' : 'bg-blue-50'}`}
               >
                 <div className="flex justify-between text-xs text-gray-500 mb-1">

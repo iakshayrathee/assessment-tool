@@ -463,6 +463,11 @@ export class LessonPlanHomeworkController {
     try {
       const { id } = req.params;
       const files = req.files as Express.Multer.File[];
+      const specialEducatorId = req.user?.profileId || (req as any).profileId;
+
+      if (!specialEducatorId) {
+        return ResponseHelper.error(res, 'Special educator profile ID is required', 400);
+      }
 
       if (!files || files.length === 0) {
         return ResponseHelper.error(res, 'No files provided', 400);
@@ -479,7 +484,7 @@ export class LessonPlanHomeworkController {
         }
       }
 
-      const homework = await this.homeworkService.uploadHomeworkFiles(id, files);
+      const homework = await this.homeworkService.uploadHomeworkFiles(id, files, specialEducatorId);
       return ResponseHelper.success(res, homework, 'Files uploaded successfully');
     } catch (error: any) {
       return ResponseHelper.error(res, error.message, 400);

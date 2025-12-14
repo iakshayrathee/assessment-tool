@@ -38,10 +38,6 @@ export class ShortTermPlanService {
             throw new Error('At least one sub-goal is required');
         }
 
-        if (!data.interventionStrategy || data.interventionStrategy.length === 0) {
-            throw new Error('At least one intervention strategy is required');
-        }
-
         // Validate date range
         const startDate = new Date(data.startDate);
         const endDate = new Date(data.endDate);

@@ -24,7 +24,7 @@ export class SpecialEducatorController {
       }
 
       const dashboardData = await this.specialEducatorService.getDashboardData(educatorId);
-      
+
       res.json({
         success: true,
         data: dashboardData
@@ -52,7 +52,7 @@ export class SpecialEducatorController {
       }
 
       const profile = await this.specialEducatorService.getProfile(userId);
-      
+
       res.json({
         success: true,
         data: profile
@@ -90,7 +90,7 @@ export class SpecialEducatorController {
       }
 
       const updatedProfile = await this.specialEducatorService.updateProfile(userId, req.body);
-      
+
       res.json({
         success: true,
         data: updatedProfile,
@@ -127,7 +127,7 @@ export class SpecialEducatorController {
         educatorId,
         { page, limit, search, status }
       );
-      
+
       res.json({
         success: true,
         data: result.students,
@@ -161,7 +161,7 @@ export class SpecialEducatorController {
         educatorId,
         studentId
       );
-      
+
       res.json({
         success: true,
         data: studentDetails
@@ -190,7 +190,7 @@ export class SpecialEducatorController {
 
       const limit = parseInt(req.query.limit as string) || 10;
       const activities = await this.specialEducatorService.getRecentActivities(educatorId, limit);
-      
+
       res.json({
         success: true,
         data: activities
@@ -218,7 +218,7 @@ export class SpecialEducatorController {
       }
 
       const stats = await this.specialEducatorService.getStatistics(educatorId);
-      
+
       res.json({
         success: true,
         data: stats
@@ -246,7 +246,7 @@ export class SpecialEducatorController {
       }
 
       const schedule = await this.specialEducatorService.getTodaysSchedule(educatorId);
-      
+
       res.json({
         success: true,
         data: schedule
@@ -279,7 +279,7 @@ export class SpecialEducatorController {
       };
 
       const sessionNote = await this.specialEducatorService.createSessionNote(sessionNoteData);
-      
+
       res.status(201).json({
         success: true,
         data: sessionNote,
@@ -317,7 +317,7 @@ export class SpecialEducatorController {
         studentId,
         { page, limit }
       );
-      
+
       res.json({
         success: true,
         data: result.sessionNotes,
@@ -328,6 +328,133 @@ export class SpecialEducatorController {
       res.status(500).json({
         success: false,
         error: 'Failed to get session notes'
+      });
+    }
+  };
+
+  /**
+   * Upload documents to educator's S3 folder
+   */
+  uploadDocuments = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const educatorId = req.user?.profileId;
+      if (!educatorId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Special educator profile not found'
+        });
+      }
+
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'No files provided'
+        });
+      }
+
+      // Import S3Service
+      const { S3Service } = await import('../services/s3Service');
+      const s3Service = new S3Service();
+
+      // Upload files to educator's folder
+      const folder = `educators/${educatorId}`;
+      const uploadedKeys = await s3Service.uploadMultipleFiles(files, folder);
+
+      res.status(201).json({
+        success: true,
+        data: {
+          uploadedFiles: uploadedKeys.length,
+          keys: uploadedKeys
+        },
+        message: `${uploadedKeys.length} file(s) uploaded successfully`
+      });
+    } catch (error) {
+      console.error('Error uploading documents:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to upload documents'
+      });
+    }
+  };
+
+  /**
+   * Get all documents for the educator
+   */
+  getDocuments = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const educatorId = req.user?.profileId;
+      if (!educatorId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Special educator profile not found'
+        });
+      }
+
+      // Import S3Service
+      const { S3Service } = await import('../services/s3Service');
+      const s3Service = new S3Service();
+
+      // List all files in educator's folder
+      const folder = `educators/${educatorId}`;
+      const files = await s3Service.listFiles(folder);
+
+      res.json({
+        success: true,
+        data: {
+          files,
+          total: files.length
+        }
+      });
+    } catch (error) {
+      console.error('Error getting documents:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get documents'
+      });
+    }
+  };
+
+  /**
+   * Delete a document from educator's S3 folder
+   */
+  deleteDocument = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const educatorId = req.user?.profileId;
+      if (!educatorId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Special educator profile not found'
+        });
+      }
+
+      const fileKey = decodeURIComponent(req.params.fileKey);
+
+      // Verify the file belongs to this educator
+      const folder = `educators/${educatorId}`;
+      if (!fileKey.startsWith(folder)) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied to this file'
+        });
+      }
+
+      // Import S3Service
+      const { S3Service } = await import('../services/s3Service');
+      const s3Service = new S3Service();
+
+      // Delete file from S3
+      await s3Service.deleteFile(fileKey);
+
+      res.json({
+        success: true,
+        message: 'Document deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to delete document'
       });
     }
   };

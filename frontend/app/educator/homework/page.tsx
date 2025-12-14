@@ -406,24 +406,25 @@ export default function EducatorHomeworkPage() {
                             />
                         </div>
 
-                        {/* Due Date */}
-                        <ProfessionalDatePicker
-                            label="Due Date"
-                            value={formData.dueDate}
-                            onChange={(date) => setFormData({ ...formData, dueDate: date })}
-                            required
-                            placeholder="Select due date"
-                        />
-
-                        {/* Estimated Time */}
-                        <div>
-                            <Label>Estimated Time (minutes)</Label>
-                            <Input
-                                type="number"
-                                value={formData.estimatedTime}
-                                onChange={(e) => setFormData({ ...formData, estimatedTime: e.target.value })}
-                                placeholder="e.g., 30"
+                        {/* Due Date and Estimated Time - Aligned */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <ProfessionalDatePicker
+                                label="Due Date"
+                                value={formData.dueDate}
+                                onChange={(date) => setFormData({ ...formData, dueDate: date })}
+                                required
+                                placeholder="Select due date"
                             />
+                            <div>
+                                <Label>Estimated Time (minutes)</Label>
+                                <Input
+                                    type="number"
+                                    value={formData.estimatedTime}
+                                    onChange={(e) => setFormData({ ...formData, estimatedTime: e.target.value })}
+                                    placeholder="e.g., 30"
+                                    className="mt-2"
+                                />
+                            </div>
                         </div>
 
                         {/* Skill Targeted */}
@@ -593,67 +594,69 @@ export default function EducatorHomeworkPage() {
 
             {/* Homework Detail Modal */}
             <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     {selectedHomework && (
                         <>
-                            <DialogHeader>
-                                <DialogTitle>{selectedHomework.title}</DialogTitle>
+                            <DialogHeader className="border-b pb-4 pr-10">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <DialogTitle className="text-2xl pr-2">{selectedHomework.title}</DialogTitle>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Assigned on {new Date(selectedHomework.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <Badge className={`${getStatusColor(selectedHomework.status)} px-3 py-1 text-sm flex-shrink-0`}>
+                                        {selectedHomework.status.replace('_', ' ')}
+                                    </Badge>
+                                </div>
                             </DialogHeader>
 
-                            <div className="space-y-4">
-                                {/* Homework Info */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label className="text-gray-600">Student</Label>
-                                        <p className="font-medium">{selectedHomework.student.fullName}</p>
-                                    </div>
-                                    <div>
-                                        <Label className="text-gray-600">Subject</Label>
-                                        <p className="font-medium">{selectedHomework.subject}</p>
-                                    </div>
-                                    <div>
-                                        <Label className="text-gray-600">Due Date</Label>
-                                        <p className="font-medium">
-                                            {new Date(selectedHomework.dueDate).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <Label className="text-gray-600">Estimated Time</Label>
-                                        <p className="font-medium">
-                                            {selectedHomework.estimatedTime ? `${selectedHomework.estimatedTime} minutes` : 'Not specified'}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <Label className="text-gray-600">Status</Label>
-                                        <Badge className={getStatusColor(selectedHomework.status)}>
-                                            {selectedHomework.status.replace('_', ' ')}
-                                        </Badge>
-                                    </div>
-                                    <div>
-                                        <Label className="text-gray-600">Assigned Date</Label>
-                                        <p className="font-medium">
-                                            {new Date(selectedHomework.createdAt).toLocaleDateString()}
-                                        </p>
+                            <div className="space-y-6 pt-4">
+                                {/* Basic Information Section */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Basic Information</h3>
+                                    <div className="grid grid-cols-3 gap-6">
+                                        <div>
+                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Student</Label>
+                                            <p className="font-medium text-gray-900 mt-1">{selectedHomework.student.fullName}</p>
+                                            <p className="text-sm text-gray-600 mt-0.5">Grade {selectedHomework.student.grade}</p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Subject</Label>
+                                            <p className="font-medium text-gray-900 mt-1">{selectedHomework.subject}</p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Due Date</Label>
+                                            <p className="font-medium text-gray-900 mt-1">
+                                                {new Date(selectedHomework.dueDate).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Estimated Time</Label>
+                                            <p className="font-medium text-gray-900 mt-1">
+                                                {selectedHomework.estimatedTime ? `${selectedHomework.estimatedTime} minutes` : 'Not specified'}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Instructions */}
-                                <div>
-                                    <Label className="text-gray-600">Instructions</Label>
-                                    <Card className="mt-1">
-                                        <CardContent className="p-3">
-                                            <p className="text-sm">{selectedHomework.instructions}</p>
+                                {/* Instructions Section */}
+                                <div className="space-y-3">
+                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Instructions</h3>
+                                    <Card className="bg-gray-50 border-gray-200">
+                                        <CardContent className="p-4">
+                                            <p className="text-sm text-gray-900 leading-relaxed">{selectedHomework.instructions}</p>
                                         </CardContent>
                                     </Card>
                                 </div>
 
                                 {/* Skill Targeted */}
                                 {selectedHomework.skillTargeted && (
-                                    <div>
-                                        <Label className="text-gray-600">Skill Targeted</Label>
-                                        <Card className="mt-1 bg-blue-50">
-                                            <CardContent className="p-3">
-                                                <p className="text-sm text-blue-900">{selectedHomework.skillTargeted}</p>
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Skill Targeted</h3>
+                                        <Card className="bg-blue-50 border-blue-200">
+                                            <CardContent className="p-4">
+                                                <p className="text-sm text-blue-900 font-medium">{selectedHomework.skillTargeted}</p>
                                             </CardContent>
                                         </Card>
                                     </div>
@@ -661,11 +664,11 @@ export default function EducatorHomeworkPage() {
 
                                 {/* Additional Notes */}
                                 {selectedHomework.additionalNotes && (
-                                    <div>
-                                        <Label className="text-gray-600">Additional Notes</Label>
-                                        <Card className="mt-1 bg-yellow-50">
-                                            <CardContent className="p-3">
-                                                <p className="text-sm">{selectedHomework.additionalNotes}</p>
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Additional Notes</h3>
+                                        <Card className="bg-amber-50 border-amber-200">
+                                            <CardContent className="p-4">
+                                                <p className="text-sm text-gray-900">{selectedHomework.additionalNotes}</p>
                                             </CardContent>
                                         </Card>
                                     </div>
@@ -673,11 +676,11 @@ export default function EducatorHomeworkPage() {
 
                                 {/* Parent Feedback */}
                                 {selectedHomework.parentFeedback && (
-                                    <div>
-                                        <Label className="text-gray-600">Parent Feedback</Label>
-                                        <Card className="mt-1 bg-green-50">
-                                            <CardContent className="p-3">
-                                                <p className="text-sm">{selectedHomework.parentFeedback}</p>
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Parent Feedback</h3>
+                                        <Card className="bg-green-50 border-green-200">
+                                            <CardContent className="p-4">
+                                                <p className="text-sm text-gray-900">{selectedHomework.parentFeedback}</p>
                                             </CardContent>
                                         </Card>
                                     </div>
@@ -685,28 +688,26 @@ export default function EducatorHomeworkPage() {
 
                                 {/* Educator Feedback */}
                                 {selectedHomework.educatorFeedback && (
-                                    <div>
-                                        <Label className="text-gray-600">Your Feedback</Label>
-                                        <Card className="mt-1 bg-purple-50">
-                                            <CardContent className="p-3">
-                                                <p className="text-sm">{selectedHomework.educatorFeedback}</p>
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Your Feedback</h3>
+                                        <Card className="bg-purple-50 border-purple-200">
+                                            <CardContent className="p-4">
+                                                <p className="text-sm text-gray-900">{selectedHomework.educatorFeedback}</p>
                                             </CardContent>
                                         </Card>
                                     </div>
                                 )}
 
                                 {/* Attached Files */}
-                                <div>
-                                    <FileViewer
-                                        files={homeworkFiles}
-                                        isLoading={isLoadingFiles}
-                                    />
-                                    {homeworkFiles.length > 0 && (
-                                        <div className="mt-2">
-                                            <p className="text-xs text-gray-500">You can delete files by clicking the X button in the file upload section above when editing.</p>
-                                        </div>
-                                    )}
-                                </div>
+                                {homeworkFiles.length > 0 && (
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Attached Files</h3>
+                                        <FileViewer
+                                            files={homeworkFiles}
+                                            isLoading={isLoadingFiles}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}

@@ -283,68 +283,75 @@ export default function ParentHomeworkPage() {
 
             {/* Homework Detail Modal */}
             <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     {selectedHomework && (
                         <>
-                            <DialogHeader>
-                                <DialogTitle>{selectedHomework.title}</DialogTitle>
+                            <DialogHeader className="border-b pb-4 pr-10">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <DialogTitle className="text-2xl pr-2">{selectedHomework.title}</DialogTitle>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Assigned on {new Date(selectedHomework.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <Badge className={`${getStatusColor(selectedHomework.status)} px-3 py-1 text-sm flex-shrink-0`}>
+                                        {selectedHomework.status.replace('_', ' ')}
+                                    </Badge>
+                                </div>
                             </DialogHeader>
 
-                            <div className="space-y-4">
-                                {/* Homework Info */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label className="text-gray-600">Child</Label>
-                                        <p className="font-medium">{selectedHomework.student.fullName}</p>
-                                    </div>
-                                    <div>
-                                        <Label className="text-gray-600">Subject</Label>
-                                        <p className="font-medium">{selectedHomework.subject}</p>
-                                    </div>
-                                    <div>
-                                        <Label className="text-gray-600">Due Date</Label>
-                                        <p className="font-medium">
-                                            {new Date(selectedHomework.dueDate).toLocaleDateString()}
-                                        </p>
-                                        {isOverdue(selectedHomework.dueDate, selectedHomework.status) && (
-                                            <p className="text-sm text-red-600 font-medium">Overdue</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <Label className="text-gray-600">Estimated Time</Label>
-                                        <p className="font-medium">
-                                            {selectedHomework.estimatedTime ? `${selectedHomework.estimatedTime} minutes` : 'Not specified'}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <Label className="text-gray-600">Status</Label>
-                                        <Badge className={getStatusColor(selectedHomework.status)}>
-                                            {selectedHomework.status.replace('_', ' ')}
-                                        </Badge>
-                                    </div>
-                                    <div>
-                                        <Label className="text-gray-600">Educator</Label>
-                                        <p className="font-medium">{selectedHomework.specialEducator.fullName}</p>
+                            <div className="space-y-6 pt-4">
+                                {/* Basic Information Section */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Basic Information</h3>
+                                    <div className="grid grid-cols-3 gap-6">
+                                        <div>
+                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Child</Label>
+                                            <p className="font-medium text-gray-900 mt-1">{selectedHomework.student.fullName}</p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Subject</Label>
+                                            <p className="font-medium text-gray-900 mt-1">{selectedHomework.subject}</p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Educator</Label>
+                                            <p className="font-medium text-gray-900 mt-1">{selectedHomework.specialEducator.fullName}</p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Due Date</Label>
+                                            <p className="font-medium text-gray-900 mt-1">
+                                                {new Date(selectedHomework.dueDate).toLocaleDateString()}
+                                            </p>
+                                            {isOverdue(selectedHomework.dueDate, selectedHomework.status) && (
+                                                <p className="text-sm text-red-600 font-medium mt-1">⚠ Overdue</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Estimated Time</Label>
+                                            <p className="font-medium text-gray-900 mt-1">
+                                                {selectedHomework.estimatedTime ? `${selectedHomework.estimatedTime} minutes` : 'Not specified'}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Instructions */}
-                                <div>
-                                    <Label className="text-gray-600">Instructions</Label>
-                                    <Card className="mt-1">
-                                        <CardContent className="p-3">
-                                            <p className="text-sm">{selectedHomework.instructions}</p>
+                                {/* Instructions Section */}
+                                <div className="space-y-3">
+                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Instructions</h3>
+                                    <Card className="bg-gray-50 border-gray-200">
+                                        <CardContent className="p-4">
+                                            <p className="text-sm text-gray-900 leading-relaxed">{selectedHomework.instructions}</p>
                                         </CardContent>
                                     </Card>
                                 </div>
 
                                 {/* Skill Targeted */}
                                 {selectedHomework.skillTargeted && (
-                                    <div>
-                                        <Label className="text-gray-600">Skill Targeted</Label>
-                                        <Card className="mt-1 bg-blue-50">
-                                            <CardContent className="p-3">
-                                                <p className="text-sm text-blue-900">{selectedHomework.skillTargeted}</p>
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Skill Targeted</h3>
+                                        <Card className="bg-blue-50 border-blue-200">
+                                            <CardContent className="p-4">
+                                                <p className="text-sm text-blue-900 font-medium">{selectedHomework.skillTargeted}</p>
                                             </CardContent>
                                         </Card>
                                     </div>
@@ -352,62 +359,69 @@ export default function ParentHomeworkPage() {
 
                                 {/* Additional Notes */}
                                 {selectedHomework.additionalNotes && (
-                                    <div>
-                                        <Label className="text-gray-600">Additional Notes from Educator</Label>
-                                        <Card className="mt-1 bg-yellow-50">
-                                            <CardContent className="p-3">
-                                                <p className="text-sm">{selectedHomework.additionalNotes}</p>
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Additional Notes from Educator</h3>
+                                        <Card className="bg-amber-50 border-amber-200">
+                                            <CardContent className="p-4">
+                                                <p className="text-sm text-gray-900">{selectedHomework.additionalNotes}</p>
                                             </CardContent>
                                         </Card>
                                     </div>
                                 )}
 
                                 {/* Attached Files */}
-                                <div>
-                                    <FileViewer
-                                        files={homeworkFiles}
-                                        isLoading={isLoadingFiles}
-                                    />
-                                </div>
+                                {homeworkFiles.length > 0 && (
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Attached Files</h3>
+                                        <FileViewer
+                                            files={homeworkFiles}
+                                            isLoading={isLoadingFiles}
+                                        />
+                                    </div>
+                                )}
 
                                 {/* Feedback Section */}
                                 {selectedHomework.status === 'ASSIGNED' || selectedHomework.status === 'IN_PROGRESS' ? (
-                                    <div>
-                                        <Label>Your Feedback (Optional)</Label>
-                                        <Textarea
-                                            value={feedback}
-                                            onChange={(e) => setFeedback(e.target.value)}
-                                            rows={4}
-                                            placeholder="Add any comments or notes about the homework completion..."
-                                            className="mt-1"
-                                        />
+                                    <div className="space-y-3 bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200">
+                                        <h3 className="text-lg font-semibold text-gray-900">Submit Homework</h3>
+                                        <div>
+                                            <Label className="text-gray-700 font-medium">Your Feedback (Optional)</Label>
+                                            <Textarea
+                                                value={feedback}
+                                                onChange={(e) => setFeedback(e.target.value)}
+                                                rows={4}
+                                                placeholder="Add any comments or notes about the homework completion..."
+                                                className="mt-2 bg-white"
+                                            />
+                                        </div>
                                         <Button
                                             onClick={handleSubmitHomework}
                                             disabled={submitHomeworkMutation.isPending}
-                                            className="mt-3 w-full"
+                                            className="w-full h-12 text-base font-medium"
+                                            size="lg"
                                         >
                                             {submitHomeworkMutation.isPending ? (
                                                 <>
-                                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                                                     Submitting...
                                                 </>
                                             ) : (
                                                 <>
-                                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                                    <CheckCircle className="h-5 w-5 mr-2" />
                                                     Mark as Submitted
                                                 </>
                                             )}
                                         </Button>
                                     </div>
                                 ) : (
-                                    <>
+                                    <div className="space-y-4">
                                         {/* Submitted Feedback */}
                                         {selectedHomework.parentFeedback && (
-                                            <div>
-                                                <Label className="text-gray-600">Your Feedback</Label>
-                                                <Card className="mt-1 bg-green-50">
-                                                    <CardContent className="p-3">
-                                                        <p className="text-sm">{selectedHomework.parentFeedback}</p>
+                                            <div className="space-y-3">
+                                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Your Feedback</h3>
+                                                <Card className="bg-green-50 border-green-200">
+                                                    <CardContent className="p-4">
+                                                        <p className="text-sm text-gray-900">{selectedHomework.parentFeedback}</p>
                                                     </CardContent>
                                                 </Card>
                                             </div>
@@ -415,16 +429,16 @@ export default function ParentHomeworkPage() {
 
                                         {/* Educator Feedback */}
                                         {selectedHomework.educatorFeedback && (
-                                            <div>
-                                                <Label className="text-gray-600">Educator's Feedback</Label>
-                                                <Card className="mt-1 bg-purple-50">
-                                                    <CardContent className="p-3">
-                                                        <p className="text-sm">{selectedHomework.educatorFeedback}</p>
+                                            <div className="space-y-3">
+                                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Educator's Feedback</h3>
+                                                <Card className="bg-purple-50 border-purple-200">
+                                                    <CardContent className="p-4">
+                                                        <p className="text-sm text-gray-900">{selectedHomework.educatorFeedback}</p>
                                                     </CardContent>
                                                 </Card>
                                             </div>
                                         )}
-                                    </>
+                                    </div>
                                 )}
                             </div>
                         </>

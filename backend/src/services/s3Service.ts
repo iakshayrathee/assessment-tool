@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
@@ -154,6 +154,65 @@ export class S3Service {
         } catch (error) {
             console.error('Error deleting file from S3:', error);
             throw new Error('Failed to delete file from S3');
+        }
+    }
+
+    /**
+     * List all files in a folder
+     * @param folder - Folder path in S3 bucket
+     * @returns Array of files with metadata and signed URLs
+     */
+    async listFiles(folder: string): Promise<Array<{
+        key: string;
+        fileName: string;
+        size: number;
+        lastModified: Date;
+        url: string;
+    }>> {
+        try {
+            const command = new ListObjectsV2Command({
+                Bucket: this.bucketName,
+                Prefix: folder,
+            });
+
+            const response = await this.s3Client.send(command);
+
+            if (!response.Contents || response.Contents.length === 0) {
+                return [];
+            }
+
+            // Filter out folder entries (keys ending with /) and generate signed URLs for files
+            const fileObjects = response.Contents.filter(obj => obj.Key && !obj.Key.endsWith('/'));
+
+            const filesWithUrls = await Promise.all(
+                fileObjects.map(async (object) => {
+                    const key = object.Key!;
+                    const url = await this.getSignedUrl(key);
+
+                    // Extract original filename from S3 key
+                    // Format: folder/uuid-timestamp-originalname.ext
+                    const parts = key.split('/');
+                    const s3FileName = parts[parts.length - 1];
+
+                    // Try to extract original filename from the S3 key
+                    // Pattern: uuid-timestamp-originalname.ext
+                    const match = s3FileName.match(/^[a-f0-9-]+-\d+-(.+)$/i);
+                    const fileName = match ? match[1] : s3FileName;
+
+                    return {
+                        key,
+                        fileName,
+                        size: object.Size || 0,
+                        lastModified: object.LastModified || new Date(),
+                        url,
+                    };
+                })
+            );
+
+            return filesWithUrls;
+        } catch (error) {
+            console.error('Error listing files from S3:', error);
+            throw new Error('Failed to list files from S3');
         }
     }
 

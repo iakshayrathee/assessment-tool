@@ -88,6 +88,9 @@ const DOMAINS = [
     'COGNITIVE',
     'MOTOR',
     'BEHAVIOURAL',
+    'READING_COMPREHENSION',
+    'ORAL_LANGUAGE',
+    'SPELLING',
 ] as const;
 
 const REVIEW_CYCLES = ['MONTHLY', 'QUARTERLY', 'BIANNUAL'] as const;
@@ -191,7 +194,7 @@ const ltpFormSchema = z.object({
     durationMonths: z.number().min(6).max(12),
     domains: z.array(z.string()).min(1, 'At least one domain required'),
     reviewCycle: z.string(),
-    goals: z.array(ltpGoalSchema).min(3, 'At least 3 goals required').max(5, 'Maximum 5 goals allowed'),
+    goals: z.array(ltpGoalSchema).min(1, 'At least 1 goal required').max(5, 'Maximum 5 goals allowed'),
 });
 
 const stpSubGoalSchema = z.object({

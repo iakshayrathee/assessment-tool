@@ -35,8 +35,16 @@ import { toast } from 'react-hot-toast';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { addMonths } from 'date-fns';
 
-const DOMAINS = ['READING', 'WRITING', 'MATH', 'COGNITIVE', 'MOTOR', 'BEHAVIOURAL'];
+const DOMAINS = ['READING', 'WRITING', 'MATH', 'COGNITIVE', 'MOTOR', 'BEHAVIOURAL', 'READING_COMPREHENSION', 'ORAL_LANGUAGE', 'SPELLING'];
 const REVIEW_CYCLES = ['MONTHLY', 'QUARTERLY', 'BIANNUAL'];
+
+// Helper function to format domain names
+const formatDomainName = (domain: string) => {
+    return domain
+        .split('_')
+        .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+        .join(' ');
+};
 
 const ltpGoalSchema = z.object({
     goalStatement: z.string().min(10, 'Goal must be at least 10 characters'),
@@ -54,9 +62,9 @@ const ltpFormSchema = z.object({
     startDate: z.date(),
     endDate: z.date(),
     durationMonths: z.number().min(6).max(12),
-    domains: z.array(z.string()).min(1, 'At least one domain required'),
+    domains: z.array(z.string()).optional(), // Optional since we extract from goals
     reviewCycle: z.string(),
-    goals: z.array(ltpGoalSchema).min(3, 'At least 3 goals required').max(5, 'Maximum 5 goals'),
+    goals: z.array(ltpGoalSchema).min(1, 'At least 1 goal required').max(5, 'Maximum 5 goals'),
 });
 
 export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }: any) {
@@ -134,8 +142,12 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
     const onSubmit = async (data: any) => {
         setLoading(true);
         try {
+            // Extract unique domains from goals
+            const uniqueDomains = Array.from(new Set(data.goals.map((goal: any) => goal.domain)));
+
             const payload = {
                 ...data,
+                domains: uniqueDomains,
                 learningStrengths: data.learningStrengths.split(',').map((s: string) => s.trim()).filter(Boolean),
                 challengeAreas: data.challengeAreas.split(',').map((s: string) => s.trim()).filter(Boolean),
                 startDate: data.startDate.toISOString(),
@@ -203,19 +215,21 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
                     {/* Duration Section */}
                     <div className="space-y-4 border-b pb-4">
                         <h3 className="font-semibold text-lg">Duration & Review</h3>
-                        <div className="grid grid-cols-4 gap-4">
+                        <div className="grid grid-cols-4 gap-4 items-start">
                             <div>
-                                <Label>Start Date *</Label>
                                 <ProfessionalDatePicker
+                                    label="Start Date"
                                     value={form.watch('startDate')}
-                                    onChange={(date) => form.setValue('startDate', date)}
+                                    onChange={(date) => date && form.setValue('startDate', date)}
+                                    required
                                 />
                             </div>
                             <div>
-                                <Label>End Date *</Label>
                                 <ProfessionalDatePicker
+                                    label="End Date"
                                     value={form.watch('endDate')}
-                                    onChange={(date) => form.setValue('endDate', date)}
+                                    onChange={(date) => date && form.setValue('endDate', date)}
+                                    required
                                 />
                             </div>
                             <div>
@@ -241,7 +255,7 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
                                     </SelectTrigger>
                                     <SelectContent>
                                         {REVIEW_CYCLES.map((cycle) => (
-                                            <SelectItem key={cycle} value={cycle}>{cycle}</SelectItem>
+                                            <SelectItem key={cycle} value={cycle}>{formatDomainName(cycle)}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -249,40 +263,13 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
                         </div>
                     </div>
 
-                    {/* Domains Section */}
-                    <div className="space-y-2 border-b pb-4">
-                        <Label>Domains * (select at least one)</Label>
-                        <div className="grid grid-cols-3 gap-3">
-                            {DOMAINS.map((domain) => (
-                                <label key={domain} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input
-                                        type="checkbox"
-                                        className="w-4 h-4"
-                                        value={domain}
-                                        checked={form.watch('domains').includes(domain)}
-                                        onChange={(e) => {
-                                            const current = form.watch('domains');
-                                            if (e.target.checked) {
-                                                form.setValue('domains', [...current, domain]);
-                                            } else {
-                                                form.setValue('domains', current.filter((d) => d !== domain));
-                                            }
-                                        }}
-                                    />
-                                    <span className="text-sm">{domain}</span>
-                                </label>
-                            ))}
-                        </div>
-                        {form.formState.errors.domains && (
-                            <p className="text-sm text-red-600">{form.formState.errors.domains.message}</p>
-                        )}
-                    </div>
+
 
                     {/* TABULAR GOALS INPUT */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h3 className="font-semibold text-lg">Goals (3-5 required)</h3>
+                                <h3 className="font-semibold text-lg">Goals (1-5 required)</h3>
                                 <p className="text-sm text-gray-600">Add specific, measurable goals for this plan</p>
                             </div>
                             <Button
@@ -321,12 +308,12 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
                                                     value={form.watch(`goals.${index}.domain`)}
                                                     onValueChange={(v) => form.setValue(`goals.${index}.domain`, v)}
                                                 >
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className="h-9">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {DOMAINS.map((d) => (
-                                                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                                                            <SelectItem key={d} value={d}>{formatDomainName(d)}</SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
@@ -356,7 +343,7 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
                                                     size="sm"
                                                     variant="ghost"
                                                     onClick={() => remove(index)}
-                                                    disabled={fields.length <= 3}
+                                                    disabled={fields.length <= 1}
                                                 >
                                                     <Trash2 className="h-4 w-4 text-red-600" />
                                                 </Button>

@@ -317,10 +317,6 @@ export class HomeworkRepository {
           },
         },
         specialEducator: {
-          select: {
-            id: true,
-            fullName: true,
-          },
           include: {
             user: true
           }

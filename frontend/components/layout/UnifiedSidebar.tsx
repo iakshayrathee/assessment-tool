@@ -109,6 +109,12 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       description: 'Assign and track student homework'
     },
     {
+      title: 'Data Bank',
+      href: '/educator/data-bank',
+      icon: Database,
+      description: 'Manage your documents and resources'
+    },
+    {
       title: 'Reports',
       href: '/educator/reports',
       icon: BarChart3,

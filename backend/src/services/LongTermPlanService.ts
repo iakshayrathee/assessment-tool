@@ -22,8 +22,8 @@ export class LongTermPlanService {
             throw new Error('Duration must be between 6 and 12 months');
         }
 
-        if (!data.goals || data.goals.length < 3 || data.goals.length > 5) {
-            throw new Error('Long-term plan must have between 3 and 5 goals');
+        if (!data.goals || data.goals.length < 1 || data.goals.length > 5) {
+            throw new Error('Long-term plan must have between 1 and 5 goals');
         }
 
         if (!data.domains || data.domains.length === 0) {
@@ -98,8 +98,8 @@ export class LongTermPlanService {
         }
 
         // Validate goals if provided
-        if (data.goals && (data.goals.length < 3 || data.goals.length > 5)) {
-            throw new Error('Long-term plan must have between 3 and 5 goals');
+        if (data.goals && (data.goals.length < 1 || data.goals.length > 5)) {
+            throw new Error('Long-term plan must have between 1 and 5 goals');
         }
 
         // Validate date range if both dates provided
