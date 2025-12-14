@@ -59,6 +59,7 @@
     "react-hot-toast": "^2.4.1",
     "react-use-measure": "^2.1.7",
     "recharts": "^2.8.0",
+    "socket.io-client": "^4.7.2",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^4.1.9",

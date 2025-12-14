@@ -2183,6 +2183,52 @@ class ApiClient {
     const encodedKey = encodeURIComponent(fileKey);
     await this.client.delete(`/special-educators/documents/${encodedKey}`);
   }
+
+  // Notification endpoints
+  async getNotifications(params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    isRead?: boolean;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{
+    success: boolean;
+    data: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const response = await this.client.get('/notifications', { params });
+    return response.data;
+  }
+
+  async getUnreadNotificationCount(): Promise<{ count: number }> {
+    const response = await this.client.get<{ success: boolean; data: { count: number } }>('/notifications/unread-count');
+    return response.data.data;
+  }
+
+  async getNotificationById(id: string): Promise<any> {
+    const response = await this.client.get<{ success: boolean; data: any }>(`/notifications/${id}`);
+    return response.data.data;
+  }
+
+  async markNotificationAsRead(id: string): Promise<any> {
+    const response = await this.client.put<{ success: boolean; data: any }>(`/notifications/${id}/read`);
+    return response.data.data;
+  }
+
+  async markAllNotificationsAsRead(): Promise<{ count: number }> {
+    const response = await this.client.put<{ success: boolean; data: { count: number } }>('/notifications/mark-all-read');
+    return response.data.data;
+  }
+
+  async deleteNotification(id: string): Promise<void> {
+    await this.client.delete(`/notifications/${id}`);
+  }
 }
 
 export const apiClient = new ApiClient();

@@ -1196,17 +1196,19 @@ model AuditLog {
 }
 
 model Notification {
-  id        String    @id @default(cuid())
+  id        String           @id @default(cuid())
   userId    String
-  type      String
+  type      NotificationType
   title     String
   message   String
-  isRead    Boolean   @default(false)
+  isRead    Boolean          @default(false)
   data      String? // JSON data for additional context
-  createdAt DateTime  @default(now())
+  createdAt DateTime         @default(now())
   readAt    DateTime?
-  user      User      @relation(fields: [userId], references: [id])
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
   @@map("notifications")
 }
 
@@ -1416,4 +1418,45 @@ enum LessonStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum NotificationType {
+  // Student Management
+  STUDENT_ASSIGNED
+  STUDENT_UNASSIGNED
+  
+  // Assessments
+  ASSESSMENT_CREATED
+  ASSESSMENT_COMPLETED
+  ASSESSMENT_REVIEWED
+  
+  // IEP & Goals
+  IEP_GOAL_CREATED
+  IEP_GOAL_UPDATED
+  IEP_GOAL_ACHIEVED
+  
+  // Homework
+  HOMEWORK_ASSIGNED
+  HOMEWORK_SUBMITTED
+  HOMEWORK_REVIEWED
+  
+  // Reports
+  REPORT_SUBMITTED
+  REPORT_APPROVED
+  REPORT_REJECTED
+  
+  // Parent Concerns
+  CONCERN_SUBMITTED
+  CONCERN_RESPONDED
+  
+  // Lesson Plans
+  LESSON_PLAN_CREATED
+  LESSON_PLAN_UPDATED
+  
+  // Documents
+  DOCUMENT_UPLOADED
+  
+  // System
+  ACCOUNT_CREATED
+  ROLE_CHANGED
 }

@@ -14,15 +14,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Bell, 
-  Search, 
+import {
+  Bell,
+  Search,
   LogOut,
   Menu,
   Building,
   ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NotificationDropdown } from './NotificationDropdown';
 
 interface TopHeaderProps {
   className?: string;
@@ -42,7 +43,6 @@ const roleDisplayNames: Record<string, string> = {
 export function TopHeader({ className, userRole, onMenuClick }: TopHeaderProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const [notifications] = useState(3); // Mock notification count
 
   const handleLogout = async () => {
     await logout();
@@ -86,7 +86,7 @@ export function TopHeader({ className, userRole, onMenuClick }: TopHeaderProps) 
               <Menu className="h-5 w-5" />
             </Button>
           )}
-          
+
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Building className="h-6 w-6 text-blue-600" />
@@ -117,17 +117,7 @@ export function TopHeader({ className, userRole, onMenuClick }: TopHeaderProps) 
         {/* Right Section - Notifications + User Menu */}
         <div className="flex items-center gap-3">
           {/* Notifications */}
-          <Button variant="ghost" size="sm" className="relative">
-            <Bell className="h-5 w-5" />
-            {notifications > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-              >
-                {notifications}
-              </Badge>
-            )}
-          </Button>
+          <NotificationDropdown />
 
           {/* User Menu */}
           <DropdownMenu>

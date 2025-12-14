@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
+import { createServer } from 'http';
+import { initializeWebSocket } from './utils/websocket';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -19,6 +21,7 @@ import schoolViewerRoutes from './routes/schoolViewers';
 import iepRoutes from './routes/iep';
 import newAssessmentRoutes from './routes/newAssessments';
 import lessonPlansHomeworkRoutes from './routes/lessonPlansHomework';
+import notificationRoutes from './routes/notifications';
 
 // Load environment variables
 dotenv.config();
@@ -26,6 +29,12 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
+
+// Create HTTP server for WebSocket
+const httpServer = createServer(app);
+
+// Initialize WebSocket
+initializeWebSocket(httpServer);
 
 // Middleware
 app.use(helmet());
@@ -66,6 +75,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/school-viewers', schoolViewerRoutes);
 app.use('/api/iep', iepRoutes);
 app.use('/api/lesson-plans', lessonPlansHomeworkRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Global error handler
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -112,9 +122,10 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server with WebSocket support
+httpServer.listen(PORT, () => {
   console.log(`🚀 Knowled Backend API is running on port ${PORT}`);
+  console.log(`📡 WebSocket server is ready for connections`);
 });
 
 export default app;
