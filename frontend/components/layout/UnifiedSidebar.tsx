@@ -293,10 +293,16 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       description: 'View student information'
     },
     {
+      title: 'School Reports',
+      href: '/school-viewer/school-reports',
+      icon: BarChart3,
+      description: 'Comprehensive school analytics'
+    },
+    {
       title: 'Reports',
       href: '/school-viewer/reports',
       icon: FileText,
-      description: 'School reports and analytics'
+      description: 'Individual student reports'
     }
   ]
 };

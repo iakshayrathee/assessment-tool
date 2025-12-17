@@ -211,6 +211,7 @@ model School {
   center        CenterProfile?        @relation(fields: [centerId], references: [id])
   students      Student[]
   assignments   SchoolAssignment[]
+  reportSnapshots SchoolReportSnapshot[]
 
   @@map("schools")
 }
@@ -231,6 +232,8 @@ model Student {
   centerId                String
   schoolId                String?
   parentId                String?
+  riskCategory            RiskCategory?            @default(ON_TRACK)
+  lastRiskAssessment      DateTime?
   assessments             Assessment[]
   formalAssessments       FormalAssessment[]
   readingSkillAssessments ReadingSkillAssessment[]
@@ -1459,4 +1462,82 @@ enum NotificationType {
   // System
   ACCOUNT_CREATED
   ROLE_CHANGED
+}
+
+enum RiskCategory {
+  HIGH_SUPPORT
+  MODERATE_SUPPORT
+  ON_TRACK
+}
+
+enum ReportPeriodType {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+model SchoolReportSnapshot {
+  id                         String           @id @default(cuid())
+  schoolId                   String
+  periodType                 ReportPeriodType
+  periodStart                DateTime
+  periodEnd                  DateTime
+  
+  // Reach & Coverage
+  totalEnrolled              Int
+  totalScreened              Int
+  totalSupported             Int
+  gradesCovered              String[]
+  
+  // Risk Categories
+  highSupportCount           Int
+  moderateSupportCount       Int
+  onTrackCount               Int
+  highSupportReduction       Float?
+  moderateSupportReduction   Float?
+  onTrackIncrease            Float?
+  
+  // Skill Area Metrics (% students needing support)
+  readingReadinessPercent    Float?
+  writingReadinessPercent    Float?
+  numeracyReadinessPercent   Float?
+  attentionEngagementPercent Float?
+  processingMemoryPercent    Float?
+  
+  // Impact Metrics
+  totalSessions              Int
+  averageImprovement         Json? // Per domain improvements
+  
+  // New Dashboard 1 Metrics - Student Progress Levels
+  newStudentsThisMonth              Int?
+  studentsImproving                 Int?
+  studentsStable                    Int?
+  studentsRequiringAttention        Int?
+  
+  // New Dashboard 3 Metrics - Time Saved for Teachers (in hours)
+  manualObservationTimeSaved        Int?
+  lessonPlanningTimeSaved           Int?
+  trackingWorkloadTimeSaved         Int?
+  differentiationSupportTimeSaved   Int?
+  totalTimeSaved                    Int?
+  
+  // New Dashboard 3 Metrics - Evidence of Interventions
+  individualSupportPlansCreated     Int?
+  smallGroupInterventions           Int?
+  classroomStrategyRecommendations  Int?
+  reviewCyclesCompleted             Int?
+  
+  // AI-Generated Narratives
+  executiveSummary           String?
+  coverageNarrative          String?
+  impactNarrative            String?
+  recommendations            String?
+  
+  createdAt                  DateTime         @default(now())
+  updatedAt                  DateTime         @updatedAt
+  
+  school                     School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  @@index([schoolId, periodType, periodStart])
+  @@map("school_report_snapshots")
 }

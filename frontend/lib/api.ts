@@ -2229,6 +2229,71 @@ class ApiClient {
   async deleteNotification(id: string): Promise<void> {
     await this.client.delete(`/notifications/${id}`);
   }
+
+  // School Reports endpoints
+  async getSchoolOverviewReport(params?: { snapshotId?: string; periodType?: string; startDate?: string; endDate?: string }): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/school-viewers/school-reports/overview', { params });
+    return response.data;
+  }
+
+  async getAssessmentCoverageReport(params?: { snapshotId?: string; periodType?: string; startDate?: string; endDate?: string }): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/school-viewers/school-reports/assessment-coverage', { params });
+    return response.data;
+  }
+
+  async getSchoolImpactReport(params?: { snapshotId?: string; periodType?: string; startDate?: string; endDate?: string }): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/school-viewers/school-reports/school-impact', { params });
+    return response.data;
+  }
+
+  async getStudentDeepAssessment(studentId: string): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/school-viewers/school-reports/student-deep/${studentId}`);
+    return response.data;
+  }
+
+  async generateSchoolSnapshot(data: { periodType?: string; startDate?: string; endDate?: string }): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>('/school-viewers/school-reports/generate-snapshot', data);
+    return response.data;
+  }
+
+  async generateSchoolAINarrative(data: { snapshotId: string; narrativeType: string }): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>('/school-viewers/school-reports/generate-ai-narrative', data);
+    return response.data;
+  }
+
+  async listSchoolSnapshots(params?: { page?: number; limit?: number; periodType?: string }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get<{ success: boolean; data: any[]; pagination: any }>('/school-viewers/school-reports/snapshots', { params });
+    return {
+      data: response.data.data,
+      pagination: {
+        currentPage: response.data.pagination.page,
+        totalPages: response.data.pagination.totalPages,
+        totalCount: response.data.pagination.total,
+        hasNext: response.data.pagination.page < response.data.pagination.totalPages,
+        hasPrev: response.data.pagination.page > 1
+      }
+    };
+  }
+
+  // NEW: Get complete report data for all dashboards (single API call)
+  async getCompleteReportData(params?: {
+    snapshotId?: string | null;
+    periodType?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/school-viewers/school-reports/complete-data', { params });
+    return response.data;
+  }
+
+  // NEW: Get targeted students for deep assessment
+  async getTargetedStudents(riskLevel?: string): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/school-viewers/school-reports/targeted-students', {
+      params: riskLevel ? { riskLevel } : undefined
+    });
+    return response.data;
+  }
+
 }
 
 export const apiClient = new ApiClient();

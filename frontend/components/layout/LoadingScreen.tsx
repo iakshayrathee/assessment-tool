@@ -14,11 +14,11 @@ export function LoadingScreen() {
       >
         {/* Logo Animation */}
         <motion.div
-          animate={{ 
+          animate={{
             rotate: [0, 360],
             scale: [1, 1.1, 1]
           }}
-          transition={{ 
+          transition={{
             rotate: { duration: 2, repeat: Infinity, ease: "linear" },
             scale: { duration: 1, repeat: Infinity, ease: "easeInOut" }
           }}

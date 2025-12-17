@@ -17,7 +17,7 @@ export class AIReportService {
     skillAssessmentRepo: SkillAssessmentRepository,
     weeklyLessonPlanRepo: WeeklyLessonPlanRepository
   ) {
-    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'AIzaSyCiXuKWE7iRtkKNrBu7XqS1a1R7h9lH3zc');
+    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
     this.assessmentRepo = assessmentRepo;
     this.iepRepo = iepRepo;
     this.skillAssessmentRepo = skillAssessmentRepo;

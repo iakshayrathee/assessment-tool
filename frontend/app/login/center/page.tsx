@@ -12,7 +12,7 @@ export default function CenterLoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  
+
   const { login, isLoggingIn, isAuthenticated, user } = useAuth();
   const router = useRouter();
 
@@ -49,7 +49,7 @@ export default function CenterLoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       login({ email, password });
     }
@@ -80,16 +80,16 @@ export default function CenterLoginPage() {
                 Center Manager
               </h1>
             </div>
-            
+
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
               Operations
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">
                 Management Hub
               </span>
             </h2>
-            
+
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              Manage your learning center operations, oversee educator assignments, 
+              Manage your learning center operations, oversee educator assignments,
               handle child onboarding, and access comprehensive reports.
             </p>
 
@@ -119,7 +119,7 @@ export default function CenterLoginPage() {
         >
           <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
             {/* Back Button */}
-            <Link 
+            <Link
               href="/"
               className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
             >
@@ -152,9 +152,8 @@ export default function CenterLoginPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      errors.email ? 'border-red-300' : 'border-gray-300'
-                    }`}
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.email ? 'border-red-300' : 'border-gray-300'
+                      }`}
                     placeholder="Enter your email"
                   />
                 </div>
@@ -174,9 +173,8 @@ export default function CenterLoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      errors.password ? 'border-red-300' : 'border-gray-300'
-                    }`}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.password ? 'border-red-300' : 'border-gray-300'
+                      }`}
                     placeholder="Enter your password"
                   />
                   <button
@@ -193,8 +191,8 @@ export default function CenterLoginPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <Link 
-                  href="/forgot-password" 
+                <Link
+                  href="/forgot-password"
                   className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
                 >
                   Forgot Password?

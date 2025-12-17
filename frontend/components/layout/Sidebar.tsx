@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   LayoutDashboard,
   Users,
   GraduationCap,
@@ -213,8 +213,8 @@ export function Sidebar({ isOpen, onClose, userRole = 'ADMIN' }: SidebarProps) {
   const menuItems = roleMenus[userRole] || roleMenus.ADMIN;
 
   const toggleExpanded = (title: string) => {
-    setExpandedItems(prev => 
-      prev.includes(title) 
+    setExpandedItems(prev =>
+      prev.includes(title)
         ? prev.filter(item => item !== title)
         : [...prev, title]
     );
@@ -269,7 +269,7 @@ export function Sidebar({ isOpen, onClose, userRole = 'ADMIN' }: SidebarProps) {
               )} />
             </motion.div>
           </Button>
-          
+
           <AnimatePresence>
             {isExpanded && (
               <motion.div
@@ -314,8 +314,8 @@ export function Sidebar({ isOpen, onClose, userRole = 'ADMIN' }: SidebarProps) {
           </div>
           <span className="truncate font-medium">{item.title}</span>
           {item.badge && (
-            <Badge 
-              variant={itemIsActive ? "default" : "secondary"} 
+            <Badge
+              variant={itemIsActive ? "default" : "secondary"}
               className={cn(
                 "ml-auto h-5 px-1.5 text-xs transition-colors",
                 itemIsActive && "bg-primary text-primary-foreground"
@@ -334,9 +334,9 @@ export function Sidebar({ isOpen, onClose, userRole = 'ADMIN' }: SidebarProps) {
       {/* Desktop Sidebar */}
       <motion.aside
         initial={false}
-        animate={{ 
+        animate={{
           width: isOpen ? 256 : 64,
-          x: 0 
+          x: 0
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className="fixed left-0 top-0 z-50 h-full bg-card border-r border-border hidden lg:block"
@@ -347,7 +347,7 @@ export function Sidebar({ isOpen, onClose, userRole = 'ADMIN' }: SidebarProps) {
             transition={{ duration: 0.2 }}
             className="flex items-center space-x-3"
           >
-            <motion.div 
+            <motion.div
               className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg"
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}

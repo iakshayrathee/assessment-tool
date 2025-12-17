@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  
+
   const { login, isLoggingIn, isAuthenticated, user } = useAuth();
   const router = useRouter();
 
@@ -63,7 +63,7 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       login({ email, password });
     }
@@ -103,17 +103,17 @@ export default function LoginPage() {
                 Knowled
               </h1>
             </div>
-            
+
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
               Welcome to the Future of
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
                 Special Education
               </span>
             </h2>
-            
+
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              Comprehensive platform for managing special education programs, 
-              assessments, and student progress tracking with advanced analytics 
+              Comprehensive platform for managing special education programs,
+              assessments, and student progress tracking with advanced analytics
               and collaborative tools.
             </p>
 
@@ -171,9 +171,8 @@ export default function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      errors.email ? 'border-red-300' : 'border-gray-300'
-                    }`}
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.email ? 'border-red-300' : 'border-gray-300'
+                      }`}
                     placeholder="Enter your email"
                   />
                 </div>
@@ -193,9 +192,8 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      errors.password ? 'border-red-300' : 'border-gray-300'
-                    }`}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.password ? 'border-red-300' : 'border-gray-300'
+                      }`}
                     placeholder="Enter your password"
                   />
                   <button
