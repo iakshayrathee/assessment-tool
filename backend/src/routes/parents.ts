@@ -13,65 +13,84 @@ const parentController = new ParentController(prisma);
 router.use(AuthUtils.authenticateToken);
 
 // GET /api/parents/dashboard - Get parent dashboard data
-router.get('/dashboard', 
+router.get('/dashboard',
   AuthUtils.requireAnyRole(UserRole.PARENT),
   parentController.getParentDashboard.bind(parentController)
 );
 
 // POST /api/parents/concerns - Submit parent concern
-router.post('/concerns', 
+router.post('/concerns',
   AuthUtils.requireAnyRole(UserRole.PARENT),
   ValidationRules.createParentConcern(),
   parentController.submitConcern.bind(parentController)
 );
 
 // GET /api/parents/concerns - Get parent concerns
-router.get('/concerns', 
+router.get('/concerns',
   AuthUtils.requireAnyRole(UserRole.PARENT),
   ValidationRules.validatePagination(),
   parentController.getConcerns.bind(parentController)
 );
 
 // POST /api/parents/documents - Upload parent document
-router.post('/documents', 
+router.post('/documents',
   AuthUtils.requireAnyRole(UserRole.PARENT),
   ValidationRules.uploadDocument(),
   parentController.uploadDocument.bind(parentController)
 );
 
 // GET /api/parents/documents - Get parent documents
-router.get('/documents', 
+router.get('/documents',
   AuthUtils.requireAnyRole(UserRole.PARENT),
   ValidationRules.validatePagination(),
   parentController.getDocuments.bind(parentController)
 );
 
 // GET /api/parents/children/:childId/reports - Get child reports
-router.get('/children/:childId/reports', 
+router.get('/children/:childId/reports',
   AuthUtils.requireAnyRole(UserRole.PARENT),
   ValidationRules.validateId(),
   parentController.getChildReports.bind(parentController)
 );
 
 // GET /api/parents/children/:childId/iep-goals - Get child IEP goals
-router.get('/children/:childId/iep-goals', 
+router.get('/children/:childId/iep-goals',
   AuthUtils.requireAnyRole(UserRole.PARENT),
   ValidationRules.validateId(),
   parentController.getChildIEPGoals.bind(parentController)
 );
 
 // PUT /api/parents/profile - Update parent profile
-router.put('/profile', 
+router.put('/profile',
   AuthUtils.requireAnyRole(UserRole.PARENT),
   ValidationRules.updateParentProfile(),
   parentController.updateProfile.bind(parentController)
 );
 
 // GET /api/parents/children/:childId - Get child details
-router.get('/children/:childId', 
+router.get('/children/:childId',
   AuthUtils.requireAnyRole(UserRole.PARENT),
   ValidationRules.validateId(),
   parentController.getChildDetails.bind(parentController)
+);
+
+// Parent Report Generation Routes
+// POST /api/parents/students/:studentId/report-snapshots/generate - Generate parent report snapshot
+router.post('/students/:studentId/report-snapshots/generate',
+  AuthUtils.requireAnyRole(UserRole.PARENT),
+  parentController.generateParentSnapshot.bind(parentController)
+);
+
+// GET /api/parents/students/:studentId/report-snapshots - List parent report snapshots
+router.get('/students/:studentId/report-snapshots',
+  AuthUtils.requireAnyRole(UserRole.PARENT),
+  parentController.listParentSnapshots.bind(parentController)
+);
+
+// GET /api/parents/students/:studentId/report-data/complete - Get complete parent report data
+router.get('/students/:studentId/report-data/complete',
+  AuthUtils.requireAnyRole(UserRole.PARENT),
+  parentController.getCompleteParentReportData.bind(parentController)
 );
 
 export default router;

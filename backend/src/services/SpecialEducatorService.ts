@@ -725,4 +725,529 @@ export class SpecialEducatorService {
       throw new Error('Failed to get session notes');
     }
   }
+
+  /**
+   * Get comprehensive analytics dashboard data
+   */
+  async getAnalyticsDashboard(educatorId: string) {
+    try {
+      // Get basic dashboard stats
+      const basicStats = await this.getDashboardData(educatorId);
+
+      // Get all assigned students with detailed info
+      const students = await this.prisma.student.findMany({
+        where: {
+          assignments: {
+            some: {
+              specialEducatorId: educatorId,
+              isActive: true
+            }
+          }
+        },
+        include: {
+          iepGoals: {
+            where: {
+              specialEducatorId: educatorId
+            },
+            select: {
+              id: true,
+              status: true,
+              progressPercent: true,
+              domain: true
+            }
+          },
+          assessments: {
+            where: {
+              specialEducatorId: educatorId,
+              status: AssessmentStatus.COMPLETED
+            },
+            select: {
+              id: true,
+              readingLevel: true,
+              writingLevel: true,
+              mathLevel: true,
+              completedAt: true
+            },
+            orderBy: {
+              completedAt: 'desc'
+            },
+            take: 1
+          },
+          sessionNotes: {
+            where: {
+              specialEducatorId: educatorId
+            },
+            select: {
+              id: true,
+              sessionDate: true
+            },
+            orderBy: {
+              sessionDate: 'desc'
+            },
+            take: 1
+          },
+          homework: {
+            where: {
+              specialEducatorId: educatorId
+            },
+            select: {
+              id: true,
+              status: true
+            }
+          }
+        }
+      });
+
+      // Calculate performance distribution
+      const performanceDistribution = {
+        highPerformers: 0,
+        onTrack: 0,
+        needsSupport: 0
+      };
+
+      // Calculate domain-wise average progress
+      const domainProgress: any = {
+        READING: { total: 0, count: 0 },
+        WRITING: { total: 0, count: 0 },
+        MATH: { total: 0, count: 0 }
+      };
+
+      // Calculate average student progress
+      let totalProgress = 0;
+      let studentCount = 0;
+
+      students.forEach(student => {
+        const goals = student.iepGoals;
+        if (goals.length > 0) {
+          const avgProgress = goals.reduce((sum, goal) => sum + goal.progressPercent, 0) / goals.length;
+          totalProgress += avgProgress;
+          studentCount++;
+
+          // Categorize performance
+          if (avgProgress >= 75) {
+            performanceDistribution.highPerformers++;
+          } else if (avgProgress >= 50) {
+            performanceDistribution.onTrack++;
+          } else {
+            performanceDistribution.needsSupport++;
+          }
+
+          // Domain-wise progress
+          goals.forEach(goal => {
+            const domain = goal.domain as string;
+            if (domainProgress[domain]) {
+              domainProgress[domain].total += goal.progressPercent;
+              domainProgress[domain].count++;
+            }
+          });
+        }
+      });
+
+      const averageStudentProgress = studentCount > 0 ? Math.round(totalProgress / studentCount) : 0;
+
+      // Calculate domain averages
+      const domainAverages = {
+        reading: domainProgress.READING.count > 0
+          ? Math.round(domainProgress.READING.total / domainProgress.READING.count)
+          : 0,
+        writing: domainProgress.WRITING.count > 0
+          ? Math.round(domainProgress.WRITING.total / domainProgress.WRITING.count)
+          : 0,
+        math: domainProgress.MATH.count > 0
+          ? Math.round(domainProgress.MATH.total / domainProgress.MATH.count)
+          : 0
+      };
+
+      // Get upcoming sessions (sessions scheduled for next 7 days)
+      const today = new Date();
+      const nextWeek = new Date(today);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+
+      const upcomingSessions = await this.prisma.sessionNote.count({
+        where: {
+          specialEducatorId: educatorId,
+          sessionDate: {
+            gte: today,
+            lte: nextWeek
+          }
+        }
+      });
+
+      // Get pending tasks count
+      const pendingHomework = await this.prisma.homework.count({
+        where: {
+          specialEducatorId: educatorId,
+          status: {
+            in: ['ASSIGNED', 'IN_PROGRESS']
+          }
+        }
+      });
+
+      const pendingTasks = basicStats.pendingAssessments + pendingHomework;
+
+      return {
+        ...basicStats,
+        averageStudentProgress,
+        upcomingSessions,
+        pendingTasks,
+        performanceDistribution,
+        domainAverages,
+        totalStudents: students.length
+      };
+    } catch (error) {
+      console.error('Error getting analytics dashboard:', error);
+      throw new Error('Failed to get analytics dashboard');
+    }
+  }
+
+  /**
+   * Get detailed analytics for a specific student
+   */
+  async getStudentAnalytics(educatorId: string, studentId: string) {
+    try {
+      // Verify educator has access to this student
+      const assignment = await this.prisma.studentAssignment.findFirst({
+        where: {
+          studentId,
+          specialEducatorId: educatorId,
+          isActive: true
+        }
+      });
+
+      if (!assignment) {
+        throw new Error('Student not assigned to this educator');
+      }
+
+      // Get student with comprehensive data
+      const student = await this.prisma.student.findUnique({
+        where: { id: studentId },
+        include: {
+          assessments: {
+            where: {
+              specialEducatorId: educatorId,
+              status: AssessmentStatus.COMPLETED
+            },
+            select: {
+              id: true,
+              readingLevel: true,
+              writingLevel: true,
+              mathLevel: true,
+              completedAt: true,
+              createdAt: true
+            },
+            orderBy: {
+              completedAt: 'desc'
+            }
+          },
+          iepGoals: {
+            where: {
+              specialEducatorId: educatorId
+            },
+            select: {
+              id: true,
+              domain: true,
+              goalStatement: true,
+              status: true,
+              progressPercent: true,
+              targetDate: true,
+              createdAt: true
+            }
+          },
+          sessionNotes: {
+            where: {
+              specialEducatorId: educatorId
+            },
+            select: {
+              id: true,
+              sessionDate: true,
+              duration: true,
+              progress: true
+            },
+            orderBy: {
+              sessionDate: 'desc'
+            },
+            take: 10
+          },
+          homework: {
+            where: {
+              specialEducatorId: educatorId
+            },
+            select: {
+              id: true,
+              status: true,
+              dueDate: true,
+              submittedAt: true
+            }
+          }
+        }
+      });
+
+      if (!student) {
+        throw new Error('Student not found');
+      }
+
+      // Calculate IEP goal progress
+      const totalGoals = student.iepGoals.length;
+      const completedGoals = student.iepGoals.filter(goal => goal.status === IEPGoalStatus.ACHIEVED).length;
+      const inProgressGoals = student.iepGoals.filter(goal => goal.status === IEPGoalStatus.IN_PROGRESS).length;
+      const averageGoalProgress = totalGoals > 0
+        ? Math.round(student.iepGoals.reduce((sum, goal) => sum + goal.progressPercent, 0) / totalGoals)
+        : 0;
+
+      // Calculate homework completion rate
+      const totalHomework = student.homework.length;
+      const completedHomework = student.homework.filter(hw =>
+        hw.status === 'COMPLETED' || hw.status === 'REVIEWED'
+      ).length;
+      const homeworkCompletionRate = totalHomework > 0
+        ? Math.round((completedHomework / totalHomework) * 100)
+        : 0;
+
+      // Get domain-specific performance from latest assessment
+      const latestAssessment = student.assessments[0];
+      const domainPerformance = {
+        reading: latestAssessment?.readingLevel || 'N/A',
+        writing: latestAssessment?.writingLevel || 'N/A',
+        math: latestAssessment?.mathLevel || 'N/A'
+      };
+
+      // Calculate progress trend (comparing last 3 months of IEP progress)
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+      const recentGoals = student.iepGoals.filter(goal =>
+        new Date(goal.createdAt) >= threeMonthsAgo
+      );
+
+      let progressTrend: 'improving' | 'stable' | 'declining' = 'stable';
+      if (recentGoals.length > 0) {
+        const recentAvgProgress = recentGoals.reduce((sum, goal) => sum + goal.progressPercent, 0) / recentGoals.length;
+        if (recentAvgProgress > averageGoalProgress + 10) {
+          progressTrend = 'improving';
+        } else if (recentAvgProgress < averageGoalProgress - 10) {
+          progressTrend = 'declining';
+        }
+      }
+
+      // Session attendance
+      const totalSessions = student.sessionNotes.length;
+      const lastSession = student.sessionNotes[0]?.sessionDate;
+
+      // Assessment history for charts (last 5 assessments)
+      const assessmentHistory = student.assessments.slice(0, 5).reverse().map(assessment => ({
+        date: assessment.completedAt,
+        reading: assessment.readingLevel,
+        writing: assessment.writingLevel,
+        math: assessment.mathLevel
+      }));
+
+      // IEP goal progress over time (for chart)
+      const goalProgressOverTime = student.iepGoals.map(goal => ({
+        domain: goal.domain,
+        goalStatement: goal.goalStatement,
+        progress: goal.progressPercent,
+        status: goal.status,
+        targetDate: goal.targetDate
+      }));
+
+      return {
+        studentId: student.id,
+        fullName: student.fullName,
+        age: student.age,
+        grade: student.grade,
+        status: student.status,
+        overallProgress: averageGoalProgress,
+        iepGoals: {
+          total: totalGoals,
+          completed: completedGoals,
+          inProgress: inProgressGoals,
+          averageProgress: averageGoalProgress
+        },
+        assessments: {
+          total: student.assessments.length,
+          latest: latestAssessment,
+          history: assessmentHistory
+        },
+        sessions: {
+          total: totalSessions,
+          lastSession: lastSession
+        },
+        homework: {
+          total: totalHomework,
+          completed: completedHomework,
+          completionRate: homeworkCompletionRate
+        },
+        domainPerformance,
+        progressTrend,
+        goalProgressOverTime,
+        recentActivities: student.sessionNotes.slice(0, 5).map(note => ({
+          type: 'session',
+          date: note.sessionDate,
+          duration: note.duration,
+          progress: note.progress
+        }))
+      };
+    } catch (error) {
+      console.error('Error getting student analytics:', error);
+      throw new Error('Failed to get student analytics');
+    }
+  }
+
+  /**
+   * Get progress trends over time
+   */
+  async getProgressTrends(educatorId: string, period: 'week' | 'month' | 'quarter' = 'month') {
+    try {
+      const now = new Date();
+      let startDate = new Date();
+
+      // Calculate start date based on period
+      switch (period) {
+        case 'week':
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'quarter':
+          startDate.setMonth(now.getMonth() - 3);
+          break;
+      }
+
+      // Get IEP progress updates over time
+      const iepProgress = await this.prisma.iEPProgress.findMany({
+        where: {
+          goal: {
+            specialEducatorId: educatorId
+          },
+          updateDate: {
+            gte: startDate
+          }
+        },
+        include: {
+          goal: {
+            select: {
+              domain: true,
+              student: {
+                select: {
+                  fullName: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          updateDate: 'asc'
+        }
+      });
+
+      // Get assessment completion trends
+      const assessments = await this.prisma.assessment.findMany({
+        where: {
+          specialEducatorId: educatorId,
+          completedAt: {
+            gte: startDate
+          },
+          status: AssessmentStatus.COMPLETED
+        },
+        select: {
+          completedAt: true,
+          readingLevel: true,
+          writingLevel: true,
+          mathLevel: true
+        },
+        orderBy: {
+          completedAt: 'asc'
+        }
+      });
+
+      // Get session frequency
+      const sessions = await this.prisma.sessionNote.findMany({
+        where: {
+          specialEducatorId: educatorId,
+          sessionDate: {
+            gte: startDate
+          }
+        },
+        select: {
+          sessionDate: true,
+          duration: true
+        },
+        orderBy: {
+          sessionDate: 'asc'
+        }
+      });
+
+      // Group data by week/month for charting
+      const progressByPeriod: any = {};
+      const assessmentsByPeriod: any = {};
+      const sessionsByPeriod: any = {};
+
+      // Helper function to get period key
+      const getPeriodKey = (date: Date) => {
+        if (period === 'week') {
+          const weekStart = new Date(date);
+          weekStart.setDate(date.getDate() - date.getDay());
+          return weekStart.toISOString().split('T')[0];
+        } else {
+          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        }
+      };
+
+      // Aggregate IEP progress
+      iepProgress.forEach(progress => {
+        const key = getPeriodKey(new Date(progress.updateDate));
+        if (!progressByPeriod[key]) {
+          progressByPeriod[key] = { total: 0, count: 0 };
+        }
+        progressByPeriod[key].total += progress.progress;
+        progressByPeriod[key].count++;
+      });
+
+      // Aggregate assessments
+      assessments.forEach(assessment => {
+        const key = getPeriodKey(new Date(assessment.completedAt!));
+        if (!assessmentsByPeriod[key]) {
+          assessmentsByPeriod[key] = 0;
+        }
+        assessmentsByPeriod[key]++;
+      });
+
+      // Aggregate sessions
+      sessions.forEach(session => {
+        const key = getPeriodKey(new Date(session.sessionDate));
+        if (!sessionsByPeriod[key]) {
+          sessionsByPeriod[key] = { count: 0, totalDuration: 0 };
+        }
+        sessionsByPeriod[key].count++;
+        sessionsByPeriod[key].totalDuration += session.duration || 0;
+      });
+
+      // Format data for charts
+      const trendData = Object.keys(progressByPeriod).sort().map(key => ({
+        period: key,
+        averageProgress: progressByPeriod[key].count > 0
+          ? Math.round(progressByPeriod[key].total / progressByPeriod[key].count)
+          : 0,
+        assessmentsCompleted: assessmentsByPeriod[key] || 0,
+        sessionsCount: sessionsByPeriod[key]?.count || 0,
+        totalSessionDuration: sessionsByPeriod[key]?.totalDuration || 0
+      }));
+
+      return {
+        period,
+        startDate,
+        endDate: now,
+        trendData,
+        summary: {
+          totalProgressUpdates: iepProgress.length,
+          totalAssessments: assessments.length,
+          totalSessions: sessions.length
+        }
+      };
+    } catch (error) {
+      console.error('Error getting progress trends:', error);
+      throw new Error('Failed to get progress trends');
+    }
+  }
 }

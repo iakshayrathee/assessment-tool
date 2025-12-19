@@ -200,7 +200,7 @@ const roleMenus: Record<string, MenuItem[]> = {
     },
     {
       title: 'Reports',
-      href: '/school-viewer/reports',
+      href: '/school-viewer/school-reports',
       icon: FileText,
     },
   ],

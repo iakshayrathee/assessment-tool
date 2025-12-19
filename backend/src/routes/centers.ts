@@ -12,10 +12,8 @@ router.use(AuthUtils.authenticateToken);
 
 // Center CRUD routes
 router.get('/', centerController.getCenters.bind(centerController));
-router.get('/dashboard', centerController.getCenterDashboard.bind(centerController));
-router.get('/available-educators', centerController.getAvailableEducators.bind(centerController));
+router.get('/dashboard', centerController.getCurrentUserCenterDashboard.bind(centerController));
 router.get('/all-educators', centerController.getAllSpecialEducators.bind(centerController));
-router.get('/cities-centers', centerController.getCitiesAndCenters.bind(centerController));
 router.get('/unlinked-schools', centerController.getUnlinkedSchools.bind(centerController));
 router.get('/:id', centerController.getCenterById.bind(centerController));
 router.post('/', centerController.createCenter.bind(centerController));
@@ -32,4 +30,10 @@ router.get('/:id/reports', centerController.getCenterReports.bind(centerControll
 router.get('/:id/compliance', centerController.getCenterCompliance.bind(centerController));
 router.get('/:id/overdue-reports', centerController.getCenterOverdueReports.bind(centerController));
 
+// Center Report Generation Routes
+router.post('/:id/report-snapshots/generate', centerController.generateCenterSnapshot.bind(centerController));
+router.get('/:id/report-snapshots', centerController.listCenterSnapshots.bind(centerController));
+router.get('/:id/report-data/complete', centerController.getCompleteCenterReportData.bind(centerController));
+
 export default router;
+

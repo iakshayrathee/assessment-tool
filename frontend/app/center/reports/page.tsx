@@ -6,682 +6,925 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EnhancedCard } from '@/components/ui/enhanced-card';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { PageHeader } from '@/components/ui/page-header';
-import { 
-  FileText, 
+import {
+  FileText,
   Users,
-  Filter,
-  Search,
   Download,
-  Eye,
   Calendar,
-  Clock,
-  AlertCircle,
-  CheckCircle,
   TrendingUp,
   BarChart3,
-  PieChart,
-  FileBarChart,
-  School,
-  User,
-  Target
+  Target,
+  CheckCircle,
+  AlertCircle,
+  BookOpen,
+  GraduationCap,
+  Activity,
+  RefreshCw,
+  FileBarChart
 } from 'lucide-react';
-import Link from 'next/link';
-import { apiClient } from '@/lib/api';
+import { useCompleteCenterReportData, useGenerateCenterSnapshot, useCenterSnapshots } from '@/hooks/useCenterReports';
+import ReactDOMServer from 'react-dom/server';
+import { useToast } from '@/hooks/use-toast';
 
-interface Report {
-  id: string;
-  type: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  student: {
-    id: string;
-    fullName: string;
-    grade: string;
-  };
-  specialEducator?: {
-    id: string;
-    fullName: string;
-  };
-  superSpecialEducator?: {
-    id: string;
-    fullName: string;
-  };
-}
-
-interface ReportStats {
-  totalReports: number;
-  pendingReports: number;
-  completedReports: number;
-  reportsByType: Record<string, number>;
-  reportsByMonth: Record<string, number>;
-  recentReports: Report[];
-}
+type PeriodType = 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
 
 export default function CenterReportsPage() {
   const { user } = useAuth();
-  const [reports, setReports] = useState<Report[]>([]);
-  const [filteredReports, setFilteredReports] = useState<Report[]>([]);
-  const [stats, setStats] = useState<ReportStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [educatorFilter, setEducatorFilter] = useState<string>('');
-  const [dateFilter, setDateFilter] = useState<string>('');
-  
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const reportsPerPage = 10;
+  const { toast } = useToast();
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('MONTHLY');
+  const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | undefined>();
+  const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    loadReports();
-  }, [currentPage]);
+  const centerId = user?.profile?.id;
 
-  useEffect(() => {
-    filterReports();
-  }, [reports, searchTerm, typeFilter, statusFilter, educatorFilter, dateFilter]);
+  // Fetch snapshots list
+  const { data: snapshotsData, isLoading: snapshotsLoading } = useCenterSnapshots(centerId, {
+    page: 1,
+    limit: 10,
+    periodType: selectedPeriod
+  });
 
-  const loadReports = async () => {
+  // Fetch complete report data
+  const { data: reportData, isLoading: reportLoading, refetch } = useCompleteCenterReportData(
+    centerId,
+    selectedSnapshotId ? { snapshotId: selectedSnapshotId } : { periodType: selectedPeriod }
+  );
+
+  // Generate snapshot mutation
+  const generateSnapshot = useGenerateCenterSnapshot(centerId);
+
+  const handleGenerateReport = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      
-      const centerId = user?.profile?.id;
-      if (!centerId) {
-        setError('Center ID not found');
-        return;
-      }
-
-      const reportsData = await apiClient.getCenterReports(centerId, {
-        page: currentPage,
-        limit: reportsPerPage
+      await generateSnapshot.mutateAsync({ periodType: selectedPeriod });
+      toast({
+        title: 'Success',
+        description: 'New report generated successfully'
       });
-
-      setReports(reportsData.data);
-      setTotalPages(reportsData.pagination.totalPages);
-      
-      // Calculate stats
-      calculateStats(reportsData.data);
+      refetch();
     } catch (error) {
-      console.error('Failed to load reports:', error);
-      setError('Failed to load reports. Please try again.');
-    } finally {
-      setLoading(false);
+      console.error('Failed to generate report:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate report',
+        variant: 'destructive'
+      });
     }
   };
 
-  const calculateStats = (reportsData: Report[]) => {
-    const totalReports = reportsData.length;
-    const pendingReports = reportsData.filter(r => r.status === 'PENDING').length;
-    const completedReports = reportsData.filter(r => r.status === 'COMPLETED').length;
-    
-    // Group by type
-    const reportsByType = reportsData.reduce((acc, report) => {
-      acc[report.type] = (acc[report.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    // Group by month
-    const reportsByMonth = reportsData.reduce((acc, report) => {
-      const month = new Date(report.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      acc[month] = (acc[month] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    // Recent reports (last 5)
-    const recentReports = reportsData
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 5);
-
-    setStats({
-      totalReports,
-      pendingReports,
-      completedReports,
-      reportsByType,
-      reportsByMonth,
-      recentReports
-    });
-  };
-
-  const filterReports = () => {
-    let filtered = [...reports];
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(report =>
-        report.student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        report.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        report.specialEducator?.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        report.superSpecialEducator?.fullName.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  const handleExportPDF = async () => {
+    if (!reportData?.snapshot) {
+      toast({
+        title: 'Warning',
+        description: 'Please select a report first',
+        variant: 'destructive'
+      });
+      return;
     }
 
-    // Type filter
-    if (typeFilter) {
-      filtered = filtered.filter(report => report.type === typeFilter);
-    }
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
 
-    // Status filter
-    if (statusFilter) {
-      filtered = filtered.filter(report => report.status === statusFilter);
-    }
+      const snapshot = reportData.snapshot;
+      const center = reportData.center;
+      const centerName = center?.centerName || 'Center';
 
-    // Educator filter
-    if (educatorFilter) {
-      filtered = filtered.filter(report => 
-        report.specialEducator?.id === educatorFilter ||
-        report.superSpecialEducator?.id === educatorFilter
-      );
-    }
+      // Generate filename: CenterName_MONTHLY_Dec2024.pdf
+      const periodMonth = new Date(snapshot.periodStart).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      const filename = `${centerName.replace(/\s+/g, '_')}_${snapshot.periodType}_Report_${periodMonth}.pdf`;
 
-    // Date filter
-    if (dateFilter) {
-      const now = new Date();
-      const filterDate = new Date();
-      
-      switch (dateFilter) {
-        case 'today':
-          filterDate.setHours(0, 0, 0, 0);
-          filtered = filtered.filter(report => 
-            new Date(report.createdAt) >= filterDate
-          );
-          break;
-        case 'week':
-          filterDate.setDate(now.getDate() - 7);
-          filtered = filtered.filter(report => 
-            new Date(report.createdAt) >= filterDate
-          );
-          break;
-        case 'month':
-          filterDate.setMonth(now.getMonth() - 1);
-          filtered = filtered.filter(report => 
-            new Date(report.createdAt) >= filterDate
-          );
-          break;
-      }
-    }
+      const ReportComponent = (
+        <div style={{ fontFamily: 'Georgia, serif', fontSize: '11px', lineHeight: '1.6', color: '#000', padding: '30px 40px', maxWidth: '210mm', background: '#fff' }}>
+          {/* Header */}
+          <div style={{ borderBottom: '3px solid #2c5282', paddingBottom: '15px', marginBottom: '25px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a202c', margin: '0 0 8px 0', letterSpacing: '-0.3px' }}>
+              Center Performance & Statistics Report
+            </h1>
+            <div style={{ fontSize: '12px', color: '#4a5568', marginBottom: '10px' }}>
+              <strong>{centerName}</strong>
+            </div>
+            <div style={{ fontSize: '10px', color: '#718096', display: 'flex', justifyContent: 'space-between' }}>
+              <div>
+                <div><strong>Reporting Period:</strong> {snapshot.periodType}</div>
+                <div><strong>Period Duration:</strong> {new Date(snapshot.periodStart).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(snapshot.periodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div><strong>Report Generated:</strong> {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                <div><strong>Contact Person:</strong> {center?.contactPerson || 'N/A'}</div>
+              </div>
+            </div>
+          </div>
 
-    setFilteredReports(filtered);
-  };
+          {/* Executive Summary */}
+          {snapshot.executiveSummary && (
+            <div style={{ marginBottom: '25px', pageBreakInside: 'avoid' }}>
+              <h2 style={{ fontSize: '14px', fontWeight: '700', color: '#2d3748', marginBottom: '10px', borderBottom: '2px solid #cbd5e0', paddingBottom: '4px' }}>
+                Executive Summary
+              </h2>
+              <div style={{ fontSize: '10px', lineHeight: '1.7', textAlign: 'justify', color: '#2d3748' }}>
+                {snapshot.executiveSummary}
+              </div>
+            </div>
+          )}
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'IN_PROGRESS': return 'bg-blue-100 text-blue-800';
-      case 'DRAFT': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+          {/* 1. Student Coverage Statistics */}
+          <div style={{ marginBottom: '25px', pageBreakInside: 'avoid' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '700', color: '#2d3748', marginBottom: '10px', borderBottom: '2px solid #cbd5e0', paddingBottom: '4px' }}>
+              1. Student Coverage Statistics
+            </h2>
+            <p style={{ fontSize: '10px', lineHeight: '1.7', marginBottom: '10px', textAlign: 'justify' }}>
+              During the reporting period, the center served <strong>{snapshot.totalStudentsRegistered} registered students</strong> across <strong>{snapshot.schoolsCovered.length} schools</strong> and <strong>{snapshot.gradesCovered.length} grade levels</strong>.
+              The center successfully assessed <strong>{snapshot.studentsAssessed} students</strong> and provided targeted interventions to <strong>{snapshot.studentsUnderIntervention} students</strong> who demonstrated need for specialized educational support.
+              {snapshot.newStudentsThisPeriod > 0 && ` Additionally, ${snapshot.newStudentsThisPeriod} new students were enrolled during this period.`}
+            </p>
+            <div style={{ fontSize: '10px', marginLeft: '20px' }}>
+              <div style={{ marginBottom: '4px' }}>• <strong>Total Students Registered:</strong> {snapshot.totalStudentsRegistered}</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Students Assessed:</strong> {snapshot.studentsAssessed} ({((snapshot.studentsAssessed / snapshot.totalStudentsRegistered) * 100).toFixed(1)}% of total)</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Students Under Intervention:</strong> {snapshot.studentsUnderIntervention} ({((snapshot.studentsUnderIntervention / snapshot.totalStudentsRegistered) * 100).toFixed(1)}% of total)</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>New Students This Period:</strong> {snapshot.newStudentsThisPeriod}</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Active Students:</strong> {snapshot.activeStudents}</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Exited/Mainstreamed:</strong> {snapshot.exitedMainstreamed}</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Schools Covered:</strong> {snapshot.schoolsCovered.join(', ') || 'N/A'}</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Grades Covered:</strong> {snapshot.gradesCovered.join(', ') || 'N/A'}</div>
+            </div>
+          </div>
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'ASSESSMENT': return 'bg-blue-100 text-blue-800';
-      case 'IEP': return 'bg-purple-100 text-purple-800';
-      case 'PROGRESS': return 'bg-green-100 text-green-800';
-      case 'INTAKE': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+          {/* 2. Assessment Statistics */}
+          <div style={{ marginBottom: '25px', pageBreakInside: 'avoid' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '700', color: '#2d3748', marginBottom: '10px', borderBottom: '2px solid #cbd5e0', paddingBottom: '4px' }}>
+              2. Assessment Statistics
+            </h2>
+            <p style={{ fontSize: '10px', lineHeight: '1.7', marginBottom: '10px', textAlign: 'justify' }}>
+              During this reporting period, the center conducted <strong>{snapshot.totalAssessmentsConducted} assessments</strong>, comprising <strong>{snapshot.baselineAssessments} baseline assessments</strong> and <strong>{snapshot.reviewProgressAssessments} review/progress assessments</strong>.
+              {snapshot.averageAssessmentTime && ` The average assessment time was ${snapshot.averageAssessmentTime.toFixed(1)} hours.`}
+              {snapshot.assessmentsPerEducator && ` Each educator conducted an average of ${snapshot.assessmentsPerEducator.toFixed(1)} assessments.`}
+            </p>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', marginTop: '10px' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #2d3748' }}>
+                  <th style={{ textAlign: 'left', padding: '8px', fontWeight: '700' }}>Assessment Type</th>
+                  <th style={{ textAlign: 'center', padding: '8px', fontWeight: '700' }}>Count</th>
+                  <th style={{ textAlign: 'center', padding: '8px', fontWeight: '700' }}>Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '8px' }}>Baseline Assessments</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{snapshot.baselineAssessments}</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{((snapshot.baselineAssessments / snapshot.totalAssessmentsConducted) * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '8px' }}>Review/Progress Assessments</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{snapshot.reviewProgressAssessments}</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{((snapshot.reviewProgressAssessments / snapshot.totalAssessmentsConducted) * 100).toFixed(1)}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-  const getUniqueTypes = () => {
-    return Array.from(new Set(reports.map(r => r.type)));
-  };
+          {/* 3. Intervention Statistics */}
+          <div style={{ marginBottom: '25px', pageBreakInside: 'avoid' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '700', color: '#2d3748', marginBottom: '10px', borderBottom: '2px solid #cbd5e0', paddingBottom: '4px' }}>
+              3. Intervention Statistics
+            </h2>
+            <p style={{ fontSize: '10px', lineHeight: '1.7', marginBottom: '10px', textAlign: 'justify' }}>
+              The center implemented <strong>{snapshot.individualInterventionPlans} individual intervention plans</strong> and conducted <strong>{snapshot.totalInterventionSessions} intervention sessions</strong> during this period.
+              {snapshot.avgSessionsPerStudent && ` On average, each student received ${snapshot.avgSessionsPerStudent.toFixed(1)} intervention sessions.`}
+              {snapshot.avgDurationPerSession && ` The average session duration was ${snapshot.avgDurationPerSession.toFixed(0)} minutes.`}
+            </p>
+            <div style={{ fontSize: '10px', marginLeft: '20px' }}>
+              <div style={{ marginBottom: '4px' }}>• <strong>Individual Intervention Plans:</strong> {snapshot.individualInterventionPlans}</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Small Group Interventions:</strong> {snapshot.smallGroupInterventions}</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Total Intervention Sessions:</strong> {snapshot.totalInterventionSessions}</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Average Sessions per Student:</strong> {snapshot.avgSessionsPerStudent?.toFixed(1) || 'N/A'}</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Average Duration per Session:</strong> {snapshot.avgDurationPerSession?.toFixed(0) || 'N/A'} minutes</div>
+            </div>
+          </div>
 
-  const getUniqueEducators = () => {
-    const educators = new Map();
-    reports.forEach(report => {
-      if (report.specialEducator) {
-        educators.set(report.specialEducator.id, report.specialEducator);
-      }
-      if (report.superSpecialEducator) {
-        educators.set(report.superSpecialEducator.id, report.superSpecialEducator);
-      }
-    });
-    return Array.from(educators.values());
-  };
+          {/* 4. Progress & Outcome Statistics */}
+          <div style={{ marginBottom: '25px', pageBreakInside: 'avoid' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '700', color: '#2d3748', marginBottom: '10px', borderBottom: '2px solid #cbd5e0', paddingBottom: '4px' }}>
+              4. Progress & Outcome Statistics
+            </h2>
+            <p style={{ fontSize: '10px', lineHeight: '1.7', marginBottom: '10px', textAlign: 'justify' }}>
+              Student progress is tracked across four key developmental domains. The following improvements represent the average progress made by students receiving interventions during this reporting period.
+            </p>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', marginTop: '10px' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #2d3748' }}>
+                  <th style={{ textAlign: 'left', padding: '8px', fontWeight: '700' }}>Domain</th>
+                  <th style={{ textAlign: 'center', padding: '8px', fontWeight: '700' }}>Average Improvement</th>
+                  <th style={{ textAlign: 'left', padding: '8px', fontWeight: '700' }}>Interpretation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '8px' }}>Reading</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{snapshot.readingImprovement !== null ? `${snapshot.readingImprovement > 0 ? '+' : ''}${snapshot.readingImprovement.toFixed(1)}%` : 'N/A'}</td>
+                  <td style={{ padding: '8px' }}>{snapshot.readingImprovement !== null && snapshot.readingImprovement > 0 ? 'Positive progress' : 'Needs attention'}</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '8px' }}>Writing</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{snapshot.writingImprovement !== null ? `${snapshot.writingImprovement > 0 ? '+' : ''}${snapshot.writingImprovement.toFixed(1)}%` : 'N/A'}</td>
+                  <td style={{ padding: '8px' }}>{snapshot.writingImprovement !== null && snapshot.writingImprovement > 0 ? 'Positive progress' : 'Needs attention'}</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '8px' }}>Mathematics</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{snapshot.mathematicsImprovement !== null ? `${snapshot.mathematicsImprovement > 0 ? '+' : ''}${snapshot.mathematicsImprovement.toFixed(1)}%` : 'N/A'}</td>
+                  <td style={{ padding: '8px' }}>{snapshot.mathematicsImprovement !== null && snapshot.mathematicsImprovement > 0 ? 'Positive progress' : 'Needs attention'}</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '8px' }}>Attention & Behavior</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{snapshot.attentionBehaviorImprovement !== null ? `${snapshot.attentionBehaviorImprovement > 0 ? '+' : ''}${snapshot.attentionBehaviorImprovement.toFixed(1)}%` : 'N/A'}</td>
+                  <td style={{ padding: '8px' }}>{snapshot.attentionBehaviorImprovement !== null && snapshot.attentionBehaviorImprovement > 0 ? 'Positive progress' : 'Needs attention'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-  if (loading) {
-    return (
-      <div className="space-y-8 p-6">
-        <LoadingSkeleton className="h-32" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <LoadingSkeleton className="h-32" />
-          <LoadingSkeleton className="h-32" />
-          <LoadingSkeleton className="h-32" />
-          <LoadingSkeleton className="h-32" />
+          {/* 5. Educator Productivity Metrics */}
+          <div style={{ marginBottom: '25px', pageBreakInside: 'avoid' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '700', color: '#2d3748', marginBottom: '10px', borderBottom: '2px solid #cbd5e0', paddingBottom: '4px' }}>
+              5. Educator Productivity Metrics
+            </h2>
+            <p style={{ fontSize: '10px', lineHeight: '1.7', marginBottom: '10px', textAlign: 'justify' }}>
+              The center employed <strong>{snapshot.activeSpecialEducators} active special educators</strong> during this period.
+              {snapshot.avgStudentsPerEducator && ` Each educator managed an average of ${snapshot.avgStudentsPerEducator.toFixed(1)} students.`}
+              {snapshot.avgSessionsPerEducator && ` Educators conducted an average of ${snapshot.avgSessionsPerEducator.toFixed(1)} intervention sessions.`}
+            </p>
+            <div style={{ fontSize: '10px', marginLeft: '20px' }}>
+              <div style={{ marginBottom: '4px' }}>• <strong>Active Special Educators:</strong> {snapshot.activeSpecialEducators}</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Average Students per Educator:</strong> {snapshot.avgStudentsPerEducator?.toFixed(1) || 'N/A'}</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Average Sessions per Educator:</strong> {snapshot.avgSessionsPerEducator?.toFixed(1) || 'N/A'}</div>
+              <div style={{ marginBottom: '4px' }}>• <strong>Average Reports Generated per Educator:</strong> {snapshot.avgReportsGenerated?.toFixed(1) || 'N/A'}</div>
+            </div>
+          </div>
+
+          {/* 6. Compliance & Documentation Statistics */}
+          <div style={{ marginBottom: '25px', pageBreakInside: 'avoid' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '700', color: '#2d3748', marginBottom: '10px', borderBottom: '2px solid #cbd5e0', paddingBottom: '4px' }}>
+              6. Compliance & Documentation Statistics
+            </h2>
+            <p style={{ fontSize: '10px', lineHeight: '1.7', marginBottom: '10px', textAlign: 'justify' }}>
+              Documentation compliance is essential for quality assurance and regulatory requirements. The following metrics reflect the center's adherence to documentation standards.
+            </p>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', marginTop: '10px' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #2d3748' }}>
+                  <th style={{ textAlign: 'left', padding: '8px', fontWeight: '700' }}>Documentation Type</th>
+                  <th style={{ textAlign: 'center', padding: '8px', fontWeight: '700' }}>Completion Rate</th>
+                  <th style={{ textAlign: 'left', padding: '8px', fontWeight: '700' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '8px' }}>Assessment Records Available</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{snapshot.assessmentRecordsAvailable?.toFixed(1) || 'N/A'}%</td>
+                  <td style={{ padding: '8px' }}>{(snapshot.assessmentRecordsAvailable || 0) >= 90 ? 'Excellent' : (snapshot.assessmentRecordsAvailable || 0) >= 70 ? 'Good' : 'Needs Improvement'}</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '8px' }}>Intervention Plans Documented</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{snapshot.interventionPlansDocumented?.toFixed(1) || 'N/A'}%</td>
+                  <td style={{ padding: '8px' }}>{(snapshot.interventionPlansDocumented || 0) >= 90 ? 'Excellent' : (snapshot.interventionPlansDocumented || 0) >= 70 ? 'Good' : 'Needs Improvement'}</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '8px' }}>Progress Reviews Completed</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{snapshot.progressReviewsCompleted?.toFixed(1) || 'N/A'}%</td>
+                  <td style={{ padding: '8px' }}>{(snapshot.progressReviewsCompleted || 0) >= 90 ? 'Excellent' : (snapshot.progressReviewsCompleted || 0) >= 70 ? 'Good' : 'Needs Improvement'}</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '8px' }}>Parent Reports Shared</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{snapshot.parentReportsShared?.toFixed(1) || 'N/A'}%</td>
+                  <td style={{ padding: '8px' }}>{(snapshot.parentReportsShared || 0) >= 90 ? 'Excellent' : (snapshot.parentReportsShared || 0) >= 70 ? 'Good' : 'Needs Improvement'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Recommendations */}
+          {snapshot.recommendations && (
+            <div style={{ marginBottom: '25px', pageBreakInside: 'avoid' }}>
+              <h2 style={{ fontSize: '14px', fontWeight: '700', color: '#2d3748', marginBottom: '10px', borderBottom: '2px solid #cbd5e0', paddingBottom: '4px' }}>
+                Strategic Recommendations
+              </h2>
+              <div style={{ fontSize: '10px', lineHeight: '1.7', textAlign: 'justify', color: '#2d3748' }}>
+                {snapshot.recommendations}
+              </div>
+            </div>
+          )}
+
+          {/* Conclusion */}
+          <div style={{ marginBottom: '25px', pageBreakInside: 'avoid' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '700', color: '#2d3748', marginBottom: '10px', borderBottom: '2px solid #cbd5e0', paddingBottom: '4px' }}>
+              Conclusion
+            </h2>
+            <p style={{ fontSize: '10px', lineHeight: '1.7', textAlign: 'justify' }}>
+              This report demonstrates the center's commitment to data-driven educational interventions and continuous improvement in student outcomes.
+              The comprehensive assessment and support program has successfully identified and addressed the diverse learning needs of the student population across multiple schools and grade levels.
+              Continued monitoring, evidence-based intervention strategies, and strong educator-student ratios will be essential to maintain and enhance these positive trends in student achievement and well-being.
+            </p>
+          </div>
+
+          {/* Footer */}
+          <div style={{ marginTop: '30px', paddingTop: '15px', borderTop: '2px solid #cbd5e0', fontSize: '9px', color: '#718096', textAlign: 'center' }}>
+            <div style={{ marginBottom: '4px' }}>
+              <strong>Report Generated:</strong> {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </div>
+            <div style={{ marginBottom: '4px' }}>
+              <strong>Confidential Document</strong> - For educational and administrative purposes only
+            </div>
+            <div style={{ fontSize: '8px', color: '#a0aec0' }}>
+              © {new Date().getFullYear()} Knowled Assessment Platform | AI-Powered Educational Insights
+            </div>
+          </div>
         </div>
-        <LoadingSkeleton className="h-96" />
+      );
+
+      const html = ReactDOMServer.renderToStaticMarkup(ReportComponent);
+      const opt = {
+        margin: 15,
+        filename: filename,
+        image: { type: 'jpeg' as const, quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, letterRendering: true },
+        jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+      };
+
+      html2pdf().from(html).set(opt).save();
+      toast({ title: 'Success', description: `Professional report exported as ${filename}` });
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      toast({ title: 'Error', description: 'Failed to export PDF', variant: 'destructive' });
+    }
+  };
+
+  if (!centerId) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-center text-muted-foreground">Please log in to view reports.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
-          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">{error}</p>
-          <Button onClick={loadReports}>
-            Try Again
-          </Button>
-        </motion.div>
-      </div>
-    );
-  }
+  const isLoading = snapshotsLoading || reportLoading;
+  const snapshot = reportData?.snapshot;
+  const center = reportData?.center;
 
   return (
-    <div className="">
+    <div className="container mx-auto p-6 space-y-6">
       <PageHeader
-        title="Reports Dashboard"
-        description="View and manage all reports generated by your center"
-        badge={{
-          text: `${stats?.totalReports || 0} Total Reports`,
-          variant: 'secondary'
-        }}
-        actions={[
-          {
-            label: 'Export Reports',
-            onClick: () => console.log('Export reports'),
-            icon: Download,
-            variant: 'outline'
-          }
-        ]}
+        title="Center Performance & Statistics Report"
+        description="Comprehensive analytics and performance metrics for your center"
+        icon={FileBarChart}
       />
 
-      {/* Stats Overview */}
-      {stats && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-6"
-        >
-          <EnhancedCard
-            title="Total Reports"
-            value={stats.totalReports}
-            description="All generated reports"
-            icon={FileText}
-            iconColor="text-blue-600"
-            iconBgColor="bg-blue-50"
-            change={`${stats.completedReports} completed`}
-            changeType="positive"
-          />
-          <EnhancedCard
-            title="Pending Reports"
-            value={stats.pendingReports}
-            description="Awaiting completion"
-            icon={Clock}
-            iconColor="text-yellow-600"
-            iconBgColor="bg-yellow-50"
-            change={`${Math.round((stats.pendingReports / stats.totalReports) * 100) || 0}% of total`}
-            changeType="neutral"
-          />
-          <EnhancedCard
-            title="Completed Reports"
-            value={stats.completedReports}
-            description="Finalized reports"
-            icon={CheckCircle}
-            iconColor="text-green-600"
-            iconBgColor="bg-green-50"
-            change={`${Math.round((stats.completedReports / stats.totalReports) * 100) || 0}% completion rate`}
-            changeType="positive"
-          />
-          <EnhancedCard
-            title="Report Types"
-            value={Object.keys(stats.reportsByType).length}
-            description="Different report categories"
-            icon={BarChart3}
-            iconColor="text-purple-600"
-            iconBgColor="bg-purple-50"
-            change="Active categories"
-            changeType="neutral"
-          />
-        </motion.div>
-      )}
-
-      {/* Main Content */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Tabs defaultValue="reports" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="reports">All Reports</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="recent">Recent Activity</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="reports" className="space-y-6">
-            {/* Filters */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Filter className="h-5 w-5" />
-                  Filter Reports
-                </CardTitle>
-                <CardDescription>
-                  Search and filter reports by various criteria
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Search</label>
-                    <Input
-                      placeholder="Search reports..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Type</label>
-                    <Select value={typeFilter} onValueChange={setTypeFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All types" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All types</SelectItem>
-                        {getUniqueTypes().map(type => (
-                          <SelectItem key={type} value={type}>
-                            {type.replace('_', ' ')}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Status</label>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All statuses" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All statuses</SelectItem>
-                        <SelectItem value="PENDING">Pending</SelectItem>
-                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                        <SelectItem value="COMPLETED">Completed</SelectItem>
-                        <SelectItem value="DRAFT">Draft</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Educator</label>
-                    <Select value={educatorFilter} onValueChange={setEducatorFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All educators" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All educators</SelectItem>
-                        {getUniqueEducators().map((educator: any) => (
-                          <SelectItem key={educator.id} value={educator.id}>
-                            {educator.fullName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Date Range</label>
-                    <Select value={dateFilter} onValueChange={setDateFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All dates" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All dates</SelectItem>
-                        <SelectItem value="today">Today</SelectItem>
-                        <SelectItem value="week">Last 7 days</SelectItem>
-                        <SelectItem value="month">Last 30 days</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Reports List */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Reports ({filteredReports.length})
-                </CardTitle>
-                <CardDescription>
-                  All reports matching your filter criteria
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {filteredReports.length > 0 ? (
-                  <div className="space-y-4">
-                    {filteredReports.map((report, index) => (
-                      <motion.div
-                        key={report.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors group"
-                      >
-                        <div className="flex items-center space-x-4 flex-1">
-                          <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 rounded-full flex items-center justify-center">
-                            <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                                {report.type.replace('_', ' ')} Report
-                              </h3>
-                              <Badge className={getTypeColor(report.type)}>
-                                {report.type}
-                              </Badge>
-                              <Badge className={getStatusColor(report.status)}>
-                                {report.status}
-                              </Badge>
-                            </div>
-                            
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
-                                {report.student.fullName} (Grade {report.student.grade})
-                              </div>
-                              
-                              {(report.specialEducator || report.superSpecialEducator) && (
-                                <div className="flex items-center gap-1">
-                                  <Users className="h-3 w-3" />
-                                  {report.specialEducator?.fullName || report.superSpecialEducator?.fullName}
-                                </div>
-                              )}
-                              
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(report.createdAt).toLocaleDateString()}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Link href={`/center/reports/${report.id}`}>
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                          </Link>
-                          <Button variant="outline" size="sm">
-                            <Download className="h-3 w-3 mr-1" />
-                            Download
-                          </Button>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground mb-2">
-                      {reports.length === 0 
-                        ? 'No reports generated yet'
-                        : 'No reports match your filters'
-                      }
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {reports.length === 0 
-                        ? 'Reports will appear here as they are generated'
-                        : 'Try adjusting your search criteria'
-                      }
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-6">
-            {stats && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <PieChart className="h-5 w-5" />
-                      Reports by Type
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {Object.entries(stats.reportsByType).map(([type, count]) => (
-                        <div key={type} className="flex items-center justify-between p-3 border rounded">
-                          <div className="flex items-center gap-2">
-                            <Badge className={getTypeColor(type)}>
-                              {type.replace('_', ' ')}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="w-24 bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-primary h-2 rounded-full"
-                                style={{ width: `${(count / stats.totalReports) * 100}%` }}
-                              />
-                            </div>
-                            <span className="font-medium w-8 text-right">{count}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5" />
-                      Reports by Month
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {Object.entries(stats.reportsByMonth).map(([month, count]) => (
-                        <div key={month} className="flex items-center justify-between p-3 border rounded">
-                          <span className="font-medium">{month}</span>
-                          <div className="flex items-center gap-3">
-                            <div className="w-24 bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-green-500 h-2 rounded-full"
-                                style={{ width: `${(count / Math.max(...Object.values(stats.reportsByMonth))) * 100}%` }}
-                              />
-                            </div>
-                            <span className="font-medium w-8 text-right">{count}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+      {/* Period Selector and Actions */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Report Period</label>
+                <Select value={selectedPeriod} onValueChange={(value) => setSelectedPeriod(value as PeriodType)}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MONTHLY">Monthly</SelectItem>
+                    <SelectItem value="QUARTERLY">Quarterly</SelectItem>
+                    <SelectItem value="YEARLY">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </TabsContent>
 
-          <TabsContent value="recent" className="space-y-6">
-            {stats && (
+              {snapshotsData?.data && snapshotsData.data.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Snapshot</label>
+                  <Select value={selectedSnapshotId} onValueChange={setSelectedSnapshotId}>
+                    <SelectTrigger className="w-[250px]">
+                      <SelectValue placeholder="Latest snapshot" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="latest">Latest Snapshot</SelectItem>
+                      {snapshotsData.data.map((snap: any) => (
+                        <SelectItem key={snap.id} value={snap.id}>
+                          {new Date(snap.periodStart).toLocaleDateString()} - {new Date(snap.periodEnd).toLocaleDateString()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleGenerateReport}
+                disabled={generateSnapshot.isPending}
+                variant="outline"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${generateSnapshot.isPending ? 'animate-spin' : ''}`} />
+                {generateSnapshot.isPending ? 'Generating...' : 'Generate New Report'}
+              </Button>
+              {snapshot && (
+                <Button
+                  onClick={handleExportPDF}
+                  variant="default"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export PDF
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {isLoading ? (
+        <LoadingSkeleton count={6} />
+      ) : !snapshot ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">No Report Data Available</h3>
+            <p className="text-muted-foreground mb-4">
+              Generate your first report to view center performance statistics
+            </p>
+            <Button onClick={handleGenerateReport} disabled={generateSnapshot.isPending}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${generateSnapshot.isPending ? 'animate-spin' : ''}`} />
+              Generate Report
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div id="report-content" className="space-y-6">
+          {/* Report Header */}
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">{center?.centerName}</h2>
+                  <p className="text-muted-foreground">{center?.address}</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Period: {new Date(snapshot.periodStart).toLocaleDateString()} - {new Date(snapshot.periodEnd).toLocaleDateString()}
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-lg px-4 py-2">
+                  {selectedPeriod} REPORT
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tabs for Different Sections */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="assessments">Assessments</TabsTrigger>
+              <TabsTrigger value="interventions">Interventions</TabsTrigger>
+              <TabsTrigger value="progress">Progress</TabsTrigger>
+              <TabsTrigger value="productivity">Productivity</TabsTrigger>
+              <TabsTrigger value="compliance">Compliance</TabsTrigger>
+            </TabsList>
+
+            {/* Overview Tab - Student Coverage */}
+            <TabsContent value="overview" className="space-y-4">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Recent Activity
+                    <Users className="h-5 w-5" />
+                    Student Coverage Statistics
                   </CardTitle>
-                  <CardDescription>
-                    Latest report generation activity
-                  </CardDescription>
+                  <CardDescription>Overview of student enrollment and engagement</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {stats.recentReports.length > 0 ? (
-                    <div className="space-y-4">
-                      {stats.recentReports.map((report, index) => (
-                        <motion.div
-                          key={report.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className="flex items-center justify-between p-4 border rounded-lg"
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <FileText className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold">
-                                {report.type.replace('_', ' ')} Report
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {report.student.fullName} • {new Date(report.createdAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={getStatusColor(report.status)}>
-                              {report.status}
-                            </Badge>
-                            <Link href={`/center/reports/${report.id}`}>
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-3 w-3 mr-1" />
-                                View
-                              </Button>
-                            </Link>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">No recent activity</p>
-                    </div>
-                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <StatCard
+                      title="Total Students Registered"
+                      value={reportData.coverage.totalStudentsRegistered}
+                      icon={Users}
+                      color="blue"
+                    />
+                    <StatCard
+                      title="Students Assessed"
+                      value={reportData.coverage.studentsAssessed}
+                      icon={CheckCircle}
+                      color="green"
+                    />
+                    <StatCard
+                      title="Under Intervention"
+                      value={reportData.coverage.studentsUnderIntervention}
+                      icon={Target}
+                      color="orange"
+                    />
+                    <StatCard
+                      title="New Students (This Period)"
+                      value={reportData.coverage.newStudentsThisPeriod}
+                      icon={TrendingUp}
+                      color="purple"
+                    />
+                    <StatCard
+                      title="Active Students"
+                      value={reportData.coverage.activeStudents}
+                      icon={Activity}
+                      color="cyan"
+                    />
+                    <StatCard
+                      title="Exited/Mainstreamed"
+                      value={reportData.coverage.exitedMainstreamed}
+                      icon={GraduationCap}
+                      color="emerald"
+                    />
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm">Schools Covered</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                          {snapshot.schoolsCovered.length > 0 ? (
+                            snapshot.schoolsCovered.map((school: string, idx: number) => (
+                              <Badge key={idx} variant="secondary">{school}</Badge>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No schools linked</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm">Grades Covered</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                          {snapshot.gradesCovered.length > 0 ? (
+                            snapshot.gradesCovered.map((grade: string, idx: number) => (
+                              <Badge key={idx} variant="outline">{grade}</Badge>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No grades data</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </CardContent>
               </Card>
-            )}
-          </TabsContent>
-        </Tabs>
-      </motion.div>
+            </TabsContent>
+
+            {/* Assessments Tab */}
+            <TabsContent value="assessments" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Assessment Statistics
+                  </CardTitle>
+                  <CardDescription>Comprehensive assessment data and metrics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <StatCard
+                      title="Total Assessments Conducted"
+                      value={reportData.assessments.totalAssessmentsConducted}
+                      icon={FileText}
+                      color="blue"
+                    />
+                    <StatCard
+                      title="Baseline Assessments"
+                      value={reportData.assessments.baselineAssessments}
+                      icon={BarChart3}
+                      color="green"
+                    />
+                    <StatCard
+                      title="Review/Progress Assessments"
+                      value={reportData.assessments.reviewProgressAssessments}
+                      icon={TrendingUp}
+                      color="purple"
+                    />
+                    <StatCard
+                      title="Avg Assessment Time (hours)"
+                      value={reportData.assessments.averageAssessmentTime?.toFixed(1) || 'N/A'}
+                      icon={Calendar}
+                      color="orange"
+                    />
+                    <StatCard
+                      title="Assessments per Educator"
+                      value={reportData.assessments.assessmentsPerEducator?.toFixed(1) || 'N/A'}
+                      icon={Users}
+                      color="cyan"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Interventions Tab */}
+            <TabsContent value="interventions" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Intervention Statistics
+                  </CardTitle>
+                  <CardDescription>Intervention plans and session data</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <StatCard
+                      title="Individual Intervention Plans"
+                      value={reportData.interventions.individualInterventionPlans}
+                      icon={Target}
+                      color="blue"
+                    />
+                    <StatCard
+                      title="Small Group Interventions"
+                      value={reportData.interventions.smallGroupInterventions}
+                      icon={Users}
+                      color="green"
+                    />
+                    <StatCard
+                      title="Total Intervention Sessions"
+                      value={reportData.interventions.totalInterventionSessions}
+                      icon={Activity}
+                      color="purple"
+                    />
+                    <StatCard
+                      title="Avg Sessions per Student"
+                      value={reportData.interventions.avgSessionsPerStudent?.toFixed(1) || 'N/A'}
+                      icon={BarChart3}
+                      color="orange"
+                    />
+                    <StatCard
+                      title="Avg Duration per Session (min)"
+                      value={reportData.interventions.avgDurationPerSession?.toFixed(0) || 'N/A'}
+                      icon={Calendar}
+                      color="cyan"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Progress Tab */}
+            <TabsContent value="progress" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Progress & Outcome Statistics
+                  </CardTitle>
+                  <CardDescription>Domain-wise improvement trends</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ProgressCard
+                      domain="Reading"
+                      improvement={reportData.progress.readingImprovement}
+                      icon={BookOpen}
+                    />
+                    <ProgressCard
+                      domain="Writing"
+                      improvement={reportData.progress.writingImprovement}
+                      icon={FileText}
+                    />
+                    <ProgressCard
+                      domain="Mathematics"
+                      improvement={reportData.progress.mathematicsImprovement}
+                      icon={BarChart3}
+                    />
+                    <ProgressCard
+                      domain="Attention & Behavior"
+                      improvement={reportData.progress.attentionBehaviorImprovement}
+                      icon={Activity}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Productivity Tab */}
+            <TabsContent value="productivity" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Educator Productivity Metrics
+                  </CardTitle>
+                  <CardDescription>Performance and workload distribution</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard
+                      title="Active Special Educators"
+                      value={reportData.productivity.activeSpecialEducators}
+                      icon={Users}
+                      color="blue"
+                    />
+                    <StatCard
+                      title="Avg Students per Educator"
+                      value={reportData.productivity.avgStudentsPerEducator?.toFixed(1) || 'N/A'}
+                      icon={Users}
+                      color="green"
+                    />
+                    <StatCard
+                      title="Avg Sessions per Educator"
+                      value={reportData.productivity.avgSessionsPerEducator?.toFixed(1) || 'N/A'}
+                      icon={Activity}
+                      color="purple"
+                    />
+                    <StatCard
+                      title="Avg Reports Generated"
+                      value={reportData.productivity.avgReportsGenerated?.toFixed(1) || 'N/A'}
+                      icon={FileText}
+                      color="orange"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Compliance Tab */}
+            <TabsContent value="compliance" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    Compliance & Documentation Statistics
+                  </CardTitle>
+                  <CardDescription>Documentation completion rates</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ComplianceCard
+                      title="Assessment Records Available"
+                      percentage={reportData.compliance.assessmentRecordsAvailable}
+                    />
+                    <ComplianceCard
+                      title="Intervention Plans Documented"
+                      percentage={reportData.compliance.interventionPlansDocumented}
+                    />
+                    <ComplianceCard
+                      title="Progress Reviews Completed"
+                      percentage={reportData.compliance.progressReviewsCompleted}
+                    />
+                    <ComplianceCard
+                      title="Parent Reports Shared"
+                      percentage={reportData.compliance.parentReportsShared}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
     </div>
+  );
+}
+
+// Stat Card Component
+function StatCard({ title, value, icon: Icon, color }: {
+  title: string;
+  value: number | string;
+  icon: any;
+  color: string;
+}) {
+  const colorClasses = {
+    blue: 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
+    green: 'bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400',
+    purple: 'bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400',
+    orange: 'bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400',
+    cyan: 'bg-cyan-100 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-400',
+    emerald: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400',
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground mb-2">{title}</p>
+            <p className="text-3xl font-bold">{value}</p>
+          </div>
+          <div className={`p-3 rounded-lg ${colorClasses[color as keyof typeof colorClasses]}`}>
+            <Icon className="h-6 w-6" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Progress Card Component
+function ProgressCard({ domain, improvement, icon: Icon }: {
+  domain: string;
+  improvement: number | null;
+  icon: any;
+}) {
+  const getImprovementColor = (value: number | null) => {
+    if (value === null) return 'text-gray-500';
+    if (value > 10) return 'text-green-600';
+    if (value > 0) return 'text-blue-600';
+    return 'text-orange-600';
+  };
+
+  const getImprovementBg = (value: number | null) => {
+    if (value === null) return 'bg-gray-100 dark:bg-gray-900';
+    if (value > 10) return 'bg-green-100 dark:bg-green-950';
+    if (value > 0) return 'bg-blue-100 dark:bg-blue-950';
+    return 'bg-orange-100 dark:bg-orange-950';
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${getImprovementBg(improvement)}`}>
+              <Icon className={`h-5 w-5 ${getImprovementColor(improvement)}`} />
+            </div>
+            <h3 className="font-semibold">{domain}</h3>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-baseline gap-2">
+            <span className={`text-3xl font-bold ${getImprovementColor(improvement)}`}>
+              {improvement !== null ? `${improvement > 0 ? '+' : ''}${improvement.toFixed(1)}%` : 'N/A'}
+            </span>
+            <span className="text-sm text-muted-foreground">improvement</span>
+          </div>
+          {improvement !== null && (
+            <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2">
+              <div
+                className={`h-2 rounded-full ${improvement > 0 ? 'bg-green-500' : 'bg-orange-500'}`}
+                style={{ width: `${Math.min(Math.abs(improvement), 100)}%` }}
+              />
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Compliance Card Component
+function ComplianceCard({ title, percentage }: {
+  title: string;
+  percentage: number | null;
+}) {
+  const getComplianceColor = (value: number | null) => {
+    if (value === null) return 'text-gray-500';
+    if (value >= 90) return 'text-green-600';
+    if (value >= 70) return 'text-blue-600';
+    if (value >= 50) return 'text-orange-600';
+    return 'text-red-600';
+  };
+
+  const getComplianceBg = (value: number | null) => {
+    if (value === null) return 'bg-gray-500';
+    if (value >= 90) return 'bg-green-500';
+    if (value >= 70) return 'bg-blue-500';
+    if (value >= 50) return 'bg-orange-500';
+    return 'bg-red-500';
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <h3 className="font-semibold mb-4">{title}</h3>
+        <div className="space-y-3">
+          <div className="flex items-baseline gap-2">
+            <span className={`text-4xl font-bold ${getComplianceColor(percentage)}`}>
+              {percentage !== null ? `${percentage.toFixed(1)}%` : 'N/A'}
+            </span>
+          </div>
+          {percentage !== null && (
+            <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-3">
+              <div
+                className={`h-3 rounded-full ${getComplianceBg(percentage)}`}
+                style={{ width: `${Math.min(percentage, 100)}%` }}
+              />
+            </div>
+          )}
+          {percentage !== null && (
+            <p className="text-sm text-muted-foreground">
+              {percentage >= 90 ? 'Excellent' : percentage >= 70 ? 'Good' : percentage >= 50 ? 'Fair' : 'Needs Improvement'}
+            </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,15 +1,18 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, ReportPeriodType } from '@prisma/client';
 import { validationResult } from 'express-validator';
 import { AuthenticatedRequest } from '../utils/auth';
 import { CenterService } from '../services/CenterService';
+import { CenterReportService } from '../services/CenterReportService';
 import { AppError } from '../utils/errors';
 
 export class CenterController {
   private centerService: CenterService;
+  private centerReportService: CenterReportService;
 
   constructor(private prisma: PrismaClient) {
     this.centerService = new CenterService(prisma);
+    this.centerReportService = new CenterReportService(prisma);
   }
 
   // Create new center
@@ -383,7 +386,7 @@ export class CenterController {
       });
     } catch (error: any) {
       console.error('Get current user center dashboard error:', error);
-      
+
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
           success: false,
@@ -403,7 +406,7 @@ export class CenterController {
     try {
       // For CENTER role, get their own center ID from the database
       let centerId: string | undefined = req.params.id;
-      
+
       if (req.user?.role === 'CENTER') {
         const centerUser = await this.prisma.user.findUnique({
           where: { id: req.user.userId },
@@ -431,7 +434,7 @@ export class CenterController {
       });
     } catch (error: any) {
       console.error('Get center dashboard error:', error);
-      
+
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
           success: false,
@@ -489,13 +492,13 @@ export class CenterController {
 
       // Handle case where schoolId might be an object instead of string
       let actualSchoolId: string | undefined;
-      
+
       if (typeof schoolId === 'string') {
         actualSchoolId = schoolId;
       } else if (schoolId && typeof schoolId === 'object') {
         // Try to extract ID from different possible object structures
         actualSchoolId = schoolId.id || schoolId.schoolId || schoolId.value || schoolId._id;
-        
+
         // If no ID found but we have school details, we need to create a new school
         if (!actualSchoolId && schoolId.name) {
           // Create a new school with the provided details
@@ -509,7 +512,7 @@ export class CenterController {
               centerId: center.id
             }
           });
-          
+
           res.status(200).json({
             success: true,
             data: newSchool,
@@ -518,7 +521,7 @@ export class CenterController {
           return;
         }
       }
-      
+
       if (!actualSchoolId) {
         console.error('Invalid schoolId format:', schoolId);
         return res.status(400).json({
@@ -596,28 +599,28 @@ export class CenterController {
         const specialEducatorProfile = await this.prisma.specialEducatorProfile.findUnique({
           where: { userId: educatorId }
         });
-        
+
         if (!specialEducatorProfile) {
           return res.status(404).json({
             success: false,
             error: 'Special educator profile not found for this user'
           });
         }
-        
+
         assignmentData.specialEducatorId = specialEducatorProfile.id;
       } else if (educatorType === 'SUPER_SPECIAL_EDUCATOR') {
         // Find the super special educator profile for this user
         const superSpecialEducatorProfile = await this.prisma.superSpecialEducatorProfile.findUnique({
           where: { userId: educatorId }
         });
-        
+
         if (!superSpecialEducatorProfile) {
           return res.status(404).json({
             success: false,
             error: 'Super special educator profile not found for this user'
           });
         }
-        
+
         assignmentData.superSpecialEducatorId = superSpecialEducatorProfile.id;
       } else {
         return res.status(400).json({
@@ -687,7 +690,7 @@ export class CenterController {
       });
     } catch (error: any) {
       console.error('Get center students error:', error);
-      
+
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
           success: false,
@@ -714,7 +717,7 @@ export class CenterController {
       });
     } catch (error: any) {
       console.error('Get center schools error:', error);
-      
+
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
           success: false,
@@ -734,7 +737,7 @@ export class CenterController {
     try {
       const centerId = req.params.id;
       const { page = 1, limit = 50, search } = req.query;
-      
+
       const result = await this.centerService.getCenterEducators(centerId, {
         page: parseInt(page as string),
         limit: parseInt(limit as string),
@@ -748,7 +751,7 @@ export class CenterController {
       });
     } catch (error: any) {
       console.error('Get center educators error:', error);
-      
+
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
           success: false,
@@ -767,7 +770,7 @@ export class CenterController {
   async removeEducatorAssignment(req: AuthenticatedRequest, res: Response) {
     try {
       const { id: centerId, assignmentId } = req.params;
-      
+
       await this.centerService.removeEducatorAssignment(centerId, assignmentId);
 
       res.json({
@@ -776,7 +779,7 @@ export class CenterController {
       });
     } catch (error: any) {
       console.error('Remove educator assignment error:', error);
-      
+
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
           success: false,
@@ -800,8 +803,8 @@ export class CenterController {
       const reports = await this.centerService.getCenterReports(
         centerId,
         {
-          page: Number(page),
-          limit: Number(limit),
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
           type: type as string,
           status: status as string
         }
@@ -812,139 +815,87 @@ export class CenterController {
         data: reports.data,
         pagination: reports.pagination
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Get center reports error:', error);
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({
-          success: false,
-          message: error.message
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: 'Failed to get center reports'
-        });
-      }
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch center reports'
+      });
     }
   }
 
-  // Get compliance monitoring data
-  async getCenterCompliance(req: Request, res: Response): Promise<void> {
+  // Get center compliance monitoring data
+  async getCenterCompliance(req: Request, res: Response) {
     try {
       const centerId = req.params.id;
-      
-      const complianceData = await this.centerService.getCenterCompliance(centerId);
+      const compliance = await this.centerService.getCenterCompliance(centerId);
 
       res.json({
         success: true,
-        data: complianceData
+        data: compliance
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Get center compliance error:', error);
+
       if (error instanceof AppError) {
-        res.status(error.statusCode).json({
+        return res.status(error.statusCode).json({
           success: false,
-          message: error.message
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: 'Failed to get center compliance data'
+          error: error.message
         });
       }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch center compliance data'
+      });
     }
   }
 
-  // Get overdue reports
-  async getCenterOverdueReports(req: Request, res: Response): Promise<void> {
+  // Get overdue reports for a center
+  async getCenterOverdueReports(req: Request, res: Response) {
     try {
       const centerId = req.params.id;
       const { page = 1, limit = 10 } = req.query;
 
-      const overdueReports = await this.centerService.getCenterOverdueReports(
-        centerId,
-        {
-          page: Number(page),
-          limit: Number(limit)
-        }
-      );
-
-      res.json({
-        success: true,
-        data: overdueReports.data,
-        pagination: overdueReports.pagination
-      });
-    } catch (error) {
-      console.error('Get center overdue reports error:', error);
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({
-          success: false,
-          message: error.message
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: 'Failed to get center overdue reports'
-        });
-      }
-    }
-  }
-
-  // Get available special educators for assignment
-  async getAvailableEducators(req: AuthenticatedRequest, res: Response): Promise<Response> {
-    try {
-      const { page = 1, limit = 100 } = req.query;
-      
-      const result = await this.centerService.getAvailableEducators({
+      const result = await this.centerService.getCenterOverdueReports(centerId, {
         page: parseInt(page as string),
         limit: parseInt(limit as string)
       });
 
-      return res.json({
+      res.json({
         success: true,
-        data: result.educators,
+        data: result.data,
         pagination: result.pagination
       });
     } catch (error: any) {
-      console.error('Get available educators error:', error);
-      return res.status(500).json({
+      console.error('Get center overdue reports error:', error);
+
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          error: error.message
+        });
+      }
+
+      res.status(500).json({
         success: false,
-        error: 'Failed to fetch available educators'
+        error: 'Failed to fetch overdue reports'
       });
     }
   }
 
-  // Get cities and centers data for work locations dropdown
-  async getCitiesAndCenters(req: AuthenticatedRequest, res: Response): Promise<Response> {
+  // Get all special educators (for assignment dropdown)
+  async getAllSpecialEducators(req: AuthenticatedRequest, res: Response) {
     try {
-      const citiesAndCenters = await this.centerService.getCitiesAndCenters();
+      const { page = 1, limit = 100, search } = req.query;
 
-      return res.json({
-        success: true,
-        data: citiesAndCenters
-      });
-    } catch (error: any) {
-      console.error('Get cities and centers error:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to fetch cities and centers data'
-      });
-    }
-  }
-
-  // Get all special educators (both assigned and unassigned)
-  async getAllSpecialEducators(req: AuthenticatedRequest, res: Response): Promise<Response> {
-    try {
-      const { page = 1, limit = 20, search, centerId } = req.query;
-      
       const result = await this.centerService.getAllSpecialEducators({
         page: parseInt(page as string),
         limit: parseInt(limit as string),
-        search: search as string,
-        centerId: centerId as string
+        search: search as string
       });
 
-      return res.json({
+      res.json({
         success: true,
         data: result.educators,
         pagination: result.pagination
@@ -962,7 +913,7 @@ export class CenterController {
   async getUnlinkedSchools(req: AuthenticatedRequest, res: Response) {
     try {
       const { page = 1, limit = 50, search } = req.query;
-      
+
       const result = await this.centerService.getUnlinkedSchools({
         page: parseInt(page as string),
         limit: parseInt(limit as string),
@@ -976,7 +927,7 @@ export class CenterController {
       });
     } catch (error: any) {
       console.error('Get unlinked schools error:', error);
-      
+
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
           success: false,
@@ -989,5 +940,281 @@ export class CenterController {
         error: 'Failed to fetch unlinked schools'
       });
     }
+  }
+
+  // ==================== CENTER REPORT ENDPOINTS ====================
+
+  // Generate new center report snapshot
+  async generateCenterSnapshot(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id: centerId } = req.params;
+      const { periodType = 'MONTHLY', startDate, endDate } = req.body;
+
+      // Verify center access
+      if (req.user?.role === 'CENTER') {
+        const centerUser = await this.prisma.user.findUnique({
+          where: { id: req.user.userId },
+          include: { centerProfile: true }
+        });
+
+        if (!centerUser || centerUser.centerProfile?.id !== centerId) {
+          return res.status(403).json({
+            success: false,
+            error: 'Access denied to this center'
+          });
+        }
+      }
+
+      // Get default dates if not provided
+      const start = startDate ? new Date(startDate) : getDefaultStartDate(periodType as ReportPeriodType);
+      const end = endDate ? new Date(endDate) : new Date();
+
+      // Invalidate cache first
+      await this.centerReportService.invalidateCache(centerId, periodType as ReportPeriodType);
+
+      // Generate new snapshot
+      const snapshot = await this.centerReportService.generateCenterSnapshot(
+        centerId,
+        periodType as ReportPeriodType,
+        start,
+        end
+      );
+
+      res.json({
+        success: true,
+        message: 'Center report snapshot generated successfully',
+        data: snapshot
+      });
+    } catch (error: any) {
+      console.error('Generate center snapshot error:', error);
+
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          error: error.message
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to generate center snapshot'
+      });
+    }
+  }
+
+  // List all snapshots for a center
+  async listCenterSnapshots(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id: centerId } = req.params;
+      const { page = 1, limit = 20, periodType } = req.query;
+
+      // Verify center access
+      if (req.user?.role === 'CENTER') {
+        const centerUser = await this.prisma.user.findUnique({
+          where: { id: req.user.userId },
+          include: { centerProfile: true }
+        });
+
+        if (!centerUser || centerUser.centerProfile?.id !== centerId) {
+          return res.status(403).json({
+            success: false,
+            error: 'Access denied to this center'
+          });
+        }
+      }
+
+      // Build where clause
+      const where: any = { centerId };
+      if (periodType) {
+        where.periodType = periodType as ReportPeriodType;
+      }
+
+      // Get total count
+      const total = await this.prisma.centerReportSnapshot.count({ where });
+
+      // Get paginated snapshots
+      const snapshots = await this.prisma.centerReportSnapshot.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (Number(page) - 1) * Number(limit),
+        take: Number(limit)
+      });
+
+      res.json({
+        success: true,
+        data: snapshots,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          totalPages: Math.ceil(total / Number(limit))
+        }
+      });
+    } catch (error: any) {
+      console.error('List center snapshots error:', error);
+
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          error: error.message
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to list center snapshots'
+      });
+    }
+  }
+
+  // Get complete center report data (single optimized call)
+  async getCompleteCenterReportData(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id: centerId } = req.params;
+      const { snapshotId, periodType = 'MONTHLY', startDate, endDate } = req.query;
+
+      // Verify center access
+      if (req.user?.role === 'CENTER') {
+        const centerUser = await this.prisma.user.findUnique({
+          where: { id: req.user.userId },
+          include: { centerProfile: true }
+        });
+
+        if (!centerUser || centerUser.centerProfile?.id !== centerId) {
+          return res.status(403).json({
+            success: false,
+            error: 'Access denied to this center'
+          });
+        }
+      }
+
+      // Get center info
+      const center = await this.prisma.centerProfile.findUnique({
+        where: { id: centerId },
+        select: {
+          id: true,
+          centerName: true,
+          address: true,
+          contactPerson: true
+        }
+      });
+
+      if (!center) {
+        return res.status(404).json({
+          success: false,
+          error: 'Center not found'
+        });
+      }
+
+      let snapshot;
+
+      // If snapshotId is provided, fetch that specific snapshot
+      if (snapshotId) {
+        snapshot = await this.prisma.centerReportSnapshot.findFirst({
+          where: {
+            id: snapshotId as string,
+            centerId
+          }
+        });
+
+        if (!snapshot) {
+          return res.status(404).json({
+            success: false,
+            error: 'Snapshot not found'
+          });
+        }
+      } else {
+        // Otherwise, generate or retrieve snapshot based on period
+        const start = startDate ? new Date(startDate as string) : getDefaultStartDate(periodType as ReportPeriodType);
+        const end = endDate ? new Date(endDate as string) : new Date();
+
+        snapshot = await this.centerReportService.generateCenterSnapshot(
+          centerId,
+          periodType as ReportPeriodType,
+          start,
+          end
+        );
+      }
+
+      // Return complete data for all dashboard sections
+      res.json({
+        success: true,
+        data: {
+          snapshot,
+          center,
+          // Structured data for easy consumption
+          coverage: {
+            totalStudentsRegistered: snapshot.totalStudentsRegistered,
+            studentsAssessed: snapshot.studentsAssessed,
+            studentsUnderIntervention: snapshot.studentsUnderIntervention,
+            newStudentsThisPeriod: snapshot.newStudentsThisPeriod,
+            activeStudents: snapshot.activeStudents,
+            exitedMainstreamed: snapshot.exitedMainstreamed
+          },
+          assessments: {
+            totalAssessmentsConducted: snapshot.totalAssessmentsConducted,
+            baselineAssessments: snapshot.baselineAssessments,
+            reviewProgressAssessments: snapshot.reviewProgressAssessments,
+            averageAssessmentTime: snapshot.averageAssessmentTime,
+            assessmentsPerEducator: snapshot.assessmentsPerEducator
+          },
+          interventions: {
+            individualInterventionPlans: snapshot.individualInterventionPlans,
+            smallGroupInterventions: snapshot.smallGroupInterventions,
+            totalInterventionSessions: snapshot.totalInterventionSessions,
+            avgSessionsPerStudent: snapshot.avgSessionsPerStudent,
+            avgDurationPerSession: snapshot.avgDurationPerSession
+          },
+          progress: {
+            readingImprovement: snapshot.readingImprovement,
+            writingImprovement: snapshot.writingImprovement,
+            mathematicsImprovement: snapshot.mathematicsImprovement,
+            attentionBehaviorImprovement: snapshot.attentionBehaviorImprovement
+          },
+          productivity: {
+            activeSpecialEducators: snapshot.activeSpecialEducators,
+            avgStudentsPerEducator: snapshot.avgStudentsPerEducator,
+            avgSessionsPerEducator: snapshot.avgSessionsPerEducator,
+            avgReportsGenerated: snapshot.avgReportsGenerated
+          },
+          compliance: {
+            assessmentRecordsAvailable: snapshot.assessmentRecordsAvailable,
+            interventionPlansDocumented: snapshot.interventionPlansDocumented,
+            progressReviewsCompleted: snapshot.progressReviewsCompleted,
+            parentReportsShared: snapshot.parentReportsShared
+          }
+        }
+      });
+    } catch (error: any) {
+      console.error('Get complete center report data error:', error);
+
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          error: error.message
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get center report data'
+      });
+    }
+  }
+}
+
+/**
+ * Helper function to get default start date based on period type
+ */
+function getDefaultStartDate(periodType: ReportPeriodType): Date {
+  const now = new Date();
+
+  if (periodType === ReportPeriodType.MONTHLY) {
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  } else if (periodType === ReportPeriodType.QUARTERLY) {
+    const quarter = Math.floor(now.getMonth() / 3);
+    return new Date(now.getFullYear(), quarter * 3, 1);
+  } else {
+    return new Date(now.getFullYear(), 0, 1);
   }
 }

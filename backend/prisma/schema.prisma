@@ -144,40 +144,42 @@ model SpecialEducatorProfile {
 }
 
 model CenterProfile {
-  id             String             @id @default(cuid())
-  userId         String             @unique
-  centerName     String
-  address        String?
-  phone          String?
-  email          String?
-  contactPerson  String?
-  operatingHours String?
-  description    String?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  assignments    CenterAssignment[]
-  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  schools        School[]
-  students       Student[]
+  id              String                 @id @default(cuid())
+  userId          String                 @unique
+  centerName      String
+  address         String?
+  phone           String?
+  email           String?
+  contactPerson   String?
+  operatingHours  String?
+  description     String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  assignments     CenterAssignment[]
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schools         School[]
+  students        Student[]
+  reportSnapshots CenterReportSnapshot[]
 
   @@map("center_profiles")
 }
 
 model ParentProfile {
-  id               String           @id @default(cuid())
-  userId           String           @unique
+  id               String                 @id @default(cuid())
+  userId           String                 @unique
   fullName         String
   phone            String?
   address          String?
   emergencyContact String?
-  relationship     String           @default("Parent")
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  relationship     String                 @default("Parent")
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
   concerns         ParentConcern[]
   documents        ParentDocument[]
   homework         Homework[]
-  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   children         Student[]
+  reportSnapshots  ParentReportSnapshot[]
 
   @@map("parent_profiles")
 }
@@ -198,19 +200,19 @@ model SchoolViewerProfile {
 }
 
 model School {
-  id            String                @id @default(cuid())
-  name          String
-  address       String?
-  phone         String?
-  email         String?
-  principalName String?
-  centerId      String?
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
-  viewers       SchoolViewerProfile[]
-  center        CenterProfile?        @relation(fields: [centerId], references: [id])
-  students      Student[]
-  assignments   SchoolAssignment[]
+  id              String                 @id @default(cuid())
+  name            String
+  address         String?
+  phone           String?
+  email           String?
+  principalName   String?
+  centerId        String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  viewers         SchoolViewerProfile[]
+  center          CenterProfile?         @relation(fields: [centerId], references: [id])
+  students        Student[]
+  assignments     SchoolAssignment[]
   reportSnapshots SchoolReportSnapshot[]
 
   @@map("schools")
@@ -254,6 +256,7 @@ model Student {
   school                  School?                  @relation(fields: [schoolId], references: [id])
   ieps                    IEP[]
   iepDocuments            IEPDocument[]
+  reportSnapshots         ParentReportSnapshot[]
 
   @@map("students")
 }
@@ -758,22 +761,22 @@ model LongTermPlan {
 
   // Student Profile Summary
   diagnosis         String?
-  suspectedLD       String? @map("suspected_ld")
+  suspectedLD       String?  @map("suspected_ld")
   learningStrengths String[] @map("learning_strengths")
   challengeAreas    String[] @map("challenge_areas")
 
   // Duration
   startDate      DateTime @map("start_date")
   endDate        DateTime @map("end_date")
-  durationMonths Int @map("duration_months") // 6-12 months
+  durationMonths Int      @map("duration_months") // 6-12 months
 
   // Domains Covered
   domains Domain[]
 
   // Review Cycle
   reviewCycle    ReviewCycle @default(QUARTERLY) @map("review_cycle")
-  lastReviewDate DateTime? @map("last_review_date")
-  nextReviewDate DateTime @map("next_review_date")
+  lastReviewDate DateTime?   @map("last_review_date")
+  nextReviewDate DateTime    @map("next_review_date")
 
   // Status
   status PlanStatus @default(ACTIVE)
@@ -821,12 +824,12 @@ model ShortTermPlan {
 
   // Link to LTP Goal
   linkedLongTermGoalId String? @map("linked_long_term_goal_id")
-  linkedGoalStatement  String @map("linked_goal_statement") // Copy of LTP goal for reference
+  linkedGoalStatement  String  @map("linked_goal_statement") // Copy of LTP goal for reference
 
   // Duration
   startDate     DateTime @map("start_date")
   endDate       DateTime @map("end_date")
-  durationWeeks Int @map("duration_weeks") // 4-8 weeks
+  durationWeeks Int      @map("duration_weeks") // 4-8 weeks
 
   // STP Goal
   stpGoal String @map("stp_goal") // Main STP goal statement
@@ -862,7 +865,7 @@ model ShortTermSubGoal {
   id              String @id @default(cuid())
   shortTermPlanId String @map("short_term_plan_id")
 
-  goalStatement String @map("goal_statement") // e.g., "Recognise A-F"
+  goalStatement String    @map("goal_statement") // e.g., "Recognise A-F"
   order         Int // for sorting
   isAchieved    Boolean   @default(false) @map("is_achieved")
   achievedDate  DateTime? @map("achieved_date")
@@ -879,11 +882,11 @@ model ShortTermSubGoal {
 model WeeklyLessonPlan {
   id                String  @id @default(cuid())
   shortTermPlanId   String? @map("short_term_plan_id") // Optional link to STP
-  studentId         String @map("student_id")
-  specialEducatorId String @map("special_educator_id")
+  studentId         String  @map("student_id")
+  specialEducatorId String  @map("special_educator_id")
 
   // Week Information
-  weekNumber  Int @map("week_number")
+  weekNumber  Int      @map("week_number")
   sessionDate DateTime @map("session_date") // Specific date of session (e.g., 11-11-2025)
 
   // Topics & Areas
@@ -895,7 +898,7 @@ model WeeklyLessonPlan {
   actualTime  Int? @map("actual_time") // in minutes (filled after session)
 
   // Motivation & Resources
-  motivationStrategy String? @map("motivation_strategy") // e.g., "Token reward, praise"
+  motivationStrategy String?  @map("motivation_strategy") // e.g., "Token reward, praise"
   resourcesUsed      String[] @map("resources_used") // e.g., ["Flashcards", "Tracing sheets", "Digital game"]
 
   // Outcome
@@ -1427,38 +1430,38 @@ enum NotificationType {
   // Student Management
   STUDENT_ASSIGNED
   STUDENT_UNASSIGNED
-  
+
   // Assessments
   ASSESSMENT_CREATED
   ASSESSMENT_COMPLETED
   ASSESSMENT_REVIEWED
-  
+
   // IEP & Goals
   IEP_GOAL_CREATED
   IEP_GOAL_UPDATED
   IEP_GOAL_ACHIEVED
-  
+
   // Homework
   HOMEWORK_ASSIGNED
   HOMEWORK_SUBMITTED
   HOMEWORK_REVIEWED
-  
+
   // Reports
   REPORT_SUBMITTED
   REPORT_APPROVED
   REPORT_REJECTED
-  
+
   // Parent Concerns
   CONCERN_SUBMITTED
   CONCERN_RESPONDED
-  
+
   // Lesson Plans
   LESSON_PLAN_CREATED
   LESSON_PLAN_UPDATED
-  
+
   // Documents
   DOCUMENT_UPLOADED
-  
+
   // System
   ACCOUNT_CREATED
   ROLE_CHANGED
@@ -1477,67 +1480,200 @@ enum ReportPeriodType {
 }
 
 model SchoolReportSnapshot {
-  id                         String           @id @default(cuid())
-  schoolId                   String
-  periodType                 ReportPeriodType
-  periodStart                DateTime
-  periodEnd                  DateTime
-  
+  id          String           @id @default(cuid())
+  schoolId    String
+  periodType  ReportPeriodType
+  periodStart DateTime
+  periodEnd   DateTime
+
   // Reach & Coverage
-  totalEnrolled              Int
-  totalScreened              Int
-  totalSupported             Int
-  gradesCovered              String[]
-  
+  totalEnrolled  Int
+  totalScreened  Int
+  totalSupported Int
+  gradesCovered  String[]
+
   // Risk Categories
-  highSupportCount           Int
-  moderateSupportCount       Int
-  onTrackCount               Int
-  highSupportReduction       Float?
-  moderateSupportReduction   Float?
-  onTrackIncrease            Float?
-  
+  highSupportCount         Int
+  moderateSupportCount     Int
+  onTrackCount             Int
+  highSupportReduction     Float?
+  moderateSupportReduction Float?
+  onTrackIncrease          Float?
+
   // Skill Area Metrics (% students needing support)
   readingReadinessPercent    Float?
   writingReadinessPercent    Float?
   numeracyReadinessPercent   Float?
   attentionEngagementPercent Float?
   processingMemoryPercent    Float?
-  
+
   // Impact Metrics
-  totalSessions              Int
-  averageImprovement         Json? // Per domain improvements
-  
+  totalSessions      Int
+  averageImprovement Json? // Per domain improvements
+
   // New Dashboard 1 Metrics - Student Progress Levels
-  newStudentsThisMonth              Int?
-  studentsImproving                 Int?
-  studentsStable                    Int?
-  studentsRequiringAttention        Int?
-  
+  newStudentsThisMonth       Int?
+  studentsImproving          Int?
+  studentsStable             Int?
+  studentsRequiringAttention Int?
+
   // New Dashboard 3 Metrics - Time Saved for Teachers (in hours)
-  manualObservationTimeSaved        Int?
-  lessonPlanningTimeSaved           Int?
-  trackingWorkloadTimeSaved         Int?
-  differentiationSupportTimeSaved   Int?
-  totalTimeSaved                    Int?
-  
+  manualObservationTimeSaved      Int?
+  lessonPlanningTimeSaved         Int?
+  trackingWorkloadTimeSaved       Int?
+  differentiationSupportTimeSaved Int?
+  totalTimeSaved                  Int?
+
   // New Dashboard 3 Metrics - Evidence of Interventions
-  individualSupportPlansCreated     Int?
-  smallGroupInterventions           Int?
-  classroomStrategyRecommendations  Int?
-  reviewCyclesCompleted             Int?
-  
+  individualSupportPlansCreated    Int?
+  smallGroupInterventions          Int?
+  classroomStrategyRecommendations Int?
+  reviewCyclesCompleted            Int?
+
   // AI-Generated Narratives
-  executiveSummary           String?
-  coverageNarrative          String?
-  impactNarrative            String?
-  recommendations            String?
-  
-  createdAt                  DateTime         @default(now())
-  updatedAt                  DateTime         @updatedAt
-  
-  school                     School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  
+  executiveSummary  String?
+  coverageNarrative String?
+  impactNarrative   String?
+  recommendations   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
   @@index([schoolId, periodType, periodStart])
   @@map("school_report_snapshots")
+}
+
+model CenterReportSnapshot {
+  id          String           @id @default(cuid())
+  centerId    String
+  periodType  ReportPeriodType
+  periodStart DateTime
+  periodEnd   DateTime
+
+  // Student Coverage Statistics
+  totalStudentsRegistered   Int
+  studentsAssessed          Int
+  studentsUnderIntervention Int
+  newStudentsThisPeriod     Int
+  activeStudents            Int
+  exitedMainstreamed        Int
+
+  // Assessment Statistics
+  totalAssessmentsConducted Int
+  baselineAssessments       Int
+  reviewProgressAssessments Int
+  averageAssessmentTime     Float?
+  assessmentsPerEducator    Float?
+
+  // Intervention Statistics
+  individualInterventionPlans Int
+  smallGroupInterventions     Int
+  totalInterventionSessions   Int
+  avgSessionsPerStudent       Float?
+  avgDurationPerSession       Float?
+
+  // Progress & Outcome Statistics (by domain)
+  readingImprovement           Float?
+  writingImprovement           Float?
+  mathematicsImprovement       Float?
+  attentionBehaviorImprovement Float?
+
+  // Educator Productivity Metrics
+  activeSpecialEducators Int
+  avgStudentsPerEducator Float?
+  avgSessionsPerEducator Float?
+  avgReportsGenerated    Float?
+
+  // Compliance & Documentation Statistics (percentages)
+  assessmentRecordsAvailable  Float?
+  interventionPlansDocumented Float?
+  progressReviewsCompleted    Float?
+  parentReportsShared         Float?
+
+  // Coverage Information
+  schoolsCovered String[]
+  gradesCovered  String[]
+
+  // AI-Generated Narratives
+  executiveSummary String?
+  recommendations  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  center CenterProfile @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@index([centerId, periodType, periodStart])
+  @@map("center_report_snapshots")
+}
+
+model ParentReportSnapshot {
+  id          String           @id @default(cuid())
+  studentId   String
+  parentId    String
+  periodType  ReportPeriodType
+  periodStart DateTime
+  periodEnd   DateTime
+
+  // Student Information
+  studentName          String
+  studentGrade         String
+  studentAge           Int
+  enrollmentDate       DateTime
+  assignedEducatorName String?
+
+  // Assessment Summary
+  totalAssessments      Int
+  latestAssessmentDate  DateTime?
+  latestAssessmentScore Float?
+  riskLevel             String? // "High", "Moderate", "On Track"
+  assessmentProgress    String? // Brief summary
+
+  // Progress Tracking
+  readingProgress       Float? // Percentage improvement
+  writingProgress       Float?
+  mathProgress          Float?
+  attentionProgress     Float?
+  overallGoalCompletion Float? // Percentage of goals completed
+
+  // Attendance & Session Participation
+  totalSessionsScheduled Int
+  sessionsAttended       Int
+  participationRate      Float? // Percentage
+  lastSessionDate        DateTime?
+
+  // Individual Intervention Plan - Focus Areas
+  focusReading     Boolean @default(false)
+  focusWriting     Boolean @default(false)
+  focusMathematics Boolean @default(false)
+  focusAttention   Boolean @default(false)
+  focusConfidence  Boolean @default(false)
+
+  // Intervention Goals
+  shortTermGoals String? // JSON array or text
+  longTermGoals  String? // JSON array or text
+
+  // Intervention Strategies (per area)
+  readingStrategy     String?
+  writingStrategy     String?
+  mathematicsStrategy String?
+  attentionStrategy   String?
+  confidenceStrategy  String?
+
+  // Additional Information
+  educatorNotes         String?
+  parentFriendlySummary String? // AI-generated or educator-written
+  nextReviewDate        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parent  ParentProfile @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, periodType, periodStart])
+  @@index([parentId, periodStart])
+  @@map("parent_report_snapshots")
 }

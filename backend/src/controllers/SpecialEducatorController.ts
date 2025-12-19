@@ -458,4 +458,99 @@ export class SpecialEducatorController {
       });
     }
   };
+
+  /**
+   * Get comprehensive analytics dashboard
+   */
+  getAnalyticsDashboard = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const educatorId = req.user?.profileId;
+      if (!educatorId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Special educator profile not found'
+        });
+      }
+
+      const analytics = await this.specialEducatorService.getAnalyticsDashboard(educatorId);
+
+      res.json({
+        success: true,
+        data: analytics
+      });
+    } catch (error) {
+      console.error('Error getting analytics dashboard:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get analytics dashboard'
+      });
+    }
+  };
+
+  /**
+   * Get student-specific analytics
+   */
+  getStudentAnalytics = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const educatorId = req.user?.profileId;
+      const studentId = req.params.studentId;
+
+      if (!educatorId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Special educator profile not found'
+        });
+      }
+
+      if (!studentId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Student ID is required'
+        });
+      }
+
+      const analytics = await this.specialEducatorService.getStudentAnalytics(educatorId, studentId);
+
+      res.json({
+        success: true,
+        data: analytics
+      });
+    } catch (error) {
+      console.error('Error getting student analytics:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get student analytics'
+      });
+    }
+  };
+
+  /**
+   * Get progress trends
+   */
+  getProgressTrends = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const educatorId = req.user?.profileId;
+      if (!educatorId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Special educator profile not found'
+        });
+      }
+
+      const period = (req.query.period as 'week' | 'month' | 'quarter') || 'month';
+
+      const trends = await this.specialEducatorService.getProgressTrends(educatorId, period);
+
+      res.json({
+        success: true,
+        data: trends
+      });
+    } catch (error) {
+      console.error('Error getting progress trends:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get progress trends'
+      });
+    }
+  };
 }

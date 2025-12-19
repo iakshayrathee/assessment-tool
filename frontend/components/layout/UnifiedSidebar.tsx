@@ -267,6 +267,12 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       description: 'View and submit homework'
     },
     {
+      title: 'Reports',
+      href: '/parent/reports',
+      icon: BarChart3,
+      description: 'View your child\'s progress reports'
+    },
+    {
       title: 'Concerns',
       href: '/parent/concerns',
       icon: MessageSquare,
@@ -297,12 +303,6 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       href: '/school-viewer/school-reports',
       icon: BarChart3,
       description: 'Comprehensive school analytics'
-    },
-    {
-      title: 'Reports',
-      href: '/school-viewer/reports',
-      icon: FileText,
-      description: 'Individual student reports'
     }
   ]
 };

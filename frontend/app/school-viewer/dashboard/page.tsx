@@ -6,10 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Users, 
-  FileText, 
-  Target, 
+import {
+  Users,
+  FileText,
+  Target,
   Calendar,
   TrendingUp,
   Clock,
@@ -224,8 +224,8 @@ export default function SchoolViewerDashboard() {
             </div>
             <div className="flex items-center space-x-2 mt-1">
               <div className="flex-1 bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-green-500 h-2 rounded-full" 
+                <div
+                  className="bg-green-500 h-2 rounded-full"
                   style={{ width: `${data.stats.interventionProgress}%` }}
                 />
               </div>
@@ -459,7 +459,7 @@ export default function SchoolViewerDashboard() {
                 )}
               </div>
               <div className="mt-4 pt-4 border-t">
-                <Link href="/school-viewer/reports">
+                <Link href="/school-viewer/school-reports">
                   <Button variant="outline" className="w-full">
                     View All Reports
                   </Button>

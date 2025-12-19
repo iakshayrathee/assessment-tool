@@ -67,6 +67,27 @@ router.get('/activities', specialEducatorController.getRecentActivities.bind(spe
 router.get('/statistics', specialEducatorController.getStatistics.bind(specialEducatorController));
 
 /**
+ * @route GET /api/special-educators/analytics/dashboard
+ * @desc Get comprehensive analytics dashboard data
+ * @access Private (Special Educator only)
+ */
+router.get('/analytics/dashboard', specialEducatorController.getAnalyticsDashboard.bind(specialEducatorController));
+
+/**
+ * @route GET /api/special-educators/analytics/student/:studentId
+ * @desc Get detailed analytics for a specific student
+ * @access Private (Special Educator only)
+ */
+router.get('/analytics/student/:studentId', specialEducatorController.getStudentAnalytics.bind(specialEducatorController));
+
+/**
+ * @route GET /api/special-educators/analytics/trends
+ * @desc Get progress trends over time (query param: period=week|month|quarter)
+ * @access Private (Special Educator only)
+ */
+router.get('/analytics/trends', specialEducatorController.getProgressTrends.bind(specialEducatorController));
+
+/**
  * @route GET /api/special-educators/schedule/today
  * @desc Get today's schedule
  * @access Private (Special Educator only)

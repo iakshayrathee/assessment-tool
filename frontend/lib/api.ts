@@ -787,6 +787,64 @@ class ApiClient {
     return response.data;
   }
 
+  // Center Report Generation endpoints
+  async listCenterSnapshots(centerId: string, params?: {
+    page?: number;
+    limit?: number;
+    periodType?: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get<PaginatedResponse<any>>(`/centers/${centerId}/report-snapshots`, { params });
+    return response.data;
+  }
+
+  async generateCenterSnapshot(centerId: string, params?: {
+    periodType?: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/centers/${centerId}/report-snapshots/generate`, params);
+    return response.data.data;
+  }
+
+  async getCompleteCenterReportData(centerId: string, params?: {
+    snapshotId?: string;
+    periodType?: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/centers/${centerId}/report-data/complete`, { params });
+    return response.data.data;
+  }
+
+  // Parent Report Generation Methods
+  async listParentSnapshots(studentId: string, params?: {
+    page?: number;
+    limit?: number;
+    periodType?: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+  }): Promise<PaginatedResponse<any>> {
+    const response = await this.client.get<PaginatedResponse<any>>(`/parents/students/${studentId}/report-snapshots`, { params });
+    return response.data;
+  }
+
+  async generateParentSnapshot(studentId: string, params?: {
+    periodType?: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+    startDate?: string;
+    endDate?: string;
+  }): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/parents/students/${studentId}/report-snapshots/generate`, params);
+    return response.data;
+  }
+
+  async getCompleteParentReportData(studentId: string, params?: {
+    snapshotId?: string;
+    periodType?: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+    startDate?: string;
+    endDate?: string;
+  }): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/parents/students/${studentId}/report-data/complete`, { params });
+    return response.data.data;
+  }
+
   // Parent endpoints
   async getParentDashboard(): Promise<any> {
     const response = await this.client.get<ApiResponse<any>>('/parents/dashboard');
@@ -1324,12 +1382,12 @@ class ApiClient {
     search?: string;
     status?: string;
   }): Promise<PaginatedResponse<any>> {
-    const response = await this.client.get('/special-educator/students', { params });
+    const response = await this.client.get('/special-educators/students', { params });
     return response.data;
   }
 
   async getSpecialEducatorStatistics(): Promise<any> {
-    const response = await this.client.get('/special-educator/statistics');
+    const response = await this.client.get('/special-educators/statistics');
     return response.data;
   }
 
@@ -1346,12 +1404,12 @@ class ApiClient {
     page?: number;
     limit?: number;
   }): Promise<PaginatedResponse<any>> {
-    const response = await this.client.get(`/special-educator/session-notes/${studentId}`, { params });
+    const response = await this.client.get(`/special-educators/session-notes/${studentId}`, { params });
     return response.data;
   }
 
   async getStudentDetailsForSpecialEducator(studentId: string): Promise<any> {
-    const response = await this.client.get(`/special-educator/students/${studentId}`);
+    const response = await this.client.get(`/special-educators/students/${studentId}`);
     return response.data;
   }
 
@@ -1360,7 +1418,7 @@ class ApiClient {
     specialEducatorId: string;
     notes?: string;
   }): Promise<any> {
-    const response = await this.client.post('/special-educator/assign-student', assignmentData);
+    const response = await this.client.post('/special-educators/assign-student', assignmentData);
     return response.data;
   }
 
