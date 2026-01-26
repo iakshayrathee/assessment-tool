@@ -231,6 +231,15 @@ export class AdminService {
           where: { centerId: centerId }
         });
 
+        // Delete all school assignments before deleting schools
+        await tx.schoolAssignment.deleteMany({
+          where: {
+            school: {
+              centerId: centerId
+            }
+          }
+        });
+
         // Delete all schools associated with this center
         await tx.school.deleteMany({
           where: { centerId: centerId }
@@ -251,9 +260,55 @@ export class AdminService {
           where: { specialEducatorId }
         });
 
+        // Delete all formal assessments
+        await tx.formalAssessment.deleteMany({
+          where: { specialEducatorId }
+        });
+
+        // Delete all skill assessments
+        await tx.readingSkillAssessment.deleteMany({
+          where: { specialEducatorId }
+        });
+
+        await tx.writingSkillAssessment.deleteMany({
+          where: { specialEducatorId }
+        });
+
+        await tx.mathSkillAssessment.deleteMany({
+          where: { specialEducatorId }
+        });
+
         // Delete all intake forms created by this educator
         await tx.intakeForm.deleteMany({
           where: { specialEducatorId }
+        });
+
+        // Delete all plans
+        await tx.weeklyLessonPlan.deleteMany({
+          where: { specialEducatorId }
+        });
+
+        await tx.shortTermPlan.deleteMany({
+          where: { specialEducatorId }
+        });
+
+        await tx.longTermPlan.deleteMany({
+          where: { specialEducatorId }
+        });
+
+        // Delete all homework
+        await tx.homework.deleteMany({
+          where: { specialEducatorId }
+        });
+
+        // Delete all IEP documents
+        await tx.iEPDocument.deleteMany({
+          where: { specialEducatorId }
+        });
+
+        // Delete all IEPs
+        await tx.iEP.deleteMany({
+          where: { educatorId: specialEducatorId }
         });
 
         // Delete all IEP goals created by this educator
@@ -271,8 +326,18 @@ export class AdminService {
           where: { specialEducatorId }
         });
 
+        // Delete all training logs
+        await tx.trainingLog.deleteMany({
+          where: { specialEducatorId }
+        });
+
         // Delete student assignments
         await tx.studentAssignment.deleteMany({
+          where: { specialEducatorId }
+        });
+
+        // Delete school assignments
+        await tx.schoolAssignment.deleteMany({
           where: { specialEducatorId }
         });
 
@@ -286,8 +351,18 @@ export class AdminService {
       if (user.superSpecialEducatorProfile) {
         const superSpecialEducatorId = user.superSpecialEducatorProfile.id;
 
+        // Delete school assignments
+        await tx.schoolAssignment.deleteMany({
+          where: { superSpecialEducatorId }
+        });
+
         // Delete center assignments
         await tx.centerAssignment.deleteMany({
+          where: { superSpecialEducatorId }
+        });
+
+        // Delete training logs
+        await tx.trainingLog.deleteMany({
           where: { superSpecialEducatorId }
         });
 
@@ -1029,11 +1104,11 @@ export class AdminService {
   // Approval System
   async getPendingApprovals(page: number, limit: number, type?: string) {
     const skip = (page - 1) * limit;
-    
+
     const where: any = {
       status: 'PENDING'
     };
-    
+
     if (type && type !== 'all') {
       where.type = type;
     }
@@ -1161,7 +1236,7 @@ export class AdminService {
 
   private async processUserCreationApproval(request: any, adminId: string, comments?: string) {
     const requestData = request.requestedData as any;
-    
+
     // Create the user account
     const user = await this.prisma.user.create({
       data: {
@@ -1184,7 +1259,7 @@ export class AdminService {
     }
 
     const requestData = request.requestedData as any;
-    
+
     // Update user role
     await this.prisma.user.update({
       where: { id: request.targetUserId },
