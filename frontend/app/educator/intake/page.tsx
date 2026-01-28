@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import ReactDOMServer from 'react-dom/server';
 import toast from 'react-hot-toast';
 import { useIntakeForm } from '@/hooks/useAssessments';
 import { useEducatorStudents } from '@/hooks/useEducator';
@@ -147,7 +148,6 @@ function IntakeFormPageContent() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [showStudentModal, setShowStudentModal] = useState(false);
-  const pdfRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState<FormData>({
     // Section 1: Socio Demographic Data
     name: '',
@@ -273,7 +273,7 @@ function IntakeFormPageContent() {
       // Debug: Check if student data is available in the intake form
       console.log('Student data in intake form:', intakeForm.student);
       console.log('Current form data before update:', formData);
-      
+
       // Update form data with intake form values while preserving current state
       setFormData(prev => ({
         ...prev,
@@ -340,7 +340,7 @@ function IntakeFormPageContent() {
         dominantWritingHand: intakeForm.dominantWritingHand || prev.dominantWritingHand,
         strugglesInLanguages: intakeForm.strugglesInLanguages ?? prev.strugglesInLanguages,
       }));
-      
+
       if (intakeForm.status === 'COMPLETED') {
         console.log('Intake form is already completed for this student');
       }
@@ -452,7 +452,7 @@ function IntakeFormPageContent() {
         ageOfWalking: formData.ageOfWalking ? parseInt(formData.ageOfWalking) : null,
         ageOfTwoWordSpeech: formData.ageOfTwoWordSpeech ? parseInt(formData.ageOfTwoWordSpeech) : null,
       };
-      
+
       if (intakeForm) {
         await updateIntakeForm({ id: intakeForm.id, data: submitData });
       } else {
@@ -479,7 +479,7 @@ function IntakeFormPageContent() {
         ageOfWalking: formData.ageOfWalking ? parseInt(formData.ageOfWalking) : null,
         ageOfTwoWordSpeech: formData.ageOfTwoWordSpeech ? parseInt(formData.ageOfTwoWordSpeech) : null,
       };
-      
+
       if (intakeForm) {
         await updateIntakeForm({ id: intakeForm.id, data: submitData });
         await completeIntakeForm(intakeForm.id);
@@ -495,25 +495,320 @@ function IntakeFormPageContent() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!pdfRef.current || !selectedStudentId || !isFormComplete()) {
-      toast.error('Please complete the form before downloading PDF');
+    if (!selectedStudentId) {
+      toast.error('Please select a student first');
       return;
     }
-    
+
     try {
       const html2pdf = (await import('html2pdf.js')).default;
-      
-      const element = pdfRef.current;
-      const studentName = selectedStudentData?.fullName || 'intake-form';
+
+      const studentName = selectedStudentData?.fullName || formData.name || 'Student';
+      const studentGrade = selectedStudentData?.grade || formData.class || 'N/A';
+
+      // Create structured PDF component
+      const IntakeFormPDFComponent = (
+        <div style={{
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '12px',
+          lineHeight: '1.6',
+          color: '#2d3748',
+          padding: '0',
+          margin: '0'
+        }}>
+          {/* Header */}
+          <div style={{
+            background: 'linear-gradient(135deg, #4299e1 0%, #667eea 100%)',
+            color: 'white',
+            padding: '1.5rem',
+            borderRadius: '8px 8px 0 0',
+            marginBottom: '1.5rem'
+          }}>
+            <h1 style={{
+              fontSize: '24px',
+              fontWeight: 'bold',
+              marginBottom: '0.5rem',
+              textAlign: 'center',
+              margin: '0'
+            }}>
+              Student Intake Assessment Form
+            </h1>
+            <p style={{
+              fontSize: '14px',
+              textAlign: 'center',
+              opacity: '0.9',
+              margin: '0.5rem 0 0 0'
+            }}>
+              Comprehensive Student Information
+            </p>
+          </div>
+
+          <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
+            {/* Student Information Header */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '1.5rem',
+              marginBottom: '1.5rem',
+              background: '#f8fafc',
+              padding: '1rem',
+              borderRadius: '6px',
+              border: '1px solid #e2e8f0'
+            }}>
+              <div>
+                <p style={{ margin: '0.3rem 0', fontSize: '13px' }}><strong>Student Name:</strong> {studentName}</p>
+                <p style={{ margin: '0.3rem 0', fontSize: '13px' }}><strong>Age:</strong> {formData.age || 'N/A'} years</p>
+                <p style={{ margin: '0.3rem 0', fontSize: '13px' }}><strong>Gender:</strong> {formData.gender || 'N/A'}</p>
+              </div>
+              <div>
+                <p style={{ margin: '0.3rem 0', fontSize: '13px' }}><strong>Grade:</strong> {studentGrade}</p>
+                <p style={{ margin: '0.3rem 0', fontSize: '13px' }}><strong>School/Center:</strong> {formData.schoolCenter || 'N/A'}</p>
+                <p style={{ margin: '0.3rem 0', fontSize: '13px' }}><strong>Date:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              </div>
+            </div>
+
+            {/* Section 1: Demographics */}
+            <div style={{
+              marginBottom: '1.5rem',
+              background: '#eff6ff',
+              padding: '1rem',
+              borderRadius: '6px',
+              border: '1px solid #bfdbfe'
+            }}>
+              <h2 style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#1e40af',
+                marginBottom: '0.75rem',
+                paddingBottom: '0.5rem',
+                borderBottom: '2px solid #3b82f6',
+                margin: '0 0 0.75rem 0'
+              }}>
+                📋 Socio-Demographic Information
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '12px' }}>
+                <p style={{ margin: '0.25rem 0' }}><strong>Mother Tongue:</strong> {formData.motherTongue || 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Syllabus:</strong> {formData.syllabus || 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0', gridColumn: '1 / -1' }}><strong>Address:</strong> {formData.address || 'N/A'}</p>
+              </div>
+            </div>
+
+            {/* Section 2: Family History */}
+            <div style={{
+              marginBottom: '1.5rem',
+              background: '#f0fdf4',
+              padding: '1rem',
+              borderRadius: '6px',
+              border: '1px solid #bbf7d0'
+            }}>
+              <h2 style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#15803d',
+                marginBottom: '0.75rem',
+                paddingBottom: '0.5rem',
+                borderBottom: '2px solid #22c55e',
+                margin: '0 0 0.75rem 0'
+              }}>
+                👨‍👩‍👧 Family History & Background
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '12px' }}>
+                <p style={{ margin: '0.25rem 0' }}><strong>Father's Name:</strong> {formData.fatherName || 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Mother's Name:</strong> {formData.motherName || 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Guardian's Name:</strong> {formData.guardianName || 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Family Income:</strong> {formData.familyIncome || 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Family Type:</strong> {formData.familyType || 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Child Type:</strong> {formData.childType || 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Digital Resources at Home:</strong> {formData.digitalResourcesAtHome ? '✓ Yes' : '✗ No'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Daily Digital Use:</strong> {formData.dailyDigitalUse ? `${formData.dailyDigitalUse} hours` : 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Enjoys School:</strong> {formData.enjoysSchool ? '✓ Yes' : '✗ No'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Study Assistant:</strong> {formData.studyAssistant || 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>External Academic Support:</strong> {formData.externalAcademicSupport ? '✓ Yes' : '✗ No'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Enjoys Reading:</strong> {formData.enjoysReading ? '✓ Yes' : '✗ No'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Daily Parent-Child Time:</strong> {formData.dailyParentChildTime ? `${formData.dailyParentChildTime} hours` : 'N/A'}</p>
+              </div>
+            </div>
+
+            {/* Section 3: Prenatal & Birth */}
+            <div style={{
+              marginBottom: '1.5rem',
+              background: '#fef3c7',
+              padding: '1rem',
+              borderRadius: '6px',
+              border: '1px solid #fde68a'
+            }}>
+              <h2 style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#92400e',
+                marginBottom: '0.75rem',
+                paddingBottom: '0.5rem',
+                borderBottom: '2px solid #f59e0b',
+                margin: '0 0 0.75rem 0'
+              }}>
+                🤰 Prenatal, Natal & Delivery Details
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '12px' }}>
+                <p style={{ margin: '0.25rem 0' }}><strong>Pregnancy Normal:</strong> {formData.pregnancyNormal ? '✓ Yes' : '✗ No'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Medications During Pregnancy:</strong> {formData.medicationsDuringPregnancy || 'N/A'}</p>
+                {formData.medicationsDuringPregnancyDetails && (
+                  <p style={{ margin: '0.25rem 0', gridColumn: '1 / -1' }}><strong>Medication Details:</strong> {formData.medicationsDuringPregnancyDetails}</p>
+                )}
+                <p style={{ margin: '0.25rem 0' }}><strong>Miscarriages/Abortions:</strong> {formData.miscarriagesAbortions ? '✓ Yes' : '✗ No'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Full Term/Premature:</strong> {formData.fullTermOrPremature || 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Delivery Type:</strong> {formData.deliveryType || 'N/A'}</p>
+              </div>
+            </div>
+
+            {/* Section 4: Post Natal */}
+            <div style={{
+              marginBottom: '1.5rem',
+              background: '#fce7f3',
+              padding: '1rem',
+              borderRadius: '6px',
+              border: '1px solid #fbcfe8'
+            }}>
+              <h2 style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#9f1239',
+                marginBottom: '0.75rem',
+                paddingBottom: '0.5rem',
+                borderBottom: '2px solid #ec4899',
+                margin: '0 0 0.75rem 0'
+              }}>
+                👶 Post Natal Factors
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '12px' }}>
+                <p style={{ margin: '0.25rem 0' }}><strong>Breast Fed:</strong> {formData.breastFed ? '✓ Yes' : '✗ No'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Infant Jaundice:</strong> {formData.infantJaundice ? '✓ Yes' : '✗ No'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Incubation Required:</strong> {formData.incubation ? '✓ Yes' : '✗ No'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Immunization Done:</strong> {formData.immunizationDone ? '✓ Yes' : '✗ No'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Consanguineous Marriage:</strong> {formData.consanguineousMarriage ? '✓ Yes' : '✗ No'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Birth Cry:</strong> {formData.birthCry || 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Delay in Neck Standing:</strong> {formData.delayInNeckStanding ? '✓ Yes' : '✗ No'}</p>
+                {formData.delayInNeckStandingDetails && (
+                  <p style={{ margin: '0.25rem 0', gridColumn: '1 / -1' }}><strong>Delay Details:</strong> {formData.delayInNeckStandingDetails}</p>
+                )}
+                <p style={{ margin: '0.25rem 0' }}><strong>Age of Walking:</strong> {formData.ageOfWalking ? `${formData.ageOfWalking} months` : 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Age of Two-Word Speech:</strong> {formData.ageOfTwoWordSpeech ? `${formData.ageOfTwoWordSpeech} months` : 'N/A'}</p>
+              </div>
+            </div>
+
+            {/* Section 5: Medical History */}
+            <div style={{
+              marginBottom: '1.5rem',
+              background: '#fff1f2',
+              padding: '1rem',
+              borderRadius: '6px',
+              border: '1px solid #fecdd3'
+            }}>
+              <h2 style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#be123c',
+                marginBottom: '0.75rem',
+                paddingBottom: '0.5rem',
+                borderBottom: '2px solid #f43f5e',
+                margin: '0 0 0.75rem 0'
+              }}>
+                🏥 Medical History
+              </h2>
+              <div style={{ fontSize: '12px' }}>
+                <p style={{ margin: '0.25rem 0', marginBottom: '0.5rem' }}><strong>Health Concerns:</strong></p>
+                <p style={{ margin: '0 0 0.75rem 0', paddingLeft: '1rem', fontStyle: formData.healthConcerns ? 'normal' : 'italic' }}>
+                  {formData.healthConcerns || 'None reported'}
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <p style={{ margin: '0.25rem 0' }}><strong>Epileptic History:</strong> {formData.epilepticHistory ? '✓ Yes' : '✗ No'}</p>
+                  <p style={{ margin: '0.25rem 0' }}><strong>On Medication:</strong> {formData.onMedication ? '✓ Yes' : '✗ No'}</p>
+                  {formData.medicationDetails && (
+                    <p style={{ margin: '0.25rem 0', gridColumn: '1 / -1' }}><strong>Medication Details:</strong> {formData.medicationDetails}</p>
+                  )}
+                  <p style={{ margin: '0.25rem 0' }}><strong>Asthma/Wheezing:</strong> {formData.asthmaWheezing ? '✓ Yes' : '✗ No'}</p>
+                  <p style={{ margin: '0.25rem 0' }}><strong>Wears Glasses:</strong> {formData.wearsGlasses ? '✓ Yes' : '✗ No'}</p>
+                  <p style={{ margin: '0.25rem 0' }}><strong>Vision Test Done:</strong> {formData.visionTestDone ? '✓ Yes' : '✗ No'}</p>
+                  <p style={{ margin: '0.25rem 0' }}><strong>Hearing Test Done:</strong> {formData.hearingTestDone ? '✓ Yes' : '✗ No'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 6: Educational History */}
+            <div style={{
+              marginBottom: '1.5rem',
+              background: '#f5f3ff',
+              padding: '1rem',
+              borderRadius: '6px',
+              border: '1px solid #ddd6fe'
+            }}>
+              <h2 style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#6b21a8',
+                marginBottom: '0.75rem',
+                paddingBottom: '0.5rem',
+                borderBottom: '2px solid #a855f7',
+                margin: '0 0 0.75rem 0'
+              }}>
+                🎓 Educational History
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '12px' }}>
+                <p style={{ margin: '0.25rem 0' }}><strong>Attended Preschool:</strong> {formData.attendedPreschool ? '✓ Yes' : '✗ No'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Repeated Grades:</strong> {formData.repeatedGrades ? '✓ Yes' : '✗ No'}</p>
+                {formData.whichGradeRepeated && (
+                  <p style={{ margin: '0.25rem 0' }}><strong>Grade Repeated:</strong> {formData.whichGradeRepeated}</p>
+                )}
+                <p style={{ margin: '0.25rem 0' }}><strong>Dominant Writing Hand:</strong> {formData.dominantWritingHand || 'N/A'}</p>
+                <p style={{ margin: '0.25rem 0' }}><strong>Struggles in Languages:</strong> {formData.strugglesInLanguages ? '✓ Yes' : '✗ No'}</p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              marginTop: '1.5rem',
+              padding: '0.75rem',
+              background: '#f8fafc',
+              borderRadius: '6px',
+              textAlign: 'center',
+              fontSize: '10px',
+              color: '#64748b',
+              border: '1px solid #e2e8f0'
+            }}>
+              <p style={{ margin: '0.2rem 0' }}>
+                Form completed on {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+              <p style={{ margin: '0.2rem 0', fontWeight: 'bold' }}>
+                Confidential - For educational and assessment purposes only
+              </p>
+              <p style={{ margin: '0.2rem 0', fontSize: '9px' }}>
+                © {new Date().getFullYear()} Knowled Assessment Platform
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+
+      // Convert React component to HTML string
+      const html = ReactDOMServer.renderToStaticMarkup(IntakeFormPDFComponent);
+
       const opt = {
-        margin: 10,
+        margin: 12,
         filename: `${studentName.replace(/\s+/g, '-').toLowerCase()}-intake-form-${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait' as const,
+          compress: true
+        }
       };
-      
-      html2pdf().from(element).set(opt).save();
+
+      html2pdf().from(html).set(opt).save();
       toast.success('PDF downloaded successfully');
     } catch (error) {
       console.error('Failed to download PDF:', error);
@@ -526,7 +821,7 @@ function IntakeFormPageContent() {
       handleNewChildRequest();
       return;
     }
-    
+
     if (hasUnsavedChanges) {
       setPendingAction(() => () => {
         setSelectedStudentId(studentId);
@@ -608,7 +903,7 @@ function IntakeFormPageContent() {
         hasData: !!formData.dominantWritingHand
       }
     ];
-    
+
     const completedSections = sections.filter(section => section.hasData).length;
     return (completedSections / sections.length) * 100;
   };
@@ -1235,7 +1530,7 @@ function IntakeFormPageContent() {
               <h3 className="text-lg font-semibold mb-1">Review Your Information</h3>
               <p className="text-gray-600 text-xs">Please review all information before submitting. Click on any section to view details.</p>
             </div>
-            
+
             {/* Compact Section Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Demographics Section */}
@@ -1252,9 +1547,8 @@ function IntakeFormPageContent() {
                   <p className="truncate"><span className="font-medium">Gender:</span> {formData.gender || '-'}</p>
                   <p className="truncate"><span className="font-medium">Class:</span> {formData.class || '-'}</p>
                   <div className="mt-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                      isTabCompleted('demographics') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                    }`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('demographics') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                      }`}>
                       {isTabCompleted('demographics') ? '✓ Complete' : 'Incomplete'}
                     </span>
                   </div>
@@ -1274,9 +1568,8 @@ function IntakeFormPageContent() {
                   <p className="truncate"><span className="font-medium">Income:</span> {formData.familyIncome || '-'}</p>
                   <p className="truncate"><span className="font-medium">Digital:</span> {formData.digitalResourcesAtHome ? 'Yes' : 'No'}</p>
                   <div className="mt-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                      isTabCompleted('family') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                    }`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('family') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                      }`}>
                       {isTabCompleted('family') ? '✓ Complete' : 'Incomplete'}
                     </span>
                   </div>
@@ -1296,9 +1589,8 @@ function IntakeFormPageContent() {
                   <p className="truncate"><span className="font-medium">Delivery:</span> {formData.deliveryType || '-'}</p>
                   <p className="truncate"><span className="font-medium">Term:</span> {formData.fullTermOrPremature || '-'}</p>
                   <div className="mt-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                      isTabCompleted('prenatal') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                    }`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('prenatal') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                      }`}>
                       {isTabCompleted('prenatal') ? '✓ Complete' : 'Incomplete'}
                     </span>
                   </div>
@@ -1318,9 +1610,8 @@ function IntakeFormPageContent() {
                   <p className="truncate"><span className="font-medium">Immunization:</span> {formData.immunizationDone ? 'Done' : 'No'}</p>
                   <p className="truncate"><span className="font-medium">Walking:</span> {formData.ageOfWalking ? `${formData.ageOfWalking}m` : '-'}</p>
                   <div className="mt-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                      isTabCompleted('postnatal') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                    }`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('postnatal') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                      }`}>
                       {isTabCompleted('postnatal') ? '✓ Complete' : 'Incomplete'}
                     </span>
                   </div>
@@ -1340,9 +1631,8 @@ function IntakeFormPageContent() {
                   <p className="truncate"><span className="font-medium">Medication:</span> {formData.onMedication ? 'Yes' : 'No'}</p>
                   <p className="truncate"><span className="font-medium">Vision:</span> {formData.wearsGlasses ? 'Glasses' : 'Normal'}</p>
                   <div className="mt-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                      isTabCompleted('medical') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                    }`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('medical') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                      }`}>
                       {isTabCompleted('medical') ? '✓ Complete' : 'Incomplete'}
                     </span>
                   </div>
@@ -1362,9 +1652,8 @@ function IntakeFormPageContent() {
                   <p className="truncate"><span className="font-medium">Repeated:</span> {formData.repeatedGrades ? 'Yes' : 'No'}</p>
                   <p className="truncate"><span className="font-medium">Hand:</span> {formData.dominantWritingHand || '-'}</p>
                   <div className="mt-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                      isTabCompleted('educational') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                    }`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('educational') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                      }`}>
                       {isTabCompleted('educational') ? '✓ Complete' : 'Incomplete'}
                     </span>
                   </div>
@@ -1383,9 +1672,8 @@ function IntakeFormPageContent() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
                   <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${
-                      isTabCompleted('demographics') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('demographics') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                      }`}>
                       <User className="h-4 w-4" />
                     </div>
                     <p className="font-medium">Demographics</p>
@@ -1394,9 +1682,8 @@ function IntakeFormPageContent() {
                     </p>
                   </div>
                   <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${
-                      isTabCompleted('family') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('family') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                      }`}>
                       <Users className="h-4 w-4" />
                     </div>
                     <p className="font-medium">Family</p>
@@ -1405,9 +1692,8 @@ function IntakeFormPageContent() {
                     </p>
                   </div>
                   <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${
-                      isTabCompleted('prenatal') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('prenatal') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                      }`}>
                       <Baby className="h-4 w-4" />
                     </div>
                     <p className="font-medium">Prenatal</p>
@@ -1416,9 +1702,8 @@ function IntakeFormPageContent() {
                     </p>
                   </div>
                   <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${
-                      isTabCompleted('postnatal') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('postnatal') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                      }`}>
                       <Heart className="h-4 w-4" />
                     </div>
                     <p className="font-medium">Postnatal</p>
@@ -1427,9 +1712,8 @@ function IntakeFormPageContent() {
                     </p>
                   </div>
                   <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${
-                      isTabCompleted('medical') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('medical') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                      }`}>
                       <Stethoscope className="h-4 w-4" />
                     </div>
                     <p className="font-medium">Medical</p>
@@ -1438,9 +1722,8 @@ function IntakeFormPageContent() {
                     </p>
                   </div>
                   <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${
-                      isTabCompleted('educational') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('educational') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                      }`}>
                       <GraduationCap className="h-4 w-4" />
                     </div>
                     <p className="font-medium">Educational</p>
@@ -1475,7 +1758,7 @@ function IntakeFormPageContent() {
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Child:</span>
                 {selectedStudentId ? (
-                  <div 
+                  <div
                     className="flex items-center gap-4 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200 min-w-[250px] cursor-pointer hover:bg-blue-100 transition-colors"
                     onClick={() => setShowStudentModal(true)}
                   >
@@ -1487,8 +1770,8 @@ function IntakeFormPageContent() {
                         Grade {selectedStudentData?.grade || 'N/A'}
                       </p>
                     </div>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 flex-shrink-0"
                       title="Change student"
@@ -1497,8 +1780,8 @@ function IntakeFormPageContent() {
                     </Button>
                   </div>
                 ) : (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => setShowStudentModal(true)}
                     className="flex items-center gap-2 px-4 py-2 min-w-[140px]"
                     disabled={isFormCompleted}
@@ -1550,7 +1833,7 @@ function IntakeFormPageContent() {
                   <span className="hidden sm:inline">Save Draft</span>
                   <span className="sm:hidden">Save</span>
                 </Button>
-                
+
                 <Button
                   onClick={handleSubmit}
                   size="sm"
@@ -1571,7 +1854,7 @@ function IntakeFormPageContent() {
                     </>
                   )}
                 </Button>
-                
+
                 <Button
                   onClick={handleDownloadPDF}
                   variant="outline"
@@ -1609,9 +1892,9 @@ function IntakeFormPageContent() {
                   <p className="text-blue-600 text-sm mt-1">
                     The student may take a moment to appear in the list. Please try refreshing using the button below.
                   </p>
-                  <Button 
-                    onClick={refreshStudents} 
-                    variant="outline" 
+                  <Button
+                    onClick={refreshStudents}
+                    variant="outline"
                     className="w-full mt-3 flex items-center gap-2"
                     disabled={isLoadingStudents}
                   >
@@ -1626,7 +1909,7 @@ function IntakeFormPageContent() {
 
         {/* Form Content */}
         {selectedStudentId && !isLoadingStudentData && (
-          <div ref={pdfRef} className="space-y-6">
+          <div className="space-y-6">
             {selectedStudentData && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-green-800 text-sm font-medium">
@@ -1643,14 +1926,14 @@ function IntakeFormPageContent() {
               <div className="relative">
                 {/* Progress Line */}
                 <div className="absolute top-6 left-6 right-6 h-0.5 bg-gray-200 z-0">
-                  <div 
+                  <div
                     className="h-full bg-blue-500 transition-all duration-500 ease-in-out"
-                    style={{ 
-                      width: `${(TABS.findIndex(tab => tab.id === activeTab) / (TABS.length - 1)) * 100}%` 
+                    style={{
+                      width: `${(TABS.findIndex(tab => tab.id === activeTab) / (TABS.length - 1)) * 100}%`
                     }}
                   />
                 </div>
-                
+
                 {/* Tab Icons */}
                 <div className="relative z-10 flex justify-between items-center">
                   {TABS.map((tab, index) => {
@@ -1658,7 +1941,7 @@ function IntakeFormPageContent() {
                     const status = getTabStatus(tab.id);
                     const isActive = activeTab === tab.id;
                     const isCompleted = status === 'completed';
-                    
+
                     return (
                       <div key={tab.id} className="flex flex-col items-center group">
                         <button
@@ -1666,10 +1949,10 @@ function IntakeFormPageContent() {
                           className={`
                             relative w-12 h-12 rounded-full border-2 flex items-center justify-center
                             transition-all duration-300 ease-in-out transform hover:scale-110
-                            ${isCompleted 
-                              ? 'bg-green-500 border-green-500 text-white shadow-lg' 
-                              : isActive 
-                                ? 'bg-blue-500 border-blue-500 text-white shadow-lg' 
+                            ${isCompleted
+                              ? 'bg-green-500 border-green-500 text-white shadow-lg'
+                              : isActive
+                                ? 'bg-blue-500 border-blue-500 text-white shadow-lg'
                                 : 'bg-white border-gray-300 text-gray-500 hover:border-blue-300 hover:text-blue-500'
                             }
                           `}
@@ -1679,21 +1962,21 @@ function IntakeFormPageContent() {
                           ) : (
                             <Icon className="h-5 w-5" />
                           )}
-                          
+
                           {/* Active indicator */}
                           {isActive && (
                             <div className="absolute -inset-1 rounded-full border-2 border-blue-300 animate-pulse" />
                           )}
                         </button>
-                        
+
                         {/* Tab Label */}
                         <div className="mt-2 text-center min-h-[3rem] flex flex-col justify-start">
                           <p className={`
                             text-xs font-medium transition-colors duration-200 h-4 flex items-center justify-center
-                            ${isCompleted 
-                              ? 'text-green-600' 
-                              : isActive 
-                                ? 'text-blue-600' 
+                            ${isCompleted
+                              ? 'text-green-600'
+                              : isActive
+                                ? 'text-blue-600'
                                 : 'text-gray-500 group-hover:text-blue-500'
                             }
                           `}>
@@ -1744,11 +2027,11 @@ function IntakeFormPageContent() {
               <AlertTriangle className="h-6 w-6 text-amber-500" />
               <h3 className="text-lg font-semibold text-gray-900">Unsaved Changes</h3>
             </div>
-            
+
             <p className="text-gray-600 mb-6">
               You have unsaved changes in the current form. What would you like to do?
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 onClick={handleSaveAndContinue}
@@ -1758,7 +2041,7 @@ function IntakeFormPageContent() {
                 <Save className="h-4 w-4 mr-2" />
                 Save & Continue
               </Button>
-              
+
               <Button
                 onClick={handleDiscardAndContinue}
                 variant="outline"
@@ -1767,7 +2050,7 @@ function IntakeFormPageContent() {
                 <X className="h-4 w-4 mr-2" />
                 Discard Changes
               </Button>
-              
+
               <Button
                 onClick={handleCancelModal}
                 variant="outline"
