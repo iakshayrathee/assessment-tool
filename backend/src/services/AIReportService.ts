@@ -1,11 +1,11 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { OpenAI } from 'openai';
 import { AssessmentRepository } from '../repositories/AssessmentRepository';
 import { IEPRepository } from '../repositories/IepRepository';
 import { SkillAssessmentRepository } from '../repositories/SkillAssessmentRepository';
 import { WeeklyLessonPlanRepository } from '../repositories/WeeklyLessonPlanRepository';
 
 export class AIReportService {
-  private genAI: GoogleGenerativeAI;
+  private openai: OpenAI;
   private assessmentRepo: AssessmentRepository;
   private iepRepo: IEPRepository;
   private skillAssessmentRepo: SkillAssessmentRepository;
@@ -17,7 +17,9 @@ export class AIReportService {
     skillAssessmentRepo: SkillAssessmentRepository,
     weeklyLessonPlanRepo: WeeklyLessonPlanRepository
   ) {
-    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    this.openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY!
+    });
     this.assessmentRepo = assessmentRepo;
     this.iepRepo = iepRepo;
     this.skillAssessmentRepo = skillAssessmentRepo;
@@ -63,23 +65,32 @@ export class AIReportService {
         ? this.buildAssessmentReportPrompt(studentData)
         : this.buildLessonPlanReportPrompt(studentData);
 
-      // Call Gemini API
-      console.log('Calling Gemini AI API with prompt...');
-      const model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-      // Combine system prompt with user prompt for Gemini
+      // Call OpenAI API
+      console.log('Calling OpenAI API with prompt...');
+      
       const systemPrompt = reportType === 'ASSESSMENT'
         ? 'You are an expert special education analyst. Generate comprehensive, professional assessment reports that analyze student progress, identify patterns from assessment data and intake forms, and provide actionable recommendations. Use clear educational terminology and maintain a supportive, constructive tone.'
         : 'You are an expert special education analyst. Generate comprehensive, professional lesson plan reports that analyze teaching effectiveness, student responses, and learning outcomes. Include symptom observations in natural sentences and teacher comments. Use clear educational terminology and maintain a supportive, constructive tone.';
 
-      const fullPrompt = `${systemPrompt}
+      console.log('AI Prompt length:', prompt.length);
 
-${prompt}`;
+      const completion = await this.openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0.7
+      });
 
-      console.log('AI Prompt length:', fullPrompt.length);
-
-      const result = await model.generateContent(fullPrompt);
-      const aiResponse = result.response.text();
+      const aiResponse = completion.choices[0]?.message?.content;
 
       if (!aiResponse) {
         console.error('AI response was empty');
