@@ -76,7 +76,7 @@ async function main() {
     console.log('👩‍🏫 Creating Special Educator...');
     const educator = await prisma.user.create({
         data: {
-            email: 'test-sarah.educator@knowled.com',
+            email: 'educator@knowled.com',
             password: hashedPassword,
             role: UserRole.SPECIAL_EDUCATOR,
             isActive: true,
@@ -297,13 +297,13 @@ async function main() {
     console.log('  Educator: test-sarah.educator@knowled.com');
     console.log('  Parents: test-rahul.sharma@gmail.com, test-priya.nair@yahoo.com, etc.');
     console.log('\n🔑 Default password for all test accounts: password123');
-    
+
     console.log('\n👩‍🏫 Test Special Educator Profile:');
     console.log(`  Name: ${educator.specialEducatorProfile?.fullName}`);
     console.log(`  Experience: ${educator.specialEducatorProfile?.yearsOfExperience} years`);
     console.log(`  Specializations: ${educator.specialEducatorProfile?.specializationAreas?.join(', ')}`);
     console.log(`  Certifications: ${educator.specialEducatorProfile?.additionalCertifications?.join(', ')}`);
-    
+
     console.log('\n👦👧 Test Students Overview:');
     students.forEach((student, index) => {
         const parent = parents.find(p => p.parentProfile?.id === student.parentId);

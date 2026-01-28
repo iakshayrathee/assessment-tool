@@ -39,7 +39,7 @@ initializeWebSocket(httpServer);
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000' || 'https://knowledai.vercel.app',
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000' || 'https://knowledai.vercel.app' || 'https://assessment-tool-dev.vercel.app',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
