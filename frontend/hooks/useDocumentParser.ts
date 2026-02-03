@@ -45,22 +45,26 @@ export function useDocumentParser() {
 
             console.log('[useDocumentParser] Starting PDF import...');
 
-            // Use require-style dynamic import for CommonJS compatibility
-            const pdfjsLib = await import('pdfjs-dist');
+            // Import from specific build path for better compatibility
+            const pdfjsLib = await import('pdfjs-dist/build/pdf');
 
             console.log('[useDocumentParser] PDF library loaded, version:', pdfjsLib.version);
 
-            // Configure worker
-            if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-                console.log('[useDocumentParser] Worker configured');
-            }
+            // Configure worker with specific version to avoid compatibility issues
+            // Use the exact version from the package to ensure compatibility
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js`;
+            console.log('[useDocumentParser] Worker configured with version 3.4.120');
 
             console.log('[useDocumentParser] Reading file arrayBuffer...');
             const arrayBuffer = await file.arrayBuffer();
 
             console.log('[useDocumentParser] Loading PDF document...');
-            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            const loadingTask = pdfjsLib.getDocument({
+                data: arrayBuffer,
+                // Add these options to improve compatibility
+                useSystemFonts: true,
+                standardFontDataUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/standard_fonts/`,
+            });
             const pdf = await loadingTask.promise;
             const totalPages = pdf.numPages;
 

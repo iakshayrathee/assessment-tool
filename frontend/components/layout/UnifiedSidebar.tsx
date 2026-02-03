@@ -38,7 +38,8 @@ import {
   AlertTriangle,
   Building2,
   MessageSquare,
-  ClipboardList
+  ClipboardList,
+  Volume2
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -113,6 +114,12 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       href: '/educator/data-bank',
       icon: Database,
       description: 'Manage your documents and resources'
+    },
+    {
+      title: 'Text-to-Speech',
+      href: '/educator/text-to-speech',
+      icon: Volume2,
+      description: 'Document reader with voice narration'
     },
     {
       title: 'Reports',
