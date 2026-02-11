@@ -62,6 +62,12 @@ interface NavigationItem {
 const roleNavigations: Record<string, NavigationItem[]> = {
   SPECIAL_EDUCATOR: [
     {
+      title: 'Portal Home',
+      href: '/educator',
+      icon: LayoutDashboard,
+      description: 'Switch between portals'
+    },
+    {
       title: 'Dashboard',
       href: '/educator/dashboard',
       icon: Home,
@@ -94,7 +100,7 @@ const roleNavigations: Record<string, NavigationItem[]> = {
     {
       title: 'Remediation',
       href: '/educator/lesson-plans-new',
-      icon: Calendar,
+      icon: BookOpen,
       description: 'Create and manage lesson plans'
     },
     {
@@ -108,6 +114,12 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       href: '/educator/homework',
       icon: ClipboardList,
       description: 'Assign and track student homework'
+    },
+    {
+      title: 'IEP',
+      href: '/educator/iep',
+      icon: Award,
+      description: 'Individualized Education Programs'
     },
     {
       title: 'Data Bank',

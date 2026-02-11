@@ -22,6 +22,7 @@ import iepRoutes from './routes/iep';
 import newAssessmentRoutes from './routes/newAssessments';
 import lessonPlansHomeworkRoutes from './routes/lessonPlansHomework';
 import notificationRoutes from './routes/notifications';
+import massAssessmentRoutes from './routes/massAssessment';
 
 // Load environment variables
 dotenv.config();
@@ -80,6 +81,7 @@ app.use('/api/school-viewers', schoolViewerRoutes);
 app.use('/api/iep', iepRoutes);
 app.use('/api/lesson-plans', lessonPlansHomeworkRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/mass-assessment', massAssessmentRoutes);
 
 // Global error handler
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
