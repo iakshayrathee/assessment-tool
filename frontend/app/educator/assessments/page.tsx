@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useEducatorStudents } from '@/hooks/useEducator';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,9 +29,8 @@ const getVersionLabel = (version?: number, isFirst?: boolean) => {
 
 export default function AssessmentsPage() {
   const { user } = useAuth();
-  const { students, isLoading: studentsLoading } = useEducatorStudents();
 
-  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [assessmentTab, setAssessmentTab] = useState('formal');
   const [showFormalForm, setShowFormalForm] = useState(false);
   const [showSkillAssessment, setShowSkillAssessment] = useState<'reading' | 'writing' | 'math' | null>(null);
@@ -50,10 +48,8 @@ export default function AssessmentsPage() {
   const [pendingAssessmentType, setPendingAssessmentType] = useState<'formal' | 'reading' | 'writing' | 'math' | null>(null);
   const [oldestAssessment, setOldestAssessment] = useState<any>(null);
 
-  const selectedStudent = students?.find(s => s.id === selectedStudentId);
-
   useEffect(() => {
-    if (selectedStudentId) {
+    if (selectedStudent?.id) {
       fetchAssessments();
     } else {
       setFormalAssessments([]);
@@ -61,16 +57,18 @@ export default function AssessmentsPage() {
       setWritingAssessments([]);
       setMathAssessments([]);
     }
-  }, [selectedStudentId]);
+  }, [selectedStudent?.id]);
 
   const fetchAssessments = async () => {
+    if (!selectedStudent?.id) return;
+
     setLoadingAssessments(true);
     try {
       const [formal, reading, writing, math] = await Promise.all([
-        apiClient.getFormalAssessmentsByStudent(selectedStudentId),
-        apiClient.getReadingSkillAssessmentsByStudent(selectedStudentId),
-        apiClient.getWritingSkillAssessmentsByStudent(selectedStudentId),
-        apiClient.getMathSkillAssessmentsByStudent(selectedStudentId),
+        apiClient.getFormalAssessmentsByStudent(selectedStudent.id),
+        apiClient.getReadingSkillAssessmentsByStudent(selectedStudent.id),
+        apiClient.getWritingSkillAssessmentsByStudent(selectedStudent.id),
+        apiClient.getMathSkillAssessmentsByStudent(selectedStudent.id),
       ]);
 
       setFormalAssessments(formal || []);
@@ -319,7 +317,7 @@ export default function AssessmentsPage() {
         </div>
       </div>
 
-      {selectedStudentId ? (
+      {selectedStudent?.id ? (
         <Tabs value={assessmentTab} onValueChange={setAssessmentTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="formal">
@@ -359,7 +357,7 @@ export default function AssessmentsPage() {
               <div>
                 {showSkillAssessment === 'reading' && (
                   <ReadingSkillAssessment
-                    studentId={selectedStudentId}
+                    studentId={selectedStudent?.id || ''}
                     assessmentId={editingAssessment?.type === 'reading' ? editingAssessment?.id : undefined}
                     initialData={editingAssessment?.type === 'reading' ? editingAssessment : undefined}
                     mode={editingAssessment?.type === 'reading' ? (editingAssessment?.mode || 'edit') : 'create'}
@@ -372,7 +370,7 @@ export default function AssessmentsPage() {
                 )}
                 {showSkillAssessment === 'writing' && (
                   <WritingSkillAssessment
-                    studentId={selectedStudentId}
+                    studentId={selectedStudent?.id || ''}
                     assessmentId={editingAssessment?.type === 'writing' ? editingAssessment?.id : undefined}
                     initialData={editingAssessment?.type === 'writing' ? editingAssessment : undefined}
                     mode={editingAssessment?.type === 'writing' ? (editingAssessment?.mode || 'edit') : 'create'}
@@ -385,7 +383,7 @@ export default function AssessmentsPage() {
                 )}
                 {showSkillAssessment === 'math' && (
                   <MathSkillAssessment
-                    studentId={selectedStudentId}
+                    studentId={selectedStudent?.id || ''}
                     assessmentId={editingAssessment?.type === 'math' ? editingAssessment?.id : undefined}
                     initialData={editingAssessment?.type === 'math' ? editingAssessment : undefined}
                     mode={editingAssessment?.type === 'math' ? (editingAssessment?.mode || 'edit') : 'create'}
@@ -475,8 +473,8 @@ export default function AssessmentsPage() {
       <StudentSelectionModal
         isOpen={showStudentModal}
         onClose={() => setShowStudentModal(false)}
-        onSelect={setSelectedStudentId}
-        selectedStudentId={selectedStudentId}
+        onSelect={(studentId, student) => setSelectedStudent(student)}
+        selectedStudentId={selectedStudent?.id}
       />
 
       <Dialog open={showFormalForm} onOpenChange={setShowFormalForm}>
@@ -484,17 +482,17 @@ export default function AssessmentsPage() {
           <div className="sticky top-0 bg-white z-10 px-6 pt-6 pb-4 border-b">
             <DialogHeader>
               <DialogTitle>
-                {editingAssessment?.mode === 'view' 
-                  ? 'View Formal Assessment' 
-                  : editingAssessment 
-                    ? 'Edit Formal Assessment' 
+                {editingAssessment?.mode === 'view'
+                  ? 'View Formal Assessment'
+                  : editingAssessment
+                    ? 'Edit Formal Assessment'
                     : 'New Formal Assessment Referral'}
               </DialogTitle>
             </DialogHeader>
           </div>
           <div className="px-6 pb-6">
             <FormalAssessmentForm
-              studentId={selectedStudentId}
+              studentId={selectedStudent?.id || ''}
               referredBy={user?.profile?.fullName || 'Educator'}
               assessmentId={editingAssessment?.id}
               initialData={editingAssessment}

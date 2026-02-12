@@ -12,10 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { 
-  Search, 
-  Plus, 
-  Users, 
+import {
+  Search,
+  Plus,
+  Users,
   Filter,
   Eye,
   TrendingUp
@@ -48,28 +48,28 @@ function StudentRegistrationModal({ onStudentRegistered }: { onStudentRegistered
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Clear previous errors
     setFieldErrors({});
     setIsCreating(true);
-    
+
     try {
       // Get centerId from educator's centerAssignments
       const centerId = educatorProfile?.centerAssignments?.[0]?.centerId;
-      
+
       if (!centerId) {
         toast.error('No center assignment found for educator. Please contact administrator.');
         return;
       }
-      
+
       // Calculate age from date of birth
       const birthDate = new Date(formData.dateOfBirth);
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
-      
+
       // Convert date to ISO-8601 DateTime format for Prisma
       const dateOfBirthISO = new Date(formData.dateOfBirth + 'T00:00:00.000Z').toISOString();
-      
+
       // Prepare student data for API
       const studentData = {
         fullName: formData.fullName,
@@ -87,7 +87,7 @@ function StudentRegistrationModal({ onStudentRegistered }: { onStudentRegistered
 
       // Call the API to create student
       const newStudent = await apiClient.createStudent(studentData);
-      
+
       // Invalidate all relevant caches to refresh the lists
       await Promise.all([
         queryClient.invalidateQueries({
@@ -97,21 +97,21 @@ function StudentRegistrationModal({ onStudentRegistered }: { onStudentRegistered
           queryKey: ['students']
         })
       ]);
-      
+
       // Show success message
       toast.success('Student registered successfully!');
-      
+
       // Close modal
       setIsOpen(false);
-      
+
       // Longer delay to ensure cache invalidation completes and data is available
       setTimeout(() => {
         onStudentRegistered(newStudent.id);
       }, 500);
-      
+
     } catch (error: any) {
       console.error('Failed to register student:', error);
-      
+
       // Handle validation errors
       if (error.response?.status === 400 && error.response?.data?.error === 'Validation failed') {
         // If there are field-specific errors, display them
@@ -196,8 +196,8 @@ function StudentRegistrationModal({ onStudentRegistered }: { onStudentRegistered
               </div>
               <div>
                 <label className="text-sm font-medium">Gender *</label>
-                <Select 
-                  value={formData.gender} 
+                <Select
+                  value={formData.gender}
                   onValueChange={(value) => handleInputChange('gender', value)}
                 >
                   <SelectTrigger className={fieldErrors.gender ? 'border-red-500' : ''}>
@@ -328,6 +328,20 @@ export default function StudentsPage() {
     status: statusFilter
   });
 
+  // Fetch total count (all statuses) for the Total Students card
+  const { pagination: totalPagination } = useEducatorStudents({
+    page: 1,
+    limit: 1 // We only need the pagination metadata, not the actual students
+    // Don't pass status parameter to get all students regardless of status
+  });
+
+  // Fetch active students count for the Active Students card
+  const { pagination: activePagination } = useEducatorStudents({
+    page: 1,
+    limit: 1, // We only need the pagination metadata
+    status: 'ACTIVE'
+  });
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ACTIVE': return 'bg-green-100 text-green-800 border-green-200';
@@ -365,262 +379,264 @@ export default function StudentsPage() {
 
   return (
     <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Students</h1>
-            <p className="text-gray-600">Manage and track progress of your assigned students</p>
-          </div>
-          <Link href="/educator/students/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Register New Student
-            </Button>
-          </Link>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">My Students</h1>
+          <p className="text-gray-600">Manage and track progress of your assigned students</p>
         </div>
+        <Link href="/educator/students/new">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Register New Student
+          </Button>
+        </Link>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{pagination?.total || 0}</div>
-                <p className="text-xs text-muted-foreground">Assigned to you</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Students</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {students.filter((s: any) => s.status === 'ACTIVE').length}
-                </div>
-                <p className="text-xs text-muted-foreground">Currently enrolled</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Assessments</CardTitle>
-                <Users className="h-4 w-4 text-yellow-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {students.filter((s: any) => !s.progressSummary || s.progressSummary.totalGoals === 0).length}
-                </div>
-                <p className="text-xs text-muted-foreground">Need assessment</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Progress</CardTitle>
-                <TrendingUp className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {students.length > 0 
-                    ? Math.round(
-                        students.reduce((sum: number, s: any) => 
-                          sum + (s.progressSummary?.averageProgress || 0), 0
-                        ) / students.length
-                      )
-                    : 0}%
-                </div>
-                <p className="text-xs text-muted-foreground">Across all goals</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Filters and Search */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Student List</CardTitle>
-            <CardDescription>
-              View and manage all students assigned to you
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search students by name..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {totalPagination?.total ?? 0}
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="ACTIVE">Active</SelectItem>
-                  <SelectItem value="INACTIVE">Inactive</SelectItem>
-                  <SelectItem value="GRADUATED">Graduated</SelectItem>
-                  <SelectItem value="TRANSFERRED">Transferred</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <p className="text-xs text-muted-foreground">Assigned to you</p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-            {/* Students Grid */}
-            <div className="space-y-4">
-              {students.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
-                  <p className="text-gray-500 mb-4">
-                    {searchTerm || statusFilter 
-                      ? "Try adjusting your search or filter criteria"
-                      : "You don't have any students assigned yet"
-                    }
-                  </p>
-                  <StudentRegistrationModal onStudentRegistered={handleStudentRegistered} />
-                </div>
-              ) : (
-                students.map((student: any, index: number) => (
-                  <motion.div
-                    key={student.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-sm">
-                            {getInitials(student.fullName)}
-                          </span>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Students</CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {activePagination?.total ?? 0}
+              </div>
+              <p className="text-xs text-muted-foreground">Currently enrolled</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Assessments</CardTitle>
+              <Users className="h-4 w-4 text-yellow-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {students.filter((s: any) => !s.progressSummary || s.progressSummary.totalGoals === 0).length}
+              </div>
+              <p className="text-xs text-muted-foreground">Need assessment</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Average Progress</CardTitle>
+              <TrendingUp className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {students.length > 0
+                  ? Math.round(
+                    students.reduce((sum: number, s: any) =>
+                      sum + (s.progressSummary?.averageProgress || 0), 0
+                    ) / students.length
+                  )
+                  : 0}%
+              </div>
+              <p className="text-xs text-muted-foreground">Across all goals</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Filters and Search */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Student List</CardTitle>
+          <CardDescription>
+            View and manage all students assigned to you
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search students by name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="INACTIVE">Inactive</SelectItem>
+                <SelectItem value="GRADUATED">Graduated</SelectItem>
+                <SelectItem value="TRANSFERRED">Transferred</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Students Grid */}
+          <div className="space-y-4">
+            {students.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm || statusFilter
+                    ? "Try adjusting your search or filter criteria"
+                    : "You don't have any students assigned yet"
+                  }
+                </p>
+                <StudentRegistrationModal onStudentRegistered={handleStudentRegistered} />
+              </div>
+            ) : (
+              students.map((student: any, index: number) => (
+                <motion.div
+                  key={student.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+                        <span className="text-white font-semibold text-sm">
+                          {getInitials(student.fullName)}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="font-semibold text-gray-900">{student.fullName}</h3>
+                          <Badge className={getStatusColor(student.status)}>
+                            {student.status}
+                          </Badge>
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-1">
-                            <h3 className="font-semibold text-gray-900">{student.fullName}</h3>
-                            <Badge className={getStatusColor(student.status)}>
-                              {student.status}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <span>{student.age} years old</span>
-                            <span>•</span>
-                            <span>{student.grade}</span>
-                            <span>•</span>
-                            <span>{student.center?.centerName}</span>
-                            {student.school && (
-                              <>
-                                <span>•</span>
-                                <span>{student.school.name}</span>
-                              </>
-                            )}
-                          </div>
-                          {student.lastSession && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Last session: {new Date(student.lastSession).toLocaleDateString()}
-                            </p>
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <span>{student.age} years old</span>
+                          <span>•</span>
+                          <span>{student.grade}</span>
+                          <span>•</span>
+                          <span>{student.center?.centerName}</span>
+                          {student.school && (
+                            <>
+                              <span>•</span>
+                              <span>{student.school.name}</span>
+                            </>
                           )}
                         </div>
-                      </div>
-
-                      <div className="flex items-center space-x-4">
-                        {/* Progress Summary */}
-                        {student.progressSummary && (
-                          <div className="text-right min-w-32">
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="text-gray-500">Progress</span>
-                              <span className="font-medium">{student.progressSummary.averageProgress}%</span>
-                            </div>
-                            <Progress 
-                              value={student.progressSummary.averageProgress} 
-                              className="h-2 w-24"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              {student.progressSummary.completedGoals}/{student.progressSummary.totalGoals} goals
-                            </p>
-                          </div>
+                        {student.lastSession && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Last session: {new Date(student.lastSession).toLocaleDateString()}
+                          </p>
                         )}
-
-                        {/* Action Button - Only View Profile */}
-                        <div className="flex items-center gap-2">
-                          <Link href={`/educator/students/${student.id}`}>
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-4 w-4 mr-1" />
-                              View Profile
-                            </Button>
-                          </Link>
-                        </div>
                       </div>
                     </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
 
-            {/* Pagination */}
-            {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6">
-                <p className="text-sm text-gray-700">
-                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, pagination.total)} of {pagination.total} students
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-sm text-gray-600">
-                    Page {currentPage} of {pagination.totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => prev + 1)}
-                    disabled={currentPage >= pagination.totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
+                    <div className="flex items-center space-x-4">
+                      {/* Progress Summary */}
+                      {student.progressSummary && (
+                        <div className="text-right min-w-32">
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="text-gray-500">Progress</span>
+                            <span className="font-medium">{student.progressSummary.averageProgress}%</span>
+                          </div>
+                          <Progress
+                            value={student.progressSummary.averageProgress}
+                            className="h-2 w-24"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            {student.progressSummary.completedGoals}/{student.progressSummary.totalGoals} goals
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Action Button - Only View Profile */}
+                      <div className="flex items-center gap-2">
+                        <Link href={`/educator/students/${student.id}`}>
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            View Profile
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
             )}
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6">
+              <p className="text-sm text-gray-700">
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, pagination?.total || 0)} of {pagination?.total || 0} students
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Page {currentPage} of {pagination.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  disabled={currentPage >= pagination.totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
