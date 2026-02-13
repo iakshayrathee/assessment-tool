@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,20 +23,20 @@ interface WritingSkillAssessmentProps {
 }
 
 const WRITING_QUESTIONS = [
-  { 
+  {
     id: 'writingQ1',
-    question: 'Can the child write legibly?', 
-    options: ['Yes', 'With Effort', 'No'] 
+    question: 'Can the child write legibly?',
+    options: ['Yes', 'With Effort', 'No']
   },
-  { 
+  {
     id: 'writingQ2',
-    question: 'Does the child use proper letter formation?', 
-    options: ['Always', 'Sometimes', 'Rarely'] 
+    question: 'Does the child use proper letter formation?',
+    options: ['Always', 'Sometimes', 'Rarely']
   },
-  { 
+  {
     id: 'writingQ3',
-    question: 'Can the child compose sentences?', 
-    options: ['Independently', 'With Help', 'Not Yet'] 
+    question: 'Can the child compose sentences?',
+    options: ['Independently', 'With Help', 'Not Yet']
   }
 ];
 
@@ -132,35 +133,35 @@ const WRITING_SYMPTOMS = {
 function extractSymptoms(data: any): Record<string, boolean> {
   const symptoms: Record<string, boolean> = {};
   const allSymptomKeys = Object.values(WRITING_SYMPTOMS).flat().map(s => s.key);
-  
+
   allSymptomKeys.forEach(key => {
     if (data[key] === true) {
       symptoms[key] = true;
     }
   });
-  
+
   return symptoms;
 }
 
 function extractQuestionAnswers(data: any): Record<string, string> {
   const answers: Record<string, string> = {};
-  
+
   WRITING_QUESTIONS.forEach(q => {
     if (data[q.id]) {
       answers[q.id] = data[q.id];
     }
   });
-  
+
   return answers;
 }
 
-export function WritingSkillAssessment({ 
-  studentId, 
+export function WritingSkillAssessment({
+  studentId,
   assessmentId,
   initialData,
   mode = 'create',
-  onSuccess, 
-  onCancel 
+  onSuccess,
+  onCancel
 }: WritingSkillAssessmentProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedSymptoms, setSelectedSymptoms] = useState<Record<string, boolean>>(
@@ -174,7 +175,61 @@ export function WritingSkillAssessment({
   const [showPreview, setShowPreview] = useState(mode === 'view');
   const [savedAssessment, setSavedAssessment] = useState<any>(initialData || null);
   const reportRef = useRef<HTMLDivElement>(null);
-  
+
+  // NEW: Near Copying Skills State
+  const [hasNearCopyingSkills, setHasNearCopyingSkills] = useState<boolean | null>(
+    initialData?.hasNearCopyingSkills ?? null
+  );
+  const [nearCopyingLevels, setNearCopyingLevels] = useState<string[]>(
+    initialData?.nearCopyingLevels || []
+  );
+  const [nearCopyingObservation, setNearCopyingObservation] = useState(
+    initialData?.nearCopyingObservation || ''
+  );
+
+  // NEW: Board Copying Skills State
+  const [hasBoardCopyingSkills, setHasBoardCopyingSkills] = useState<boolean | null>(
+    initialData?.hasBoardCopyingSkills ?? null
+  );
+  const [boardCopyingLevels, setBoardCopyingLevels] = useState<string[]>(
+    initialData?.boardCopyingLevels || []
+  );
+  const [boardCopyingSpeedObservation, setBoardCopyingSpeedObservation] = useState(
+    initialData?.boardCopyingSpeedObservation || ''
+  );
+  const [visualTrackingDifficulty, setVisualTrackingDifficulty] = useState(
+    initialData?.visualTrackingDifficulty || false
+  );
+  const [omissionSkippingFlag, setOmissionSkippingFlag] = useState(
+    initialData?.omissionSkippingFlag || false
+  );
+  const [boardCopyingObservation, setBoardCopyingObservation] = useState(
+    initialData?.boardCopyingObservation || ''
+  );
+
+  // NEW: Punctuation Skills State
+  const [punctuationSkills, setPunctuationSkills] = useState({
+    usesCapitalLetters: initialData?.usesCapitalLetters || false,
+    usesFullStop: initialData?.usesFullStop || false,
+    usesQuestionMark: initialData?.usesQuestionMark || false,
+    usesComma: initialData?.usesComma || false,
+    usesApostrophe: initialData?.usesApostrophe || false,
+  });
+  const [punctuationOther, setPunctuationOther] = useState(
+    initialData?.punctuationOther || ''
+  );
+  const [punctuationObservation, setPunctuationObservation] = useState(
+    initialData?.punctuationObservation || ''
+  );
+
+  // NEW: Spelling Observations State
+  const [spellingStrengthSummary, setSpellingStrengthSummary] = useState(
+    initialData?.spellingStrengthSummary || ''
+  );
+  const [spellingErrorPatternObservation, setSpellingErrorPatternObservation] = useState(
+    initialData?.spellingErrorPatternObservation || ''
+  );
+
   const isViewMode = mode === 'view';
 
   // Get student and educator details from saved assessment response
@@ -193,7 +248,7 @@ export function WritingSkillAssessment({
     // Validate that at least one symptom is selected or there are additional notes
     const hasSelectedSymptoms = Object.values(selectedSymptoms).some(value => value === true);
     const hasQuestionAnswers = Object.values(questionAnswers).some(value => value && value.trim() !== '');
-    
+
     if (!hasSelectedSymptoms && !hasQuestionAnswers && !additionalNotes.trim()) {
       toast.error('Please select at least one symptom, answer questions, or add notes before saving.');
       return;
@@ -201,12 +256,34 @@ export function WritingSkillAssessment({
 
     try {
       setIsSubmitting(true);
-      
+
       const data = {
         studentId,
         ...selectedSymptoms,
         ...questionAnswers,
         additionalNotes,
+
+        // NEW: Near Copying Skills
+        hasNearCopyingSkills,
+        nearCopyingLevels: hasNearCopyingSkills ? nearCopyingLevels : [],
+        nearCopyingObservation: hasNearCopyingSkills ? nearCopyingObservation : null,
+
+        // NEW: Board Copying Skills
+        hasBoardCopyingSkills,
+        boardCopyingLevels: hasBoardCopyingSkills ? boardCopyingLevels : [],
+        boardCopyingSpeedObservation: hasBoardCopyingSkills ? boardCopyingSpeedObservation : null,
+        visualTrackingDifficulty,
+        omissionSkippingFlag,
+        boardCopyingObservation: hasBoardCopyingSkills ? boardCopyingObservation : null,
+
+        // NEW: Punctuation Skills
+        ...punctuationSkills,
+        punctuationOther,
+        punctuationObservation,
+
+        // NEW: Spelling Observations
+        spellingStrengthSummary,
+        spellingErrorPatternObservation,
       };
 
       let response;
@@ -217,7 +294,7 @@ export function WritingSkillAssessment({
         response = await apiClient.createWritingSkillAssessment(data);
         toast.success('Writing skill assessment created successfully!');
       }
-      
+
       // Store the full response data which includes student and specialEducator
       setSavedAssessment(response.data || response);
       setShowPreview(true);
@@ -232,24 +309,24 @@ export function WritingSkillAssessment({
 
   const downloadPDF = async () => {
     if (!reportRef.current) return;
-    
+
     try {
       const html2pdf = (await import('html2pdf.js')).default;
-      
+
       const element = reportRef.current;
-      
+
       // Generate filename with student name, grade, educator name, date and time
       const now = new Date();
       const dateStr = now.toISOString().split('T')[0];
       const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-      
+
       // Use available data or fallback values
       const studentName = studentDetails?.fullName ? studentDetails.fullName.replace(/\s+/g, '_') : 'student';
       const grade = studentDetails?.grade ? `grade_${studentDetails.grade}` : 'grade_unknown';
       const educatorName = educatorDetails?.fullName ? educatorDetails.fullName.replace(/\s+/g, '_') : 'educator';
-      
+
       const filename = `${studentName}_${grade}_${educatorName}_${dateStr}_${timeStr}.pdf`;
-      
+
       const opt = {
         margin: 10,
         filename: filename,
@@ -257,7 +334,7 @@ export function WritingSkillAssessment({
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
       };
-      
+
       html2pdf().from(element).set(opt).save();
       toast.success('PDF downloaded successfully');
     } catch (error) {
@@ -278,8 +355,8 @@ export function WritingSkillAssessment({
           {WRITING_QUESTIONS.map((q) => (
             <div key={q.id} className="space-y-2">
               <Label className="text-sm font-medium">{q.question}</Label>
-              <Select 
-                value={questionAnswers[q.id] || ''} 
+              <Select
+                value={questionAnswers[q.id] || ''}
                 onValueChange={(value) => setQuestionAnswers(prev => ({ ...prev, [q.id]: value }))}
                 disabled={isViewMode}
               >
@@ -294,6 +371,303 @@ export function WritingSkillAssessment({
               </Select>
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      {/* NEW: Near Copying Skills */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Near Copying Skills</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-base font-semibold">Has Near Copying Skills? *</Label>
+            <div className="flex gap-4 mt-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={hasNearCopyingSkills === true}
+                  onChange={() => setHasNearCopyingSkills(true)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span>Yes</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={hasNearCopyingSkills === false}
+                  onChange={() => setHasNearCopyingSkills(false)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span>No</span>
+              </label>
+            </div>
+          </div>
+
+          {hasNearCopyingSkills === true && (
+            <div className="space-y-3 p-4 bg-green-50 rounded-lg">
+              <Label className="text-sm font-semibold">Copying Levels (Select all that apply)</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {['Letter', 'Word', 'Phrase', 'Sentence'].map((level) => (
+                  <label key={level} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={nearCopyingLevels.includes(level)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setNearCopyingLevels([...nearCopyingLevels, level]);
+                        } else {
+                          setNearCopyingLevels(nearCopyingLevels.filter((l) => l !== level));
+                        }
+                      }}
+                      disabled={isViewMode}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm">{level}</span>
+                  </label>
+                ))}
+              </div>
+              <div>
+                <Label htmlFor="nearCopyingObservation">Observation</Label>
+                <Textarea
+                  id="nearCopyingObservation"
+                  value={nearCopyingObservation}
+                  onChange={(e) => setNearCopyingObservation(e.target.value)}
+                  placeholder="Observations about near copying skills..."
+                  disabled={isViewMode}
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* NEW: Board Copying Skills */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Board Copying Skills</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-base font-semibold">Has Board Copying Skills? *</Label>
+            <div className="flex gap-4 mt-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={hasBoardCopyingSkills === true}
+                  onChange={() => setHasBoardCopyingSkills(true)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span>Yes</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={hasBoardCopyingSkills === false}
+                  onChange={() => setHasBoardCopyingSkills(false)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span>No</span>
+              </label>
+            </div>
+          </div>
+
+          {hasBoardCopyingSkills === true && (
+            <div className="space-y-4 p-4 bg-green-50 rounded-lg">
+              <div>
+                <Label className="text-sm font-semibold">Copying Levels (Select all that apply)</Label>
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  {['Letter', 'Word', 'Phrase', 'Sentence', 'Paragraph'].map((level) => (
+                    <label key={level} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={boardCopyingLevels.includes(level)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setBoardCopyingLevels([...boardCopyingLevels, level]);
+                          } else {
+                            setBoardCopyingLevels(boardCopyingLevels.filter((l) => l !== level));
+                          }
+                        }}
+                        disabled={isViewMode}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm">{level}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="boardCopyingSpeedObservation">Speed Observation</Label>
+                <Textarea
+                  id="boardCopyingSpeedObservation"
+                  value={boardCopyingSpeedObservation}
+                  onChange={(e) => setBoardCopyingSpeedObservation(e.target.value)}
+                  placeholder="Observations about copying speed..."
+                  disabled={isViewMode}
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visualTrackingDifficulty}
+                    onChange={(e) => setVisualTrackingDifficulty(e.target.checked)}
+                    disabled={isViewMode}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">Visual Tracking Difficulty</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={omissionSkippingFlag}
+                    onChange={(e) => setOmissionSkippingFlag(e.target.checked)}
+                    disabled={isViewMode}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">Omission/Skipping Flag</span>
+                </label>
+              </div>
+
+              <div>
+                <Label htmlFor="boardCopyingObservation">Overall Observation</Label>
+                <Textarea
+                  id="boardCopyingObservation"
+                  value={boardCopyingObservation}
+                  onChange={(e) => setBoardCopyingObservation(e.target.value)}
+                  placeholder="Overall observations about board copying..."
+                  disabled={isViewMode}
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* NEW: Punctuation Skills */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Punctuation Skills</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Label className="text-sm font-semibold">Punctuation Marks Used (Select all that apply)</Label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={punctuationSkills.usesCapitalLetters}
+                onChange={(e) => setPunctuationSkills({ ...punctuationSkills, usesCapitalLetters: e.target.checked })}
+                disabled={isViewMode}
+                className="h-4 w-4"
+              />
+              <span className="text-sm">Capital Letters</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={punctuationSkills.usesFullStop}
+                onChange={(e) => setPunctuationSkills({ ...punctuationSkills, usesFullStop: e.target.checked })}
+                disabled={isViewMode}
+                className="h-4 w-4"
+              />
+              <span className="text-sm">Full Stop (.)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={punctuationSkills.usesQuestionMark}
+                onChange={(e) => setPunctuationSkills({ ...punctuationSkills, usesQuestionMark: e.target.checked })}
+                disabled={isViewMode}
+                className="h-4 w-4"
+              />
+              <span className="text-sm">Question Mark (?)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={punctuationSkills.usesComma}
+                onChange={(e) => setPunctuationSkills({ ...punctuationSkills, usesComma: e.target.checked })}
+                disabled={isViewMode}
+                className="h-4 w-4"
+              />
+              <span className="text-sm">Comma (,)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={punctuationSkills.usesApostrophe}
+                onChange={(e) => setPunctuationSkills({ ...punctuationSkills, usesApostrophe: e.target.checked })}
+                disabled={isViewMode}
+                className="h-4 w-4"
+              />
+              <span className="text-sm">Apostrophe (')</span>
+            </label>
+          </div>
+
+          <div>
+            <Label htmlFor="punctuationOther">Other Punctuation</Label>
+            <Input
+              id="punctuationOther"
+              value={punctuationOther}
+              onChange={(e) => setPunctuationOther(e.target.value)}
+              placeholder="e.g., Exclamation mark, Semicolon, etc."
+              disabled={isViewMode}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="punctuationObservation">Observation</Label>
+            <Textarea
+              id="punctuationObservation"
+              value={punctuationObservation}
+              onChange={(e) => setPunctuationObservation(e.target.value)}
+              placeholder="Observations about punctuation usage..."
+              disabled={isViewMode}
+              rows={2}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* NEW: Spelling Observations */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Spelling Observations</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="spellingStrengthSummary">Spelling Strength Summary</Label>
+            <Textarea
+              id="spellingStrengthSummary"
+              value={spellingStrengthSummary}
+              onChange={(e) => setSpellingStrengthSummary(e.target.value)}
+              placeholder="Describe the student's spelling strengths..."
+              disabled={isViewMode}
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="spellingErrorPatternObservation">Error Pattern Observation</Label>
+            <Textarea
+              id="spellingErrorPatternObservation"
+              value={spellingErrorPatternObservation}
+              onChange={(e) => setSpellingErrorPatternObservation(e.target.value)}
+              placeholder="Document common spelling error patterns..."
+              disabled={isViewMode}
+              rows={3}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -373,7 +747,7 @@ export function WritingSkillAssessment({
           </Button>
         </div>
       )}
-      
+
       {isViewMode && (
         <div className="flex justify-end space-x-4">
           <Button type="button" variant="outline" onClick={onCancel}>
@@ -395,12 +769,12 @@ export function WritingSkillAssessment({
               Your writing assessment has been saved successfully. You can now download it as PDF.
             </p>
           </DialogHeader>
-          
+
           <div ref={reportRef} className="p-6 bg-white">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-green-800">Writing Skill Assessment</h2>
               <p className="text-gray-600">Assessment Date: {new Date().toLocaleDateString()}</p>
-              
+
               {/* Student and Educator Details */}
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="bg-blue-50 p-3 rounded">
@@ -415,7 +789,7 @@ export function WritingSkillAssessment({
                     <p className="text-gray-500">Loading student information...</p>
                   )}
                 </div>
-                
+
                 <div className="bg-green-50 p-3 rounded">
                   <h4 className="font-semibold text-green-800">Special Educator Information</h4>
                   {educatorDetails ? (
@@ -475,13 +849,184 @@ export function WritingSkillAssessment({
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Question Responses</h3>
                 <div className="bg-gray-50 p-4 rounded">
-                  {WRITING_QUESTIONS.map(q => 
+                  {WRITING_QUESTIONS.map(q =>
                     questionAnswers[q.id] && (
                       <div key={q.id} className="mb-2">
                         <p className="font-medium">{q.question}</p>
                         <p className="text-green-700">{questionAnswers[q.id]}</p>
                       </div>
                     )
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Near Copying Skills */}
+            {hasNearCopyingSkills !== null && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Near Copying Skills</h3>
+                <div className="bg-gray-50 p-4 rounded space-y-3">
+                  <div>
+                    <p className="font-medium">Has Near Copying Skills?</p>
+                    <p className={hasNearCopyingSkills ? "text-green-700" : "text-orange-700"}>
+                      {hasNearCopyingSkills ? "Yes" : "No"}
+                    </p>
+                  </div>
+
+                  {hasNearCopyingSkills && nearCopyingLevels.length > 0 && (
+                    <div>
+                      <p className="font-medium mb-2">Copying Levels:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {nearCopyingLevels.map((level) => (
+                          <span key={level} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                            {level}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {hasNearCopyingSkills && nearCopyingObservation && (
+                    <div>
+                      <p className="font-medium">Observation:</p>
+                      <p className="whitespace-pre-wrap">{nearCopyingObservation}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Board Copying Skills */}
+            {hasBoardCopyingSkills !== null && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Board Copying Skills</h3>
+                <div className="bg-gray-50 p-4 rounded space-y-3">
+                  <div>
+                    <p className="font-medium">Has Board Copying Skills?</p>
+                    <p className={hasBoardCopyingSkills ? "text-green-700" : "text-orange-700"}>
+                      {hasBoardCopyingSkills ? "Yes" : "No"}
+                    </p>
+                  </div>
+
+                  {hasBoardCopyingSkills && boardCopyingLevels.length > 0 && (
+                    <div>
+                      <p className="font-medium mb-2">Copying Levels:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {boardCopyingLevels.map((level) => (
+                          <span key={level} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                            {level}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {hasBoardCopyingSkills && boardCopyingSpeedObservation && (
+                    <div>
+                      <p className="font-medium">Speed Observation:</p>
+                      <p className="whitespace-pre-wrap">{boardCopyingSpeedObservation}</p>
+                    </div>
+                  )}
+
+                  {hasBoardCopyingSkills && (visualTrackingDifficulty || omissionSkippingFlag) && (
+                    <div>
+                      <p className="font-medium mb-2">Flags:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {visualTrackingDifficulty && (
+                          <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">
+                            Visual Tracking Difficulty
+                          </span>
+                        )}
+                        {omissionSkippingFlag && (
+                          <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">
+                            Omission/Skipping Flag
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {hasBoardCopyingSkills && boardCopyingObservation && (
+                    <div>
+                      <p className="font-medium">Overall Observation:</p>
+                      <p className="whitespace-pre-wrap">{boardCopyingObservation}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Punctuation Skills */}
+            {(Object.values(punctuationSkills).some(val => val) || punctuationOther || punctuationObservation) && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Punctuation Skills</h3>
+                <div className="bg-gray-50 p-4 rounded space-y-3">
+                  {Object.values(punctuationSkills).some(val => val) && (
+                    <div>
+                      <p className="font-medium mb-2">Punctuation Marks Used:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {punctuationSkills.usesCapitalLetters && (
+                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                            Capital Letters
+                          </span>
+                        )}
+                        {punctuationSkills.usesFullStop && (
+                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                            Full Stop (.)
+                          </span>
+                        )}
+                        {punctuationSkills.usesQuestionMark && (
+                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                            Question Mark (?)
+                          </span>
+                        )}
+                        {punctuationSkills.usesComma && (
+                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                            Comma (,)
+                          </span>
+                        )}
+                        {punctuationSkills.usesApostrophe && (
+                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                            Apostrophe (')
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {punctuationOther && (
+                    <div>
+                      <p className="font-medium">Other Punctuation:</p>
+                      <p>{punctuationOther}</p>
+                    </div>
+                  )}
+
+                  {punctuationObservation && (
+                    <div>
+                      <p className="font-medium">Observation:</p>
+                      <p className="whitespace-pre-wrap">{punctuationObservation}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Spelling Observations */}
+            {(spellingStrengthSummary || spellingErrorPatternObservation) && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Spelling Observations</h3>
+                <div className="bg-gray-50 p-4 rounded space-y-3">
+                  {spellingStrengthSummary && (
+                    <div>
+                      <p className="font-medium">Spelling Strength Summary:</p>
+                      <p className="whitespace-pre-wrap">{spellingStrengthSummary}</p>
+                    </div>
+                  )}
+                  {spellingErrorPatternObservation && (
+                    <div>
+                      <p className="font-medium">Error Pattern Observation:</p>
+                      <p className="whitespace-pre-wrap">{spellingErrorPatternObservation}</p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -507,7 +1052,7 @@ export function WritingSkillAssessment({
             }}>
               Close
             </Button>
-            <Button 
+            <Button
               onClick={downloadPDF}
               disabled={!studentDetails || !educatorDetails}
               title={!studentDetails || !educatorDetails ? 'Waiting for student and educator information to load...' : ''}

@@ -555,6 +555,24 @@ model ReadingSkillAssessment {
   extraPausesAtCommas                 Boolean @default(false)
   incorrectToneForQuestionExclamation Boolean @default(false)
 
+  // NEW: Reading Grade Level Mapping
+  isAtGradeLevel                  Boolean?
+  functionalGradeLevel            String?  // Editable grade level if at grade level
+  performanceSummary              String?  // Free text for performance summary
+  gradeLevelMappings              Json?    // Array of {gradeLevel, independent, instructional, frustration}
+  gradeLevelObservation           String?  // Observation for grade mappings
+
+  // NEW: Knowledcare Battery Test Results
+  batteryTestConducted            Boolean  @default(false)
+  batteryTestSummary              String?
+  batteryTestReportUrl            String?  // PDF/Report upload path
+
+  // NEW: Reading Comprehension Level
+  atGradeLevelComprehension       Boolean?
+  comprehensionLevels             String[] @default([]) // Literal, Inferential, Application, Critical
+  currentLevelComprehension       String[] @default([]) // If not at grade level
+  comprehensionObservation        String?
+
   additionalNotes String?
   status          AssessmentStatus       @default(PENDING)
   completedAt     DateTime?
@@ -653,6 +671,32 @@ model WritingSkillAssessment {
   lowConfidenceWriting               Boolean @default(false)
   inconsistentPerformanceAcrossDays  Boolean @default(false)
 
+  // NEW: Near Copying Skills
+  hasNearCopyingSkills            Boolean?
+  nearCopyingLevels               String[] @default([]) // Letter, Word, Phrase, Sentence
+  nearCopyingObservation          String?
+
+  // NEW: Board Copying Skills
+  hasBoardCopyingSkills           Boolean?
+  boardCopyingLevels              String[] @default([]) // Letter, Word, Phrase, Sentence
+  boardCopyingSpeedObservation    String?
+  visualTrackingDifficulty        Boolean  @default(false)
+  omissionSkippingFlag            Boolean  @default(false)
+  boardCopyingObservation         String?
+
+  // NEW: Punctuation Skills
+  usesCapitalLetters              Boolean  @default(false)
+  usesFullStop                    Boolean  @default(false)
+  usesQuestionMark                Boolean  @default(false)
+  usesComma                       Boolean  @default(false)
+  usesApostrophe                  Boolean  @default(false)
+  punctuationOther                String?
+  punctuationObservation          String?
+
+  // NEW: Spelling Observations
+  spellingStrengthSummary         String?
+  spellingErrorPatternObservation String?
+
   additionalNotes String?
   status          AssessmentStatus       @default(PENDING)
   completedAt     DateTime?
@@ -741,6 +785,31 @@ model MathSkillAssessment {
   needsConstantPrompting              Boolean @default(false)
   appearsConfusedAfterExplanation     Boolean @default(false)
   poorAttentionDuringMath             Boolean @default(false)
+
+  // NEW: Math Grade Level Identification
+  isAtMathGradeLevel              Boolean?
+  mathFunctionalGradeLevel        String?  // Editable grade level
+  mathPerformanceSummary          String?
+  mathGradeLevelMappings          Json?    // Array of {gradeLevel, independent, instructional, frustration, summaryNote}
+  mathGradeLevelObservation       String?
+
+  // NEW: Knowledcare Battery Test (Math)
+  mathBatteryTestConducted        Boolean  @default(false)
+  mathBatteryTestSummary          String?
+  mathBatteryTestReportUrl        String?
+
+  // NEW: Math Concepts Performance (Json objects with performance, summary, errorPattern)
+  additionPerformance             Json?
+  subtractionPerformance          Json?
+  multiplicationPerformance       Json?
+  divisionPerformance             Json?
+  placeValuePerformance           Json?
+  numberLinePerformance           Json?
+  fractionsPerformance            Json?
+  decimalsPerformance             Json?
+  algebraPerformance              Json?
+  statementSumsPerformance        Json?
+  geometryPerformance             Json?
 
   additionalNotes String?
   status          AssessmentStatus       @default(PENDING)

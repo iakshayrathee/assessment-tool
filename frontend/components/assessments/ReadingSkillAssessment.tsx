@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,6 +12,8 @@ import { ChevronDown, ChevronRight, Download, Eye } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { GradeLevelMappingComponent, type GradeLevelMapping } from './GradeLevelMapping';
+import { BatteryTestSection } from './BatteryTestSection';
 
 interface ReadingSkillAssessmentProps {
   studentId: string;
@@ -22,20 +25,20 @@ interface ReadingSkillAssessmentProps {
 }
 
 const READING_QUESTIONS = [
-  { 
+  {
     id: 'readingQ1',
-    question: 'Is the child reading at grade level?', 
-    options: ['Yes', '1 Level Below', '2+ Levels Below'] 
+    question: 'Is the child reading at grade level?',
+    options: ['Yes', '1 Level Below', '2+ Levels Below']
   },
-  { 
+  {
     id: 'readingQ2',
-    question: 'Can the child decode unfamiliar words?', 
-    options: ['Yes', 'With Help', 'No'] 
+    question: 'Can the child decode unfamiliar words?',
+    options: ['Yes', 'With Help', 'No']
   },
-  { 
+  {
     id: 'readingQ3',
-    question: 'Can the child answer comprehension questions?', 
-    options: ['Fully', 'Partially', 'Not Yet'] 
+    question: 'Can the child answer comprehension questions?',
+    options: ['Fully', 'Partially', 'Not Yet']
   }
 ];
 
@@ -107,35 +110,35 @@ const READING_SYMPTOMS = {
 function extractSymptoms(data: any): Record<string, boolean> {
   const symptoms: Record<string, boolean> = {};
   const allSymptomKeys = Object.values(READING_SYMPTOMS).flat().map(s => s.key);
-  
+
   allSymptomKeys.forEach(key => {
     if (data[key] === true) {
       symptoms[key] = true;
     }
   });
-  
+
   return symptoms;
 }
 
 function extractQuestionAnswers(data: any): Record<string, string> {
   const answers: Record<string, string> = {};
-  
+
   READING_QUESTIONS.forEach(q => {
     if (data[q.id]) {
       answers[q.id] = data[q.id];
     }
   });
-  
+
   return answers;
 }
 
-export function ReadingSkillAssessment({ 
-  studentId, 
+export function ReadingSkillAssessment({
+  studentId,
   assessmentId,
   initialData,
   mode = 'create',
-  onSuccess, 
-  onCancel 
+  onSuccess,
+  onCancel
 }: ReadingSkillAssessmentProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedSymptoms, setSelectedSymptoms] = useState<Record<string, boolean>>(
@@ -149,7 +152,49 @@ export function ReadingSkillAssessment({
   const [showPreview, setShowPreview] = useState(mode === 'view');
   const [savedAssessment, setSavedAssessment] = useState<any>(initialData || null);
   const reportRef = useRef<HTMLDivElement>(null);
-  
+
+  // NEW: Grade Level Mapping State
+  const [isAtGradeLevel, setIsAtGradeLevel] = useState<boolean | null>(
+    initialData?.isAtGradeLevel ?? null
+  );
+  const [functionalGradeLevel, setFunctionalGradeLevel] = useState(
+    initialData?.functionalGradeLevel || ''
+  );
+  const [performanceSummary, setPerformanceSummary] = useState(
+    initialData?.performanceSummary || ''
+  );
+  const [gradeLevelMappings, setGradeLevelMappings] = useState<GradeLevelMapping[]>(
+    initialData?.gradeLevelMappings || []
+  );
+  const [gradeLevelObservation, setGradeLevelObservation] = useState(
+    initialData?.gradeLevelObservation || ''
+  );
+
+  // NEW: Battery Test State
+  const [batteryTestConducted, setBatteryTestConducted] = useState(
+    initialData?.batteryTestConducted || false
+  );
+  const [batteryTestSummary, setBatteryTestSummary] = useState(
+    initialData?.batteryTestSummary || ''
+  );
+  const [batteryTestReportUrl, setBatteryTestReportUrl] = useState(
+    initialData?.batteryTestReportUrl || ''
+  );
+
+  // NEW: Comprehension Levels State
+  const [atGradeLevelComprehension, setAtGradeLevelComprehension] = useState<boolean | null>(
+    initialData?.atGradeLevelComprehension ?? null
+  );
+  const [comprehensionLevels, setComprehensionLevels] = useState<string[]>(
+    initialData?.comprehensionLevels || []
+  );
+  const [currentLevelComprehension, setCurrentLevelComprehension] = useState<string[]>(
+    initialData?.currentLevelComprehension || []
+  );
+  const [comprehensionObservation, setComprehensionObservation] = useState(
+    initialData?.comprehensionObservation || ''
+  );
+
   const isViewMode = mode === 'view';
 
   // Get student and educator details from saved assessment response
@@ -168,7 +213,7 @@ export function ReadingSkillAssessment({
     // Validate that at least one symptom is selected or there are additional notes
     const hasSelectedSymptoms = Object.values(selectedSymptoms).some(value => value === true);
     const hasQuestionAnswers = Object.values(questionAnswers).some(value => value && value.trim() !== '');
-    
+
     if (!hasSelectedSymptoms && !hasQuestionAnswers && !additionalNotes.trim()) {
       toast.error('Please select at least one symptom, answer questions, or add notes before saving.');
       return;
@@ -176,12 +221,32 @@ export function ReadingSkillAssessment({
 
     try {
       setIsSubmitting(true);
-      
+
       const data = {
         studentId,
         ...selectedSymptoms,
         ...questionAnswers,
         additionalNotes,
+
+        // NEW: Grade Level Mapping fields
+        isAtGradeLevel,
+        functionalGradeLevel: isAtGradeLevel ? functionalGradeLevel : null,
+        performanceSummary: isAtGradeLevel ? performanceSummary : null,
+        gradeLevelMappings: !isAtGradeLevel && gradeLevelMappings.length > 0
+          ? gradeLevelMappings
+          : null,
+        gradeLevelObservation: !isAtGradeLevel ? gradeLevelObservation : null,
+
+        // NEW: Battery Test fields
+        batteryTestConducted,
+        batteryTestSummary: batteryTestConducted ? batteryTestSummary : null,
+        batteryTestReportUrl: batteryTestConducted ? batteryTestReportUrl : null,
+
+        // NEW: Comprehension Levels fields
+        atGradeLevelComprehension,
+        comprehensionLevels: atGradeLevelComprehension ? comprehensionLevels : [],
+        currentLevelComprehension: !atGradeLevelComprehension ? currentLevelComprehension : [],
+        comprehensionObservation,
       };
 
       let response;
@@ -192,7 +257,7 @@ export function ReadingSkillAssessment({
         response = await apiClient.createReadingSkillAssessment(data);
         toast.success('Reading skill assessment created successfully!');
       }
-      
+
       // Store the full response data which includes student and specialEducator
       setSavedAssessment(response.data || response);
       setShowPreview(true);
@@ -207,24 +272,24 @@ export function ReadingSkillAssessment({
 
   const downloadPDF = async () => {
     if (!reportRef.current) return;
-    
+
     try {
       const html2pdf = (await import('html2pdf.js')).default;
-      
+
       const element = reportRef.current;
-      
+
       // Generate filename with student name, grade, educator name, date and time
       const now = new Date();
       const dateStr = now.toISOString().split('T')[0];
       const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-      
+
       // Use available data or fallback values
       const studentName = studentDetails?.fullName ? studentDetails.fullName.replace(/\s+/g, '_') : 'student';
       const grade = studentDetails?.grade ? `grade_${studentDetails.grade}` : 'grade_unknown';
       const educatorName = educatorDetails?.fullName ? educatorDetails.fullName.replace(/\s+/g, '_') : 'educator';
-      
+
       const filename = `${studentName}_${grade}_${educatorName}_${dateStr}_${timeStr}.pdf`;
-      
+
       const opt = {
         margin: 10,
         filename: filename,
@@ -232,7 +297,7 @@ export function ReadingSkillAssessment({
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
       };
-      
+
       html2pdf().from(element).set(opt).save();
       toast.success('PDF downloaded successfully');
     } catch (error) {
@@ -253,8 +318,8 @@ export function ReadingSkillAssessment({
           {READING_QUESTIONS.map((q) => (
             <div key={q.id} className="space-y-2">
               <Label className="text-sm font-medium">{q.question}</Label>
-              <Select 
-                value={questionAnswers[q.id] || ''} 
+              <Select
+                value={questionAnswers[q.id] || ''}
                 onValueChange={(value) => setQuestionAnswers(prev => ({ ...prev, [q.id]: value }))}
                 disabled={isViewMode}
               >
@@ -269,6 +334,226 @@ export function ReadingSkillAssessment({
               </Select>
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      {/* NEW: Grade Level Identification */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Grade Level Identification</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Radio buttons for Yes/No */}
+          <div>
+            <Label className="text-base font-semibold">
+              Is Child at Grade Level? *
+            </Label>
+            <div className="flex gap-4 mt-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="isAtGradeLevel"
+                  checked={isAtGradeLevel === true}
+                  onChange={() => setIsAtGradeLevel(true)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span>Yes</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="isAtGradeLevel"
+                  checked={isAtGradeLevel === false}
+                  onChange={() => setIsAtGradeLevel(false)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span>No</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Conditional: If YES */}
+          {isAtGradeLevel === true && (
+            <div className="space-y-4 p-4 bg-green-50 rounded-lg">
+              <div>
+                <Label htmlFor="functionalGradeLevel">Grade Level *</Label>
+                <Input
+                  id="functionalGradeLevel"
+                  value={functionalGradeLevel}
+                  onChange={(e) => setFunctionalGradeLevel(e.target.value)}
+                  placeholder="e.g., Grade 3"
+                  disabled={isViewMode}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="performanceSummary">Performance Summary *</Label>
+                <Textarea
+                  id="performanceSummary"
+                  value={performanceSummary}
+                  onChange={(e) => setPerformanceSummary(e.target.value)}
+                  placeholder="Describe the student's performance at grade level..."
+                  disabled={isViewMode}
+                  className="mt-1"
+                  rows={4}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Conditional: If NO */}
+          {isAtGradeLevel === false && (
+            <div className="space-y-4">
+              <GradeLevelMappingComponent
+                mappings={gradeLevelMappings}
+                onChange={setGradeLevelMappings}
+                maxMappings={4}
+                disabled={isViewMode}
+                title="Grade Level Mapping (Up to 4 Grades Down)"
+                showSummaryNote={false}
+              />
+              <div>
+                <Label htmlFor="gradeLevelObservation">Observation</Label>
+                <Textarea
+                  id="gradeLevelObservation"
+                  value={gradeLevelObservation}
+                  onChange={(e) => setGradeLevelObservation(e.target.value)}
+                  placeholder="Additional observations about grade level performance..."
+                  disabled={isViewMode}
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* NEW: Battery Test Section */}
+      <BatteryTestSection
+        conducted={batteryTestConducted}
+        onConductedChange={setBatteryTestConducted}
+        summary={batteryTestSummary}
+        onSummaryChange={setBatteryTestSummary}
+        reportUrl={batteryTestReportUrl}
+        onReportUpload={(file) => {
+          // TODO: Implement file upload to server
+          console.log('File to upload:', file);
+          toast.success('File upload functionality to be implemented');
+        }}
+        onReportRemove={() => setBatteryTestReportUrl('')}
+        disabled={isViewMode}
+        title="Knowledcare Battery Test Results (Optional)"
+      />
+
+      {/* NEW: Reading Comprehension Level */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Reading Comprehension Level</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Radio buttons for Yes/No */}
+          <div>
+            <Label className="text-base font-semibold">
+              At Grade Level Reading Comprehension? *
+            </Label>
+            <div className="flex gap-4 mt-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="atGradeLevelComprehension"
+                  checked={atGradeLevelComprehension === true}
+                  onChange={() => setAtGradeLevelComprehension(true)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span>Yes</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="atGradeLevelComprehension"
+                  checked={atGradeLevelComprehension === false}
+                  onChange={() => setAtGradeLevelComprehension(false)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span>No</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Conditional: If YES - Comprehension Levels */}
+          {atGradeLevelComprehension === true && (
+            <div className="p-4 bg-green-50 rounded-lg">
+              <Label className="text-sm font-semibold mb-2 block">
+                Comprehension Levels (Select all that apply)
+              </Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {['Literal', 'Inferential', 'Application', 'Critical Evaluation'].map((level) => (
+                  <label key={level} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={comprehensionLevels.includes(level)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setComprehensionLevels([...comprehensionLevels, level]);
+                        } else {
+                          setComprehensionLevels(comprehensionLevels.filter((l) => l !== level));
+                        }
+                      }}
+                      disabled={isViewMode}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm">{level}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Conditional: If NO - Current Level Comprehension */}
+          {atGradeLevelComprehension === false && (
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">
+                At the Child's Current Reading Level, Comprehension is:
+              </Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-yellow-50 rounded-lg">
+                {['Literal', 'Inferential', 'Application', 'Critical Evaluation'].map((level) => (
+                  <label key={level} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={currentLevelComprehension.includes(level)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setCurrentLevelComprehension([...currentLevelComprehension, level]);
+                        } else {
+                          setCurrentLevelComprehension(currentLevelComprehension.filter((l) => l !== level));
+                        }
+                      }}
+                      disabled={isViewMode}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm">{level}</span>
+                  </label>
+                ))}
+              </div>
+              <div>
+                <Label htmlFor="comprehensionObservation">Observation</Label>
+                <Textarea
+                  id="comprehensionObservation"
+                  value={comprehensionObservation}
+                  onChange={(e) => setComprehensionObservation(e.target.value)}
+                  placeholder="Additional observations about comprehension..."
+                  disabled={isViewMode}
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -348,7 +633,7 @@ export function ReadingSkillAssessment({
           </Button>
         </div>
       )}
-      
+
       {isViewMode && (
         <div className="flex justify-end space-x-4">
           <Button type="button" variant="outline" onClick={onCancel}>
@@ -370,12 +655,12 @@ export function ReadingSkillAssessment({
               Your reading assessment has been saved successfully. You can now download it as PDF.
             </p>
           </DialogHeader>
-          
+
           <div ref={reportRef} className="p-6 bg-white">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-blue-800">Reading Skill Assessment</h2>
               <p className="text-gray-600">Assessment Date: {new Date().toLocaleDateString()}</p>
-              
+
               {/* Student and Educator Details */}
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="bg-blue-50 p-3 rounded">
@@ -390,7 +675,7 @@ export function ReadingSkillAssessment({
                     <p className="text-gray-500">Loading student information...</p>
                   )}
                 </div>
-                
+
                 <div className="bg-green-50 p-3 rounded">
                   <h4 className="font-semibold text-green-800">Special Educator Information</h4>
                   {educatorDetails ? (
@@ -450,13 +735,147 @@ export function ReadingSkillAssessment({
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Question Responses</h3>
                 <div className="bg-gray-50 p-4 rounded">
-                  {READING_QUESTIONS.map(q => 
+                  {READING_QUESTIONS.map(q =>
                     questionAnswers[q.id] && (
                       <div key={q.id} className="mb-2">
                         <p className="font-medium">{q.question}</p>
                         <p className="text-blue-700">{questionAnswers[q.id]}</p>
                       </div>
                     )
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Reading Grade Level Identification */}
+            {isAtGradeLevel !== null && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Grade Level Identification</h3>
+                <div className="bg-gray-50 p-4 rounded space-y-3">
+                  <div>
+                    <p className="font-medium">Is Child at Grade Level?</p>
+                    <p className={isAtGradeLevel ? "text-green-700" : "text-orange-700"}>
+                      {isAtGradeLevel ? "Yes" : "No"}
+                    </p>
+                  </div>
+
+                  {isAtGradeLevel && functionalGradeLevel && (
+                    <>
+                      <div>
+                        <p className="font-medium">Grade Level:</p>
+                        <p>{functionalGradeLevel}</p>
+                      </div>
+                      {performanceSummary && (
+                        <div>
+                          <p className="font-medium">Performance Summary:</p>
+                          <p className="whitespace-pre-wrap">{performanceSummary}</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {!isAtGradeLevel && gradeLevelMappings && gradeLevelMappings.length > 0 && (
+                    <div>
+                      <p className="font-medium mb-2">Grade Level Mappings:</p>
+                      <div className="space-y-2">
+                        {gradeLevelMappings.map((mapping, idx) => (
+                          <div key={idx} className="bg-white p-3 rounded border">
+                            <p className="font-medium text-sm">Grade: {mapping.gradeLevel}</p>
+                            <div className="grid grid-cols-3 gap-2 mt-1 text-xs">
+                              <div>
+                                <span className="font-medium">Independent:</span> {mapping.independent || 'N/A'}
+                              </div>
+                              <div>
+                                <span className="font-medium">Instructional:</span> {mapping.instructional || 'N/A'}
+                              </div>
+                              <div>
+                                <span className="font-medium">Frustration:</span> {mapping.frustration || 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {!isAtGradeLevel && gradeLevelObservation && (
+                    <div>
+                      <p className="font-medium">Observation:</p>
+                      <p className="whitespace-pre-wrap">{gradeLevelObservation}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Battery Test Results */}
+            {batteryTestConducted && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Knowledcare Battery Test Results</h3>
+                <div className="bg-gray-50 p-4 rounded space-y-3">
+                  <div>
+                    <p className="font-medium">Test Conducted:</p>
+                    <p className="text-green-700">Yes</p>
+                  </div>
+                  {batteryTestSummary && (
+                    <div>
+                      <p className="font-medium">Test Summary:</p>
+                      <p className="whitespace-pre-wrap">{batteryTestSummary}</p>
+                    </div>
+                  )}
+                  {batteryTestReportUrl && (
+                    <div>
+                      <p className="font-medium">Report URL:</p>
+                      <p className="text-blue-600 text-sm break-all">{batteryTestReportUrl}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Reading Comprehension Level */}
+            {atGradeLevelComprehension !== null && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Reading Comprehension Level</h3>
+                <div className="bg-gray-50 p-4 rounded space-y-3">
+                  <div>
+                    <p className="font-medium">At Grade Level Reading Comprehension?</p>
+                    <p className={atGradeLevelComprehension ? "text-green-700" : "text-orange-700"}>
+                      {atGradeLevelComprehension ? "Yes" : "No"}
+                    </p>
+                  </div>
+
+                  {atGradeLevelComprehension && comprehensionLevels.length > 0 && (
+                    <div>
+                      <p className="font-medium mb-2">Comprehension Levels:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {comprehensionLevels.map((level) => (
+                          <span key={level} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                            {level}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {!atGradeLevelComprehension && currentLevelComprehension.length > 0 && (
+                    <div>
+                      <p className="font-medium mb-2">At Current Reading Level, Comprehension is:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {currentLevelComprehension.map((level) => (
+                          <span key={level} className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
+                            {level}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {comprehensionObservation && (
+                    <div>
+                      <p className="font-medium">Observation:</p>
+                      <p className="whitespace-pre-wrap">{comprehensionObservation}</p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -482,7 +901,7 @@ export function ReadingSkillAssessment({
             }}>
               Close
             </Button>
-            <Button 
+            <Button
               onClick={downloadPDF}
               disabled={!studentDetails || !educatorDetails}
               title={!studentDetails || !educatorDetails ? 'Waiting for student and educator information to load...' : ''}
