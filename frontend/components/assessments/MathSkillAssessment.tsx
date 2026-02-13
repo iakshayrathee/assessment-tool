@@ -3,14 +3,18 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronRight, Download } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, Eye } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { GradeLevelMappingComponent, type GradeLevelMapping } from './GradeLevelMapping';
+import { BatteryTestSection } from './BatteryTestSection';
+import { MultiConceptMapping, type ConceptPerformance } from './ConceptPerformanceMapping';
 
 interface MathSkillAssessmentProps {
   studentId: string;
@@ -22,20 +26,20 @@ interface MathSkillAssessmentProps {
 }
 
 const MATH_QUESTIONS = [
-  { 
+  {
     id: 'mathQ1',
-    question: 'Does the child understand number concepts?', 
-    options: ['Yes', 'Partially', 'No'] 
+    question: 'Does the child understand number concepts?',
+    options: ['Yes', 'Partially', 'No']
   },
-  { 
+  {
     id: 'mathQ2',
-    question: 'Can the child perform basic operations?', 
-    options: ['Yes', 'With Help', 'No'] 
+    question: 'Can the child perform basic operations?',
+    options: ['Yes', 'With Help', 'No']
   },
-  { 
+  {
     id: 'mathQ3',
-    question: 'Can the child solve word problems?', 
-    options: ['Yes', 'Sometimes', 'No'] 
+    question: 'Can the child solve word problems?',
+    options: ['Yes', 'Sometimes', 'No']
   }
 ];
 
@@ -121,35 +125,35 @@ const MATH_SYMPTOMS = {
 function extractSymptoms(data: any): Record<string, boolean> {
   const symptoms: Record<string, boolean> = {};
   const allSymptomKeys = Object.values(MATH_SYMPTOMS).flat().map(s => s.key);
-  
+
   allSymptomKeys.forEach(key => {
     if (data[key] === true) {
       symptoms[key] = true;
     }
   });
-  
+
   return symptoms;
 }
 
 function extractQuestionAnswers(data: any): Record<string, string> {
   const answers: Record<string, string> = {};
-  
+
   MATH_QUESTIONS.forEach(q => {
     if (data[q.id]) {
       answers[q.id] = data[q.id];
     }
   });
-  
+
   return answers;
 }
 
-export function MathSkillAssessment({ 
-  studentId, 
+export function MathSkillAssessment({
+  studentId,
   assessmentId,
   initialData,
   mode = 'create',
-  onSuccess, 
-  onCancel 
+  onSuccess,
+  onCancel
 }: MathSkillAssessmentProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedSymptoms, setSelectedSymptoms] = useState<Record<string, boolean>>(
@@ -163,7 +167,50 @@ export function MathSkillAssessment({
   const [showPreview, setShowPreview] = useState(mode === 'view');
   const [savedAssessment, setSavedAssessment] = useState<any>(initialData || null);
   const reportRef = useRef<HTMLDivElement>(null);
-  
+
+  // NEW: Math Grade Level State
+  const [isAtMathGradeLevel, setIsAtMathGradeLevel] = useState<boolean | null>(
+    initialData?.isAtMathGradeLevel ?? null
+  );
+  const [mathFunctionalGradeLevel, setMathFunctionalGradeLevel] = useState(
+    initialData?.mathFunctionalGradeLevel || ''
+  );
+  const [mathPerformanceSummary, setMathPerformanceSummary] = useState(
+    initialData?.mathPerformanceSummary || ''
+  );
+  const [mathGradeLevelMappings, setMathGradeLevelMappings] = useState<GradeLevelMapping[]>(
+    initialData?.mathGradeLevelMappings || []
+  );
+  const [mathGradeLevelObservation, setMathGradeLevelObservation] = useState(
+    initialData?.mathGradeLevelObservation || ''
+  );
+
+  // NEW: Math Battery Test State
+  const [mathBatteryTestConducted, setMathBatteryTestConducted] = useState(
+    initialData?.mathBatteryTestConducted || false
+  );
+  const [mathBatteryTestSummary, setMathBatteryTestSummary] = useState(
+    initialData?.mathBatteryTestSummary || ''
+  );
+  const [mathBatteryTestReportUrl, setMathBatteryTestReportUrl] = useState(
+    initialData?.mathBatteryTestReportUrl || ''
+  );
+
+  // NEW: Math Concepts Performance State (11 concepts)
+  const [mathConcepts, setMathConcepts] = useState<Record<string, ConceptPerformance>>({
+    addition: initialData?.additionPerformance || { performance: '', summary: '', errorPattern: '' },
+    subtraction: initialData?.subtractionPerformance || { performance: '', summary: '', errorPattern: '' },
+    multiplication: initialData?.multiplicationPerformance || { performance: '', summary: '', errorPattern: '' },
+    division: initialData?.divisionPerformance || { performance: '', summary: '', errorPattern: '' },
+    placeValue: initialData?.placeValuePerformance || { performance: '', summary: '', errorPattern: '' },
+    numberLine: initialData?.numberLinePerformance || { performance: '', summary: '', errorPattern: '' },
+    fractions: initialData?.fractionsPerformance || { performance: '', summary: '', errorPattern: '' },
+    decimals: initialData?.decimalsPerformance || { performance: '', summary: '', errorPattern: '' },
+    algebra: initialData?.algebraPerformance || { performance: '', summary: '', errorPattern: '' },
+    statementSums: initialData?.statementSumsPerformance || { performance: '', summary: '', errorPattern: '' },
+    geometry: initialData?.geometryPerformance || { performance: '', summary: '', errorPattern: '' },
+  });
+
   const isViewMode = mode === 'view';
 
   // Get student and educator details from saved assessment response
@@ -182,7 +229,7 @@ export function MathSkillAssessment({
     // Validate that at least one symptom is selected or there are additional notes
     const hasSelectedSymptoms = Object.values(selectedSymptoms).some(value => value === true);
     const hasQuestionAnswers = Object.values(questionAnswers).some(value => value && value.trim() !== '');
-    
+
     if (!hasSelectedSymptoms && !hasQuestionAnswers && !additionalNotes.trim()) {
       toast.error('Please select at least one symptom, answer questions, or add notes before saving.');
       return;
@@ -190,12 +237,39 @@ export function MathSkillAssessment({
 
     try {
       setIsSubmitting(true);
-      
+
       const data = {
         studentId,
         ...selectedSymptoms,
         ...questionAnswers,
         additionalNotes,
+
+        // NEW: Math Grade Level fields
+        isAtMathGradeLevel,
+        mathFunctionalGradeLevel: isAtMathGradeLevel ? mathFunctionalGradeLevel : null,
+        mathPerformanceSummary: isAtMathGradeLevel ? mathPerformanceSummary : null,
+        mathGradeLevelMappings: !isAtMathGradeLevel && mathGradeLevelMappings.length > 0
+          ? mathGradeLevelMappings
+          : null,
+        mathGradeLevelObservation: !isAtMathGradeLevel ? mathGradeLevelObservation : null,
+
+        // NEW: Math Battery Test fields
+        mathBatteryTestConducted,
+        mathBatteryTestSummary: mathBatteryTestConducted ? mathBatteryTestSummary : null,
+        mathBatteryTestReportUrl: mathBatteryTestConducted ? mathBatteryTestReportUrl : null,
+
+        // NEW: Math Concepts Performance fields (11 concepts)
+        additionPerformance: mathConcepts.addition.performance ? mathConcepts.addition : null,
+        subtractionPerformance: mathConcepts.subtraction.performance ? mathConcepts.subtraction : null,
+        multiplicationPerformance: mathConcepts.multiplication.performance ? mathConcepts.multiplication : null,
+        divisionPerformance: mathConcepts.division.performance ? mathConcepts.division : null,
+        placeValuePerformance: mathConcepts.placeValue.performance ? mathConcepts.placeValue : null,
+        numberLinePerformance: mathConcepts.numberLine.performance ? mathConcepts.numberLine : null,
+        fractionsPerformance: mathConcepts.fractions.performance ? mathConcepts.fractions : null,
+        decimalsPerformance: mathConcepts.decimals.performance ? mathConcepts.decimals : null,
+        algebraPerformance: mathConcepts.algebra.performance ? mathConcepts.algebra : null,
+        statementSumsPerformance: mathConcepts.statementSums.performance ? mathConcepts.statementSums : null,
+        geometryPerformance: mathConcepts.geometry.performance ? mathConcepts.geometry : null,
       };
 
       let response;
@@ -206,7 +280,7 @@ export function MathSkillAssessment({
         response = await apiClient.createMathSkillAssessment(data);
         toast.success('Math skill assessment created successfully!');
       }
-      
+
       // Store the full response data which includes student and specialEducator
       setSavedAssessment(response.data || response);
       setShowPreview(true);
@@ -221,24 +295,24 @@ export function MathSkillAssessment({
 
   const downloadPDF = async () => {
     if (!reportRef.current) return;
-    
+
     try {
       const html2pdf = (await import('html2pdf.js')).default;
-      
+
       const element = reportRef.current;
-      
+
       // Generate filename with student name, grade, educator name, date and time
       const now = new Date();
       const dateStr = now.toISOString().split('T')[0];
       const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-      
+
       // Use available data or fallback values
       const studentName = studentDetails?.fullName ? studentDetails.fullName.replace(/\s+/g, '_') : 'student';
       const grade = studentDetails?.grade ? `grade_${studentDetails.grade}` : 'grade_unknown';
       const educatorName = educatorDetails?.fullName ? educatorDetails.fullName.replace(/\s+/g, '_') : 'educator';
-      
+
       const filename = `${studentName}_${grade}_${educatorName}_${dateStr}_${timeStr}.pdf`;
-      
+
       const opt = {
         margin: 10,
         filename: filename,
@@ -246,7 +320,7 @@ export function MathSkillAssessment({
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
       };
-      
+
       html2pdf().from(element).set(opt).save();
       toast.success('PDF downloaded successfully');
     } catch (error) {
@@ -267,8 +341,8 @@ export function MathSkillAssessment({
           {MATH_QUESTIONS.map((q) => (
             <div key={q.id} className="space-y-2">
               <Label className="text-sm font-medium">{q.question}</Label>
-              <Select 
-                value={questionAnswers[q.id] || ''} 
+              <Select
+                value={questionAnswers[q.id] || ''}
                 onValueChange={(value) => setQuestionAnswers(prev => ({ ...prev, [q.id]: value }))}
                 disabled={isViewMode}
               >
@@ -283,6 +357,179 @@ export function MathSkillAssessment({
               </Select>
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      {/* NEW: Math Grade Level Identification */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Math Grade Level Identification</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-base font-semibold">
+              Is Child at Grade Level in Math? *
+            </Label>
+            <div className="flex gap-4 mt-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="isAtMathGradeLevel"
+                  checked={isAtMathGradeLevel === true}
+                  onChange={() => setIsAtMathGradeLevel(true)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span>Yes</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="isAtMathGradeLevel"
+                  checked={isAtMathGradeLevel === false}
+                  onChange={() => setIsAtMathGradeLevel(false)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span>No</span>
+              </label>
+            </div>
+          </div>
+
+          {isAtMathGradeLevel === true && (
+            <div className="space-y-4 p-4 bg-green-50 rounded-lg">
+              <div>
+                <Label htmlFor="mathFunctionalGradeLevel">Grade Level *</Label>
+                <Input
+                  id="mathFunctionalGradeLevel"
+                  value={mathFunctionalGradeLevel}
+                  onChange={(e) => setMathFunctionalGradeLevel(e.target.value)}
+                  placeholder="e.g., Grade 3"
+                  disabled={isViewMode}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="mathPerformanceSummary">Performance Summary *</Label>
+                <Textarea
+                  id="mathPerformanceSummary"
+                  value={mathPerformanceSummary}
+                  onChange={(e) => setMathPerformanceSummary(e.target.value)}
+                  placeholder="Describe the student's math performance at grade level..."
+                  disabled={isViewMode}
+                  className="mt-1"
+                  rows={4}
+                />
+              </div>
+            </div>
+          )}
+
+          {isAtMathGradeLevel === false && (
+            <div className="space-y-4">
+              <GradeLevelMappingComponent
+                mappings={mathGradeLevelMappings}
+                onChange={setMathGradeLevelMappings}
+                maxMappings={4}
+                disabled={isViewMode}
+                title="Math Grade Level Mapping (Up to 4 Grades Down)"
+                showSummaryNote={false}
+              />
+              <div>
+                <Label htmlFor="mathGradeLevelObservation">Observation</Label>
+                <Textarea
+                  id="mathGradeLevelObservation"
+                  value={mathGradeLevelObservation}
+                  onChange={(e) => setMathGradeLevelObservation(e.target.value)}
+                  placeholder="Additional observations about math grade level performance..."
+                  disabled={isViewMode}
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* NEW: Math Battery Test Section */}
+      <BatteryTestSection
+        conducted={mathBatteryTestConducted}
+        onConductedChange={setMathBatteryTestConducted}
+        summary={mathBatteryTestSummary}
+        onSummaryChange={setMathBatteryTestSummary}
+        reportUrl={mathBatteryTestReportUrl}
+        onReportUpload={(file) => {
+          console.log('File to upload:', file);
+          toast.success('File upload functionality to be implemented');
+        }}
+        onReportRemove={() => setMathBatteryTestReportUrl('')}
+        disabled={isViewMode}
+        title="Math Battery Test Results (Optional)"
+      />
+
+      {/* NEW: Math Concepts Performance Mapping */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Math Concepts Performance Assessment</CardTitle>
+          <p className="text-sm text-gray-600 mt-1">
+            Assess student performance across different math concepts
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Basic Operations */}
+          <MultiConceptMapping
+            title="Basic Operations"
+            concepts={[
+              { key: 'addition', label: 'Addition' },
+              { key: 'subtraction', label: 'Subtraction' },
+              { key: 'multiplication', label: 'Multiplication' },
+              { key: 'division', label: 'Division' },
+            ]}
+            values={mathConcepts}
+            onChange={(key, value) => setMathConcepts({ ...mathConcepts, [key]: value })}
+            disabled={isViewMode}
+            showErrorPattern={true}
+          />
+
+          {/* Number & Place Value */}
+          <MultiConceptMapping
+            title="Number & Place Value"
+            concepts={[
+              { key: 'placeValue', label: 'Place Value' },
+              { key: 'numberLine', label: 'Number Line' },
+            ]}
+            values={mathConcepts}
+            onChange={(key, value) => setMathConcepts({ ...mathConcepts, [key]: value })}
+            disabled={isViewMode}
+            showErrorPattern={true}
+          />
+
+          {/* Fractions & Decimals */}
+          <MultiConceptMapping
+            title="Fractions & Decimals"
+            concepts={[
+              { key: 'fractions', label: 'Fractions' },
+              { key: 'decimals', label: 'Decimals' },
+            ]}
+            values={mathConcepts}
+            onChange={(key, value) => setMathConcepts({ ...mathConcepts, [key]: value })}
+            disabled={isViewMode}
+            showErrorPattern={true}
+          />
+
+          {/* Higher-Level Concepts */}
+          <MultiConceptMapping
+            title="Higher-Level Concepts"
+            concepts={[
+              { key: 'algebra', label: 'Algebra' },
+              { key: 'statementSums', label: 'Statement Sums' },
+              { key: 'geometry', label: 'Geometry' },
+            ]}
+            values={mathConcepts}
+            onChange={(key, value) => setMathConcepts({ ...mathConcepts, [key]: value })}
+            disabled={isViewMode}
+            showErrorPattern={true}
+          />
         </CardContent>
       </Card>
 
@@ -362,7 +609,7 @@ export function MathSkillAssessment({
           </Button>
         </div>
       )}
-      
+
       {isViewMode && (
         <div className="flex justify-end space-x-4">
           <Button type="button" variant="outline" onClick={onCancel}>
@@ -384,12 +631,12 @@ export function MathSkillAssessment({
               Your math assessment has been saved successfully. You can now download it as PDF.
             </p>
           </DialogHeader>
-          
+
           <div ref={reportRef} className="p-6 bg-white">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-purple-800">Math Skill Assessment</h2>
               <p className="text-gray-600">Assessment Date: {new Date().toLocaleDateString()}</p>
-              
+
               {/* Student and Educator Details */}
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="bg-blue-50 p-3 rounded">
@@ -404,7 +651,7 @@ export function MathSkillAssessment({
                     <p className="text-gray-500">Loading student information...</p>
                   )}
                 </div>
-                
+
                 <div className="bg-green-50 p-3 rounded">
                   <h4 className="font-semibold text-green-800">Special Educator Information</h4>
                   {educatorDetails ? (
@@ -464,11 +711,138 @@ export function MathSkillAssessment({
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Question Responses</h3>
                 <div className="bg-gray-50 p-4 rounded">
-                  {MATH_QUESTIONS.map(q => 
+                  {MATH_QUESTIONS.map(q =>
                     questionAnswers[q.id] && (
                       <div key={q.id} className="mb-2">
                         <p className="font-medium">{q.question}</p>
                         <p className="text-green-700">{questionAnswers[q.id]}</p>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Math Grade Level Identification */}
+            {isAtMathGradeLevel !== null && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Math Grade Level Identification</h3>
+                <div className="bg-gray-50 p-4 rounded space-y-3">
+                  <div>
+                    <p className="font-medium">Is Child at Grade Level in Math?</p>
+                    <p className={isAtMathGradeLevel ? "text-green-700" : "text-orange-700"}>
+                      {isAtMathGradeLevel ? "Yes" : "No"}
+                    </p>
+                  </div>
+
+                  {isAtMathGradeLevel && mathFunctionalGradeLevel && (
+                    <>
+                      <div>
+                        <p className="font-medium">Grade Level:</p>
+                        <p>{mathFunctionalGradeLevel}</p>
+                      </div>
+                      {mathPerformanceSummary && (
+                        <div>
+                          <p className="font-medium">Performance Summary:</p>
+                          <p className="whitespace-pre-wrap">{mathPerformanceSummary}</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {!isAtMathGradeLevel && mathGradeLevelMappings && mathGradeLevelMappings.length > 0 && (
+                    <div>
+                      <p className="font-medium mb-2">Grade Level Mappings:</p>
+                      <div className="space-y-2">
+                        {mathGradeLevelMappings.map((mapping, idx) => (
+                          <div key={idx} className="bg-white p-3 rounded border">
+                            <p className="font-medium text-sm">Grade: {mapping.gradeLevel}</p>
+                            <div className="grid grid-cols-3 gap-2 mt-1 text-xs">
+                              <div>
+                                <span className="font-medium">Independent:</span> {mapping.independent || 'N/A'}
+                              </div>
+                              <div>
+                                <span className="font-medium">Instructional:</span> {mapping.instructional || 'N/A'}
+                              </div>
+                              <div>
+                                <span className="font-medium">Frustration:</span> {mapping.frustration || 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {!isAtMathGradeLevel && mathGradeLevelObservation && (
+                    <div>
+                      <p className="font-medium">Observation:</p>
+                      <p className="whitespace-pre-wrap">{mathGradeLevelObservation}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Math Battery Test Results */}
+            {mathBatteryTestConducted && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Math Battery Test Results</h3>
+                <div className="bg-gray-50 p-4 rounded space-y-3">
+                  <div>
+                    <p className="font-medium">Test Conducted:</p>
+                    <p className="text-green-700">Yes</p>
+                  </div>
+                  {mathBatteryTestSummary && (
+                    <div>
+                      <p className="font-medium">Test Summary:</p>
+                      <p className="whitespace-pre-wrap">{mathBatteryTestSummary}</p>
+                    </div>
+                  )}
+                  {mathBatteryTestReportUrl && (
+                    <div>
+                      <p className="font-medium">Report URL:</p>
+                      <p className="text-blue-600 text-sm break-all">{mathBatteryTestReportUrl}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Math Concepts Performance Assessment */}
+            {Object.values(mathConcepts).some(concept => concept.performance) && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Math Concepts Performance Assessment</h3>
+                <div className="bg-gray-50 p-4 rounded space-y-4">
+                  {Object.entries(mathConcepts).map(([key, concept]) =>
+                    concept.performance && (
+                      <div key={key} className="bg-white p-3 rounded border">
+                        <p className="font-semibold text-sm capitalize mb-2">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </p>
+                        <div className="space-y-1 text-sm">
+                          <div>
+                            <span className="font-medium">Performance Level:</span>{' '}
+                            <span className={
+                              concept.performance === 'Independent' ? 'text-green-700' :
+                                concept.performance === 'Instructional' ? 'text-blue-700' :
+                                  concept.performance === 'Frustration' ? 'text-red-700' :
+                                    'text-gray-700'
+                            }>
+                              {concept.performance}
+                            </span>
+                          </div>
+                          {concept.summary && (
+                            <div>
+                              <span className="font-medium">Summary:</span> {concept.summary}
+                            </div>
+                          )}
+                          {concept.errorPattern && (
+                            <div>
+                              <span className="font-medium">Error Pattern:</span> {concept.errorPattern}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )
                   )}
@@ -496,7 +870,7 @@ export function MathSkillAssessment({
             }}>
               Close
             </Button>
-            <Button 
+            <Button
               onClick={downloadPDF}
               disabled={!studentDetails || !educatorDetails}
               title={!studentDetails || !educatorDetails ? 'Waiting for student and educator information to load...' : ''}
