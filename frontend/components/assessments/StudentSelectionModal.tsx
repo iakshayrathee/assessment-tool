@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, Filter, Loader2 } from 'lucide-react';
 import { useEducatorStudents } from '@/hooks/useEducator';
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
+import { GRADE_LIST } from '@/lib/gradeConfig';
 
 interface StudentSelectionModalProps {
   isOpen: boolean;
@@ -98,9 +100,9 @@ export function StudentSelectionModal({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Grades</SelectItem>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((grade) => (
-                  <SelectItem key={grade} value={grade.toString()}>
-                    Grade {grade}
+                {GRADE_LIST.map((grade) => (
+                  <SelectItem key={grade} value={grade}>
+                    {grade}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -160,7 +162,7 @@ export function StudentSelectionModal({
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-gray-900 truncate">{fullName}</h3>
                           <p className="text-sm text-gray-600">
-                            Grade {grade} • Age {age}
+                            <GradeDisplay grade={grade} /> • Age {age}
                           </p>
                           {school && (
                             <p className="text-xs text-gray-500 mt-1 truncate">{school}</p>

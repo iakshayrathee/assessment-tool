@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  Users, 
-  Search, 
+import {
+  Users,
+  Search,
   Filter,
   User,
   Calendar,
@@ -27,6 +27,8 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
+import { GradeSelect } from '@/components/ui/GradeSelect';
 
 interface Student {
   id: string;
@@ -76,12 +78,12 @@ export default function SchoolViewerStudents() {
   const [grade, setGrade] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  const { 
-    students, 
-    pagination, 
-    isLoading, 
-    error, 
-    refetch 
+  const {
+    students,
+    pagination,
+    isLoading,
+    error,
+    refetch
   } = useSchoolViewerStudents({
     page,
     limit: 12,
@@ -234,7 +236,7 @@ export default function SchoolViewerStudents() {
             <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Students Found</h3>
             <p className="text-gray-600">
-              {search || status || grade 
+              {search || status || grade
                 ? 'No students match your current filters. Try adjusting your search criteria.'
                 : 'No students are currently enrolled at your school.'
               }
@@ -268,7 +270,7 @@ export default function SchoolViewerStudents() {
                         <div>
                           <p className="font-medium text-gray-900">{student.fullName}</p>
                           <div className="flex items-center space-x-2 text-sm text-gray-600">
-                            <span>Grade {student.grade}</span>
+                            <GradeDisplay grade={student.grade} />
                             <span>•</span>
                             <span>Age {student.age}</span>
                           </div>

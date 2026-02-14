@@ -1,6 +1,8 @@
 // Static system configuration data
 // This data is based on the backend AdminService.getSystemConfig() method
 
+import { GRADE_LIST } from './gradeConfig';
+
 export const SYSTEM_CONFIG = {
   platform: {
     name: 'Knowled',
@@ -9,7 +11,7 @@ export const SYSTEM_CONFIG = {
   },
   features: {
     assessmentDomains: ['Reading', 'Writing', 'Math', 'Visual Perception', 'Motor Skills', 'Attention'],
-    gradeList: ['Pre-K', 'Kinder Garden', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'],
+    gradeList: GRADE_LIST, // Use shared grade configuration
     syllabusList: ['CBSE', 'ICSE', 'State Board', 'IB', 'IGCSE'],
     reportTypes: ['INTAKE', 'ASSESSMENT', 'IEP', 'PROGRESS']
   },
@@ -25,7 +27,8 @@ export const SYSTEM_CONFIG = {
 };
 
 // Export individual lists for easier access
-export const GRADE_LIST = SYSTEM_CONFIG.features.gradeList;
+// Re-export from gradeConfig to maintain backward compatibility
+export { GRADE_LIST } from './gradeConfig';
 export const SYLLABUS_LIST = SYSTEM_CONFIG.features.syllabusList;
 export const ASSESSMENT_DOMAINS = SYSTEM_CONFIG.features.assessmentDomains;
 export const REPORT_TYPES = SYSTEM_CONFIG.features.reportTypes;

@@ -11,9 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EnhancedCard } from '@/components/ui/enhanced-card';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { PageHeader } from '@/components/ui/page-header';
-import { 
-  School, 
-  Users, 
+import {
+  School,
+  Users,
   MapPin,
   Phone,
   Mail,
@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
 
 interface SchoolDetail {
   id: string;
@@ -85,7 +86,7 @@ export default function SchoolDetailPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const centerId = user?.profile?.id;
       if (!centerId) {
         setError('Center ID not found');
@@ -95,7 +96,7 @@ export default function SchoolDetailPage() {
       // Get school details from center schools
       const schools = await apiClient.getCenterSchools(centerId);
       const schoolDetail = schools.find(s => s.id === schoolId);
-      
+
       if (!schoolDetail) {
         setError('School not found');
         return;
@@ -268,7 +269,7 @@ export default function SchoolDetailPage() {
                     <label className="text-sm font-medium text-muted-foreground">School Name</label>
                     <p className="font-medium text-lg">{school.name}</p>
                   </div>
-                  
+
                   {school.address && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Address</label>
@@ -278,7 +279,7 @@ export default function SchoolDetailPage() {
                       </div>
                     </div>
                   )}
-                  
+
                   {school.phone && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Phone</label>
@@ -288,7 +289,7 @@ export default function SchoolDetailPage() {
                       </div>
                     </div>
                   )}
-                  
+
                   {school.email && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Email</label>
@@ -298,7 +299,7 @@ export default function SchoolDetailPage() {
                       </div>
                     </div>
                   )}
-                  
+
                   {school.principalName && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Principal</label>
@@ -324,12 +325,12 @@ export default function SchoolDetailPage() {
                     <label className="text-sm font-medium text-muted-foreground">Partnership Started</label>
                     <p className="font-medium">{new Date(school.createdAt).toLocaleDateString()}</p>
                   </div>
-                  
+
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
                     <p className="font-medium">{new Date(school.updatedAt).toLocaleDateString()}</p>
                   </div>
-                  
+
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Status</label>
                     <div className="mt-1">
@@ -338,7 +339,7 @@ export default function SchoolDetailPage() {
                       </Badge>
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Services</label>
                     <div className="flex flex-wrap gap-2 mt-1">
@@ -379,7 +380,7 @@ export default function SchoolDetailPage() {
                               {student.fullName}
                             </h3>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <span>Grade {student.grade}</span>
+                              <GradeDisplay grade={student.grade} />
                               <span>•</span>
                               <Badge className={getStatusColor(student.status)}>
                                 {student.status}
@@ -387,7 +388,7 @@ export default function SchoolDetailPage() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-4">
                           <div className="text-right">
                             <p className="text-sm font-medium">Assignment Status</p>
@@ -395,7 +396,7 @@ export default function SchoolDetailPage() {
                               {getAssignmentStatus(student)}
                             </Badge>
                           </div>
-                          
+
                           <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Link href={`/center/students/${student.id}`}>
                               <Button variant="outline" size="sm">
@@ -464,7 +465,7 @@ export default function SchoolDetailPage() {
                             )}
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-2">
                           <Badge variant={viewer.user.isActive ? 'default' : 'secondary'}>
                             {viewer.user.isActive ? 'Active' : 'Inactive'}

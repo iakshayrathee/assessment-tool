@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  User, 
+import {
+  User,
   Save,
   Calendar,
   School,
@@ -18,6 +18,7 @@ import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { GRADE_LIST, SYLLABUS_LIST } from '@/lib/staticData';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
+import { GradeSelect } from '@/components/ui/GradeSelect';
 
 interface StudentFormData {
   fullName: string;
@@ -92,11 +93,11 @@ export default function AddStudentModal({ isOpen, onClose, onStudentAdded }: Add
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    
+
     return age;
   };
 
@@ -135,7 +136,7 @@ export default function AddStudentModal({ isOpen, onClose, onStudentAdded }: Add
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -163,7 +164,7 @@ export default function AddStudentModal({ isOpen, onClose, onStudentAdded }: Add
       };
 
       await apiClient.createStudent(studentData);
-      
+
       toast({
         title: "Success",
         description: "Student added successfully!",
@@ -180,7 +181,7 @@ export default function AddStudentModal({ isOpen, onClose, onStudentAdded }: Add
         schoolId: ''
       });
       setErrors({});
-      
+
       onStudentAdded();
       onClose();
     } catch (error: any) {
@@ -231,7 +232,7 @@ export default function AddStudentModal({ isOpen, onClose, onStudentAdded }: Add
               <User className="h-4 w-4" />
               Student Information
             </h3>
-            
+
             {/* Full Name */}
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-sm font-medium">
@@ -296,18 +297,11 @@ export default function AddStudentModal({ isOpen, onClose, onStudentAdded }: Add
                   <GraduationCap className="h-4 w-4 mr-1" />
                   Grade/Class *
                 </Label>
-                <Select value={formData.grade} onValueChange={(value) => handleInputChange('grade', value)}>
-                  <SelectTrigger className={errors.grade ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select grade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GRADE_LIST.map((grade) => (
-                      <SelectItem key={grade} value={grade}>
-                        {grade}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <GradeSelect
+                  value={formData.grade}
+                  onValueChange={(value) => handleInputChange('grade', value)}
+                  error={errors.grade}
+                />
                 {errors.grade && (
                   <p className="text-sm text-red-600">{errors.grade}</p>
                 )}

@@ -40,6 +40,7 @@ import {
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
 
 interface SchoolData {
   id: string;
@@ -938,7 +939,7 @@ export default function CenterSchools() {
                             </div>
                             <div>
                               <p className="font-medium">{student.fullName}</p>
-                              <p className="text-sm text-gray-600">Grade {student.grade}</p>
+                              <p className="text-sm text-gray-600"><GradeDisplay grade={student.grade} /></p>
                             </div>
                           </div>
                           <div className="text-right">
@@ -1068,7 +1069,7 @@ export default function CenterSchools() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <Badge variant="outline">Grade {student.grade}</Badge>
+                                <Badge variant="outline"><GradeDisplay grade={student.grade} /></Badge>
                               </TableCell>
                               <TableCell>
                                 {getStatusBadge(student.status)}

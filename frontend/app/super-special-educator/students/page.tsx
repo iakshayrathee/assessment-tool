@@ -11,9 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  Users, 
-  MapPin, 
+import {
+  Users,
+  MapPin,
   Calendar,
   Search,
   ArrowLeft,
@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
 
 interface Student {
   id: string;
@@ -75,12 +76,12 @@ export default function StudentsPage() {
   const [progressFilter, setProgressFilter] = useState<string>('all');
   const [centerFilter, setCenterFilter] = useState<string>('all');
   const [gradeFilter, setGradeFilter] = useState<string>('all');
-  
+
   // Modal states
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [progressModalOpen, setProgressModalOpen] = useState(false);
-  
+
   // Progress tracking form states
   const [progressNotes, setProgressNotes] = useState('');
   const [progressGoal, setProgressGoal] = useState('');
@@ -115,16 +116,16 @@ export default function StudentsPage() {
   const uniqueGrades = Array.from(new Set(studentsArray.map(s => s.grade).filter(Boolean))).sort();
 
   const filteredStudents = studentsArray.filter(student => {
-    const matchesSearch = 
+    const matchesSearch =
       student.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.centerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.educatorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (student.learningDisabilities || []).some(ld => ld?.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     const matchesProgress = progressFilter === 'all' || student.progressStatus === progressFilter;
     const matchesCenter = centerFilter === 'all' || student.centerName === centerFilter;
     const matchesGrade = gradeFilter === 'all' || student.grade === gradeFilter;
-    
+
     return matchesSearch && matchesProgress && matchesCenter && matchesGrade;
   });
 
@@ -196,7 +197,7 @@ export default function StudentsPage() {
 
     try {
       setSubmittingProgress(true);
-      
+
       // TODO: Replace with actual API call
       // await apiClient.updateStudentProgress(selectedStudent.id, {
       //   category: progressCategory,
@@ -208,7 +209,7 @@ export default function StudentsPage() {
         title: "Success",
         description: "Progress update submitted successfully",
       });
-      
+
       setProgressModalOpen(false);
       // Optionally refresh data
       // fetchStudents();
@@ -262,7 +263,7 @@ export default function StudentsPage() {
             className="pl-10"
           />
         </div>
-        
+
         <div className="flex gap-3 items-center flex-wrap">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-gray-500" />
@@ -280,7 +281,7 @@ export default function StudentsPage() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <Select value={centerFilter} onValueChange={setCenterFilter}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -381,7 +382,7 @@ export default function StudentsPage() {
             <Users className="h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {searchTerm || progressFilter !== 'all' || centerFilter !== 'all' || gradeFilter !== 'all'
-                ? 'No students found' 
+                ? 'No students found'
                 : 'No students under supervision'
               }
             </h3>
@@ -448,7 +449,7 @@ export default function StudentsPage() {
                       </td>
                       <td className="p-4">
                         <div className="text-sm">
-                          <div className="font-medium text-gray-900">Grade {student.grade}</div>
+                          <div className="font-medium text-gray-900"><GradeDisplay grade={student.grade} /></div>
                           <div className="text-gray-500">{student.age} years old</div>
                         </div>
                       </td>
@@ -495,11 +496,10 @@ export default function StudentsPage() {
                       <td className="p-4">
                         {student.nextAssessmentDue ? (
                           <div className="text-sm">
-                            <div className={`font-medium ${
-                              isAssessmentOverdue(student.nextAssessmentDue) 
-                                ? 'text-red-600' 
-                                : 'text-gray-900'
-                            }`}>
+                            <div className={`font-medium ${isAssessmentOverdue(student.nextAssessmentDue)
+                              ? 'text-red-600'
+                              : 'text-gray-900'
+                              }`}>
                               {formatDate(student.nextAssessmentDue)}
                             </div>
                             {isAssessmentOverdue(student.nextAssessmentDue) && (
@@ -552,7 +552,7 @@ export default function StudentsPage() {
               Comprehensive student profile and academic information
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedStudent && (
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="grid w-full grid-cols-5">
@@ -562,7 +562,7 @@ export default function StudentsPage() {
                 <TabsTrigger value="assessments">Assessments</TabsTrigger>
                 <TabsTrigger value="reports">Reports</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="overview" className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card>
@@ -602,7 +602,7 @@ export default function StudentsPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  
+
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">Learning Profile</CardTitle>
@@ -633,7 +633,7 @@ export default function StudentsPage() {
                       )}
                     </CardContent>
                   </Card>
-                  
+
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">Performance Metrics</CardTitle>
@@ -661,7 +661,7 @@ export default function StudentsPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  
+
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">Important Dates</CardTitle>
@@ -676,11 +676,10 @@ export default function StudentsPage() {
                       {selectedStudent.nextAssessmentDue && (
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">Next Assessment:</span>
-                          <span className={`font-medium text-sm ${
-                            isAssessmentOverdue(selectedStudent.nextAssessmentDue) 
-                              ? 'text-red-600' 
-                              : 'text-blue-600'
-                          }`}>
+                          <span className={`font-medium text-sm ${isAssessmentOverdue(selectedStudent.nextAssessmentDue)
+                            ? 'text-red-600'
+                            : 'text-blue-600'
+                            }`}>
                             {formatDate(selectedStudent.nextAssessmentDue)}
                             {isAssessmentOverdue(selectedStudent.nextAssessmentDue) && ' (Overdue)'}
                           </span>
@@ -696,7 +695,7 @@ export default function StudentsPage() {
                   </Card>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="academic" className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card>
@@ -725,7 +724,7 @@ export default function StudentsPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  
+
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">Learning Strengths</CardTitle>
@@ -753,7 +752,7 @@ export default function StudentsPage() {
                   </Card>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="iep" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -771,12 +770,12 @@ export default function StudentsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-20 bg-gray-200 rounded-full h-2">
-                            <div className="bg-blue-600 h-2 rounded-full" style={{width: '75%'}}></div>
+                            <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
                           </div>
                           <span className="text-sm font-medium">75%</span>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
                           <Target className="h-4 w-4 text-green-500" />
@@ -787,12 +786,12 @@ export default function StudentsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-20 bg-gray-200 rounded-full h-2">
-                            <div className="bg-green-600 h-2 rounded-full" style={{width: '90%'}}></div>
+                            <div className="bg-green-600 h-2 rounded-full" style={{ width: '90%' }}></div>
                           </div>
                           <span className="text-sm font-medium">90%</span>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
                           <Target className="h-4 w-4 text-yellow-500" />
@@ -803,7 +802,7 @@ export default function StudentsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-20 bg-gray-200 rounded-full h-2">
-                            <div className="bg-yellow-600 h-2 rounded-full" style={{width: '60%'}}></div>
+                            <div className="bg-yellow-600 h-2 rounded-full" style={{ width: '60%' }}></div>
                           </div>
                           <span className="text-sm font-medium">60%</span>
                         </div>
@@ -812,7 +811,7 @@ export default function StudentsPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
-              
+
               <TabsContent value="assessments" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -830,7 +829,7 @@ export default function StudentsPage() {
                         </div>
                         <Badge variant="default">Completed</Badge>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
                           <Brain className="h-4 w-4 text-green-500" />
@@ -841,7 +840,7 @@ export default function StudentsPage() {
                         </div>
                         <Badge variant="default">Completed</Badge>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
                           <Heart className="h-4 w-4 text-red-500" />
@@ -856,7 +855,7 @@ export default function StudentsPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
-              
+
               <TabsContent value="reports" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -877,7 +876,7 @@ export default function StudentsPage() {
                           View
                         </Button>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
                           <PieChart className="h-4 w-4 text-green-500" />
@@ -891,7 +890,7 @@ export default function StudentsPage() {
                           View
                         </Button>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
                           <LineChart className="h-4 w-4 text-purple-500" />
@@ -926,7 +925,7 @@ export default function StudentsPage() {
               Update progress for {selectedStudent?.fullName}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Progress Category *</label>
@@ -944,7 +943,7 @@ export default function StudentsPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Specific Goal (Optional)</label>
               <Input
@@ -953,7 +952,7 @@ export default function StudentsPage() {
                 onChange={(e) => setProgressGoal(e.target.value)}
               />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Progress Notes *</label>
               <Textarea
@@ -963,7 +962,7 @@ export default function StudentsPage() {
                 rows={4}
               />
             </div>
-            
+
             <div className="flex gap-2 pt-4">
               <Button
                 variant="outline"

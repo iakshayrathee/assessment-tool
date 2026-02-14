@@ -16,6 +16,7 @@ import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker
 import { Plus, Eye, Loader2, ClipboardList } from 'lucide-react';
 import { FileUpload } from '@/components/ui/file-upload';
 import { FileViewer } from '@/components/ui/file-viewer';
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
 
 interface Student {
     id: string;
@@ -546,7 +547,7 @@ export default function EducatorHomeworkPage() {
                                             <div>
                                                 <h3 className="font-medium text-gray-900">{student.fullName}</h3>
                                                 <p className="text-sm text-gray-600">
-                                                    Grade {student.grade} • Age {student.age}
+                                                    <GradeDisplay grade={student.grade} /> • Age {student.age}
                                                 </p>
                                             </div>
                                             {formData.studentId === student.id && (
