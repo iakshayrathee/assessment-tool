@@ -81,7 +81,7 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
             No grade levels added yet. Click "Add Grade Level" to begin.
           </p>
         )}
-        
+
         {mappings.map((mapping, index) => (
           <Card key={index} className="border-2">
             <CardContent className="pt-4">
@@ -100,7 +100,7 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <Label htmlFor={`gradeLevel-${index}`}>Grade Level *</Label>
                   <Input
@@ -113,44 +113,51 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor={`independent-${index}`}>Independent Level</Label>
-                  <Input
-                    id={`independent-${index}`}
-                    value={mapping.independent}
-                    onChange={(e) => updateMapping(index, 'independent', e.target.value)}
-                    placeholder="e.g., 95%+"
-                    disabled={disabled}
-                    className="mt-1"
-                  />
-                </div>
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Performance Levels (Select all that apply)</Label>
 
-                <div>
-                  <Label htmlFor={`instructional-${index}`}>Instructional Level</Label>
-                  <Input
-                    id={`instructional-${index}`}
-                    value={mapping.instructional}
-                    onChange={(e) => updateMapping(index, 'instructional', e.target.value)}
-                    placeholder="e.g., 90-94%"
-                    disabled={disabled}
-                    className="mt-1"
-                  />
-                </div>
+                  <div className="space-y-2 border rounded-md p-3 bg-gray-50">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={mapping.independent === 'Yes'}
+                        onChange={(e) => updateMapping(index, 'independent', e.target.checked ? 'Yes' : '')}
+                        disabled={disabled}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm font-medium">Independent Level</span>
+                    </label>
+                  </div>
 
-                <div>
-                  <Label htmlFor={`frustration-${index}`}>Frustration Level</Label>
-                  <Input
-                    id={`frustration-${index}`}
-                    value={mapping.frustration}
-                    onChange={(e) => updateMapping(index, 'frustration', e.target.value)}
-                    placeholder="e.g., Below 90%"
-                    disabled={disabled}
-                    className="mt-1"
-                  />
+                  <div className="space-y-2 border rounded-md p-3 bg-gray-50">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={mapping.instructional === 'Yes'}
+                        onChange={(e) => updateMapping(index, 'instructional', e.target.checked ? 'Yes' : '')}
+                        disabled={disabled}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm font-medium">Instructional Level</span>
+                    </label>
+                  </div>
+
+                  <div className="space-y-2 border rounded-md p-3 bg-gray-50">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={mapping.frustration === 'Yes'}
+                        onChange={(e) => updateMapping(index, 'frustration', e.target.checked ? 'Yes' : '')}
+                        disabled={disabled}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm font-medium">Frustration Level</span>
+                    </label>
+                  </div>
                 </div>
 
                 {showSummaryNote && (
-                  <div className="md:col-span-2">
+                  <div>
                     <Label htmlFor={`summaryNote-${index}`}>Summary Note (Optional)</Label>
                     <Textarea
                       id={`summaryNote-${index}`}

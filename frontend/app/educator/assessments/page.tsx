@@ -358,6 +358,7 @@ export default function AssessmentsPage() {
                 {showSkillAssessment === 'reading' && (
                   <ReadingSkillAssessment
                     studentId={selectedStudent?.id || ''}
+                    studentGrade={selectedStudent?.grade || ''}
                     assessmentId={editingAssessment?.type === 'reading' ? editingAssessment?.id : undefined}
                     initialData={editingAssessment?.type === 'reading' ? editingAssessment : undefined}
                     mode={editingAssessment?.type === 'reading' ? (editingAssessment?.mode || 'edit') : 'create'}
@@ -371,6 +372,7 @@ export default function AssessmentsPage() {
                 {showSkillAssessment === 'writing' && (
                   <WritingSkillAssessment
                     studentId={selectedStudent?.id || ''}
+                    studentGrade={selectedStudent?.grade || ''}
                     assessmentId={editingAssessment?.type === 'writing' ? editingAssessment?.id : undefined}
                     initialData={editingAssessment?.type === 'writing' ? editingAssessment : undefined}
                     mode={editingAssessment?.type === 'writing' ? (editingAssessment?.mode || 'edit') : 'create'}
@@ -384,6 +386,7 @@ export default function AssessmentsPage() {
                 {showSkillAssessment === 'math' && (
                   <MathSkillAssessment
                     studentId={selectedStudent?.id || ''}
+                    studentGrade={selectedStudent?.grade || ''}
                     assessmentId={editingAssessment?.type === 'math' ? editingAssessment?.id : undefined}
                     initialData={editingAssessment?.type === 'math' ? editingAssessment : undefined}
                     mode={editingAssessment?.type === 'math' ? (editingAssessment?.mode || 'edit') : 'create'}

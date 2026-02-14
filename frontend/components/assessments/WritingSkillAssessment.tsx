@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 
 interface WritingSkillAssessmentProps {
   studentId: string;
+  studentGrade?: string;
   assessmentId?: string;
   initialData?: any;
   mode?: 'create' | 'edit' | 'view';
@@ -207,7 +208,7 @@ export function WritingSkillAssessment({
     initialData?.boardCopyingObservation || ''
   );
 
-  // NEW: Punctuation Skills State
+  // NEW: Punctuation Skills State (Legacy - kept for backward compatibility)
   const [punctuationSkills, setPunctuationSkills] = useState({
     usesCapitalLetters: initialData?.usesCapitalLetters || false,
     usesFullStop: initialData?.usesFullStop || false,
@@ -220,6 +221,36 @@ export function WritingSkillAssessment({
   );
   const [punctuationObservation, setPunctuationObservation] = useState(
     initialData?.punctuationObservation || ''
+  );
+
+  // NEW: Punctuation Skills (for Copying)
+  const [punctuationSkillsCopying, setPunctuationSkillsCopying] = useState({
+    usesCapitalLetters: initialData?.usesCapitalLettersCopying || false,
+    usesFullStop: initialData?.usesFullStopCopying || false,
+    usesQuestionMark: initialData?.usesQuestionMarkCopying || false,
+    usesComma: initialData?.usesCommaCopying || false,
+    usesApostrophe: initialData?.usesApostropheCopying || false,
+  });
+  const [punctuationOtherCopying, setPunctuationOtherCopying] = useState(
+    initialData?.punctuationOtherCopying || ''
+  );
+  const [punctuationObservationCopying, setPunctuationObservationCopying] = useState(
+    initialData?.punctuationObservationCopying || ''
+  );
+
+  // NEW: Punctuation Skills (in Creative Writing)
+  const [punctuationSkillsCreative, setPunctuationSkillsCreative] = useState({
+    usesCapitalLetters: initialData?.usesCapitalLettersCreative || false,
+    usesFullStop: initialData?.usesFullStopCreative || false,
+    usesQuestionMark: initialData?.usesQuestionMarkCreative || false,
+    usesComma: initialData?.usesCommaCreative || false,
+    usesApostrophe: initialData?.usesApostropheCreative || false,
+  });
+  const [punctuationOtherCreative, setPunctuationOtherCreative] = useState(
+    initialData?.punctuationOtherCreative || ''
+  );
+  const [punctuationObservationCreative, setPunctuationObservationCreative] = useState(
+    initialData?.punctuationObservationCreative || ''
   );
 
   // NEW: Spelling Observations State
@@ -276,10 +307,28 @@ export function WritingSkillAssessment({
         omissionSkippingFlag,
         boardCopyingObservation: hasBoardCopyingSkills ? boardCopyingObservation : null,
 
-        // NEW: Punctuation Skills
+        // NEW: Punctuation Skills (Legacy - for backward compatibility)
         ...punctuationSkills,
         punctuationOther,
         punctuationObservation,
+
+        // NEW: Punctuation Skills (for Copying)
+        usesCapitalLettersCopying: punctuationSkillsCopying.usesCapitalLetters,
+        usesFullStopCopying: punctuationSkillsCopying.usesFullStop,
+        usesQuestionMarkCopying: punctuationSkillsCopying.usesQuestionMark,
+        usesCommaCopying: punctuationSkillsCopying.usesComma,
+        usesApostropheCopying: punctuationSkillsCopying.usesApostrophe,
+        punctuationOtherCopying,
+        punctuationObservationCopying,
+
+        // NEW: Punctuation Skills (in Creative Writing)
+        usesCapitalLettersCreative: punctuationSkillsCreative.usesCapitalLetters,
+        usesFullStopCreative: punctuationSkillsCreative.usesFullStop,
+        usesQuestionMarkCreative: punctuationSkillsCreative.usesQuestionMark,
+        usesCommaCreative: punctuationSkillsCreative.usesComma,
+        usesApostropheCreative: punctuationSkillsCreative.usesApostrophe,
+        punctuationOtherCreative,
+        punctuationObservationCreative,
 
         // NEW: Spelling Observations
         spellingStrengthSummary,
@@ -442,6 +491,21 @@ export function WritingSkillAssessment({
               </div>
             </div>
           )}
+
+          {hasNearCopyingSkills === false && (
+            <div className="space-y-3 p-4 bg-red-50 rounded-lg">
+              <Label htmlFor="nearCopyingNoObservation">Observation (Mandatory) *</Label>
+              <Textarea
+                id="nearCopyingNoObservation"
+                value={nearCopyingObservation}
+                onChange={(e) => setNearCopyingObservation(e.target.value)}
+                placeholder="Please explain the difficulty with near copying skills..."
+                disabled={isViewMode}
+                rows={3}
+                required
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -551,6 +615,21 @@ export function WritingSkillAssessment({
               </div>
             </div>
           )}
+
+          {hasBoardCopyingSkills === false && (
+            <div className="space-y-3 p-4 bg-red-50 rounded-lg">
+              <Label htmlFor="boardCopyingNoObservation">Observation (Mandatory) *</Label>
+              <Textarea
+                id="boardCopyingNoObservation"
+                value={boardCopyingObservation}
+                onChange={(e) => setBoardCopyingObservation(e.target.value)}
+                placeholder="Please explain the difficulty with board copying skills..."
+                disabled={isViewMode}
+                rows={3}
+                required
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -638,6 +717,92 @@ export function WritingSkillAssessment({
           </div>
         </CardContent>
       </Card>
+
+      {/* NEW: Punctuation Skills (for Copying) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Punctuation Skills (in Creative Writing)</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Label className="text-sm font-semibold">Punctuation Marks Used (Select all that apply)</Label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={punctuationSkillsCreative.usesCapitalLetters}
+                onChange={(e) => setPunctuationSkillsCreative({ ...punctuationSkillsCreative, usesCapitalLetters: e.target.checked })}
+                disabled={isViewMode}
+                className="h-4 w-4"
+              />
+              <span className="text-sm">Capital Letters</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={punctuationSkillsCreative.usesFullStop}
+                onChange={(e) => setPunctuationSkillsCreative({ ...punctuationSkillsCreative, usesFullStop: e.target.checked })}
+                disabled={isViewMode}
+                className="h-4 w-4"
+              />
+              <span className="text-sm">Full Stop (.)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={punctuationSkillsCreative.usesQuestionMark}
+                onChange={(e) => setPunctuationSkillsCreative({ ...punctuationSkillsCreative, usesQuestionMark: e.target.checked })}
+                disabled={isViewMode}
+                className="h-4 w-4"
+              />
+              <span className="text-sm">Question Mark (?)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={punctuationSkillsCreative.usesComma}
+                onChange={(e) => setPunctuationSkillsCreative({ ...punctuationSkillsCreative, usesComma: e.target.checked })}
+                disabled={isViewMode}
+                className="h-4 w-4"
+              />
+              <span className="text-sm">Comma (,)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={punctuationSkillsCreative.usesApostrophe}
+                onChange={(e) => setPunctuationSkillsCreative({ ...punctuationSkillsCreative, usesApostrophe: e.target.checked })}
+                disabled={isViewMode}
+                className="h-4 w-4"
+              />
+              <span className="text-sm">Apostrophe (')</span>
+            </label>
+          </div>
+
+          <div>
+            <Label htmlFor="punctuationOtherCreative">Other (Please specify)</Label>
+            <Input
+              id="punctuationOtherCreative"
+              value={punctuationOtherCreative}
+              onChange={(e) => setPunctuationOtherCreative(e.target.value)}
+              disabled={isViewMode}
+              placeholder="e.g., Semicolon, Colon, etc."
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="punctuationObservationCreative">Observation Summary</Label>
+            <Textarea
+              id="punctuationObservationCreative"
+              value={punctuationObservationCreative}
+              onChange={(e) => setPunctuationObservationCreative(e.target.value)}
+              disabled={isViewMode}
+              placeholder="Describe punctuation usage patterns in creative writing..."
+              rows={3}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
 
       {/* NEW: Spelling Observations */}
       <Card>
@@ -1066,4 +1231,5 @@ export function WritingSkillAssessment({
     </div>
   );
 }
+
 

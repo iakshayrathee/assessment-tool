@@ -17,6 +17,7 @@ import { BatteryTestSection } from './BatteryTestSection';
 
 interface ReadingSkillAssessmentProps {
   studentId: string;
+  studentGrade?: string;
   assessmentId?: string;
   initialData?: any;
   mode?: 'create' | 'edit' | 'view';
@@ -170,6 +171,26 @@ export function ReadingSkillAssessment({
     initialData?.gradeLevelObservation || ''
   );
 
+  // NEW: Initial Reading Level Assessment State
+  const [independentLevelKnownText, setIndependentLevelKnownText] = useState(
+    initialData?.independentLevelKnownText || false
+  );
+  const [independentLevelUnknownText, setIndependentLevelUnknownText] = useState(
+    initialData?.independentLevelUnknownText || false
+  );
+  const [instructionalLevelKnownText, setInstructionalLevelKnownText] = useState(
+    initialData?.instructionalLevelKnownText || false
+  );
+  const [instructionalLevelUnknownText, setInstructionalLevelUnknownText] = useState(
+    initialData?.instructionalLevelUnknownText || false
+  );
+  const [frustrationLevelKnownText, setFrustrationLevelKnownText] = useState(
+    initialData?.frustrationLevelKnownText || false
+  );
+  const [frustrationLevelUnknownText, setFrustrationLevelUnknownText] = useState(
+    initialData?.frustrationLevelUnknownText || false
+  );
+
   // NEW: Battery Test State
   const [batteryTestConducted, setBatteryTestConducted] = useState(
     initialData?.batteryTestConducted || false
@@ -308,6 +329,96 @@ export function ReadingSkillAssessment({
 
   return (
     <div className="space-y-6">
+      {/* NEW: Initial Reading Level Assessment */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Reading Level Assessment</CardTitle>
+          <p className="text-sm text-gray-600">Assess the student's reading performance at different levels</p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Independent Level */}
+          <div className="p-4 border rounded-lg bg-blue-50">
+            <Label className="text-base font-semibold mb-3 block">1. Independent Level</Label>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={independentLevelKnownText}
+                  onChange={(e) => setIndependentLevelKnownText(e.target.checked)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">Known Text</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={independentLevelUnknownText}
+                  onChange={(e) => setIndependentLevelUnknownText(e.target.checked)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">Unknown Text</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Instructional Level */}
+          <div className="p-4 border rounded-lg bg-yellow-50">
+            <Label className="text-base font-semibold mb-3 block">2. Instructional Level</Label>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={instructionalLevelKnownText}
+                  onChange={(e) => setInstructionalLevelKnownText(e.target.checked)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">Known Text</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={instructionalLevelUnknownText}
+                  onChange={(e) => setInstructionalLevelUnknownText(e.target.checked)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">Unknown Text</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Frustration Level */}
+          <div className="p-4 border rounded-lg bg-red-50">
+            <Label className="text-base font-semibold mb-3 block">3. Frustration Level</Label>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={frustrationLevelKnownText}
+                  onChange={(e) => setFrustrationLevelKnownText(e.target.checked)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">Known Text</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={frustrationLevelUnknownText}
+                  onChange={(e) => setFrustrationLevelUnknownText(e.target.checked)}
+                  disabled={isViewMode}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">Unknown Text</span>
+              </label>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Assessment Questions */}
       <Card>
         <CardHeader>
@@ -411,7 +522,7 @@ export function ReadingSkillAssessment({
                 onChange={setGradeLevelMappings}
                 maxMappings={4}
                 disabled={isViewMode}
-                title="Grade Level Mapping (Up to 4 Grades Down)"
+                title="Grade Level Mapping"
                 showSummaryNote={false}
               />
               <div>
