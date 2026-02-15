@@ -72,17 +72,41 @@ export default function AssessmentsPage() {
 
     setLoadingAssessments(true);
     try {
-      const [formal, reading, writing, math] = await Promise.all([
+      // Use Promise.allSettled to prevent one failure from breaking all assessments
+      const results = await Promise.allSettled([
         apiClient.getFormalAssessmentsByStudent(selectedStudent.id),
         apiClient.getReadingSkillAssessmentsByStudent(selectedStudent.id),
         apiClient.getWritingSkillAssessmentsByStudent(selectedStudent.id),
         apiClient.getMathSkillAssessmentsByStudent(selectedStudent.id),
       ]);
 
-      setFormalAssessments(formal || []);
-      setReadingAssessments(reading || []);
-      setWritingAssessments(writing || []);
-      setMathAssessments(math || []);
+      // Extract successful results, use empty array for failures
+      setFormalAssessments(
+        results[0].status === 'fulfilled' ? results[0].value || [] : []
+      );
+      setReadingAssessments(
+        results[1].status === 'fulfilled' ? results[1].value || [] : []
+      );
+      setWritingAssessments(
+        results[2].status === 'fulfilled' ? results[2].value || [] : []
+      );
+      setMathAssessments(
+        results[3].status === 'fulfilled' ? results[3].value || [] : []
+      );
+
+      // Log any failures for debugging
+      const assessmentTypes = ['formal', 'reading', 'writing', 'math'];
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`Failed to fetch ${assessmentTypes[index]} assessments:`, result.reason);
+        }
+      });
+
+      // Show error toast only if all requests failed
+      const allFailed = results.every(result => result.status === 'rejected');
+      if (allFailed) {
+        toast.error('Failed to load assessments');
+      }
     } catch (error) {
       console.error('Error fetching assessments:', error);
       toast.error('Failed to load assessments');
