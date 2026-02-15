@@ -715,6 +715,9 @@ model WritingSkillAssessment {
   spellingStrengthSummary         String?
   spellingErrorPatternObservation String?
 
+  // NEW: Creative Writing
+  creativeWritingSummary          String?
+
   additionalNotes String?
   status          AssessmentStatus       @default(PENDING)
   completedAt     DateTime?

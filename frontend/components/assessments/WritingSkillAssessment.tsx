@@ -261,6 +261,11 @@ export function WritingSkillAssessment({
     initialData?.spellingErrorPatternObservation || ''
   );
 
+  // NEW: Creative Writing Summary
+  const [creativeWritingSummary, setCreativeWritingSummary] = useState(
+    initialData?.creativeWritingSummary || ''
+  );
+
   const isViewMode = mode === 'view';
 
   // Get student and educator details from saved assessment response
@@ -333,6 +338,9 @@ export function WritingSkillAssessment({
         // NEW: Spelling Observations
         spellingStrengthSummary,
         spellingErrorPatternObservation,
+
+        // NEW: Creative Writing Summary
+        creativeWritingSummary,
       };
 
       let response;
@@ -836,6 +844,27 @@ export function WritingSkillAssessment({
         </CardContent>
       </Card>
 
+      {/* NEW: Creative Writing */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Creative Writing</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div>
+            <Label htmlFor="creativeWritingSummary">Summary</Label>
+            <Textarea
+              id="creativeWritingSummary"
+              value={creativeWritingSummary}
+              onChange={(e) => setCreativeWritingSummary(e.target.value)}
+              placeholder="Provide a summary of the student's creative writing abilities..."
+              disabled={isViewMode}
+              rows={5}
+              className="mt-2"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Detailed Symptoms */}
       <Card>
         <CardHeader>
@@ -1193,6 +1222,16 @@ export function WritingSkillAssessment({
                       <p className="whitespace-pre-wrap">{spellingErrorPatternObservation}</p>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Creative Writing */}
+            {creativeWritingSummary && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Creative Writing</h3>
+                <div className="bg-gray-50 p-4 rounded">
+                  <p className="whitespace-pre-wrap">{creativeWritingSummary}</p>
                 </div>
               </div>
             )}
