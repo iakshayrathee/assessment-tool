@@ -555,23 +555,31 @@ model ReadingSkillAssessment {
   extraPausesAtCommas                 Boolean @default(false)
   incorrectToneForQuestionExclamation Boolean @default(false)
 
+  // NEW: Initial Reading Level Assessment
+  independentLevelKnownText     Boolean @default(false)
+  independentLevelUnknownText   Boolean @default(false)
+  instructionalLevelKnownText   Boolean @default(false)
+  instructionalLevelUnknownText Boolean @default(false)
+  frustrationLevelKnownText     Boolean @default(false)
+  frustrationLevelUnknownText   Boolean @default(false)
+
   // NEW: Reading Grade Level Mapping
-  isAtGradeLevel                  Boolean?
-  functionalGradeLevel            String?  // Editable grade level if at grade level
-  performanceSummary              String?  // Free text for performance summary
-  gradeLevelMappings              Json?    // Array of {gradeLevel, independent, instructional, frustration}
-  gradeLevelObservation           String?  // Observation for grade mappings
+  isAtGradeLevel        Boolean?
+  functionalGradeLevel  String? // Editable grade level if at grade level
+  performanceSummary    String? // Free text for performance summary
+  gradeLevelMappings    Json? // Array of {gradeLevel, independent, instructional, frustration}
+  gradeLevelObservation String? // Observation for grade mappings
 
   // NEW: Knowledcare Battery Test Results
-  batteryTestConducted            Boolean  @default(false)
-  batteryTestSummary              String?
-  batteryTestReportUrl            String?  // PDF/Report upload path
+  batteryTestConducted Boolean @default(false)
+  batteryTestSummary   String?
+  batteryTestReportUrl String? // PDF/Report upload path
 
   // NEW: Reading Comprehension Level
-  atGradeLevelComprehension       Boolean?
-  comprehensionLevels             String[] @default([]) // Literal, Inferential, Application, Critical
-  currentLevelComprehension       String[] @default([]) // If not at grade level
-  comprehensionObservation        String?
+  atGradeLevelComprehension Boolean?
+  comprehensionLevels       String[] @default([]) // Literal, Inferential, Application, Critical
+  currentLevelComprehension String[] @default([]) // If not at grade level
+  comprehensionObservation  String?
 
   additionalNotes String?
   status          AssessmentStatus       @default(PENDING)
@@ -672,51 +680,51 @@ model WritingSkillAssessment {
   inconsistentPerformanceAcrossDays  Boolean @default(false)
 
   // NEW: Near Copying Skills
-  hasNearCopyingSkills            Boolean?
-  nearCopyingLevels               String[] @default([]) // Letter, Word, Phrase, Sentence
-  nearCopyingObservation          String?
+  hasNearCopyingSkills   Boolean?
+  nearCopyingLevels      String[] @default([]) // Letter, Word, Phrase, Sentence
+  nearCopyingObservation String?
 
   // NEW: Board Copying Skills
-  hasBoardCopyingSkills           Boolean?
-  boardCopyingLevels              String[] @default([]) // Letter, Word, Phrase, Sentence
-  boardCopyingSpeedObservation    String?
-  visualTrackingDifficulty        Boolean  @default(false)
-  omissionSkippingFlag            Boolean  @default(false)
-  boardCopyingObservation         String?
+  hasBoardCopyingSkills        Boolean?
+  boardCopyingLevels           String[] @default([]) // Letter, Word, Phrase, Sentence
+  boardCopyingSpeedObservation String?
+  visualTrackingDifficulty     Boolean  @default(false)
+  omissionSkippingFlag         Boolean  @default(false)
+  boardCopyingObservation      String?
 
   // NEW: Punctuation Skills (Legacy - kept for backward compatibility)
-  usesCapitalLetters              Boolean  @default(false)
-  usesFullStop                    Boolean  @default(false)
-  usesQuestionMark                Boolean  @default(false)
-  usesComma                       Boolean  @default(false)
-  usesApostrophe                  Boolean  @default(false)
-  punctuationOther                String?
-  punctuationObservation          String?
+  usesCapitalLetters     Boolean @default(false)
+  usesFullStop           Boolean @default(false)
+  usesQuestionMark       Boolean @default(false)
+  usesComma              Boolean @default(false)
+  usesApostrophe         Boolean @default(false)
+  punctuationOther       String?
+  punctuationObservation String?
 
   // NEW: Punctuation Skills (for Copying)
-  usesCapitalLettersCopying       Boolean  @default(false)
-  usesFullStopCopying             Boolean  @default(false)
-  usesQuestionMarkCopying         Boolean  @default(false)
-  usesCommaCopying                Boolean  @default(false)
-  usesApostropheCopying           Boolean  @default(false)
-  punctuationOtherCopying         String?
-  punctuationObservationCopying   String?
+  usesCapitalLettersCopying     Boolean @default(false)
+  usesFullStopCopying           Boolean @default(false)
+  usesQuestionMarkCopying       Boolean @default(false)
+  usesCommaCopying              Boolean @default(false)
+  usesApostropheCopying         Boolean @default(false)
+  punctuationOtherCopying       String?
+  punctuationObservationCopying String?
 
   // NEW: Punctuation Skills (in Creative Writing)
-  usesCapitalLettersCreative      Boolean  @default(false)
-  usesFullStopCreative            Boolean  @default(false)
-  usesQuestionMarkCreative        Boolean  @default(false)
-  usesCommaCreative               Boolean  @default(false)
-  usesApostropheCreative          Boolean  @default(false)
-  punctuationOtherCreative        String?
-  punctuationObservationCreative  String?
+  usesCapitalLettersCreative     Boolean @default(false)
+  usesFullStopCreative           Boolean @default(false)
+  usesQuestionMarkCreative       Boolean @default(false)
+  usesCommaCreative              Boolean @default(false)
+  usesApostropheCreative         Boolean @default(false)
+  punctuationOtherCreative       String?
+  punctuationObservationCreative String?
 
   // NEW: Spelling Observations
   spellingStrengthSummary         String?
   spellingErrorPatternObservation String?
 
   // NEW: Creative Writing
-  creativeWritingSummary          String?
+  creativeWritingSummary String?
 
   additionalNotes String?
   status          AssessmentStatus       @default(PENDING)
@@ -808,29 +816,29 @@ model MathSkillAssessment {
   poorAttentionDuringMath             Boolean @default(false)
 
   // NEW: Math Grade Level Identification
-  isAtMathGradeLevel              Boolean?
-  mathFunctionalGradeLevel        String?  // Editable grade level
-  mathPerformanceSummary          String?
-  mathGradeLevelMappings          Json?    // Array of {gradeLevel, independent, instructional, frustration, summaryNote}
-  mathGradeLevelObservation       String?
+  isAtMathGradeLevel        Boolean?
+  mathFunctionalGradeLevel  String? // Editable grade level
+  mathPerformanceSummary    String?
+  mathGradeLevelMappings    Json? // Array of {gradeLevel, independent, instructional, frustration, summaryNote}
+  mathGradeLevelObservation String?
 
   // NEW: Knowledcare Battery Test (Math)
-  mathBatteryTestConducted        Boolean  @default(false)
-  mathBatteryTestSummary          String?
-  mathBatteryTestReportUrl        String?
+  mathBatteryTestConducted Boolean @default(false)
+  mathBatteryTestSummary   String?
+  mathBatteryTestReportUrl String?
 
   // NEW: Math Concepts Performance (Json objects with performance, summary, errorPattern)
-  additionPerformance             Json?
-  subtractionPerformance          Json?
-  multiplicationPerformance       Json?
-  divisionPerformance             Json?
-  placeValuePerformance           Json?
-  numberLinePerformance           Json?
-  fractionsPerformance            Json?
-  decimalsPerformance             Json?
-  algebraPerformance              Json?
-  statementSumsPerformance        Json?
-  geometryPerformance             Json?
+  additionPerformance       Json?
+  subtractionPerformance    Json?
+  multiplicationPerformance Json?
+  divisionPerformance       Json?
+  placeValuePerformance     Json?
+  numberLinePerformance     Json?
+  fractionsPerformance      Json?
+  decimalsPerformance       Json?
+  algebraPerformance        Json?
+  statementSumsPerformance  Json?
+  geometryPerformance       Json?
 
   additionalNotes String?
   status          AssessmentStatus       @default(PENDING)

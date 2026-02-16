@@ -249,6 +249,14 @@ export function ReadingSkillAssessment({
         ...questionAnswers,
         additionalNotes,
 
+        // NEW: Initial Reading Level Assessment
+        independentLevelKnownText,
+        independentLevelUnknownText,
+        instructionalLevelKnownText,
+        instructionalLevelUnknownText,
+        frustrationLevelKnownText,
+        frustrationLevelUnknownText,
+
         // NEW: Grade Level Mapping fields
         isAtGradeLevel,
         functionalGradeLevel: isAtGradeLevel ? functionalGradeLevel : null,
@@ -857,6 +865,58 @@ export function ReadingSkillAssessment({
                 </div>
               </div>
             )}
+
+            {/* Reading Level Assessment */}
+            {(independentLevelKnownText || independentLevelUnknownText ||
+              instructionalLevelKnownText || instructionalLevelUnknownText ||
+              frustrationLevelKnownText || frustrationLevelUnknownText) && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3">Reading Level Assessment</h3>
+                  <div className="bg-gray-50 p-4 rounded space-y-3">
+                    {(independentLevelKnownText || independentLevelUnknownText) && (
+                      <div className="p-3 bg-blue-50 rounded">
+                        <p className="font-medium mb-2">Independent Level</p>
+                        <div className="flex gap-4 text-sm">
+                          {independentLevelKnownText && (
+                            <span className="text-green-700">✓ Known Text</span>
+                          )}
+                          {independentLevelUnknownText && (
+                            <span className="text-green-700">✓ Unknown Text</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {(instructionalLevelKnownText || instructionalLevelUnknownText) && (
+                      <div className="p-3 bg-yellow-50 rounded">
+                        <p className="font-medium mb-2">Instructional Level</p>
+                        <div className="flex gap-4 text-sm">
+                          {instructionalLevelKnownText && (
+                            <span className="text-green-700">✓ Known Text</span>
+                          )}
+                          {instructionalLevelUnknownText && (
+                            <span className="text-green-700">✓ Unknown Text</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {(frustrationLevelKnownText || frustrationLevelUnknownText) && (
+                      <div className="p-3 bg-red-50 rounded">
+                        <p className="font-medium mb-2">Frustration Level</p>
+                        <div className="flex gap-4 text-sm">
+                          {frustrationLevelKnownText && (
+                            <span className="text-green-700">✓ Known Text</span>
+                          )}
+                          {frustrationLevelUnknownText && (
+                            <span className="text-green-700">✓ Unknown Text</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
             {/* Reading Grade Level Identification */}
             {isAtGradeLevel !== null && (
