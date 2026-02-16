@@ -11,8 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { PageHeader } from '@/components/ui/page-header';
-import { 
-  Users, 
+import {
+  Users,
   School,
   Search,
   Filter,
@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
 
 interface SchoolStudent {
   id: string;
@@ -67,13 +68,13 @@ export default function SchoolStudentsPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const [school, setSchool] = useState<School | null>(null);
   const [students, setStudents] = useState<SchoolStudent[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<SchoolStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -94,7 +95,7 @@ export default function SchoolStudentsPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const centerId = user?.profile?.id;
       if (!centerId) {
         setError('Center ID not found');
@@ -114,7 +115,7 @@ export default function SchoolStudentsPage() {
       }
 
       // Filter students by school
-      const schoolStudents = allStudents.data.filter((student: any) => 
+      const schoolStudents = allStudents.data.filter((student: any) =>
         student.schoolId === schoolId
       );
 
@@ -152,11 +153,11 @@ export default function SchoolStudentsPage() {
     // Assignment filter
     if (assignmentFilter) {
       if (assignmentFilter === 'assigned') {
-        filtered = filtered.filter(student => 
+        filtered = filtered.filter(student =>
           student.assignments.some(a => a.isActive)
         );
       } else if (assignmentFilter === 'unassigned') {
-        filtered = filtered.filter(student => 
+        filtered = filtered.filter(student =>
           !student.assignments.some(a => a.isActive)
         );
       }
@@ -276,7 +277,7 @@ export default function SchoolStudentsPage() {
                   className="w-full"
                 />
               </div>
-              
+
               <div>
                 <label className="text-sm font-medium mb-2 block">Status</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -290,7 +291,7 @@ export default function SchoolStudentsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <label className="text-sm font-medium mb-2 block">Grade</label>
                 <Select value={gradeFilter} onValueChange={setGradeFilter}>
@@ -305,7 +306,7 @@ export default function SchoolStudentsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <label className="text-sm font-medium mb-2 block">Assignment</label>
                 <Select value={assignmentFilter} onValueChange={setAssignmentFilter}>
@@ -345,7 +346,7 @@ export default function SchoolStudentsPage() {
               <div className="space-y-4">
                 {filteredStudents.map((student, index) => {
                   const assignmentInfo = getAssignmentStatus(student);
-                  
+
                   return (
                     <motion.div
                       key={student.id}
@@ -365,7 +366,7 @@ export default function SchoolStudentsPage() {
                             {student.fullName}
                           </h3>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>Grade {student.grade}</span>
+                            <GradeDisplay grade={student.grade} />
                             <span>•</span>
                             <span>Age {student.age}</span>
                             <span>•</span>
@@ -373,18 +374,18 @@ export default function SchoolStudentsPage() {
                               {student.status}
                             </Badge>
                           </div>
-                          
+
                           <div className="flex items-center gap-4 mt-2">
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Calendar className="h-3 w-3" />
                               Enrolled: {new Date(student.registrationDate).toLocaleDateString()}
                             </div>
-                            
+
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <FileText className="h-3 w-3" />
                               {student.reports.length} reports
                             </div>
-                            
+
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <BookOpen className="h-3 w-3" />
                               {student.assessments.length} assessments
@@ -392,7 +393,7 @@ export default function SchoolStudentsPage() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-4">
                         <div className="text-right">
                           <p className="text-sm font-medium">Assignment</p>
@@ -407,7 +408,7 @@ export default function SchoolStudentsPage() {
                             )}
                           </div>
                         </div>
-                        
+
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Link href={`/center/students/${student.id}`}>
                             <Button variant="outline" size="sm">
@@ -415,7 +416,7 @@ export default function SchoolStudentsPage() {
                               View
                             </Button>
                           </Link>
-                          
+
                           {assignmentInfo.status === 'Unassigned' ? (
                             <Link href={`/center/students/${student.id}/assign`}>
                               <Button size="sm">
@@ -441,13 +442,13 @@ export default function SchoolStudentsPage() {
               <div className="text-center py-12">
                 <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-2">
-                  {students.length === 0 
+                  {students.length === 0
                     ? 'No students from this school yet'
                     : 'No students match your filters'
                   }
                 </p>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {students.length === 0 
+                  {students.length === 0
                     ? 'Add students to get started'
                     : 'Try adjusting your search criteria'
                   }
@@ -485,7 +486,7 @@ export default function SchoolStudentsPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
@@ -499,7 +500,7 @@ export default function SchoolStudentsPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
@@ -513,7 +514,7 @@ export default function SchoolStudentsPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">

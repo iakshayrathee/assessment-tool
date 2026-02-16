@@ -1,5 +1,6 @@
 import { body, param, query, ValidationChain } from 'express-validator';
 import { UserRole, Gender } from '../models';
+import { GRADE_LIST, isValidGrade } from '../constants/gradeConstants';
 
 // Custom validation for CUID format (used by Prisma)
 const isCUID = (value: string): boolean => {
@@ -14,7 +15,7 @@ const isValidId = (value: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   // CUID format
   const cuidRegex = /^c[0-9a-z]{24}$/i;
-  
+
   return uuidRegex.test(value) || cuidRegex.test(value);
 };
 
@@ -82,8 +83,10 @@ export class ValidationRules {
         .isIn(Object.values(Gender))
         .withMessage('Gender must be one of: MALE, FEMALE, or OTHER'),
       body('grade')
-        .isLength({ min: 1, max: 20 })
-        .withMessage('Grade is required (e.g., "Grade 1", "Kindergarten", "Pre-K")'),
+        .notEmpty()
+        .withMessage('Grade is required')
+        .custom((value) => isValidGrade(value))
+        .withMessage(`Invalid grade value. Must be one of: ${Array.from(GRADE_LIST).join(', ')}`),
       body('school')
         .optional()
         .isLength({ min: 2, max: 100 })
@@ -135,8 +138,8 @@ export class ValidationRules {
         .withMessage('Gender must be one of: MALE, FEMALE, or OTHER'),
       body('grade')
         .optional()
-        .isLength({ min: 1, max: 20 })
-        .withMessage('Grade is required (e.g., "Grade 1", "Kindergarten", "Pre-K")'),
+        .custom((value) => !value || isValidGrade(value))
+        .withMessage(`Invalid grade value. Must be one of: ${Array.from(GRADE_LIST).join(', ')}`),
       body('school')
         .optional()
         .isLength({ min: 2, max: 100 })

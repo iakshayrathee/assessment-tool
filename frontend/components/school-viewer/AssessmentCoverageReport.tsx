@@ -8,6 +8,7 @@ import { useStudentDeepAssessment, useTargetedStudents } from '@/hooks/useSchool
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
 
 interface Props {
     data: any;
@@ -271,7 +272,7 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
                                         <div className="flex items-start justify-between mb-3">
                                             <div>
                                                 <h4 className="font-semibold text-gray-900">{student.name}</h4>
-                                                <p className="text-sm text-gray-600">Grade {student.grade}</p>
+                                                <p className="text-sm text-gray-600"><GradeDisplay grade={student.grade} /></p>
                                             </div>
                                             <Badge className={getRiskBadgeColor(student.riskCategory)}>
                                                 {student.riskCategory === 'HIGH_SUPPORT' ? 'High' : 'Moderate'}

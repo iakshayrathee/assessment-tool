@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, Filter, X } from 'lucide-react';
 import { useSchoolViewerStudents } from '@/hooks/useSchoolViewer';
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
 
 interface Student {
   id: string;
@@ -25,11 +26,11 @@ interface StudentSelectionModalProps {
   selectedStudentId?: string;
 }
 
-export function StudentSelectionModal({ 
-  isOpen, 
-  onClose, 
-  onSelect, 
-  selectedStudentId 
+export function StudentSelectionModal({
+  isOpen,
+  onClose,
+  onSelect,
+  selectedStudentId
 }: StudentSelectionModalProps) {
   const { students, isLoading } = useSchoolViewerStudents();
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,10 +42,10 @@ export function StudentSelectionModal({
   const filteredStudents = students?.filter((student: any) => {
     // Ensure student is an object with expected properties
     if (!student || typeof student !== 'object') return false;
-    
+
     const studentName = student.fullName || student.name || '';
     const studentGrade = student.grade || 0;
-    
+
     const matchesSearch = studentName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesGrade = gradeFilter === 'all' || studentGrade.toString() === gradeFilter;
     return matchesSearch && matchesGrade;
@@ -149,9 +150,8 @@ export function StudentSelectionModal({
                   {paginatedStudents.map((student: any) => (
                     <Card
                       key={student.id}
-                      className={`cursor-pointer transition-colors hover:bg-gray-50 ${
-                        selectedStudentId === student.id ? 'border-primary bg-primary/5' : ''
-                      }`}
+                      className={`cursor-pointer transition-colors hover:bg-gray-50 ${selectedStudentId === student.id ? 'border-primary bg-primary/5' : ''
+                        }`}
                       onClick={() => handleStudentSelect(student.id)}
                     >
                       <CardContent className="p-4">
@@ -161,7 +161,7 @@ export function StudentSelectionModal({
                               {student.fullName || student.name}
                             </h3>
                             <p className="text-sm text-gray-500">
-                              Grade {student.grade} • Age {student.age}
+                              <GradeDisplay grade={student.grade.toString()} /> • Age {student.age}
                               {student.school && ` • ${student.school}`}
                             </p>
                           </div>

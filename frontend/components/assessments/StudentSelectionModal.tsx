@@ -4,78 +4,80 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, Filter, X } from 'lucide-react';
+import { Search, Filter, Loader2 } from 'lucide-react';
 import { useEducatorStudents } from '@/hooks/useEducator';
-
-interface Student {
-  id: string;
-  fullName: string;
-  grade: number;
-  age: number;
-  school?: string;
-}
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
+import { GRADE_LIST } from '@/lib/gradeConfig';
 
 interface StudentSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (studentId: string) => void;
+  onSelect: (studentId: string, student: any) => void;
   selectedStudentId?: string;
 }
 
-export function StudentSelectionModal({ 
-  isOpen, 
-  onClose, 
-  onSelect, 
-  selectedStudentId 
+export function StudentSelectionModal({
+  isOpen,
+  onClose,
+  onSelect,
+  selectedStudentId
 }: StudentSelectionModalProps) {
-  const { students, isLoading } = useEducatorStudents();
   const [searchTerm, setSearchTerm] = useState('');
-  const [gradeFilter, setGradeFilter] = useState<string>('all');
+  const [gradeFilter, setGradeFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const pageSize = 12; // Show 12 students per page (2 columns x 6 rows)
 
-  // Filter students based on search and grade filter
-  const filteredStudents = students?.filter((student: any) => {
-    // Ensure student is an object with expected properties
-    if (!student || typeof student !== 'object') return false;
-    
-    const studentName = student.fullName || student.name || '';
-    const studentGrade = student.grade || 0;
-    
-    const matchesSearch = studentName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGrade = gradeFilter === 'all' || studentGrade.toString() === gradeFilter;
-    return matchesSearch && matchesGrade;
-  }) || [];
+  // Fetch students with server-side pagination and filtering
+  const { students, pagination, isLoading } = useEducatorStudents({
+    page: currentPage,
+    limit: pageSize,
+    search: searchTerm,
+    status: 'ACTIVE' // Only show active students in selection
+  });
 
-  // Pagination
-  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedStudents = filteredStudents.slice(startIndex, startIndex + itemsPerPage);
-
-  // Reset pagination when filters change
+  // Reset to page 1 when search term changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, gradeFilter]);
+  }, [searchTerm]);
 
-  const handleStudentSelect = (studentId: string) => {
-    onSelect(studentId);
+  // Client-side grade filtering (if needed)
+  const filteredStudents = gradeFilter
+    ? students?.filter((student: any) => student.grade?.toString() === gradeFilter) || []
+    : students || [];
+
+  const handleStudentSelect = (student: any) => {
+    onSelect(student.id, student);
     onClose();
   };
 
   const clearFilters = () => {
     setSearchTerm('');
-    setGradeFilter('all');
+    setGradeFilter('');
     setCurrentPage(1);
+  };
+
+  const handlePreviousPage = () => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    if (pagination && currentPage < pagination.totalPages) {
+      setCurrentPage(prev => prev + 1);
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Select Student</DialogTitle>
+          {pagination && (
+            <p className="text-sm text-gray-500">
+              {pagination.total} active student{pagination.total !== 1 ? 's' : ''} available
+            </p>
+          )}
         </DialogHeader>
 
         {/* Search and Filter Controls */}
@@ -89,24 +91,24 @@ export function StudentSelectionModal({
               className="pl-10"
             />
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-gray-400" />
             <Select value={gradeFilter} onValueChange={setGradeFilter}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Grade" />
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="All Grades" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Grades</SelectItem>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((grade) => (
-                  <SelectItem key={grade} value={grade.toString()}>
-                    Grade {grade}
+                {GRADE_LIST.map((grade) => (
+                  <SelectItem key={grade} value={grade}>
+                    {grade}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            
-            {(searchTerm || gradeFilter !== 'all') && (
+
+            {(searchTerm || gradeFilter) && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 Clear
               </Button>
@@ -115,53 +117,59 @@ export function StudentSelectionModal({
         </div>
 
         {/* Student List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-[400px]">
           {isLoading ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600">Loading students...</p>
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
+                <p className="text-gray-600">Loading students...</p>
+              </div>
             </div>
           ) : filteredStudents.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600">
-                {searchTerm || gradeFilter !== 'all' 
-                  ? 'No students match your search criteria.' 
-                  : 'No students found.'
+            <div className="text-center py-12">
+              <p className="text-gray-600 mb-2">
+                {searchTerm || gradeFilter
+                  ? 'No students match your search criteria.'
+                  : 'No active students found.'
                 }
               </p>
+              {(searchTerm || gradeFilter) && (
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  Clear Filters
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4">
-              {paginatedStudents.map((student: any) => {
-                // Safely extract student properties with fallbacks
+              {filteredStudents.map((student: any) => {
                 const studentId = student.id || '';
                 const fullName = student.fullName || student.name || 'Unknown Student';
-                const grade = student.grade || 0;
-                const age = student.age || 0;
+                const grade = student.grade || 'N/A';
+                const age = student.age || 'N/A';
                 const school = student.school?.name || student.schoolName || '';
-                
+
                 return (
                   <Card
                     key={studentId}
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      selectedStudentId === studentId 
-                        ? 'border-2 border-blue-500 bg-blue-50' 
-                        : 'border hover:border-gray-300'
-                    }`}
-                    onClick={() => handleStudentSelect(studentId)}
+                    className={`cursor-pointer transition-all hover:shadow-md ${selectedStudentId === studentId
+                      ? 'border-2 border-blue-500 bg-blue-50'
+                      : 'border hover:border-gray-300'
+                      }`}
+                    onClick={() => handleStudentSelect(student)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium text-gray-900">{fullName}</h3>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-gray-900 truncate">{fullName}</h3>
                           <p className="text-sm text-gray-600">
-                            Grade {grade} • Age {age}
+                            <GradeDisplay grade={grade} /> • Age {age}
                           </p>
                           {school && (
-                            <p className="text-xs text-gray-500 mt-1">{school}</p>
+                            <p className="text-xs text-gray-500 mt-1 truncate">{school}</p>
                           )}
                         </div>
                         {selectedStudentId === studentId && (
-                          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                          <div className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0 ml-2"></div>
                         )}
                       </div>
                     </CardContent>
@@ -173,29 +181,29 @@ export function StudentSelectionModal({
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t">
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between p-4 border-t bg-gray-50">
             <div className="text-sm text-gray-600">
-              Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredStudents.length)} of{' '}
-              {filteredStudents.length} students
+              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, pagination.total)} of{' '}
+              {pagination.total} students
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1 || isLoading}
               >
                 Previous
               </Button>
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages}
+              <span className="text-sm text-gray-600 min-w-[100px] text-center">
+                Page {currentPage} of {pagination.totalPages}
               </span>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
+                onClick={handleNextPage}
+                disabled={currentPage >= pagination.totalPages || isLoading}
               >
                 Next
               </Button>

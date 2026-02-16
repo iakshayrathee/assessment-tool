@@ -18,11 +18,29 @@ import { MultiConceptMapping, type ConceptPerformance } from './ConceptPerforman
 
 interface MathSkillAssessmentProps {
   studentId: string;
+  studentGrade?: string;
   assessmentId?: string;
   initialData?: any;
   mode?: 'create' | 'edit' | 'view';
   onSuccess?: () => void;
   onCancel?: () => void;
+}
+
+// Helper function to determine if geometry should be shown based on grade
+function shouldShowGeometry(grade?: string): boolean {
+  if (!grade) return true; // Show by default if grade is not available
+
+  const lowerGrade = grade.toLowerCase().trim();
+
+  // Hide geometry for Pre-KG, KG, Grade 1, and Grade 2
+  const hideForGrades = [
+    'pre-kg', 'prekg', 'pre kg',
+    'kg', 'kindergarten',
+    'grade 1', 'grade1', '1',
+    'grade 2', 'grade2', '2'
+  ];
+
+  return !hideForGrades.includes(lowerGrade);
 }
 
 const MATH_QUESTIONS = [
@@ -149,6 +167,7 @@ function extractQuestionAnswers(data: any): Record<string, string> {
 
 export function MathSkillAssessment({
   studentId,
+  studentGrade,
   assessmentId,
   initialData,
   mode = 'create',
@@ -431,7 +450,7 @@ export function MathSkillAssessment({
                 onChange={setMathGradeLevelMappings}
                 maxMappings={4}
                 disabled={isViewMode}
-                title="Math Grade Level Mapping (Up to 4 Grades Down)"
+                title="Math Grade Level Mapping"
                 showSummaryNote={false}
               />
               <div>
@@ -523,7 +542,8 @@ export function MathSkillAssessment({
             concepts={[
               { key: 'algebra', label: 'Algebra' },
               { key: 'statementSums', label: 'Statement Sums' },
-              { key: 'geometry', label: 'Geometry' },
+              // Only show Geometry for Grade 3 and above
+              ...(shouldShowGeometry(studentGrade) ? [{ key: 'geometry', label: 'Geometry' }] : []),
             ]}
             values={mathConcepts}
             onChange={(key, value) => setMathConcepts({ ...mathConcepts, [key]: value })}

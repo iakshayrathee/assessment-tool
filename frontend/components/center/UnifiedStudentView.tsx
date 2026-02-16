@@ -8,9 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Users, 
-  Search, 
+import {
+  Users,
+  Search,
   Filter,
   UserCheck,
   UserX,
@@ -23,6 +23,7 @@ import {
 import Link from 'next/link';
 import { useCenterStudents, useCenterSchools, useCenterEducators } from '@/hooks/useCenter';
 import { useAuth } from '@/hooks/useAuth';
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
 
 interface UnifiedStudentViewProps {
   viewType?: 'all' | 'by-school' | 'by-educator' | 'unassigned';
@@ -30,10 +31,10 @@ interface UnifiedStudentViewProps {
   contextName?: string; // school name or educator name
 }
 
-export function UnifiedStudentView({ 
-  viewType = 'all', 
-  contextId, 
-  contextName 
+export function UnifiedStudentView({
+  viewType = 'all',
+  contextId,
+  contextName
 }: UnifiedStudentViewProps) {
   const { user } = useAuth();
   const centerId = user?.profile?.id;
@@ -48,20 +49,20 @@ export function UnifiedStudentView({
   );
 
   // Data fetching with React Query
-  const { 
-    students, 
-    pagination, 
-    isLoading, 
-    assignStudent, 
-    isAssigning 
+  const {
+    students,
+    pagination,
+    isLoading,
+    assignStudent,
+    isAssigning
   } = useCenterStudents(centerId, {
     page: 1,
     limit: 20,
     search: searchTerm,
     status: statusFilter === 'all' ? undefined : statusFilter,
     schoolId: schoolFilter === 'all' ? undefined : schoolFilter,
-    hasAssignment: assignmentFilter === 'assigned' ? true : 
-                   assignmentFilter === 'unassigned' ? false : undefined
+    hasAssignment: assignmentFilter === 'assigned' ? true :
+      assignmentFilter === 'unassigned' ? false : undefined
   });
 
   const { schools } = useCenterSchools(centerId);
@@ -120,7 +121,7 @@ export function UnifiedStudentView({
             {contextName && ` • ${contextName}`}
           </p>
         </div>
-        
+
         {viewType === 'unassigned' && (
           <Badge variant="outline" className="text-orange-600 border-orange-200">
             Needs Assignment
@@ -145,7 +146,7 @@ export function UnifiedStudentView({
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full"
               />
-              
+
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
@@ -156,7 +157,7 @@ export function UnifiedStudentView({
                   <SelectItem value="INACTIVE">Inactive</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <Select value={schoolFilter} onValueChange={setSchoolFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="All schools" />
@@ -170,7 +171,7 @@ export function UnifiedStudentView({
                   ))}
                 </SelectContent>
               </Select>
-              
+
               <Select value={assignmentFilter} onValueChange={setAssignmentFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Assignment status" />
@@ -204,7 +205,7 @@ export function UnifiedStudentView({
                         {student.fullName.split(' ').map((n: string) => n[0]).join('')}
                       </span>
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold">{student.fullName}</h3>
@@ -217,27 +218,27 @@ export function UnifiedStudentView({
                           </Badge>
                         )}
                       </div>
-                      
+
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <BookOpen className="h-3 w-3" />
-                          Grade {student.grade}
+                          <GradeDisplay grade={student.grade} />
                         </div>
-                        
+
                         {student.school && (
                           <div className="flex items-center gap-1">
                             <School className="h-3 w-3" />
                             {student.school.name}
                           </div>
                         )}
-                        
+
                         {student.assignedEducator && (
                           <div className="flex items-center gap-1">
                             <GraduationCap className="h-3 w-3" />
                             {student.assignedEducator.fullName}
                           </div>
                         )}
-                        
+
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
                           {new Date(student.registrationDate).toLocaleDateString()}
@@ -245,7 +246,7 @@ export function UnifiedStudentView({
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-2">
                     <Link href={`/center/students/${student.id}`}>
                       <Button variant="outline" size="sm">
@@ -253,7 +254,7 @@ export function UnifiedStudentView({
                         View
                       </Button>
                     </Link>
-                    
+
                     {!student.hasAssignment && (
                       <Link href={`/center/students/${student.id}/assign`}>
                         <Button size="sm">
@@ -277,7 +278,7 @@ export function UnifiedStudentView({
             No students found
           </p>
           <p className="text-sm text-muted-foreground">
-            {viewType === 'unassigned' 
+            {viewType === 'unassigned'
               ? 'All students have been assigned to educators'
               : 'Try adjusting your search criteria'
             }

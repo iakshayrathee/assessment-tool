@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useEducatorStudents } from '@/hooks/useEducator';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,7 @@ import { MaxAssessmentsWarningDialog } from '@/components/assessments/MaxAssessm
 import { apiClient } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
 
 const MAX_ASSESSMENTS = 3;
 
@@ -28,11 +28,17 @@ const getVersionLabel = (version?: number, isFirst?: boolean) => {
   return `Reassessment V${version}`;
 };
 
+// Helper function to check if student's grade is eligible for comprehensive assessments
+// Students in Nursery, LKG, UKG, Kindergarten, Grade 1, and Grade 2 are not eligible
+const isGradeEligibleForAssessments = (grade: string): boolean => {
+  const earlyGrades = ['Nursery', 'LKG', 'UKG', 'Kindergarten', 'Grade 1', 'Grade 2'];
+  return !earlyGrades.includes(grade);
+};
+
 export default function AssessmentsPage() {
   const { user } = useAuth();
-  const { students, isLoading: studentsLoading } = useEducatorStudents();
 
-  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [assessmentTab, setAssessmentTab] = useState('formal');
   const [showFormalForm, setShowFormalForm] = useState(false);
   const [showSkillAssessment, setShowSkillAssessment] = useState<'reading' | 'writing' | 'math' | null>(null);
@@ -50,10 +56,8 @@ export default function AssessmentsPage() {
   const [pendingAssessmentType, setPendingAssessmentType] = useState<'formal' | 'reading' | 'writing' | 'math' | null>(null);
   const [oldestAssessment, setOldestAssessment] = useState<any>(null);
 
-  const selectedStudent = students?.find(s => s.id === selectedStudentId);
-
   useEffect(() => {
-    if (selectedStudentId) {
+    if (selectedStudent?.id) {
       fetchAssessments();
     } else {
       setFormalAssessments([]);
@@ -61,22 +65,48 @@ export default function AssessmentsPage() {
       setWritingAssessments([]);
       setMathAssessments([]);
     }
-  }, [selectedStudentId]);
+  }, [selectedStudent?.id]);
 
   const fetchAssessments = async () => {
+    if (!selectedStudent?.id) return;
+
     setLoadingAssessments(true);
     try {
-      const [formal, reading, writing, math] = await Promise.all([
-        apiClient.getFormalAssessmentsByStudent(selectedStudentId),
-        apiClient.getReadingSkillAssessmentsByStudent(selectedStudentId),
-        apiClient.getWritingSkillAssessmentsByStudent(selectedStudentId),
-        apiClient.getMathSkillAssessmentsByStudent(selectedStudentId),
+      // Use Promise.allSettled to prevent one failure from breaking all assessments
+      const results = await Promise.allSettled([
+        apiClient.getFormalAssessmentsByStudent(selectedStudent.id),
+        apiClient.getReadingSkillAssessmentsByStudent(selectedStudent.id),
+        apiClient.getWritingSkillAssessmentsByStudent(selectedStudent.id),
+        apiClient.getMathSkillAssessmentsByStudent(selectedStudent.id),
       ]);
 
-      setFormalAssessments(formal || []);
-      setReadingAssessments(reading || []);
-      setWritingAssessments(writing || []);
-      setMathAssessments(math || []);
+      // Extract successful results, use empty array for failures
+      setFormalAssessments(
+        results[0].status === 'fulfilled' ? results[0].value || [] : []
+      );
+      setReadingAssessments(
+        results[1].status === 'fulfilled' ? results[1].value || [] : []
+      );
+      setWritingAssessments(
+        results[2].status === 'fulfilled' ? results[2].value || [] : []
+      );
+      setMathAssessments(
+        results[3].status === 'fulfilled' ? results[3].value || [] : []
+      );
+
+      // Log any failures for debugging
+      const assessmentTypes = ['formal', 'reading', 'writing', 'math'];
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`Failed to fetch ${assessmentTypes[index]} assessments:`, result.reason);
+        }
+      });
+
+      // Show error toast only if all requests failed
+      const allFailed = results.every(result => result.status === 'rejected');
+      if (allFailed) {
+        toast.error('Failed to load assessments');
+      }
     } catch (error) {
       console.error('Error fetching assessments:', error);
       toast.error('Failed to load assessments');
@@ -300,7 +330,7 @@ export default function AssessmentsPage() {
                     {selectedStudent.fullName || selectedStudent.name || 'Unknown'}
                   </p>
                   <p className="text-xs text-blue-700">
-                    Grade {selectedStudent.grade || 'N/A'}
+                    <GradeDisplay grade={selectedStudent.grade || 'N/A'} />
                   </p>
                 </div>
                 <Users className="h-4 w-4 flex-shrink-0" />
@@ -319,143 +349,175 @@ export default function AssessmentsPage() {
         </div>
       </div>
 
-      {selectedStudentId ? (
-        <Tabs value={assessmentTab} onValueChange={setAssessmentTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="formal">
-              <FileText className="h-4 w-4 mr-2" />
-              Formal Assessments
-            </TabsTrigger>
-            <TabsTrigger value="skill">
-              <BookOpen className="h-4 w-4 mr-2" />
-              Skill Assessments
-            </TabsTrigger>
-          </TabsList>
+      {selectedStudent?.id ? (
+        isGradeEligibleForAssessments(selectedStudent.grade) ? (
+          <Tabs value={assessmentTab} onValueChange={setAssessmentTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="formal">
+                <FileText className="h-4 w-4 mr-2" />
+                Formal Assessments
+              </TabsTrigger>
+              <TabsTrigger value="skill">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Skill Assessments
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="formal" className="mt-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Formal Assessment Referrals</CardTitle>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Create referrals for psychological, educational, or specialized assessments ({formalAssessments.length}/{MAX_ASSESSMENTS})
-                    </p>
+            <TabsContent value="formal" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Formal Assessment Referrals</CardTitle>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Create referrals for psychological, educational, or specialized assessments ({formalAssessments.length}/{MAX_ASSESSMENTS})
+                      </p>
+                    </div>
+                    <Button onClick={() => handleCreateAssessment('formal')}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Referral
+                    </Button>
                   </div>
-                  <Button onClick={() => handleCreateAssessment('formal')}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Referral
-                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {renderAssessmentTable(formalAssessments, 'formal')}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="skill" className="mt-6">
+              {showSkillAssessment ? (
+                <div>
+                  {showSkillAssessment === 'reading' && (
+                    <ReadingSkillAssessment
+                      studentId={selectedStudent?.id || ''}
+                      studentGrade={selectedStudent?.grade || ''}
+                      assessmentId={editingAssessment?.type === 'reading' ? editingAssessment?.id : undefined}
+                      initialData={editingAssessment?.type === 'reading' ? editingAssessment : undefined}
+                      mode={editingAssessment?.type === 'reading' ? (editingAssessment?.mode || 'edit') : 'create'}
+                      onSuccess={handleAssessmentSuccess}
+                      onCancel={() => {
+                        setShowSkillAssessment(null);
+                        setEditingAssessment(null);
+                      }}
+                    />
+                  )}
+                  {showSkillAssessment === 'writing' && (
+                    <WritingSkillAssessment
+                      studentId={selectedStudent?.id || ''}
+                      studentGrade={selectedStudent?.grade || ''}
+                      assessmentId={editingAssessment?.type === 'writing' ? editingAssessment?.id : undefined}
+                      initialData={editingAssessment?.type === 'writing' ? editingAssessment : undefined}
+                      mode={editingAssessment?.type === 'writing' ? (editingAssessment?.mode || 'edit') : 'create'}
+                      onSuccess={handleAssessmentSuccess}
+                      onCancel={() => {
+                        setShowSkillAssessment(null);
+                        setEditingAssessment(null);
+                      }}
+                    />
+                  )}
+                  {showSkillAssessment === 'math' && (
+                    <MathSkillAssessment
+                      studentId={selectedStudent?.id || ''}
+                      studentGrade={selectedStudent?.grade || ''}
+                      assessmentId={editingAssessment?.type === 'math' ? editingAssessment?.id : undefined}
+                      initialData={editingAssessment?.type === 'math' ? editingAssessment : undefined}
+                      mode={editingAssessment?.type === 'math' ? (editingAssessment?.mode || 'edit') : 'create'}
+                      onSuccess={handleAssessmentSuccess}
+                      onCancel={() => {
+                        setShowSkillAssessment(null);
+                        setEditingAssessment(null);
+                      }}
+                    />
+                  )}
                 </div>
-              </CardHeader>
-              <CardContent>
-                {renderAssessmentTable(formalAssessments, 'formal')}
-              </CardContent>
-            </Card>
-          </TabsContent>
+              ) : (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                          <BookOpen className="h-5 w-5 text-blue-600" />
+                          Reading Assessments ({readingAssessments.length}/{MAX_ASSESSMENTS})
+                        </CardTitle>
+                        <Button onClick={() => handleCreateAssessment('reading')} size="sm">
+                          <Plus className="h-4 w-4 mr-1" />
+                          New
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {renderAssessmentTable(readingAssessments, 'reading')}
+                    </CardContent>
+                  </Card>
 
-          <TabsContent value="skill" className="mt-6">
-            {showSkillAssessment ? (
-              <div>
-                {showSkillAssessment === 'reading' && (
-                  <ReadingSkillAssessment
-                    studentId={selectedStudentId}
-                    assessmentId={editingAssessment?.type === 'reading' ? editingAssessment?.id : undefined}
-                    initialData={editingAssessment?.type === 'reading' ? editingAssessment : undefined}
-                    mode={editingAssessment?.type === 'reading' ? (editingAssessment?.mode || 'edit') : 'create'}
-                    onSuccess={handleAssessmentSuccess}
-                    onCancel={() => {
-                      setShowSkillAssessment(null);
-                      setEditingAssessment(null);
-                    }}
-                  />
-                )}
-                {showSkillAssessment === 'writing' && (
-                  <WritingSkillAssessment
-                    studentId={selectedStudentId}
-                    assessmentId={editingAssessment?.type === 'writing' ? editingAssessment?.id : undefined}
-                    initialData={editingAssessment?.type === 'writing' ? editingAssessment : undefined}
-                    mode={editingAssessment?.type === 'writing' ? (editingAssessment?.mode || 'edit') : 'create'}
-                    onSuccess={handleAssessmentSuccess}
-                    onCancel={() => {
-                      setShowSkillAssessment(null);
-                      setEditingAssessment(null);
-                    }}
-                  />
-                )}
-                {showSkillAssessment === 'math' && (
-                  <MathSkillAssessment
-                    studentId={selectedStudentId}
-                    assessmentId={editingAssessment?.type === 'math' ? editingAssessment?.id : undefined}
-                    initialData={editingAssessment?.type === 'math' ? editingAssessment : undefined}
-                    mode={editingAssessment?.type === 'math' ? (editingAssessment?.mode || 'edit') : 'create'}
-                    onSuccess={handleAssessmentSuccess}
-                    onCancel={() => {
-                      setShowSkillAssessment(null);
-                      setEditingAssessment(null);
-                    }}
-                  />
-                )}
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                          <PenTool className="h-5 w-5 text-green-600" />
+                          Writing Assessments ({writingAssessments.length}/{MAX_ASSESSMENTS})
+                        </CardTitle>
+                        <Button onClick={() => handleCreateAssessment('writing')} size="sm">
+                          <Plus className="h-4 w-4 mr-1" />
+                          New
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {renderAssessmentTable(writingAssessments, 'writing')}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                          <Calculator className="h-5 w-5 text-purple-600" />
+                          Math Assessments ({mathAssessments.length}/{MAX_ASSESSMENTS})
+                        </CardTitle>
+                        <Button onClick={() => handleCreateAssessment('math')} size="sm">
+                          <Plus className="h-4 w-4 mr-1" />
+                          New
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {renderAssessmentTable(mathAssessments, 'math')}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <Card className="flex-1">
+            <CardContent className="py-12">
+              <div className="text-center max-w-2xl mx-auto">
+                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BookOpen className="h-10 w-10 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  Comprehensive Assessments Not Required
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Formal comprehensive assessments are designed for students in Grade 3 and above.
+                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                  <p className="text-sm text-blue-900 font-medium mb-2">
+                    <strong>{selectedStudent.fullName}</strong> is currently in <strong><GradeDisplay grade={selectedStudent.grade} /></strong>
+                  </p>
+                  <p className="text-sm text-blue-800">
+                    Students in Nursery, LKG, UKG, Kindergarten, Grade 1, and Grade 2 do not require these detailed assessments at this stage of their development.
+                  </p>
+                </div>
+                <p className="text-sm text-gray-500 mt-4">
+                  For early grade students, please use age-appropriate observation and developmental milestone tracking instead.
+                </p>
               </div>
-            ) : (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        <BookOpen className="h-5 w-5 text-blue-600" />
-                        Reading Assessments ({readingAssessments.length}/{MAX_ASSESSMENTS})
-                      </CardTitle>
-                      <Button onClick={() => handleCreateAssessment('reading')} size="sm">
-                        <Plus className="h-4 w-4 mr-1" />
-                        New
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {renderAssessmentTable(readingAssessments, 'reading')}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        <PenTool className="h-5 w-5 text-green-600" />
-                        Writing Assessments ({writingAssessments.length}/{MAX_ASSESSMENTS})
-                      </CardTitle>
-                      <Button onClick={() => handleCreateAssessment('writing')} size="sm">
-                        <Plus className="h-4 w-4 mr-1" />
-                        New
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {renderAssessmentTable(writingAssessments, 'writing')}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        <Calculator className="h-5 w-5 text-purple-600" />
-                        Math Assessments ({mathAssessments.length}/{MAX_ASSESSMENTS})
-                      </CardTitle>
-                      <Button onClick={() => handleCreateAssessment('math')} size="sm">
-                        <Plus className="h-4 w-4 mr-1" />
-                        New
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {renderAssessmentTable(mathAssessments, 'math')}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            </CardContent>
+          </Card>
+        )
       ) : (
         <Card className="flex-1">
           <CardContent className="py-12">
@@ -475,8 +537,8 @@ export default function AssessmentsPage() {
       <StudentSelectionModal
         isOpen={showStudentModal}
         onClose={() => setShowStudentModal(false)}
-        onSelect={setSelectedStudentId}
-        selectedStudentId={selectedStudentId}
+        onSelect={(studentId, student) => setSelectedStudent(student)}
+        selectedStudentId={selectedStudent?.id}
       />
 
       <Dialog open={showFormalForm} onOpenChange={setShowFormalForm}>
@@ -484,17 +546,17 @@ export default function AssessmentsPage() {
           <div className="sticky top-0 bg-white z-10 px-6 pt-6 pb-4 border-b">
             <DialogHeader>
               <DialogTitle>
-                {editingAssessment?.mode === 'view' 
-                  ? 'View Formal Assessment' 
-                  : editingAssessment 
-                    ? 'Edit Formal Assessment' 
+                {editingAssessment?.mode === 'view'
+                  ? 'View Formal Assessment'
+                  : editingAssessment
+                    ? 'Edit Formal Assessment'
                     : 'New Formal Assessment Referral'}
               </DialogTitle>
             </DialogHeader>
           </div>
           <div className="px-6 pb-6">
             <FormalAssessmentForm
-              studentId={selectedStudentId}
+              studentId={selectedStudent?.id || ''}
               referredBy={user?.profile?.fullName || 'Educator'}
               assessmentId={editingAssessment?.id}
               initialData={editingAssessment}

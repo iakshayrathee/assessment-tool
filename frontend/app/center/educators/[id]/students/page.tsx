@@ -11,8 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { PageHeader } from '@/components/ui/page-header';
-import { 
-  Users, 
+import {
+  Users,
   GraduationCap,
   Search,
   Filter,
@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
+import { GradeDisplay } from '@/components/ui/GradeDisplay';
 
 interface EducatorInfo {
   fullName: string;
@@ -77,13 +78,13 @@ export default function EducatorStudentsPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const [educator, setEducator] = useState<EducatorInfo | null>(null);
   const [students, setStudents] = useState<StudentWithProgress[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<StudentWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -104,7 +105,7 @@ export default function EducatorStudentsPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const centerId = user?.profile?.id;
       if (!centerId) {
         setError('Center ID not found');
@@ -228,7 +229,7 @@ export default function EducatorStudentsPage() {
     const totalReports = students.reduce((sum, s) => sum + s.reports.length, 0);
     const pendingReports = students.reduce((sum, s) => sum + s.reports.filter(r => r.status === 'PENDING').length, 0);
     const totalAssessments = students.reduce((sum, s) => sum + s.assessments.length, 0);
-    const averageProgress = students.length > 0 
+    const averageProgress = students.length > 0
       ? Math.round(students.reduce((sum, s) => sum + calculateStudentProgress(s), 0) / students.length)
       : 0;
 
@@ -313,7 +314,7 @@ export default function EducatorStudentsPage() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -325,7 +326,7 @@ export default function EducatorStudentsPage() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -337,7 +338,7 @@ export default function EducatorStudentsPage() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -378,7 +379,7 @@ export default function EducatorStudentsPage() {
                   className="w-full"
                 />
               </div>
-              
+
               <div>
                 <label className="text-sm font-medium mb-2 block">Status</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -392,7 +393,7 @@ export default function EducatorStudentsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <label className="text-sm font-medium mb-2 block">Grade</label>
                 <Select value={gradeFilter} onValueChange={setGradeFilter}>
@@ -407,7 +408,7 @@ export default function EducatorStudentsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <label className="text-sm font-medium mb-2 block">Progress</label>
                 <Select value={progressFilter} onValueChange={setProgressFilter}>
@@ -449,7 +450,7 @@ export default function EducatorStudentsPage() {
                 {filteredStudents.map((student, index) => {
                   const progress = calculateStudentProgress(student);
                   const assignment = student.assignments.find(a => a.isActive);
-                  
+
                   return (
                     <motion.div
                       key={student.id}
@@ -469,7 +470,7 @@ export default function EducatorStudentsPage() {
                             {student.fullName}
                           </h3>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>Grade {student.grade}</span>
+                            <GradeDisplay grade={student.grade} />
                             <span>•</span>
                             <span>Age {student.age}</span>
                             <span>•</span>
@@ -477,7 +478,7 @@ export default function EducatorStudentsPage() {
                               {student.status}
                             </Badge>
                           </div>
-                          
+
                           <div className="flex items-center gap-4 mt-2">
                             {student.school && (
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -485,19 +486,19 @@ export default function EducatorStudentsPage() {
                                 {student.school.name}
                               </div>
                             )}
-                            
+
                             {assignment && (
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Calendar className="h-3 w-3" />
                                 Assigned: {new Date(assignment.assignedDate).toLocaleDateString()}
                               </div>
                             )}
-                            
+
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <FileText className="h-3 w-3" />
                               {student.reports.length} reports
                             </div>
-                            
+
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <BookOpen className="h-3 w-3" />
                               {student.assessments.length} assessments
@@ -505,7 +506,7 @@ export default function EducatorStudentsPage() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-4">
                         <div className="text-right">
                           <p className="text-sm font-medium">IEP Progress</p>
@@ -519,7 +520,7 @@ export default function EducatorStudentsPage() {
                             </span>
                           </div>
                         </div>
-                        
+
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Link href={`/center/students/${student.id}`}>
                             <Button variant="outline" size="sm">
@@ -537,13 +538,13 @@ export default function EducatorStudentsPage() {
               <div className="text-center py-12">
                 <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-2">
-                  {students.length === 0 
+                  {students.length === 0
                     ? 'No students assigned to this educator yet'
                     : 'No students match your filters'
                   }
                 </p>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {students.length === 0 
+                  {students.length === 0
                     ? 'Students will appear here once assigned'
                     : 'Try adjusting your search criteria'
                   }
@@ -583,22 +584,21 @@ export default function EducatorStudentsPage() {
               <div className="space-y-3">
                 {students.map((student) => {
                   const progress = calculateStudentProgress(student);
-                  
+
                   return (
                     <div key={student.id} className="flex items-center justify-between p-3 border rounded">
                       <div className="flex items-center gap-3">
                         <span className="font-medium">{student.fullName}</span>
                         <Badge variant="outline" className="text-xs">
-                          Grade {student.grade}
+                          <GradeDisplay grade={student.grade} />
                         </Badge>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              progress >= 80 ? 'bg-green-500' :
-                              progress >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
+                          <div
+                            className={`h-2 rounded-full transition-all duration-300 ${progress >= 80 ? 'bg-green-500' :
+                                progress >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                              }`}
                             style={{ width: `${progress}%` }}
                           />
                         </div>

@@ -684,7 +684,7 @@ model WritingSkillAssessment {
   omissionSkippingFlag            Boolean  @default(false)
   boardCopyingObservation         String?
 
-  // NEW: Punctuation Skills
+  // NEW: Punctuation Skills (Legacy - kept for backward compatibility)
   usesCapitalLetters              Boolean  @default(false)
   usesFullStop                    Boolean  @default(false)
   usesQuestionMark                Boolean  @default(false)
@@ -693,9 +693,30 @@ model WritingSkillAssessment {
   punctuationOther                String?
   punctuationObservation          String?
 
+  // NEW: Punctuation Skills (for Copying)
+  usesCapitalLettersCopying       Boolean  @default(false)
+  usesFullStopCopying             Boolean  @default(false)
+  usesQuestionMarkCopying         Boolean  @default(false)
+  usesCommaCopying                Boolean  @default(false)
+  usesApostropheCopying           Boolean  @default(false)
+  punctuationOtherCopying         String?
+  punctuationObservationCopying   String?
+
+  // NEW: Punctuation Skills (in Creative Writing)
+  usesCapitalLettersCreative      Boolean  @default(false)
+  usesFullStopCreative            Boolean  @default(false)
+  usesQuestionMarkCreative        Boolean  @default(false)
+  usesCommaCreative               Boolean  @default(false)
+  usesApostropheCreative          Boolean  @default(false)
+  punctuationOtherCreative        String?
+  punctuationObservationCreative  String?
+
   // NEW: Spelling Observations
   spellingStrengthSummary         String?
   spellingErrorPatternObservation String?
+
+  // NEW: Creative Writing
+  creativeWritingSummary          String?
 
   additionalNotes String?
   status          AssessmentStatus       @default(PENDING)
