@@ -205,6 +205,16 @@ class ApiClient {
     await this.client.post('/auth/change-password', { currentPassword, newPassword });
   }
 
+  async forgotPassword(email: string): Promise<{ message: string; previewUrl?: string }> {
+    const response = await this.client.post<ApiResponse<{ message: string; previewUrl?: string }>>('/auth/forgot-password', { email });
+    return response.data.data!;
+  }
+
+  async resetPassword(token: string, password: string): Promise<{ message: string }> {
+    const response = await this.client.post<ApiResponse<{ message: string }>>('/auth/reset-password', { token, password });
+    return response.data.data!;
+  }
+
   // Student endpoints
   async getStudents(params?: {
     page?: number;

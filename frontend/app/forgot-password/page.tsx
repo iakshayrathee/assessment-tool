@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -34,19 +35,14 @@ export default function ForgotPasswordPage() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call for password reset
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // In a real implementation, you would call your password reset API here
-      // const response = await fetch('/api/auth/forgot-password', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email })
-      // });
-
+      await apiClient.forgotPassword(email);
       setIsSubmitted(true);
-    } catch (error) {
-      setError('An error occurred. Please try again.');
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.error ||
+        error?.message ||
+        'An error occurred. Please try again.';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -67,14 +63,14 @@ export default function ForgotPasswordPage() {
                 <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
             </div>
-            
+
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email</h2>
-            
+
             <p className="text-gray-600 mb-6">
-              We've sent a password reset link to <strong>{email}</strong>. 
+              We&apos;ve sent a password reset link to <strong>{email}</strong>.
               Please check your email and follow the instructions to reset your password.
             </p>
-            
+
             <div className="space-y-4">
               <Link
                 href="/"
@@ -82,7 +78,7 @@ export default function ForgotPasswordPage() {
               >
                 Back to Login
               </Link>
-              
+
               <button
                 onClick={() => {
                   setIsSubmitted(false);
@@ -109,7 +105,7 @@ export default function ForgotPasswordPage() {
       >
         <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
           {/* Back Button */}
-          <Link 
+          <Link
             href="/"
             className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
           >
@@ -125,7 +121,7 @@ export default function ForgotPasswordPage() {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Forgot Password?</h2>
             <p className="text-gray-600">
-              Enter your email address and we'll send you a link to reset your password.
+              Enter your email address and we&apos;ll send you a link to reset your password.
             </p>
           </div>
 
@@ -141,9 +137,8 @@ export default function ForgotPasswordPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    error ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${error ? 'border-red-300' : 'border-gray-300'
+                    }`}
                   placeholder="Enter your email address"
                   required
                 />

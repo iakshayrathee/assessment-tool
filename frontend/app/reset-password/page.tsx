@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Lock, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +17,7 @@ function ResetPasswordPageContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string; token?: string }>({});
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -24,7 +25,7 @@ function ResetPasswordPageContent() {
   useEffect(() => {
     // Validate token on component mount
     if (!token) {
-      setErrors({ token: 'Invalid or missing reset token' });
+      setErrors({ token: 'Invalid or missing reset token. Please request a new password reset link.' });
     }
   }, [token]);
 
@@ -53,7 +54,7 @@ function ResetPasswordPageContent() {
     e.preventDefault();
 
     if (!token) {
-      setErrors({ token: 'Invalid or missing reset token' });
+      setErrors({ token: 'Invalid or missing reset token. Please request a new password reset link.' });
       return;
     }
 
@@ -64,19 +65,14 @@ function ResetPasswordPageContent() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call for password reset
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // In a real implementation, you would call your password reset API here
-      // const response = await fetch('/api/auth/reset-password', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ token, password })
-      // });
-
+      await apiClient.resetPassword(token, password);
       setIsSuccess(true);
-    } catch (error) {
-      setErrors({ token: 'An error occurred. Please try again or request a new reset link.' });
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.error ||
+        error?.message ||
+        'An error occurred. Please try again or request a new reset link.';
+      setErrors({ token: message });
     } finally {
       setIsSubmitting(false);
     }
@@ -97,13 +93,13 @@ function ResetPasswordPageContent() {
                 <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
             </div>
-            
+
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Password Reset Successful</h2>
-            
+
             <p className="text-gray-600 mb-6">
               Your password has been successfully reset. You can now sign in with your new password.
             </p>
-            
+
             <Link
               href="/"
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-4 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 inline-block text-center"
@@ -131,13 +127,13 @@ function ResetPasswordPageContent() {
                 <AlertCircle className="h-8 w-8 text-red-600" />
               </div>
             </div>
-            
+
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Invalid Reset Link</h2>
-            
+
             <p className="text-gray-600 mb-6">
               {errors.token}
             </p>
-            
+
             <div className="space-y-4">
               <Link
                 href="/forgot-password"
@@ -145,7 +141,7 @@ function ResetPasswordPageContent() {
               >
                 Request New Reset Link
               </Link>
-              
+
               <Link
                 href="/"
                 className="w-full text-gray-600 hover:text-gray-900 py-2 transition-colors inline-block text-center"
@@ -169,7 +165,7 @@ function ResetPasswordPageContent() {
       >
         <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
           {/* Back Button */}
-          <Link 
+          <Link
             href="/"
             className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
           >
@@ -201,9 +197,8 @@ function ResetPasswordPageContent() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    errors.password ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.password ? 'border-red-300' : 'border-gray-300'
+                    }`}
                   placeholder="Enter your new password"
                 />
                 <button
@@ -233,9 +228,8 @@ function ResetPasswordPageContent() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                    }`}
                   placeholder="Confirm your new password"
                 />
                 <button
