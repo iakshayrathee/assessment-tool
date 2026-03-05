@@ -149,7 +149,7 @@ export default function EducatorDashboard() {
   const exportToCSV = () => {
     if (!students) return;
 
-    const headers = ['Name', 'Age', 'Grade', 'Status', 'Overall Progress', 'IEP Goals (Completed/Total)', 'Last Session'];
+    const headers = ['Name', 'Age', 'Grade', 'Status', 'Overall Progress', 'Remediation Plans (Completed/Total)', 'Last Session'];
     const rows = students.map((student: any) => [
       student.fullName || '',
       student.age || '',
@@ -314,13 +314,13 @@ export default function EducatorDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{analytics?.averageStudentProgress || 0}%</div>
-              <p className="text-xs text-muted-foreground">Across all IEP goals</p>
+              <p className="text-xs text-muted-foreground">Across all remediation plans</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active IEP Goals</CardTitle>
+              <CardTitle className="text-sm font-medium">Active Remediation Plans</CardTitle>
               <Target className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
@@ -548,7 +548,7 @@ export default function EducatorDashboard() {
                           <div className="bg-blue-50 p-2 rounded">
                             <div className="flex items-center gap-1 text-blue-700 mb-1">
                               <Target className="h-3 w-3" />
-                              <span className="font-medium">IEP Goals</span>
+                              <span className="font-medium">Remediation Plans</span>
                             </div>
                             <p className="text-lg font-bold text-blue-900">
                               {progressSummary.completedGoals || 0}/{progressSummary.totalGoals || 0}

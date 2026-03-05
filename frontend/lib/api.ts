@@ -646,6 +646,11 @@ class ApiClient {
     };
   }
 
+  async getSpecialEducatorStudents(params?: any): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/special-educators/students', { params });
+    return response.data.data;
+  }
+
   // Center endpoints
   async getCenters(params?: {
     page?: number;
@@ -1136,14 +1141,14 @@ class ApiClient {
 
   async generateAIReport(studentId: string, reportType: 'ASSESSMENT' | 'LESSON_PLAN' = 'ASSESSMENT'): Promise<any> {
     console.log(`Generating AI report for student: ${studentId}, type: ${reportType}`);
-    const response = await this.client.post<ApiResponse<any>>(`/reports/ai/generate/${studentId}`, { reportType });
+    const response = await this.client.post<ApiResponse<any>>(`/reports/ai/generate/${studentId}`, { reportType }, { timeout: 120000 });
     console.log('AI report generation response:', response.data);
     return response.data.report || response.data.data;
   }
 
   async previewAIReport(studentId: string, reportType: 'ASSESSMENT' | 'LESSON_PLAN' = 'ASSESSMENT'): Promise<any> {
     console.log(`Previewing AI report for student: ${studentId}, type: ${reportType}`);
-    const response = await this.client.get<ApiResponse<any>>(`/reports/ai/preview/${studentId}?reportType=${reportType}`);
+    const response = await this.client.get<ApiResponse<any>>(`/reports/ai/preview/${studentId}?reportType=${reportType}`, { timeout: 120000 });
     console.log('AI report preview response:', response.data);
     return response.data.report || response.data.data;
   }

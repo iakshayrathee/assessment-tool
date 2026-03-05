@@ -40,7 +40,7 @@ const FIELD_OF_STUDY_OPTIONS = [
 ];
 
 const SPECIALIZATION_AREAS = [
-  "Learning Disabilities", "Autism Spectrum Disorders", "Intellectual Disabilities", "Multiple Disabilities", 
+  "Learning Disabilities", "Autism Spectrum Disorders", "Intellectual Disabilities", "Multiple Disabilities",
   "Visual Impairment", "Hearing Impairment", "Physical Disabilities", "Behavioral Disorders", "ADHD", "Dyslexia"
 ];
 
@@ -166,6 +166,7 @@ export default function EducatorProfile() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState("personal");
+  const [isEditing, setIsEditing] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [customCertification, setCustomCertification] = useState("");
@@ -176,7 +177,7 @@ export default function EducatorProfile() {
     dateOfBirth: "",
     rciValidityDate: ""
   });
-  
+
   // State for cities and centers data
   const [cities, setCities] = useState<string[]>([]);
   const [centersByCity, setCentersByCity] = useState<Record<string, Array<{ id: string; name: string }>>>({});
@@ -184,7 +185,7 @@ export default function EducatorProfile() {
   const [selectedCenter, setSelectedCenter] = useState("");
   const [otherWorkLocation, setOtherWorkLocation] = useState("");
   const [isLoadingCities, setIsLoadingCities] = useState(false);
-  
+
   // State for dropdown selections that reset after adding to arrays
   const [dropdownSelections, setDropdownSelections] = useState({
     secondaryLanguage: "",
@@ -383,12 +384,12 @@ export default function EducatorProfile() {
     }
 
     setErrors(newErrors);
-    
+
     // Show alert and redirect to relevant tab if there are errors
     if (Object.keys(newErrors).length > 0) {
       const firstError = Object.keys(newErrors)[0];
       const errorMessage = newErrors[firstError];
-      
+
       // Determine which tab to redirect to based on the error field
       let targetTab = "personal";
       if (["fullName", "dateOfBirth", "gender", "phone", "address", "primaryLanguage", "secondaryLanguages"].includes(firstError)) {
@@ -402,23 +403,23 @@ export default function EducatorProfile() {
       } else if (["consentToShare", "agreementToPolicies", "workingInMultipleCenters", "centerCount", "areasOfInterest"].includes(firstError)) {
         targetTab = "preferences";
       }
-      
+
       setActiveTab(targetTab);
       setAlertMessage(`Validation Error: ${errorMessage}`);
       setShowAlert(true);
-      
+
       // Auto-hide alert after 5 seconds
       setTimeout(() => {
         setShowAlert(false);
       }, 5000);
     }
-    
+
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -443,8 +444,8 @@ export default function EducatorProfile() {
 
         // Professional Info - Special Education
         rciCertified: formData.rciCertified,
-        rciValidityDate: formData.rciCertified && formData.rciValidityDate 
-          ? formData.rciValidityDate.toISOString().split('T')[0] 
+        rciValidityDate: formData.rciCertified && formData.rciValidityDate
+          ? formData.rciValidityDate.toISOString().split('T')[0]
           : null,
         specialEdQualification: formData.specialEdQualification,
         specializationAreas: formData.specializationAreas,
@@ -479,6 +480,7 @@ export default function EducatorProfile() {
       };
 
       await updateProfile(submitData);
+      setIsEditing(false);
     } catch (error) {
       console.error('Error submitting profile:', error);
       // The error will be handled by the useSpecialEducatorProfile hook
@@ -493,7 +495,7 @@ export default function EducatorProfile() {
         : [...currentValues, value];
       return { ...prev, [field]: newValues };
     });
-    
+
     // Reset the dropdown selection after adding to array
     if (dropdownKey) {
       setDropdownSelections(prev => ({ ...prev, [dropdownKey]: "" }));
@@ -561,202 +563,402 @@ export default function EducatorProfile() {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile 👤</h1>
               <p className="text-gray-600">Manage your professional information and preferences</p>
             </div>
-            <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 px-6 py-2 shadow-md">
-              💾 Save Changes
-            </Button>
+            <div className="flex gap-3">
+              {isEditing ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false);
+                      // Reset form data back to profile data
+                      if (profile) {
+                        setFormData({
+                          fullName: profile.fullName || "",
+                          dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth) : null,
+                          gender: profile.gender || "",
+                          phone: profile.phone || "",
+                          address: profile.address || "",
+                          primaryLanguage: profile.primaryLanguage || "",
+                          secondaryLanguages: profile.secondaryLanguages || [],
+                          highestQualification: profile.highestQualification || "",
+                          fieldOfStudy: profile.fieldOfStudy || "",
+                          institutionName: profile.institutionName || "",
+                          yearOfGraduation: profile.yearOfGraduation || null,
+                          rciCertified: profile.rciCertified || false,
+                          rciValidityDate: profile.rciValidityDate ? new Date(profile.rciValidityDate) : null,
+                          specialEdQualification: profile.specialEdQualification || "",
+                          specializationAreas: profile.specializationAreas || [],
+                          additionalCertifications: profile.additionalCertifications || [],
+                          yearsOfExperience: profile.yearsOfExperience || null,
+                          experienceTypes: profile.experienceTypes || [],
+                          maxGroupSize: profile.maxGroupSize || null,
+                          totalYearsOfExperience: profile.totalYearsOfExperience || null,
+                          currentWorkLocations: profile.currentWorkLocations || [],
+                          ldTypesHandled: profile.ldTypesHandled || [],
+                          gradeLevelsServed: profile.gradeLevelsServed || [],
+                          assessmentTools: profile.assessmentTools || "",
+                          assistiveTechProficiency: profile.assistiveTechProficiency || [],
+                          workingInMultipleCenters: (profile.currentWorkLocations?.length || 0) > 1,
+                          centerCount: profile.currentWorkLocations?.length || 0,
+                          areasOfInterest: profile.areasOfInterest || [],
+                          consentToShare: profile.consentToShare || false,
+                          agreementToPolicies: profile.agreementToPolicies || false,
+                          personalStatement: profile.personalStatement || "",
+                        });
+                      }
+                      setErrors({});
+                    }}
+                    className="px-6 py-2"
+                  >
+                    ❌ Cancel
+                  </Button>
+                  <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 px-6 py-2 shadow-md">
+                    💾 Save Changes
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={() => setIsEditing(true)} variant="outline" className="px-6 py-2 shadow-md">
+                  ✏️ Edit Profile
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-            <TabsList className="grid w-full grid-cols-5 bg-gray-100 p-1 rounded-lg">
-              <TabsTrigger value="personal" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                👤 Personal
-              </TabsTrigger>
-              <TabsTrigger value="education" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                🎓 Education
-              </TabsTrigger>
-              <TabsTrigger value="experience" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                💼 Experience
-              </TabsTrigger>
-              <TabsTrigger value="expertise" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                🎯 Expertise
-              </TabsTrigger>
-              <TabsTrigger value="preferences" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                ⚙️ Preferences
-              </TabsTrigger>
-            </TabsList>
+          <fieldset disabled={!isEditing} className={cn(!isEditing && "opacity-75")}>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+              <TabsList className="grid w-full grid-cols-5 bg-gray-100 p-1 rounded-lg">
+                <TabsTrigger value="personal" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  👤 Personal
+                </TabsTrigger>
+                <TabsTrigger value="education" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  🎓 Education
+                </TabsTrigger>
+                <TabsTrigger value="experience" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  💼 Experience
+                </TabsTrigger>
+                <TabsTrigger value="expertise" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  🎯 Expertise
+                </TabsTrigger>
+                <TabsTrigger value="preferences" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  ⚙️ Preferences
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Personal Information Tab */}
-            <TabsContent value="personal" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
-                  <CardDescription>Basic personal details and contact information</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="fullName">Full Name *</Label>
-                      <Input
-                        id="fullName"
-                        value={formData.fullName}
-                        onChange={(e) => handleInputChange('fullName', e.target.value)}
-                        className={errors.fullName ? "border-red-500" : ""}
+              {/* Personal Information Tab */}
+              <TabsContent value="personal" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Personal Information</CardTitle>
+                    <CardDescription>Basic personal details and contact information</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="fullName">Full Name *</Label>
+                        <Input
+                          id="fullName"
+                          value={formData.fullName}
+                          onChange={(e) => handleInputChange('fullName', e.target.value)}
+                          className={errors.fullName ? "border-red-500" : ""}
+                        />
+                        {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+                      </div>
+
+                      <ProfessionalDatePicker
+                        label="Date of Birth"
+                        value={formData.dateOfBirth}
+                        onChange={(date) => handleInputChange('dateOfBirth', date)}
+                        error={errors.dateOfBirth}
+                        required={true}
                       />
-                      {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+
+                      <div>
+                        <Label htmlFor="gender">Gender *</Label>
+                        <Select key={`gender-${formData.gender}`} value={formData.gender} onValueChange={(value) => handleSelectChange('gender', value)}>
+                          <SelectTrigger className={errors.gender ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {GENDER_OPTIONS.map(option => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="phone">Phone Number *</Label>
+                        <Input
+                          id="phone"
+                          value={formData.phone}
+                          onChange={(e) => handleInputChange('phone', e.target.value)}
+                          placeholder="10-digit phone number"
+                          className={errors.phone ? "border-red-500" : ""}
+                        />
+                        {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+                      </div>
                     </div>
 
-                    <ProfessionalDatePicker
-                      label="Date of Birth"
-                      value={formData.dateOfBirth}
-                      onChange={(date) => handleInputChange('dateOfBirth', date)}
-                      error={errors.dateOfBirth}
-                      required={true}
-                    />
-
                     <div>
-                      <Label htmlFor="gender">Gender *</Label>
-                      <Select key={`gender-${formData.gender}`} value={formData.gender} onValueChange={(value) => handleSelectChange('gender', value)}>
-                        <SelectTrigger className={errors.gender ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {GENDER_OPTIONS.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="phone">Phone Number *</Label>
-                      <Input
-                        id="phone"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        placeholder="10-digit phone number"
-                        className={errors.phone ? "border-red-500" : ""}
+                      <Label htmlFor="address">Address</Label>
+                      <Textarea
+                        id="address"
+                        value={formData.address}
+                        onChange={(e) => handleInputChange('address', e.target.value)}
+                        placeholder="Complete address"
+                        rows={3}
                       />
-                      {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
                     </div>
-                  </div>
 
-                  <div>
-                    <Label htmlFor="address">Address</Label>
-                    <Textarea
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      placeholder="Complete address"
-                      rows={3}
-                    />
-                  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="primaryLanguage">Primary Language *</Label>
+                        {formData.primaryLanguage === "Other" ? (
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Input
+                                value={customLanguage}
+                                onChange={(e) => setCustomLanguage(e.target.value)}
+                                placeholder="Enter your primary language"
+                                className={errors.primaryLanguage ? "border-red-500" : ""}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  if (customLanguage.trim()) {
+                                    setFormData(prev => ({ ...prev, primaryLanguage: customLanguage.trim() }));
+                                    setCustomLanguage("");
+                                  } else {
+                                    setFormData(prev => ({ ...prev, primaryLanguage: "" }));
+                                  }
+                                }}
+                              >
+                                {customLanguage.trim() ? "Save" : "Cancel"}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Select key={`primaryLanguage-${formData.primaryLanguage}`} value={formData.primaryLanguage} onValueChange={(value) => {
+                            if (value === "Other") {
+                              setFormData(prev => ({ ...prev, primaryLanguage: value }));
+                              setCustomLanguage("");
+                            } else {
+                              setFormData(prev => ({ ...prev, primaryLanguage: value }));
+                            }
+                          }}>
+                            <SelectTrigger className={errors.primaryLanguage ? "border-red-500" : ""}>
+                              <SelectValue placeholder="Select primary language" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {LANGUAGE_OPTIONS.map(lang => (
+                                <SelectItem key={lang} value={lang}>
+                                  {lang}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                        {errors.primaryLanguage && <p className="text-red-500 text-sm mt-1">{errors.primaryLanguage}</p>}
+                      </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="primaryLanguage">Primary Language *</Label>
-                      {formData.primaryLanguage === "Other" ? (
+                      <div>
+                        <Label>Secondary Languages</Label>
                         <div className="space-y-2">
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
+                            {formData.secondaryLanguages.map(lang => (
+                              <Badge key={lang} variant="secondary" className="cursor-pointer" onClick={() => handleMultiSelectChange('secondaryLanguages', lang)}>
+                                {lang} <X className="ml-1 h-3 w-3" />
+                              </Badge>
+                            ))}
+                          </div>
+                          <Select
+                            value={dropdownSelections.secondaryLanguage}
+                            onValueChange={(value) => {
+                              setDropdownSelections(prev => ({ ...prev, secondaryLanguage: value }));
+                              handleMultiSelectChange('secondaryLanguages', value, 'secondaryLanguage');
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Add secondary language" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {LANGUAGE_OPTIONS.filter(lang => !formData.secondaryLanguages.includes(lang) && lang !== formData.primaryLanguage).map(lang => (
+                                <SelectItem key={lang} value={lang}>
+                                  {lang}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Education Tab */}
+              <TabsContent value="education" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>General Education</CardTitle>
+                    <CardDescription>Academic qualifications and educational background</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="highestQualification">Highest Academic Qualification *</Label>
+                        <Select value={formData.highestQualification} onValueChange={(value) => setFormData(prev => ({ ...prev, highestQualification: value }))}>
+                          <SelectTrigger className={errors.highestQualification ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Select qualification" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {QUALIFICATION_OPTIONS.map(qual => (
+                              <SelectItem key={qual} value={qual}>
+                                {qual}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.highestQualification && <p className="text-red-500 text-sm mt-1">{errors.highestQualification}</p>}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="fieldOfStudy">Field of Study *</Label>
+                        <Select
+                          value={formData.fieldOfStudy}
+                          onValueChange={(value) => {
+                            if (value === "Other") {
+                              setCustomFieldOfStudy("");
+                            } else {
+                              setCustomFieldOfStudy("");
+                            }
+                            setFormData(prev => ({ ...prev, fieldOfStudy: value }));
+                          }}
+                        >
+                          <SelectTrigger className={errors.fieldOfStudy ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Select field of study" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {FIELD_OF_STUDY_OPTIONS.map(field => (
+                              <SelectItem key={field} value={field}>
+                                {field}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {formData.fieldOfStudy === "Other" && (
+                          <div className="mt-2 flex gap-2">
                             <Input
-                              value={customLanguage}
-                              onChange={(e) => setCustomLanguage(e.target.value)}
-                              placeholder="Enter your primary language"
-                              className={errors.primaryLanguage ? "border-red-500" : ""}
+                              placeholder="Enter custom field of study"
+                              value={customFieldOfStudy}
+                              onChange={(e) => setCustomFieldOfStudy(e.target.value)}
+                              className="flex-1"
                             />
-                            <Button 
-                              type="button" 
-                              variant="outline" 
+                            <Button
+                              type="button"
+                              size="sm"
                               onClick={() => {
-                                if (customLanguage.trim()) {
-                                  setFormData(prev => ({ ...prev, primaryLanguage: customLanguage.trim() }));
-                                  setCustomLanguage("");
-                                } else {
-                                  setFormData(prev => ({ ...prev, primaryLanguage: "" }));
+                                if (customFieldOfStudy.trim()) {
+                                  setFormData(prev => ({ ...prev, fieldOfStudy: customFieldOfStudy.trim() }));
+                                  setCustomFieldOfStudy("");
                                 }
                               }}
                             >
-                              {customLanguage.trim() ? "Save" : "Cancel"}
+                              Save
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, fieldOfStudy: "" }));
+                                setCustomFieldOfStudy("");
+                              }}
+                            >
+                              Cancel
                             </Button>
                           </div>
-                        </div>
-                      ) : (
-                        <Select key={`primaryLanguage-${formData.primaryLanguage}`} value={formData.primaryLanguage} onValueChange={(value) => {
-                          if (value === "Other") {
-                            setFormData(prev => ({ ...prev, primaryLanguage: value }));
-                            setCustomLanguage("");
-                          } else {
-                            setFormData(prev => ({ ...prev, primaryLanguage: value }));
-                          }
-                        }}>
-                          <SelectTrigger className={errors.primaryLanguage ? "border-red-500" : ""}>
-                            <SelectValue placeholder="Select primary language" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {LANGUAGE_OPTIONS.map(lang => (
-                              <SelectItem key={lang} value={lang}>
-                                {lang}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                      {errors.primaryLanguage && <p className="text-red-500 text-sm mt-1">{errors.primaryLanguage}</p>}
-                    </div>
+                        )}
+                        {errors.fieldOfStudy && <p className="text-red-500 text-sm mt-1">{errors.fieldOfStudy}</p>}
+                      </div>
 
-                    <div>
-                      <Label>Secondary Languages</Label>
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-2">
-                          {formData.secondaryLanguages.map(lang => (
-                            <Badge key={lang} variant="secondary" className="cursor-pointer" onClick={() => handleMultiSelectChange('secondaryLanguages', lang)}>
-                              {lang} <X className="ml-1 h-3 w-3" />
-                            </Badge>
-                          ))}
-                        </div>
-                        <Select 
-                          value={dropdownSelections.secondaryLanguage} 
-                          onValueChange={(value) => {
-                            setDropdownSelections(prev => ({ ...prev, secondaryLanguage: value }));
-                            handleMultiSelectChange('secondaryLanguages', value, 'secondaryLanguage');
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Add secondary language" />
+                      <div>
+                        <Label htmlFor="institutionName">Institution Name *</Label>
+                        <Input
+                          id="institutionName"
+                          value={formData.institutionName}
+                          onChange={(e) => handleInputChange('institutionName', e.target.value)}
+                          className={errors.institutionName ? "border-red-500" : ""}
+                        />
+                        {errors.institutionName && <p className="text-red-500 text-sm mt-1">{errors.institutionName}</p>}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="yearOfGraduation">Year of Graduation *</Label>
+                        <Select value={formData.yearOfGraduation?.toString() || ""} onValueChange={(value) => setFormData(prev => ({ ...prev, yearOfGraduation: parseInt(value) }))}>
+                          <SelectTrigger className={errors.yearOfGraduation ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Select year" />
                           </SelectTrigger>
                           <SelectContent>
-                            {LANGUAGE_OPTIONS.filter(lang => !formData.secondaryLanguages.includes(lang) && lang !== formData.primaryLanguage).map(lang => (
-                              <SelectItem key={lang} value={lang}>
-                                {lang}
+                            {YEAR_OPTIONS.map(year => (
+                              <SelectItem key={year} value={year.toString()}>
+                                {year}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                        {errors.yearOfGraduation && <p className="text-red-500 text-sm mt-1">{errors.yearOfGraduation}</p>}
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                  </CardContent>
+                </Card>
 
-            {/* Education Tab */}
-            <TabsContent value="education" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>General Education</CardTitle>
-                  <CardDescription>Academic qualifications and educational background</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Special Education</CardTitle>
+                    <CardDescription>Special education qualifications and certifications</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="highestQualification">Highest Academic Qualification *</Label>
-                      <Select value={formData.highestQualification} onValueChange={(value) => setFormData(prev => ({ ...prev, highestQualification: value }))}>
-                        <SelectTrigger className={errors.highestQualification ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Select qualification" />
+                      <Label>RCI Certification Status *</Label>
+                      <RadioGroup
+                        value={formData.rciCertified.toString()}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, rciCertified: value === "true" }))}
+                        className="flex space-x-4 mt-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="true" id="rci-yes" />
+                          <Label htmlFor="rci-yes">Certified</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="false" id="rci-no" />
+                          <Label htmlFor="rci-no">Not Certified</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {formData.rciCertified && (
+                      <ProfessionalDatePicker
+                        label="RCI Validity Date"
+                        value={formData.rciValidityDate}
+                        onChange={(date) => handleInputChange('rciValidityDate', date)}
+                        error={errors.rciValidityDate}
+                        required={true}
+                      />
+                    )}
+
+                    <div>
+                      <Label htmlFor="specialEdQualification">Qualification (Special Ed) *</Label>
+                      <Select value={formData.specialEdQualification} onValueChange={(value) => setFormData(prev => ({ ...prev, specialEdQualification: value }))}>
+                        <SelectTrigger className={errors.specialEdQualification ? "border-red-500" : ""}>
+                          <SelectValue placeholder="Select special education qualification" />
                         </SelectTrigger>
                         <SelectContent>
                           {QUALIFICATION_OPTIONS.map(qual => (
@@ -766,537 +968,396 @@ export default function EducatorProfile() {
                           ))}
                         </SelectContent>
                       </Select>
-                      {errors.highestQualification && <p className="text-red-500 text-sm mt-1">{errors.highestQualification}</p>}
+                      {errors.specialEdQualification && <p className="text-red-500 text-sm mt-1">{errors.specialEdQualification}</p>}
                     </div>
 
                     <div>
-                      <Label htmlFor="fieldOfStudy">Field of Study *</Label>
-                      <Select 
-                        value={formData.fieldOfStudy} 
-                        onValueChange={(value) => {
-                          if (value === "Other") {
-                            setCustomFieldOfStudy("");
-                          } else {
-                            setCustomFieldOfStudy("");
-                          }
-                          setFormData(prev => ({ ...prev, fieldOfStudy: value }));
-                        }}
-                      >
-                        <SelectTrigger className={errors.fieldOfStudy ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Select field of study" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {FIELD_OF_STUDY_OPTIONS.map(field => (
-                            <SelectItem key={field} value={field}>
-                              {field}
-                            </SelectItem>
+                      <Label>Specialization Area *</Label>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {formData.specializationAreas.map(area => (
+                            <Badge key={area} variant="secondary" className="cursor-pointer" onClick={() => handleMultiSelectChange('specializationAreas', area)}>
+                              {area} <X className="ml-1 h-3 w-3" />
+                            </Badge>
                           ))}
-                        </SelectContent>
-                      </Select>
-                      {formData.fieldOfStudy === "Other" && (
-                        <div className="mt-2 flex gap-2">
+                        </div>
+                        <Select
+                          value={dropdownSelections.specializationArea}
+                          onValueChange={(value) => {
+                            setDropdownSelections(prev => ({ ...prev, specializationArea: value }));
+                            handleMultiSelectChange('specializationAreas', value, 'specializationArea');
+                          }}
+                        >
+                          <SelectTrigger className={errors.specializationAreas ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Add specialization area" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SPECIALIZATION_AREAS.filter(area => !formData.specializationAreas.includes(area)).map(area => (
+                              <SelectItem key={area} value={area}>
+                                {area}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.specializationAreas && <p className="text-red-500 text-sm mt-1">{errors.specializationAreas}</p>}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Additional Certifications</Label>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {formData.additionalCertifications.map(cert => (
+                            <Badge key={cert} variant="secondary" className="cursor-pointer" onClick={() => handleMultiSelectChange('additionalCertifications', cert)}>
+                              {cert} <X className="ml-1 h-3 w-3" />
+                            </Badge>
+                          ))}
+                        </div>
+                        <Select
+                          value={dropdownSelections.additionalCertification}
+                          onValueChange={(value) => {
+                            setDropdownSelections(prev => ({ ...prev, additionalCertification: value }));
+                            if (value === "Other") {
+                              // Handle custom certification input
+                            } else {
+                              handleMultiSelectChange('additionalCertifications', value, 'additionalCertification');
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Add certification" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ADDITIONAL_CERTIFICATIONS.filter(cert => !formData.additionalCertifications.includes(cert)).map(cert => (
+                              <SelectItem key={cert} value={cert}>
+                                {cert}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div className="flex gap-2">
                           <Input
-                            placeholder="Enter custom field of study"
-                            value={customFieldOfStudy}
-                            onChange={(e) => setCustomFieldOfStudy(e.target.value)}
-                            className="flex-1"
+                            placeholder="Custom certification"
+                            value={customCertification}
+                            onChange={(e) => setCustomCertification(e.target.value)}
                           />
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => {
-                              if (customFieldOfStudy.trim()) {
-                                setFormData(prev => ({ ...prev, fieldOfStudy: customFieldOfStudy.trim() }));
-                                setCustomFieldOfStudy("");
-                              }
-                            }}
-                          >
-                            Save
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setFormData(prev => ({ ...prev, fieldOfStudy: "" }));
-                              setCustomFieldOfStudy("");
-                            }}
-                          >
-                            Cancel
+                          <Button type="button" onClick={addCustomCertification} size="sm">
+                            <Plus className="h-4 w-4" />
                           </Button>
                         </div>
-                      )}
-                      {errors.fieldOfStudy && <p className="text-red-500 text-sm mt-1">{errors.fieldOfStudy}</p>}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Experience Tab */}
+              <TabsContent value="experience" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Professional Experience</CardTitle>
+                    <CardDescription>Work experience and professional background</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="yearsOfExperience">Years of Experience (Inclusive Ed.) *</Label>
+                        <Select value={formData.yearsOfExperience?.toString() || ""} onValueChange={(value) => setFormData(prev => ({ ...prev, yearsOfExperience: parseInt(value) }))}>
+                          <SelectTrigger className={errors.yearsOfExperience ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Select years" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {EXPERIENCE_YEARS.map(year => (
+                              <SelectItem key={year} value={year.toString()}>
+                                {year} {year === 1 ? 'year' : 'years'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.yearsOfExperience && <p className="text-red-500 text-sm mt-1">{errors.yearsOfExperience}</p>}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="totalYearsOfExperience">Total Years of Experience *</Label>
+                        <Select value={formData.totalYearsOfExperience?.toString() || ""} onValueChange={(value) => setFormData(prev => ({ ...prev, totalYearsOfExperience: parseInt(value) }))}>
+                          <SelectTrigger className={errors.totalYearsOfExperience ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Select total years" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {EXPERIENCE_YEARS.map(year => (
+                              <SelectItem key={year} value={year.toString()}>
+                                {year} {year === 1 ? 'year' : 'years'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.totalYearsOfExperience && <p className="text-red-500 text-sm mt-1">{errors.totalYearsOfExperience}</p>}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="maxGroupSize">Max Group Size Handled</Label>
+                        <Select value={formData.maxGroupSize?.toString() || ""} onValueChange={(value) => setFormData(prev => ({ ...prev, maxGroupSize: parseInt(value) }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select group size" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {GROUP_SIZE_OPTIONS.map(size => (
+                              <SelectItem key={size} value={size.toString()}>
+                                {size} {size === 1 ? 'student' : 'students'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     <div>
-                      <Label htmlFor="institutionName">Institution Name *</Label>
-                      <Input
-                        id="institutionName"
-                        value={formData.institutionName}
-                        onChange={(e) => handleInputChange('institutionName', e.target.value)}
-                        className={errors.institutionName ? "border-red-500" : ""}
+                      <Label>Experience Type *</Label>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {formData.experienceTypes.map(type => (
+                            <Badge key={type} variant="secondary" className="cursor-pointer" onClick={() => handleMultiSelectChange('experienceTypes', type)}>
+                              {type} <X className="ml-1 h-3 w-3" />
+                            </Badge>
+                          ))}
+                        </div>
+                        <Select
+                          value={dropdownSelections.experienceType}
+                          onValueChange={(value) => {
+                            setDropdownSelections(prev => ({ ...prev, experienceType: value }));
+                            handleMultiSelectChange('experienceTypes', value, 'experienceType');
+                          }}
+                        >
+                          <SelectTrigger className={errors.experienceTypes ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Add experience type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {EXPERIENCE_TYPES.filter(type => !formData.experienceTypes.includes(type)).map(type => (
+                              <SelectItem key={type} value={type}>
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.experienceTypes && <p className="text-red-500 text-sm mt-1">{errors.experienceTypes}</p>}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Current Work Locations *</Label>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Select City</Label>
+                            <Select
+                              value={selectedCity}
+                              onValueChange={(value) => {
+                                setSelectedCity(value);
+                                setSelectedCenter("");
+                              }}
+                              disabled={isLoadingCities}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={isLoadingCities ? "Loading cities..." : "Select a city"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {cities.map(city => (
+                                  <SelectItem key={city} value={city}>
+                                    {city}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label>Select Center</Label>
+                            <Select
+                              value={selectedCenter}
+                              onValueChange={(value) => {
+                                setSelectedCenter(value);
+                                const center = centersByCity[selectedCity]?.find(c => c.id === value);
+                                if (center && !formData.currentWorkLocations.includes(center.name)) {
+                                  setFormData(prev => {
+                                    const updatedLocations = [...prev.currentWorkLocations, center.name];
+                                    return {
+                                      ...prev,
+                                      currentWorkLocations: updatedLocations,
+                                      centerCount: updatedLocations.length,
+                                      workingInMultipleCenters: updatedLocations.length > 1
+                                    };
+                                  });
+                                }
+                                setSelectedCity("");
+                                setSelectedCenter("");
+                              }}
+                              disabled={!selectedCity || isLoadingCities}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={selectedCity ? "Select a center" : "Select city first"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {selectedCity && centersByCity[selectedCity]?.map(center => (
+                                  <SelectItem key={center.id} value={center.id}>
+                                    {center.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+
+
+                        <div className="flex flex-wrap gap-2">
+                          {formData.currentWorkLocations.map(location => (
+                            <Badge key={location} variant="secondary" className="cursor-pointer" onClick={() => removeWorkLocation(location)}>
+                              {location} <X className="ml-1 h-3 w-3" />
+                            </Badge>
+                          ))}
+                        </div>
+                        {errors.currentWorkLocations && <p className="text-red-500 text-sm mt-1">{errors.currentWorkLocations}</p>}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="workingInMultipleCenters"
+                        checked={formData.workingInMultipleCenters}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, workingInMultipleCenters: checked }))}
                       />
-                      {errors.institutionName && <p className="text-red-500 text-sm mt-1">{errors.institutionName}</p>}
+                      <Label htmlFor="workingInMultipleCenters">Working in Multiple Centers?</Label>
                     </div>
 
-                    <div>
-                      <Label htmlFor="yearOfGraduation">Year of Graduation *</Label>
-                      <Select value={formData.yearOfGraduation?.toString() || ""} onValueChange={(value) => setFormData(prev => ({ ...prev, yearOfGraduation: parseInt(value) }))}>
-                        <SelectTrigger className={errors.yearOfGraduation ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Select year" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {YEAR_OPTIONS.map(year => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.yearOfGraduation && <p className="text-red-500 text-sm mt-1">{errors.yearOfGraduation}</p>}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Special Education</CardTitle>
-                  <CardDescription>Special education qualifications and certifications</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>RCI Certification Status *</Label>
-                    <RadioGroup
-                      value={formData.rciCertified.toString()}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, rciCertified: value === "true" }))}
-                      className="flex space-x-4 mt-2"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="true" id="rci-yes" />
-                        <Label htmlFor="rci-yes">Certified</Label>
+                    {formData.workingInMultipleCenters && (
+                      <div>
+                        <Label>Center Count: {formData.centerCount}</Label>
+                        <p className="text-sm text-gray-600">Auto-calculated based on work locations</p>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="false" id="rci-no" />
-                        <Label htmlFor="rci-no">Not Certified</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                  {formData.rciCertified && (
-                    <ProfessionalDatePicker
-                      label="RCI Validity Date"
-                      value={formData.rciValidityDate}
-                      onChange={(date) => handleInputChange('rciValidityDate', date)}
-                      error={errors.rciValidityDate}
-                      required={true}
+              {/* Expertise Tab */}
+              <TabsContent value="expertise" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Areas of Expertise</CardTitle>
+                    <CardDescription>
+                      Your specialized knowledge and skills
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <MultiSelectWithTags
+                      label="Learning Disability Types You Handle"
+                      options={LD_TYPES}
+                      selectedValues={formData.ldTypesHandled}
+                      onSelectionChange={(values) => setFormData(prev => ({ ...prev, ldTypesHandled: values }))}
+                      placeholder="Select types of learning disabilities you work with"
                     />
-                  )}
 
-                  <div>
-                    <Label htmlFor="specialEdQualification">Qualification (Special Ed) *</Label>
-                    <Select value={formData.specialEdQualification} onValueChange={(value) => setFormData(prev => ({ ...prev, specialEdQualification: value }))}>
-                      <SelectTrigger className={errors.specialEdQualification ? "border-red-500" : ""}>
-                        <SelectValue placeholder="Select special education qualification" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {QUALIFICATION_OPTIONS.map(qual => (
-                          <SelectItem key={qual} value={qual}>
-                            {qual}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.specialEdQualification && <p className="text-red-500 text-sm mt-1">{errors.specialEdQualification}</p>}
-                  </div>
+                    <MultiSelectWithTags
+                      label="Grade Levels You Serve"
+                      options={GRADE_LEVELS}
+                      selectedValues={formData.gradeLevelsServed}
+                      onSelectionChange={(values) => setFormData(prev => ({ ...prev, gradeLevelsServed: values }))}
+                      placeholder="Select grade levels you teach"
+                    />
 
-                  <div>
-                    <Label>Specialization Area *</Label>
                     <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        {formData.specializationAreas.map(area => (
-                          <Badge key={area} variant="secondary" className="cursor-pointer" onClick={() => handleMultiSelectChange('specializationAreas', area)}>
-                            {area} <X className="ml-1 h-3 w-3" />
-                          </Badge>
-                        ))}
-                      </div>
-                      <Select 
-                        value={dropdownSelections.specializationArea} 
-                        onValueChange={(value) => {
-                          setDropdownSelections(prev => ({ ...prev, specializationArea: value }));
-                          handleMultiSelectChange('specializationAreas', value, 'specializationArea');
-                        }}
-                      >
-                        <SelectTrigger className={errors.specializationAreas ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Add specialization area" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SPECIALIZATION_AREAS.filter(area => !formData.specializationAreas.includes(area)).map(area => (
-                            <SelectItem key={area} value={area}>
-                              {area}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.specializationAreas && <p className="text-red-500 text-sm mt-1">{errors.specializationAreas}</p>}
+                      <Label htmlFor="assessmentTools">Assessment Tools You Use</Label>
+                      <Textarea
+                        id="assessmentTools"
+                        value={formData.assessmentTools}
+                        onChange={(e) => handleInputChange('assessmentTools', e.target.value)}
+                        placeholder="List the assessment tools and methods you use"
+                        rows={3}
+                      />
                     </div>
-                  </div>
 
-                  <div>
-                    <Label>Additional Certifications</Label>
+                    <MultiSelectWithTags
+                      label="Assistive Technology Proficiency"
+                      options={ASSISTIVE_TECH.map(item => ({ value: item, label: item }))}
+                      selectedValues={formData.assistiveTechProficiency}
+                      onSelectionChange={(values) => setFormData(prev => ({ ...prev, assistiveTechProficiency: values }))}
+                      placeholder="Select assistive technologies you're proficient with"
+                    />
+
+                    <MultiSelectWithTags
+                      label="Areas of Interest"
+                      options={AREAS_OF_INTEREST.map(item => ({ value: item, label: item }))}
+                      selectedValues={formData.areasOfInterest}
+                      onSelectionChange={(values) => setFormData(prev => ({ ...prev, areasOfInterest: values }))}
+                      placeholder="Select your professional interests"
+                    />
+
                     <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        {formData.additionalCertifications.map(cert => (
-                          <Badge key={cert} variant="secondary" className="cursor-pointer" onClick={() => handleMultiSelectChange('additionalCertifications', cert)}>
-                            {cert} <X className="ml-1 h-3 w-3" />
-                          </Badge>
-                        ))}
-                      </div>
-                      <Select 
-                        value={dropdownSelections.additionalCertification} 
-                        onValueChange={(value) => {
-                          setDropdownSelections(prev => ({ ...prev, additionalCertification: value }));
-                          if (value === "Other") {
-                            // Handle custom certification input
-                          } else {
-                            handleMultiSelectChange('additionalCertifications', value, 'additionalCertification');
-                          }
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Add certification" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ADDITIONAL_CERTIFICATIONS.filter(cert => !formData.additionalCertifications.includes(cert)).map(cert => (
-                            <SelectItem key={cert} value={cert}>
-                              {cert}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Custom certification"
-                          value={customCertification}
-                          onChange={(e) => setCustomCertification(e.target.value)}
-                        />
-                        <Button type="button" onClick={addCustomCertification} size="sm">
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Label htmlFor="personalStatement">Personal Statement</Label>
+                      <Textarea
+                        id="personalStatement"
+                        value={formData.personalStatement}
+                        onChange={(e) => handleInputChange('personalStatement', e.target.value)}
+                        placeholder="Share your philosophy, approach, or any additional information about yourself"
+                        rows={4}
+                      />
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-            {/* Experience Tab */}
-            <TabsContent value="experience" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Professional Experience</CardTitle>
-                  <CardDescription>Work experience and professional background</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="yearsOfExperience">Years of Experience (Inclusive Ed.) *</Label>
-                      <Select value={formData.yearsOfExperience?.toString() || ""} onValueChange={(value) => setFormData(prev => ({ ...prev, yearsOfExperience: parseInt(value) }))}>
-                        <SelectTrigger className={errors.yearsOfExperience ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Select years" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {EXPERIENCE_YEARS.map(year => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year} {year === 1 ? 'year' : 'years'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.yearsOfExperience && <p className="text-red-500 text-sm mt-1">{errors.yearsOfExperience}</p>}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="totalYearsOfExperience">Total Years of Experience *</Label>
-                      <Select value={formData.totalYearsOfExperience?.toString() || ""} onValueChange={(value) => setFormData(prev => ({ ...prev, totalYearsOfExperience: parseInt(value) }))}>
-                        <SelectTrigger className={errors.totalYearsOfExperience ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Select total years" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {EXPERIENCE_YEARS.map(year => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year} {year === 1 ? 'year' : 'years'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.totalYearsOfExperience && <p className="text-red-500 text-sm mt-1">{errors.totalYearsOfExperience}</p>}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="maxGroupSize">Max Group Size Handled</Label>
-                      <Select value={formData.maxGroupSize?.toString() || ""} onValueChange={(value) => setFormData(prev => ({ ...prev, maxGroupSize: parseInt(value) }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select group size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {GROUP_SIZE_OPTIONS.map(size => (
-                            <SelectItem key={size} value={size.toString()}>
-                              {size} {size === 1 ? 'student' : 'students'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Experience Type *</Label>
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        {formData.experienceTypes.map(type => (
-                          <Badge key={type} variant="secondary" className="cursor-pointer" onClick={() => handleMultiSelectChange('experienceTypes', type)}>
-                            {type} <X className="ml-1 h-3 w-3" />
-                          </Badge>
-                        ))}
-                      </div>
-                      <Select 
-                        value={dropdownSelections.experienceType} 
-                        onValueChange={(value) => {
-                          setDropdownSelections(prev => ({ ...prev, experienceType: value }));
-                          handleMultiSelectChange('experienceTypes', value, 'experienceType');
-                        }}
-                      >
-                        <SelectTrigger className={errors.experienceTypes ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Add experience type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {EXPERIENCE_TYPES.filter(type => !formData.experienceTypes.includes(type)).map(type => (
-                            <SelectItem key={type} value={type}>
-                              {type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.experienceTypes && <p className="text-red-500 text-sm mt-1">{errors.experienceTypes}</p>}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Current Work Locations *</Label>
+              {/* Preferences Tab */}
+              <TabsContent value="preferences" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Consent & Agreements</CardTitle>
+                    <CardDescription>
+                      Please review and agree to the following terms
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
                     <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>Select City</Label>
-                          <Select
-                            value={selectedCity}
-                            onValueChange={(value) => {
-                              setSelectedCity(value);
-                              setSelectedCenter("");
-                            }}
-                            disabled={isLoadingCities}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder={isLoadingCities ? "Loading cities..." : "Select a city"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {cities.map(city => (
-                                <SelectItem key={city} value={city}>
-                                  {city}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label>Select Center</Label>
-                          <Select
-                            value={selectedCenter}
-                            onValueChange={(value) => {
-                               setSelectedCenter(value);
-                               const center = centersByCity[selectedCity]?.find(c => c.id === value);
-                               if (center && !formData.currentWorkLocations.includes(center.name)) {
-                                 setFormData(prev => {
-                                   const updatedLocations = [...prev.currentWorkLocations, center.name];
-                                   return {
-                                     ...prev,
-                                     currentWorkLocations: updatedLocations,
-                                     centerCount: updatedLocations.length,
-                                     workingInMultipleCenters: updatedLocations.length > 1
-                                   };
-                                 });
-                               }
-                               setSelectedCity("");
-                               setSelectedCenter("");
-                             }}
-                            disabled={!selectedCity || isLoadingCities}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder={selectedCity ? "Select a center" : "Select city first"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {selectedCity && centersByCity[selectedCity]?.map(center => (
-                                <SelectItem key={center.id} value={center.id}>
-                                  {center.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          id="consentToShare"
+                          checked={formData.consentToShare}
+                          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, consentToShare: checked as boolean }))}
+                          className={cn(errors.consentToShare && "border-red-500")}
+                        />
+                        <div className="space-y-1">
+                          <Label htmlFor="consentToShare" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            Consent to Share Information *
+                          </Label>
+                          <p className="text-sm text-gray-600">
+                            I consent to sharing my profile information with relevant centers and administrators for assignment purposes.
+                          </p>
                         </div>
                       </div>
+                      {errors.consentToShare && <p className="text-red-500 text-sm">{errors.consentToShare}</p>}
 
-
-
-                      <div className="flex flex-wrap gap-2">
-                        {formData.currentWorkLocations.map(location => (
-                          <Badge key={location} variant="secondary" className="cursor-pointer" onClick={() => removeWorkLocation(location)}>
-                            {location} <X className="ml-1 h-3 w-3" />
-                          </Badge>
-                        ))}
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          id="agreementToPolicies"
+                          checked={formData.agreementToPolicies}
+                          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, agreementToPolicies: checked as boolean }))}
+                          className={cn(errors.agreementToPolicies && "border-red-500")}
+                        />
+                        <div className="space-y-1">
+                          <Label htmlFor="agreementToPolicies" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            Agreement to Policies *
+                          </Label>
+                          <p className="text-sm text-gray-600">
+                            I agree to abide by the organization's policies, code of conduct, and professional standards.
+                          </p>
+                        </div>
                       </div>
-                      {errors.currentWorkLocations && <p className="text-red-500 text-sm mt-1">{errors.currentWorkLocations}</p>}
+                      {errors.agreementToPolicies && <p className="text-red-500 text-sm">{errors.agreementToPolicies}</p>}
                     </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="workingInMultipleCenters"
-                      checked={formData.workingInMultipleCenters}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, workingInMultipleCenters: checked }))}
-                    />
-                    <Label htmlFor="workingInMultipleCenters">Working in Multiple Centers?</Label>
-                  </div>
-
-                  {formData.workingInMultipleCenters && (
-                    <div>
-                      <Label>Center Count: {formData.centerCount}</Label>
-                      <p className="text-sm text-gray-600">Auto-calculated based on work locations</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Expertise Tab */}
-            <TabsContent value="expertise" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Areas of Expertise</CardTitle>
-                  <CardDescription>
-                    Your specialized knowledge and skills
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <MultiSelectWithTags
-                    label="Learning Disability Types You Handle"
-                    options={LD_TYPES}
-                    selectedValues={formData.ldTypesHandled}
-                    onSelectionChange={(values) => setFormData(prev => ({ ...prev, ldTypesHandled: values }))}
-                    placeholder="Select types of learning disabilities you work with"
-                  />
-
-                  <MultiSelectWithTags
-                    label="Grade Levels You Serve"
-                    options={GRADE_LEVELS}
-                    selectedValues={formData.gradeLevelsServed}
-                    onSelectionChange={(values) => setFormData(prev => ({ ...prev, gradeLevelsServed: values }))}
-                    placeholder="Select grade levels you teach"
-                  />
-
-                  <div className="space-y-2">
-                    <Label htmlFor="assessmentTools">Assessment Tools You Use</Label>
-                    <Textarea
-                      id="assessmentTools"
-                      value={formData.assessmentTools}
-                      onChange={(e) => handleInputChange('assessmentTools', e.target.value)}
-                      placeholder="List the assessment tools and methods you use"
-                      rows={3}
-                    />
-                  </div>
-
-                  <MultiSelectWithTags
-                    label="Assistive Technology Proficiency"
-                    options={ASSISTIVE_TECH.map(item => ({ value: item, label: item }))}
-                    selectedValues={formData.assistiveTechProficiency}
-                    onSelectionChange={(values) => setFormData(prev => ({ ...prev, assistiveTechProficiency: values }))}
-                    placeholder="Select assistive technologies you're proficient with"
-                  />
-
-                  <MultiSelectWithTags
-                    label="Areas of Interest"
-                    options={AREAS_OF_INTEREST.map(item => ({ value: item, label: item }))}
-                    selectedValues={formData.areasOfInterest}
-                    onSelectionChange={(values) => setFormData(prev => ({ ...prev, areasOfInterest: values }))}
-                    placeholder="Select your professional interests"
-                  />
-
-                  <div className="space-y-2">
-                    <Label htmlFor="personalStatement">Personal Statement</Label>
-                    <Textarea
-                      id="personalStatement"
-                      value={formData.personalStatement}
-                      onChange={(e) => handleInputChange('personalStatement', e.target.value)}
-                      placeholder="Share your philosophy, approach, or any additional information about yourself"
-                      rows={4}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Preferences Tab */}
-            <TabsContent value="preferences" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Consent & Agreements</CardTitle>
-                  <CardDescription>
-                    Please review and agree to the following terms
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-2">
-                      <Checkbox
-                        id="consentToShare"
-                        checked={formData.consentToShare}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, consentToShare: checked as boolean }))}
-                        className={cn(errors.consentToShare && "border-red-500")}
-                      />
-                      <div className="space-y-1">
-                        <Label htmlFor="consentToShare" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                          Consent to Share Information *
-                        </Label>
-                        <p className="text-sm text-gray-600">
-                          I consent to sharing my profile information with relevant centers and administrators for assignment purposes.
-                        </p>
-                      </div>
-                    </div>
-                    {errors.consentToShare && <p className="text-red-500 text-sm">{errors.consentToShare}</p>}
-
-                    <div className="flex items-start space-x-2">
-                      <Checkbox
-                        id="agreementToPolicies"
-                        checked={formData.agreementToPolicies}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, agreementToPolicies: checked as boolean }))}
-                        className={cn(errors.agreementToPolicies && "border-red-500")}
-                      />
-                      <div className="space-y-1">
-                        <Label htmlFor="agreementToPolicies" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                          Agreement to Policies *
-                        </Label>
-                        <p className="text-sm text-gray-600">
-                          I agree to abide by the organization's policies, code of conduct, and professional standards.
-                        </p>
-                      </div>
-                    </div>
-                    {errors.agreementToPolicies && <p className="text-red-500 text-sm">{errors.agreementToPolicies}</p>}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </fieldset>
         </form>
       </div>
     </>

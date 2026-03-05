@@ -87,11 +87,11 @@ export default function StudentDetailPage() {
         // Indicate that parent has an existing account (for UI logic)
         parentHasAccount: !!student.parent?.userId
       };
-      
+
       console.log('Student data:', student);
       console.log('Parent data:', student.parent);
       console.log('Form data being set:', formData);
-      
+
       setEditFormData(formData);
       setIsEditModalOpen(true);
     }
@@ -103,11 +103,11 @@ export default function StudentDetailPage() {
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    
+
     return age;
   };
 
@@ -122,10 +122,10 @@ export default function StudentDetailPage() {
   // Handler for form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Filter out empty parent fields to avoid validation errors
     const filteredData = { ...editFormData };
-    
+
     // Remove empty parent fields and UI-only fields
     if (!filteredData.parentName) delete filteredData.parentName;
     if (!filteredData.parentPhone) delete filteredData.parentPhone;
@@ -135,9 +135,9 @@ export default function StudentDetailPage() {
     if (!filteredData.parentPassword) delete filteredData.parentPassword;
     // Remove UI-only field that shouldn't be sent to backend
     delete filteredData.parentHasAccount;
-    
+
     console.log('Data being sent to backend:', filteredData);
-    
+
     updateStudentMutation.mutate(filteredData);
   };
 
@@ -154,6 +154,7 @@ export default function StudentDetailPage() {
     onSuccess: () => {
       setIsEditModalOpen(false);
       // Invalidate and refetch student data
+      queryClient.invalidateQueries({ queryKey: ['student', studentId] });
       queryClient.invalidateQueries({ queryKey: ['studentDashboard', studentId] });
       toast({
         title: 'Success',
@@ -163,7 +164,7 @@ export default function StudentDetailPage() {
     },
     onError: (error: any) => {
       console.error('Failed to update student:', error);
-      
+
       // Show validation errors as toast messages
       if (error.response?.data?.details) {
         error.response.data.details.forEach((detail: any) => {
@@ -198,7 +199,7 @@ export default function StudentDetailPage() {
   // Extract data from dashboard response
   const assessmentsData = dashboardData?.assessments || [];
   const iepDocuments = dashboardData?.iepDocuments || [];
-  const lessonPlans = dashboardData?.lessonPlans || [];
+  const lessonPlans = dashboardData?.weeklyLessonPlans || [];
   const reportsData = dashboardData?.reports || [];
   const activeIEPGoals = dashboardData?.activeIEPGoals || [];
   const recentSessionNotes = dashboardData?.recentSessionNotes || [];
@@ -350,7 +351,7 @@ export default function StudentDetailPage() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div className="bg-blue-50 rounded-lg p-3">
                   <div className="text-2xl font-bold text-blue-600">{iepDocuments?.length || 0}</div>
-                  <div className="text-xs text-blue-600">IEP Goals</div>
+                  <div className="text-xs text-blue-600">Remediation Plans</div>
                 </div>
                 <div className="bg-green-50 rounded-lg p-3">
                   <div className="text-2xl font-bold text-green-600">{assessmentsData?.length || 0}</div>
@@ -379,7 +380,7 @@ export default function StudentDetailPage() {
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="intake">Intake Form</TabsTrigger>
           <TabsTrigger value="assessments">Assessments</TabsTrigger>
-          <TabsTrigger value="iep">IEP Goals</TabsTrigger>
+          <TabsTrigger value="iep">Remediation Plans</TabsTrigger>
           <TabsTrigger value="lesson-plans">Lesson Plans</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
@@ -743,7 +744,7 @@ export default function StudentDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">IEP Summary</CardTitle>
+                <CardTitle className="text-lg">Remediation Plans Summary</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -798,7 +799,7 @@ export default function StudentDetailPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>IEP Documents</CardTitle>
+              <CardTitle>Remediation Plan Documents</CardTitle>
               <Button size="sm" variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Document
@@ -827,8 +828,8 @@ export default function StudentDetailPage() {
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <Target className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                  <p>No IEP documents found for this student.</p>
-                  <p className="text-sm">Create an IEP document to track student progress.</p>
+                  <p>No remediation plan documents found for this student.</p>
+                  <p className="text-sm">Create a remediation plan document to track student progress.</p>
                 </div>
               )}
             </CardContent>
@@ -897,10 +898,12 @@ export default function StudentDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Generated Reports</CardTitle>
-              <Button size="sm" variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Generate Report
-              </Button>
+              <Link href={`/educator/reports?studentId=${studentId}`}>
+                <Button size="sm" variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Generate Report
+                </Button>
+              </Link>
             </CardHeader>
             <CardContent>
               {reportsData && reportsData.length > 0 ? (
