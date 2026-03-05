@@ -1,11 +1,10 @@
 import nodemailer from 'nodemailer';
 
 // Create a transporter using SMTP configuration
-let transporter: nodemailer.Transporter | null = null;
+// Falls back to Ethereal (fake SMTP) for development if no SMTP config is set
+let transporter: nodemailer.Transporter;
 
-const isProduction = process.env.NODE_ENV === 'production';
-
-async function getTransporter(): Promise<nodemailer.Transporter | null> {
+async function getTransporter(): Promise<nodemailer.Transporter> {
   if (transporter) return transporter;
 
   const smtpHost = process.env.SMTP_HOST;
@@ -14,7 +13,7 @@ async function getTransporter(): Promise<nodemailer.Transporter | null> {
   const smtpPass = process.env.SMTP_PASS;
 
   if (smtpHost && smtpUser && smtpPass) {
-    // Use real SMTP with connection timeout
+    // Production: use real SMTP
     transporter = nodemailer.createTransport({
       host: smtpHost,
       port: smtpPort,
@@ -23,22 +22,9 @@ async function getTransporter(): Promise<nodemailer.Transporter | null> {
         user: smtpUser,
         pass: smtpPass,
       },
-      connectionTimeout: 10000, // 10s connection timeout
-      socketTimeout: 10000, // 10s socket timeout
     });
-    console.log('📧 Email transporter configured with SMTP:', smtpHost);
-    return transporter;
-  }
-
-  // No SMTP configured
-  if (isProduction) {
-    // In production without SMTP, log a warning and return null
-    console.warn('⚠️ SMTP not configured. Password reset emails will not be sent. Set SMTP_HOST, SMTP_USER, SMTP_PASS env vars.');
-    return null;
-  }
-
-  // Development only: use Ethereal (fake SMTP for testing)
-  try {
+  } else {
+    // Development: use Ethereal (fake SMTP for testing)
     const testAccount = await nodemailer.createTestAccount();
     transporter = nodemailer.createTransport({
       host: 'smtp.ethereal.email',
@@ -48,35 +34,21 @@ async function getTransporter(): Promise<nodemailer.Transporter | null> {
         user: testAccount.user,
         pass: testAccount.pass,
       },
-      connectionTimeout: 10000,
-      socketTimeout: 10000,
     });
     console.log('📧 Using Ethereal test email account:', testAccount.user);
-    return transporter;
-  } catch (error) {
-    console.warn('⚠️ Failed to create Ethereal test account. Emails will be logged to console instead.', error);
-    return null;
   }
+
+  return transporter;
 }
 
 export async function sendPasswordResetEmail(
   to: string,
   resetToken: string
 ): Promise<{ previewUrl?: string | false }> {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
-
   const mailer = await getTransporter();
 
-  // If no transporter available, log the reset link and return
-  if (!mailer) {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📧 PASSWORD RESET EMAIL (SMTP not configured)');
-    console.log(`   To: ${to}`);
-    console.log(`   Reset Link: ${resetLink}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    return {};
-  }
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
 
   const mailOptions: nodemailer.SendMailOptions = {
     from: process.env.SMTP_FROM || '"Knowled Platform" <noreply@knowled.com>',
@@ -116,20 +88,13 @@ export async function sendPasswordResetEmail(
     text: `Password Reset Request\n\nWe received a request to reset your password.\n\nClick the following link to reset your password (expires in 1 hour):\n${resetLink}\n\nIf you didn't request this, please ignore this email.`,
   };
 
-  try {
-    const info = await mailer.sendMail(mailOptions);
+  const info = await mailer.sendMail(mailOptions);
 
-    // In development with Ethereal, provide preview URL
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    if (previewUrl) {
-      console.log('📧 Preview password reset email:', previewUrl);
-    }
-
-    return { previewUrl };
-  } catch (error) {
-    console.error('❌ Failed to send password reset email:', error);
-    // Log the link as fallback so the reset still works
-    console.log('📧 Fallback — Reset link for', to, ':', resetLink);
-    return {};
+  // In development with Ethereal, provide preview URL
+  const previewUrl = nodemailer.getTestMessageUrl(info);
+  if (previewUrl) {
+    console.log('📧 Preview password reset email:', previewUrl);
   }
+
+  return { previewUrl };
 }
