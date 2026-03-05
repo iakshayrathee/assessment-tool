@@ -2,6 +2,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { PrismaClient, UserRole } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { sendPasswordResetEmail } from '../utils/email';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -33,12 +35,12 @@ const comparePassword = async (password: string, hashedPassword: string) => {
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
-    
+
     // Basic validation
     if (!email || !password) {
       return res.status(400).json({ success: false, error: 'Email and password are required' });
     }
-    
+
     if (password.length < 6) {
       return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long' });
     }
@@ -55,7 +57,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         schoolViewerProfile: true
       }
     });
-    
+
     if (!user) {
       return res.status(401).json({ success: false, error: 'Invalid email or password' });
     }
@@ -90,8 +92,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       email: user.email,
       role: user.role,
       isActive: user.isActive,
-      profile: user.adminProfile || user.centerProfile || user.specialEducatorProfile || 
-               user.superSpecialEducatorProfile || user.parentProfile || user.schoolViewerProfile,
+      profile: user.adminProfile || user.centerProfile || user.specialEducatorProfile ||
+        user.superSpecialEducatorProfile || user.parentProfile || user.schoolViewerProfile,
       lastLogin: user.lastLogin
     };
 
@@ -112,16 +114,16 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password, role, profileData } = req.body;
-    
+
     // Basic validation
     if (!email || !password || !role) {
       return res.status(400).json({ success: false, error: 'Email, password, and role are required' });
     }
-    
+
     if (password.length < 6) {
       return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long' });
     }
-    
+
     if (!Object.values(UserRole).includes(role)) {
       return res.status(400).json({ success: false, error: 'Invalid user role' });
     }
@@ -204,7 +206,7 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
     if (!token) {
       return res.status(401).json({ success: false, error: 'Access token required' });
     }
-    
+
     let decoded;
     try {
       decoded = verifyToken(token);
@@ -213,12 +215,12 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
     }
 
     const { currentPassword, newPassword } = req.body;
-    
+
     // Basic validation
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ success: false, error: 'Current password and new password are required' });
     }
-    
+
     if (newPassword.length < 6) {
       return res.status(400).json({ success: false, error: 'New password must be at least 6 characters long' });
     }
@@ -247,32 +249,105 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-// POST /api/auth/reset-password
-export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+// POST /api/auth/forgot-password
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email } = req.body;
-    
-    // Basic validation
+
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
+
+    // Always return success to prevent email enumeration attacks
     if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
+      return res.json({ success: true, data: { message: 'If an account with that email exists, a password reset link has been sent.' } });
     }
 
-    // Generate temporary password
-    const tempPassword = Math.random().toString(36).slice(-8);
-    const hashedTempPassword = await hashPassword(tempPassword);
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { password: hashedTempPassword }
+    // Invalidate any existing unused tokens for this user
+    await prisma.passwordResetToken.updateMany({
+      where: { userId: user.id, used: false },
+      data: { used: true }
     });
 
-    // In production, send email instead of returning password
-    res.json({ success: true, data: { tempPassword } });
+    // Generate a secure reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    // Store the token in the database
+    await prisma.passwordResetToken.create({
+      data: {
+        token: resetToken,
+        userId: user.id,
+        expiresAt
+      }
+    });
+
+    // Send the reset email
+    const emailResult = await sendPasswordResetEmail(user.email, resetToken);
+
+    const responseData: any = {
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    };
+
+    // In development, include the preview URL so devs can see the email
+    if (emailResult.previewUrl) {
+      responseData.previewUrl = emailResult.previewUrl;
+    }
+
+    res.json({ success: true, data: responseData });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/auth/reset-password
+export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ success: false, error: 'Token and new password are required' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 8 characters long' });
+    }
+
+    // Find the reset token
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: { token },
+      include: { user: true }
+    });
+
+    if (!resetToken) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired reset link. Please request a new one.' });
+    }
+
+    if (resetToken.used) {
+      return res.status(400).json({ success: false, error: 'This reset link has already been used. Please request a new one.' });
+    }
+
+    if (resetToken.expiresAt < new Date()) {
+      return res.status(400).json({ success: false, error: 'This reset link has expired. Please request a new one.' });
+    }
+
+    // Hash the new password and update
+    const hashedPassword = await hashPassword(password);
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: resetToken.userId },
+        data: { password: hashedPassword }
+      }),
+      prisma.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { used: true }
+      })
+    ]);
+
+    res.json({ success: true, data: { message: 'Password has been reset successfully.' } });
   } catch (error) {
     next(error);
   }
@@ -287,7 +362,7 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
     if (!token) {
       return res.status(401).json({ success: false, error: 'Access token required' });
     }
-    
+
     let decoded;
     try {
       decoded = verifyToken(token);
@@ -306,7 +381,7 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
         schoolViewerProfile: true
       }
     });
-    
+
     if (!user) {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
@@ -316,8 +391,8 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
       email: user.email,
       role: user.role,
       isActive: user.isActive,
-      profile: user.adminProfile || user.centerProfile || user.specialEducatorProfile || 
-               user.superSpecialEducatorProfile || user.parentProfile || user.schoolViewerProfile,
+      profile: user.adminProfile || user.centerProfile || user.specialEducatorProfile ||
+        user.superSpecialEducatorProfile || user.parentProfile || user.schoolViewerProfile,
       lastLogin: user.lastLogin
     };
 
@@ -336,7 +411,7 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
     if (!token) {
       return res.status(401).json({ success: false, error: 'Access token required' });
     }
-    
+
     let decoded;
     try {
       decoded = verifyToken(token);
@@ -409,7 +484,7 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
 export const validateToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { token } = req.body;
-    
+
     if (!token) {
       return res.status(400).json({ success: false, error: 'Token is required' });
     }
@@ -432,7 +507,7 @@ export const validateToken = async (req: Request, res: Response, next: NextFunct
         schoolViewerProfile: true
       }
     });
-    
+
     if (!user) {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
@@ -442,8 +517,8 @@ export const validateToken = async (req: Request, res: Response, next: NextFunct
       email: user.email,
       role: user.role,
       isActive: user.isActive,
-      profile: user.adminProfile || user.centerProfile || user.specialEducatorProfile || 
-               user.superSpecialEducatorProfile || user.parentProfile || user.schoolViewerProfile,
+      profile: user.adminProfile || user.centerProfile || user.specialEducatorProfile ||
+        user.superSpecialEducatorProfile || user.parentProfile || user.schoolViewerProfile,
       lastLogin: user.lastLogin
     };
 
@@ -462,7 +537,7 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
     if (!token) {
       return res.status(401).json({ success: false, error: 'Access token required' });
     }
-    
+
     try {
       verifyToken(token);
     } catch {
@@ -485,7 +560,7 @@ export const getUsersByRole = async (req: Request, res: Response, next: NextFunc
     if (!token) {
       return res.status(401).json({ success: false, error: 'Access token required' });
     }
-    
+
     let decoded;
     try {
       decoded = verifyToken(token);
@@ -527,8 +602,8 @@ export const getUsersByRole = async (req: Request, res: Response, next: NextFunc
         email: user.email,
         role: user.role,
         isActive: user.isActive,
-        profile: user.adminProfile || user.centerProfile || user.specialEducatorProfile || 
-                 user.superSpecialEducatorProfile || user.parentProfile || user.schoolViewerProfile,
+        profile: user.adminProfile || user.centerProfile || user.specialEducatorProfile ||
+          user.superSpecialEducatorProfile || user.parentProfile || user.schoolViewerProfile,
         lastLogin: user.lastLogin
       })),
       pagination: {
@@ -552,7 +627,7 @@ export const searchUsers = async (req: Request, res: Response, next: NextFunctio
     if (!token) {
       return res.status(401).json({ success: false, error: 'Access token required' });
     }
-    
+
     let decoded;
     try {
       decoded = verifyToken(token);
@@ -609,8 +684,8 @@ export const searchUsers = async (req: Request, res: Response, next: NextFunctio
         email: user.email,
         role: user.role,
         isActive: user.isActive,
-        profile: user.adminProfile || user.centerProfile || user.specialEducatorProfile || 
-                 user.superSpecialEducatorProfile || user.parentProfile || user.schoolViewerProfile,
+        profile: user.adminProfile || user.centerProfile || user.specialEducatorProfile ||
+          user.superSpecialEducatorProfile || user.parentProfile || user.schoolViewerProfile,
         lastLogin: user.lastLogin
       })),
       pagination: {
@@ -634,7 +709,7 @@ export const getUserStats = async (req: Request, res: Response, next: NextFuncti
     if (!token) {
       return res.status(401).json({ success: false, error: 'Access token required' });
     }
-    
+
     let decoded;
     try {
       decoded = verifyToken(token);
@@ -678,6 +753,7 @@ export const getUserStats = async (req: Request, res: Response, next: NextFuncti
 router.post('/login', login);
 router.post('/register', register);
 router.post('/change-password', changePassword);
+router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.get('/profile', getProfile);
 router.put('/profile', updateProfile);
