@@ -50,7 +50,8 @@ export function markdownToHtmlForPdf(text: string): string {
         .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#2d3748;">$1</strong>')
         .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
         .replace(/^(\d+)[.)]\s+(.*)$/gm, '<li style="margin:0 0 4px 24px;list-style-type:decimal;">$2</li>')
-        .replace(/^[-•]\s+(.*)$/gm, '<li style="margin:0 0 4px 24px;list-style-type:disc;">$2</li>')
+        // FIXED: was incorrectly using $2 (no second capture group), now correctly uses $1
+        .replace(/^[-•]\s+(.*)$/gm, '<li style="margin:0 0 4px 24px;list-style-type:disc;">$1</li>')
         .replace(/((?:<li style="margin:0 0 4px 24px;list-style-type:disc;">.*<\/li>\n?)+)/g, '<ul style="margin:8px 0;">$1</ul>')
         .replace(/((?:<li style="margin:0 0 4px 24px;list-style-type:decimal;">.*<\/li>\n?)+)/g, '<ol style="margin:8px 0;">$1</ol>')
         .replace(/\n\n/g, '</p><p style="margin-bottom:10px;">')
@@ -60,17 +61,16 @@ export function markdownToHtmlForPdf(text: string): string {
 }
 
 /**
- * Section config for the 8 assessment report sections.
+ * Section config for the 7 topic-by-topic assessment report sections.
  */
 export const ASSESSMENT_SECTIONS = [
-    { key: '1', title: '📊 Overall Interpretation of Assessment', color: 'blue', bgClass: 'bg-blue-50', borderClass: 'border-blue-200', titleClass: 'text-blue-800' },
-    { key: '2', title: '💪 Key Strengths of the Child', color: 'green', bgClass: 'bg-green-50', borderClass: 'border-green-200', titleClass: 'text-green-800' },
-    { key: '3', title: '📋 Major Skill Gaps Identified', color: 'amber', bgClass: 'bg-amber-50', borderClass: 'border-amber-200', titleClass: 'text-amber-800' },
-    { key: '4', title: '🔍 Areas to Investigate Further', color: 'purple', bgClass: 'bg-purple-50', borderClass: 'border-purple-200', titleClass: 'text-purple-800' },
-    { key: '5', title: '👨‍👩‍👧 How to Explain This to Parents/Teachers', color: 'sky', bgClass: 'bg-sky-50', borderClass: 'border-sky-200', titleClass: 'text-sky-800' },
-    { key: '6', title: '🎯 Recommended Interventions', color: 'teal', bgClass: 'bg-teal-50', borderClass: 'border-teal-200', titleClass: 'text-teal-800' },
-    { key: '7', title: '📅 Suggested Goals for Next 6 Months', color: 'indigo', bgClass: 'bg-indigo-50', borderClass: 'border-indigo-200', titleClass: 'text-indigo-800' },
-    { key: '8', title: '✅ Closing Statement', color: 'gray', bgClass: 'bg-gray-50', borderClass: 'border-gray-200', titleClass: 'text-gray-800' },
+    { key: '1', title: '📖 Reading Feedback', color: 'blue', bgClass: 'bg-blue-50', borderClass: 'border-blue-200', titleClass: 'text-blue-800' },
+    { key: '2', title: '✏️ Writing Feedback', color: 'purple', bgClass: 'bg-purple-50', borderClass: 'border-purple-200', titleClass: 'text-purple-800' },
+    { key: '3', title: '🔢 Math Feedback', color: 'amber', bgClass: 'bg-amber-50', borderClass: 'border-amber-200', titleClass: 'text-amber-800' },
+    { key: '4', title: '🧠 Behaviour & Attention', color: 'teal', bgClass: 'bg-teal-50', borderClass: 'border-teal-200', titleClass: 'text-teal-800' },
+    { key: '5', title: '💪 Key Strengths', color: 'green', bgClass: 'bg-green-50', borderClass: 'border-green-200', titleClass: 'text-green-800' },
+    { key: '6', title: '🎯 Recommended Interventions & Goals', color: 'indigo', bgClass: 'bg-indigo-50', borderClass: 'border-indigo-200', titleClass: 'text-indigo-800' },
+    { key: '7', title: '✅ Closing Statement', color: 'gray', bgClass: 'bg-gray-50', borderClass: 'border-gray-200', titleClass: 'text-gray-800' },
 ];
 
 export const LESSON_PLAN_SECTIONS = [
@@ -115,11 +115,11 @@ export function parseReportSections(content: string): { heading: string; body: s
 /** PDF section colors */
 export const PDF_SECTION_COLORS: Record<string, { bg: string; border: string; title: string }> = {
     '0': { bg: '#eff6ff', border: '#bfdbfe', title: '#1e40af' },  // blue
-    '1': { bg: '#f0fdf4', border: '#bbf7d0', title: '#166534' },  // green
+    '1': { bg: '#faf5ff', border: '#e9d5ff', title: '#6b21a8' },  // purple
     '2': { bg: '#fffbeb', border: '#fde68a', title: '#92400e' },  // amber
-    '3': { bg: '#faf5ff', border: '#e9d5ff', title: '#6b21a8' },  // purple
-    '4': { bg: '#f0f9ff', border: '#bae6fd', title: '#0369a1' },  // sky
-    '5': { bg: '#f0fdfa', border: '#99f6e4', title: '#115e59' },  // teal
-    '6': { bg: '#eef2ff', border: '#c7d2fe', title: '#3730a3' },  // indigo
-    '7': { bg: '#f9fafb', border: '#e5e7eb', title: '#374151' },  // gray
+    '3': { bg: '#f0fdfa', border: '#99f6e4', title: '#115e59' },  // teal
+    '4': { bg: '#f0fdf4', border: '#bbf7d0', title: '#166534' },  // green
+    '5': { bg: '#eef2ff', border: '#c7d2fe', title: '#3730a3' },  // indigo
+    '6': { bg: '#f9fafb', border: '#e5e7eb', title: '#374151' },  // gray
+    '7': { bg: '#f9fafb', border: '#e5e7eb', title: '#374151' },  // gray fallback
 };

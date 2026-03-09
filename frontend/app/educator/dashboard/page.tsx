@@ -32,8 +32,6 @@ import {
   Download,
   ArrowUpDown,
   Search,
-  Bell,
-  BellOff
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -50,7 +48,6 @@ export default function EducatorDashboard() {
   const [sortBy, setSortBy] = useState<string>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [timePeriod, setTimePeriod] = useState<'week' | 'month' | 'quarter'>('month');
-  const [showNotifications, setShowNotifications] = useState(true);
 
   const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useEducatorDashboardAnalytics();
   const { data: students, isLoading: isStudentsLoading, error: studentsError, refetch: refetchStudents } = useStudentsWithAnalytics();
@@ -110,14 +107,6 @@ export default function EducatorDashboard() {
     return filtered;
   }, [students, searchQuery, statusFilter, gradeFilter, performanceFilter, sortBy, sortOrder]);
 
-  // Get students needing attention (progress < 40%)
-  const studentsNeedingAttention = useMemo(() => {
-    if (!students) return [];
-    return students.filter((student: any) => {
-      const avgProgress = student.progressSummary?.averageProgress || 0;
-      return avgProgress < 40;
-    });
-  }, [students]);
 
   // Get unique grades for filter
   const uniqueGrades = useMemo(() => {
@@ -256,43 +245,6 @@ export default function EducatorDashboard() {
       </div>
 
       <div id="dashboard-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Notifications Alert */}
-        {showNotifications && studentsNeedingAttention.length > 0 && (
-          <Card className="mb-6 border-yellow-200 bg-yellow-50">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4">
-                  <Bell className="h-6 w-6 text-yellow-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-yellow-900">Students Needing Attention</h3>
-                    <p className="text-sm text-yellow-800 mt-1">
-                      {studentsNeedingAttention.length} student{studentsNeedingAttention.length > 1 ? 's' : ''} with progress below 40%:
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {studentsNeedingAttention.slice(0, 5).map((student: any) => (
-                        <Link key={student.id} href={`/educator/students/${student.id}`}>
-                          <Badge variant="outline" className="cursor-pointer hover:bg-yellow-100">
-                            {student.fullName} ({student.progressSummary?.averageProgress || 0}%)
-                          </Badge>
-                        </Link>
-                      ))}
-                      {studentsNeedingAttention.length > 5 && (
-                        <Badge variant="outline">+{studentsNeedingAttention.length - 5} more</Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowNotifications(false)}
-                >
-                  <BellOff className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
