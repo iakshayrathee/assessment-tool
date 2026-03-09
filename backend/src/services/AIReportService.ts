@@ -259,7 +259,7 @@ export class AIReportService {
         : this.buildLessonPlanReportPrompt(studentData);
 
       const systemPrompt = reportType === 'ASSESSMENT'
-        ? `You are an expert special education assessment analyst. Generate comprehensive, professional assessment reports. You must respond with a valid JSON object with exactly these keys: "overallInterpretation", "keyStrengths", "skillGaps", "areasToInvestigate", "parentTeacherExplanation", "recommendedInterventions", "suggestedGoals", "closingStatement". Each value should be a detailed string with full paragraphs, bullet points using dashes (-), and sub-sections. Use markdown formatting within each value (bold with **, headers with ##).`
+        ? `You are an expert special education assessment analyst. Generate comprehensive, professional assessment reports organized TOPIC BY TOPIC. You must respond with a valid JSON object with exactly these 7 keys: "readingFeedback", "writingFeedback", "mathFeedback", "behaviourAttention", "keyStrengths", "interventionsAndGoals", "closingStatement". Each value should be a detailed, specific string with full paragraphs, bullet points using dashes (-), and sub-sections. Use markdown formatting within each value (bold with **, sub-headers with ###). Be specific and data-driven for each topic based on the assessment data provided.`
         : `You are an expert special education analyst. Generate comprehensive lesson plan reports. You must respond with a valid JSON object with exactly these keys: "executiveSummary", "lessonPlanAnalysis", "teachingEffectiveness", "progressPatterns", "areasOfRemediation", "recommendations", "nextSteps", "closingStatement". Each value should be a detailed string. Use markdown formatting within each value.`;
 
       console.log('AI Prompt length:', prompt.length);
@@ -298,7 +298,7 @@ export class AIReportService {
     const formalData = this.extractFormalAssessments(data.formalAssessments);
     const iepData = this.extractIEPData(data.iepGoals);
 
-    return `Generate a comprehensive ASSESSMENT REPORT for this child. Respond with a JSON object.
+    return `Generate a comprehensive ASSESSMENT REPORT for this child, organized TOPIC BY TOPIC. Respond with a JSON object.
 
 STUDENT INFORMATION:
 ${studentInfo}
@@ -325,25 +325,81 @@ IEP GOALS (Active):
 ${iepData}
 
 INSTRUCTIONS:
-Generate a JSON with these 8 keys. Each value must be a detailed, thorough string:
+Generate a JSON with exactly these 7 keys. Each value must be a detailed, thorough string using markdown formatting (bold with **, sub-headers with ###, bullet points with -):
 
-1. "overallInterpretation" - Comprehensive interpretation covering: reading level analysis (grade levels, frustration/instructional/independent levels), writing analysis (handwriting, creative writing, copying skills), math analysis, comprehension abilities, and overall cognitive observations. Be specific about grade levels and use data provided.
+1. "readingFeedback" - Comprehensive READING ANALYSIS ONLY:
+   - Current reading level (grade level, frustration/instructional/independent classification)
+   - Decoding and phonics skills: specific strengths and gaps
+   - Fluency: rate, accuracy, expression observations
+   - Comprehension: ability to understand and recall text
+   - Sight word knowledge
+   - Observed reading symptoms and their impact
+   - Specific areas of concern with evidence from assessment data
+   If no reading data is available, state that clearly.
 
-2. "keyStrengths" - Identify ALL positive aspects: motivation, willingness to attempt tasks, any areas of competence, comprehension abilities, near copying skills, idea generation in writing, math attempt willingness, etc. This is critical for balanced reporting.
+2. "writingFeedback" - Comprehensive WRITING ANALYSIS ONLY:
+   - Handwriting quality (letter formation, spacing, legibility, pencil grip/pressure)
+   - Spelling: phonetic vs sight word errors, patterns observed
+   - Sentence construction and grammar ability
+   - Creative writing: idea generation, paragraph structure, vocabulary
+   - Near-copying and board-copying skills
+   - Punctuation usage (capitals, full stops, commas)
+   - Observed writing symptoms and their impact
+   If no writing data is available, state that clearly.
 
-3. "skillGaps" - Detailed breakdown by domain: Reading gaps (decoding, fluency, vocabulary, phonics), Writing gaps (sentence structure, grammar, vocabulary, spelling - sight words vs phonic words), Math gaps (specific concepts), Visual Processing/Copying gaps. Include severity indications.
+3. "mathFeedback" - Comprehensive MATH ANALYSIS ONLY:
+   - Current math level (grade level, concept mastery)
+   - Number sense: counting, number identification, place value
+   - Operations: addition, subtraction, multiplication, division ability
+   - Conceptual understanding vs procedural skills
+   - Word problem and applied math ability
+   - Memory for math facts and multi-step procedures
+   - Observed math symptoms and their impact
+   If no math data is available, state that clearly.
 
-4. "areasToInvestigate" - Suggest further evaluations: vision screening, learning difficulty screening (dyslexia/SLD risk), attention assessment, psycho-educational assessment needs. Reference specific symptoms that warrant investigation.
+4. "behaviourAttention" - BEHAVIOUR & ATTENTION ANALYSIS:
+   - Attention and focus during tasks (from intake and assessment observations)
+   - Frustration tolerance and emotional regulation
+   - Task avoidance patterns observed
+   - Stamina and endurance for academic tasks
+   - Motivation levels and engagement
+   - Any developmental or behavioural background from intake form
+   - Areas that may need further investigation (vision, hearing, attention assessment)
+   If minimal data, note what is known and suggest next steps.
 
-5. "parentTeacherExplanation" - Write this in SIMPLE, non-technical language that parents can understand. Explain what the assessment shows, acknowledge the child's strengths, explain the challenges in everyday terms, and what it means for their learning. This should sound warm and supportive.
+5. "keyStrengths" - STRENGTHS ACROSS ALL AREAS:
+   - Identify ALL positive aspects observed in reading, writing, and math
+   - Motivational strengths, willingness to attempt tasks
+   - Social and behavioural strengths
+   - Any areas of relative competence
+   - Use warm, strengths-based language. This section must be present even if challenges are significant.
 
-6. "recommendedInterventions" - Detailed interventions for each area: Reading (phonics instruction, sight word practice, guided reading, vocabulary building with specific strategies), Writing (sentence formation, grammar basics, paragraph structure with specific exercises), Spelling (phonics-based practice, word families, sight word lists), Math (conceptual teaching, visual aids, step-by-step methods), Classroom Accommodations (printed notes, extra time, short instructions, frequent checks).
+6. "interventionsAndGoals" - RECOMMENDED INTERVENTIONS + GOALS FOR NEXT 6 MONTHS:
+   ### Reading Interventions
+   - Specific phonics and decoding strategies
+   - Fluency building activities
+   - Comprehension strategies
+   - Reading Goal: [specific measurable target for 6 months]
+   ### Writing Interventions
+   - Handwriting practice recommendations
+   - Spelling program suggestions
+   - Writing composition strategies
+   - Writing Goal: [specific measurable target for 6 months]
+   ### Math Interventions
+   - Concrete/visual/abstract teaching methods
+   - Specific concept remediation order
+   - Math Goal: [specific measurable target for 6 months]
+   ### Classroom Accommodations
+   - Practical accommodations for the classroom educator
 
-7. "suggestedGoals" - Specific measurable goals for the next 6 months in each area: Reading (fluency targets, vocabulary goals), Writing (paragraph writing targets, grammar accuracy), Spelling (sight word mastery targets), Math (concept mastery targets, accuracy goals). Include specific metrics.
+7. "closingStatement" - PROFESSIONAL CLOSING:
+   - Brief summary of key findings across all topics
+   - Acknowledgement of the child's potential and strengths
+   - Expression of confidence in improvement with proper support
+   - Written in warm but professional tone suitable for an official report
+   - NOTE: Write this in simple language parents can understand
 
-8. "closingStatement" - Professional closing that acknowledges the child's potential, summarizes key needs, and expresses confidence about improvement with proper support. Should be suitable for an official report.
-
-Be SPECIFIC - reference actual data from the assessments above. Do NOT use generic statements. If data is limited, note that and provide recommendations based on available information.`;
+Be SPECIFIC - reference actual data from the assessments above. Do NOT use generic statements. Use dash (-) bullet points for lists. If data for a topic is limited, note that and provide recommendations based on available information.`;
   }
 
   private buildLessonPlanReportPrompt(data: any): string {
@@ -633,26 +689,23 @@ Generate JSON with keys: "executiveSummary", "lessonPlanAnalysis", "teachingEffe
     const studentName = student?.fullName || 'Student';
 
     if (reportType === 'ASSESSMENT' && parsed) {
-      const summary = [
-        parsed.overallInterpretation || '',
-        parsed.keyStrengths ? `\n\n## Key Strengths\n${parsed.keyStrengths}` : '',
-      ].filter(Boolean).join('');
-
-      const recommendations = [
-        parsed.recommendedInterventions || '',
-        parsed.suggestedGoals ? `\n\n## Suggested Goals for Next 6 Months\n${parsed.suggestedGoals}` : '',
-      ].filter(Boolean).join('');
-
+      // Build topic-by-topic content with 7 sections
       const content = [
-        `## 1. Overall Interpretation of Assessment\n${parsed.overallInterpretation || 'N/A'}`,
-        `## 2. Key Strengths of the Child\n${parsed.keyStrengths || 'N/A'}`,
-        `## 3. Major Skill Gaps Identified\n${parsed.skillGaps || 'N/A'}`,
-        `## 4. Areas to Investigate Further\n${parsed.areasToInvestigate || 'N/A'}`,
-        `## 5. How to Explain This to Parents/Teachers\n${parsed.parentTeacherExplanation || 'N/A'}`,
-        `## 6. Recommended Interventions\n${parsed.recommendedInterventions || 'N/A'}`,
-        `## 7. Suggested Goals for Next 6 Months\n${parsed.suggestedGoals || 'N/A'}`,
-        `## 8. Closing Statement\n${parsed.closingStatement || 'N/A'}`,
+        `## 1. Reading Feedback\n${parsed.readingFeedback || 'No reading assessment data available for this student.'}`,
+        `## 2. Writing Feedback\n${parsed.writingFeedback || 'No writing assessment data available for this student.'}`,
+        `## 3. Math Feedback\n${parsed.mathFeedback || 'No math assessment data available for this student.'}`,
+        `## 4. Behaviour & Attention\n${parsed.behaviourAttention || 'N/A'}`,
+        `## 5. Key Strengths\n${parsed.keyStrengths || 'N/A'}`,
+        `## 6. Recommended Interventions & Goals\n${parsed.interventionsAndGoals || 'N/A'}`,
+        `## 7. Closing Statement\n${parsed.closingStatement || 'N/A'}`,
       ].join('\n\n');
+
+      // Use reading feedback as primary summary overview
+      const summary = [
+        parsed.keyStrengths ? `**Key Strengths:** ${parsed.keyStrengths}` : '',
+      ].filter(Boolean).join('');
+
+      const recommendations = parsed.interventionsAndGoals || '';
 
       return {
         studentId,
