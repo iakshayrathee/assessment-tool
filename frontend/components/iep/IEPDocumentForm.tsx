@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,6 +15,8 @@ import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { useAIAssessment } from '@/hooks/useAI';
+import { Sparkles, X, Loader2 } from 'lucide-react';
 
 const DOMAINS = [
   'Reading', 'Writing', 'Math', 'Visual Perception', 'Motor Skills', 'Attention', 'Communication', 'Social Skills'
@@ -43,6 +45,8 @@ interface IEPDocumentFormProps {
 export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFormProps) {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAiBanner, setShowAiBanner] = useState(false);
+  const aiAppliedRef = useRef(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -54,6 +58,54 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
       status: 'DRAFT',
     },
   });
+
+  // Watch studentId to trigger AI assessment analysis
+  const watchedStudentId = form.watch('studentId');
+  const aiAssessment = useAIAssessment(watchedStudentId, !!watchedStudentId);
+
+  // AI pre-fill: when student is selected and AI data arrives, pre-fill areas
+  useEffect(() => {
+    if (watchedStudentId && aiAssessment.data && !aiAppliedRef.current) {
+      aiAppliedRef.current = true;
+      const profile = aiAssessment.data.domain_profile || {};
+      const areas: string[] = [];
+
+      // Extract domains with weaknesses from AI analysis
+      Object.entries(profile).forEach(([domain, data]: [string, any]) => {
+        if (domain === 'overall_summary') return;
+        if (typeof data === 'object' && data.weaknesses?.length > 0) {
+          // Map AI domain names to form domain names
+          const domainMap: Record<string, string> = {
+            'READING': 'Reading', 'WRITING': 'Writing', 'MATH': 'Math',
+            'COGNITIVE': 'Visual Perception', 'ATTENTION_BEHAVIOR': 'Attention',
+            'BEHAVIOURAL': 'Attention', 'MOTOR': 'Motor Skills',
+          };
+          const formDomain = domainMap[domain.toUpperCase()] || domain;
+          if (DOMAINS.includes(formDomain) && !areas.includes(formDomain)) {
+            areas.push(formDomain);
+          }
+        }
+      });
+
+      if (areas.length > 0) {
+        form.setValue('areasOfRemediation', areas);
+      }
+
+      // Auto-generate title
+      const student = students.find(s => s.id === watchedStudentId);
+      if (student && !form.getValues('title')) {
+        form.setValue('title', `IEP - ${student.fullName} - ${new Date().toLocaleDateString()}`);
+      }
+
+      setShowAiBanner(true);
+    }
+  }, [watchedStudentId, aiAssessment.data, form, students]);
+
+  // Reset AI tracking when student changes
+  useEffect(() => {
+    aiAppliedRef.current = false;
+    setShowAiBanner(false);
+  }, [watchedStudentId]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -89,6 +141,24 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
             <CardTitle>IEP Header Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* AI Pre-fill Banner */}
+            {showAiBanner && (
+              <div className="flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg px-4 py-2.5">
+                <div className="flex items-center gap-2 text-sm text-indigo-700">
+                  <Sparkles className="h-4 w-4" />
+                  <span>Areas pre-filled from AI assessment analysis — all fields are editable</span>
+                </div>
+                <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-indigo-400 hover:text-indigo-600" onClick={() => setShowAiBanner(false)}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+            {watchedStudentId && aiAssessment.isLoading && (
+              <div className="flex items-center gap-2 text-sm text-indigo-500 px-1">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Analyzing student data with AI...</span>
+              </div>
+            )}
             <FormField
               control={form.control}
               name="title"

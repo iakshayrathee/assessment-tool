@@ -36,16 +36,23 @@ import {
   CheckCircle,
   AlertCircle,
   TrendingUp,
-  Notebook
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useAIStudentRisk, useAIAssessment, useAIIEPSuggestions, useAILessonPlan } from '@/hooks/useAI';
+import { AIRiskBadge, AIAssessmentPanel, AIIEPSuggestionsPanel, AILessonPlanPanel } from '@/components/ai/AIInsightPanels';
 
 export default function StudentDetailPage() {
   const params = useParams();
   const studentId = params.id as string;
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // AI hooks — auto-loaded for comprehensive student insights
+  const aiRisk = useAIStudentRisk(studentId, true);
+  const aiAssessment = useAIAssessment(studentId, true);
+  const aiIEP = useAIIEPSuggestions(studentId, true);
+  const aiLessonPlan = useAILessonPlan(studentId, 1, true);
 
   // Edit student modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -61,9 +68,10 @@ export default function StudentDetailPage() {
     parentName: '',
     parentPhone: '',
     parentEmail: '',
-    address: '',
+    parentAddress: '',
     parentEmergencyContact: '',
-    parentPassword: ''
+    parentPassword: '',
+    parentHasAccount: false
   });
 
   // Handler to open edit modal with current student data
@@ -235,6 +243,53 @@ export default function StudentDetailPage() {
     }
   };
 
+  // Handler to persist AI-generated plan to database
+  const handleSaveAIPlan = async (aiData: any) => {
+    try {
+      await apiClient.saveAILessonPlan(studentId, aiData);
+      
+      // Refresh the lists
+      queryClient.invalidateQueries({ queryKey: ['studentDashboard', studentId] });
+      
+      toast({
+        title: 'Success',
+        description: 'AI-generated plan has been saved as a draft. You can now view it in the Lesson Plans tab.',
+        variant: 'default'
+      });
+    } catch (error: any) {
+      console.error('Failed to save AI plan:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to save AI-generated plan',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // Handler to persist AI-generated risk to database
+  const handleSaveAIRisk = async (riskLevel: string) => {
+    try {
+      await apiClient.saveAIRisk(studentId, riskLevel);
+      
+      // Refresh student data to show the new risk category in the badge
+      queryClient.invalidateQueries({ queryKey: ['student', studentId] });
+      queryClient.invalidateQueries({ queryKey: ['studentDashboard', studentId] });
+      
+      toast({
+        title: 'Risk Profile Updated',
+        description: `Student risk category has been updated to ${riskLevel}.`,
+        variant: 'default'
+      });
+    } catch (error: any) {
+      console.error('Failed to save AI risk:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update risk category',
+        variant: 'destructive'
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -309,6 +364,12 @@ export default function StudentDetailPage() {
                   <Badge className={getStatusColor(student.status)}>
                     {student.status}
                   </Badge>
+                  {(aiRisk.data?.risk_classifications?.[0]?.risk_level || aiAssessment.data?.risk_classification) && (
+                    <AIRiskBadge
+                      riskLevel={aiRisk.data?.risk_classifications?.[0]?.risk_level || aiAssessment.data?.risk_classification}
+                      size="md"
+                    />
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -738,6 +799,15 @@ export default function StudentDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* AI Assessment Analysis — auto-loaded */}
+          <AIAssessmentPanel
+            data={aiAssessment.data}
+            isLoading={aiAssessment.isLoading}
+            error={aiAssessment.error}
+            onLoad={() => {}}
+            onSaveRisk={handleSaveAIRisk}
+          />
         </TabsContent>
 
         <TabsContent value="iep" className="space-y-6">
@@ -834,6 +904,15 @@ export default function StudentDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* AI IEP Suggestions — auto-loaded */}
+          <AIIEPSuggestionsPanel
+            data={aiIEP.data}
+            isLoading={aiIEP.isLoading}
+            error={aiIEP.error}
+            onLoad={() => {}}
+            onSave={handleSaveAIPlan}
+          />
         </TabsContent>
 
 
@@ -1033,6 +1112,15 @@ export default function StudentDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* AI Lesson Plan Suggestions — auto-loaded */}
+          <AILessonPlanPanel
+            data={aiLessonPlan.data}
+            isLoading={aiLessonPlan.isLoading}
+            error={aiLessonPlan.error}
+            onLoad={() => {}}
+            onSave={handleSaveAIPlan}
+          />
         </TabsContent>
       </Tabs>
 

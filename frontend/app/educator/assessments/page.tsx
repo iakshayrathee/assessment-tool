@@ -19,6 +19,8 @@ import { apiClient } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { GradeDisplay } from '@/components/ui/GradeDisplay';
+import { useAIAssessment } from '@/hooks/useAI';
+import { AIAssessmentPanel } from '@/components/ai/AIInsightPanels';
 
 const MAX_ASSESSMENTS = 3;
 
@@ -55,6 +57,19 @@ export default function AssessmentsPage() {
   const [showMaxWarning, setShowMaxWarning] = useState(false);
   const [pendingAssessmentType, setPendingAssessmentType] = useState<'formal' | 'reading' | 'writing' | 'math' | null>(null);
   const [oldestAssessment, setOldestAssessment] = useState<any>(null);
+
+  // AI hook — enabled when student is selected
+  const aiAssessment = useAIAssessment(selectedStudent?.id || '', !!selectedStudent?.id);
+
+  const handleSaveAIRisk = async (riskLevel: string) => {
+    try {
+      if (!selectedStudent?.id) return;
+      await apiClient.saveAIRisk(selectedStudent.id, riskLevel);
+      toast.success(`Student risk category updated to ${riskLevel}.`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update risk category');
+    }
+  };
 
   useEffect(() => {
     if (selectedStudent?.id) {
@@ -348,6 +363,17 @@ export default function AssessmentsPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Assessment Analysis */}
+      {selectedStudent?.id && (
+        <AIAssessmentPanel
+          data={aiAssessment.data}
+          isLoading={aiAssessment.isLoading}
+          error={aiAssessment.error}
+          onLoad={() => {}}
+          onSaveRisk={handleSaveAIRisk}
+        />
+      )}
 
       {selectedStudent?.id ? (
         isGradeEligibleForAssessments(selectedStudent.grade) ? (

@@ -79,6 +79,8 @@ import { LTPDialog } from '@/components/lesson-plans/LTPDialog';
 import { STPDialog } from '@/components/lesson-plans/STPDialog';
 import { WLPDialog } from '@/components/lesson-plans/WLPDialog';
 import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
+import { useAILessonPlan, useAIIEPSuggestions } from '@/hooks/useAI';
+import { AILessonPlanPanel, AIIEPSuggestionsPanel } from '@/components/ai/AIInsightPanels';
 
 // Constants
 const DOMAINS = [
@@ -252,6 +254,21 @@ export default function LessonPlansPage() {
     const [expandedLTPs, setExpandedLTPs] = useState<Set<string>>(new Set());
     const [expandedSTPs, setExpandedSTPs] = useState<Set<string>>(new Set());
 
+    // AI hooks — auto-enabled when a student is selected
+    const aiIEP = useAIIEPSuggestions(selectedStudent?.id || '', !!selectedStudent);
+    const aiLessonPlan = useAILessonPlan(selectedStudent?.id || '', 1, !!selectedStudent);
+
+    const handleSaveAIPlan = async (aiData: any) => {
+        try {
+            if (!selectedStudent) return;
+            await apiClient.saveAILessonPlan(selectedStudent.id, aiData);
+            await fetchAllData();
+            toast.success('AI-generated plan saved as a draft.');
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to save AI-generated plan');
+        }
+    };
+
     // Memoize fetchAllData to prevent unnecessary re-renders
     const fetchAllData = useCallback(async () => {
         if (!selectedStudent) return;
@@ -363,6 +380,22 @@ export default function LessonPlansPage() {
 
             {selectedStudent && (
                 <>
+                    {/* AI Lesson Plan & IEP Suggestions */}
+                    <AIIEPSuggestionsPanel
+                        data={aiIEP.data}
+                        isLoading={aiIEP.isLoading}
+                        error={aiIEP.error}
+                        onLoad={() => {}}
+                        onSave={handleSaveAIPlan}
+                    />
+                    <AILessonPlanPanel
+                        data={aiLessonPlan.data}
+                        isLoading={aiLessonPlan.isLoading}
+                        error={aiLessonPlan.error}
+                        onLoad={() => {}}
+                        onSave={handleSaveAIPlan}
+                    />
+
                     {/* Action Buttons */}
                     <div className="flex gap-3">
                         <Button onClick={() => { setEditingLTP(null); setLtpDialogOpen(true); }}>

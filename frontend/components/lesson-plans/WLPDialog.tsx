@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -29,10 +29,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { Plus, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Loader2, Sparkles, X } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
+import { useAILessonPlan } from '@/hooks/useAI';
 
 const wlpFormSchema = z.object({
     shortTermPlanId: z.string().optional(),
@@ -48,6 +49,11 @@ const wlpFormSchema = z.object({
 
 export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSuccess }: any) {
     const [loading, setLoading] = useState(false);
+    const [showAiBanner, setShowAiBanner] = useState(false);
+    const aiAppliedRef = useRef(false);
+
+    // AI pre-fill: fetch lesson plan suggestions when creating (not editing)
+    const aiLessonPlan = useAILessonPlan(studentId, 1, open && !editing && !!studentId);
 
     const form = useForm({
         resolver: zodResolver(wlpFormSchema),
@@ -64,12 +70,12 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
         },
     });
 
-    const { fields: areaFields, append: appendArea, remove: removeArea } = useFieldArray({
+    const { fields: areaFields, append: appendArea, remove: removeArea, replace: replaceAreas } = useFieldArray({
         control: form.control,
         name: 'areasOfRemediation',
     });
 
-    const { fields: resourceFields, append: appendResource, remove: removeResource } = useFieldArray({
+    const { fields: resourceFields, append: appendResource, remove: removeResource, replace: replaceResources } = useFieldArray({
         control: form.control,
         name: 'resourcesUsed',
     });
@@ -77,6 +83,8 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
     // Reset form when editing changes or dialog opens
     useEffect(() => {
         if (open) {
+            aiAppliedRef.current = false;
+            setShowAiBanner(false);
             if (editing) {
                 form.reset({
                     shortTermPlanId: editing.shortTermPlanId || '',
@@ -108,6 +116,40 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
             }
         }
     }, [editing, open, form]);
+
+    // AI pre-fill: populate WLP form from AI lesson plan data
+    useEffect(() => {
+        if (!editing && open && aiLessonPlan.data && !aiAppliedRef.current) {
+            aiAppliedRef.current = true;
+            const data = aiLessonPlan.data;
+            const plan = data.lesson_plan || data;
+
+            // Map AI data to form fields
+            if (plan.topics) form.setValue('topics', typeof plan.topics === 'string' ? plan.topics : plan.topics.join(', '));
+            if (data.motivation_strategy) form.setValue('motivationStrategy', data.motivation_strategy);
+
+            // Map areas of remediation — use replace() so useFieldArray rows re-render
+            const areas = data.areas_of_remediation || plan.areas_of_remediation || [];
+            if (areas.length > 0) {
+                replaceAreas(areas.map((a: string) => a));
+            }
+
+            // Map resources — use replace() so useFieldArray rows re-render
+            const resources = data.suggested_resources || plan.suggested_resources || [];
+            if (resources.length > 0) {
+                replaceResources(resources.map((r: string) => r));
+            }
+
+            // Map average time: prefer sum of activity durations, fall back to estimated_time
+            const totalMins = (data.suggested_activities || []).reduce(
+                (sum: number, a: any) => sum + (a.duration_minutes || 0), 0
+            );
+            const avgTime = totalMins > 0 ? totalMins : (data.estimated_time || 0);
+            if (avgTime > 0) form.setValue('averageTime', avgTime);
+
+            setShowAiBanner(true);
+        }
+    }, [aiLessonPlan.data, editing, open, form, replaceAreas, replaceResources]);
 
     const onSubmit = async (data: any) => {
         setLoading(true);
@@ -150,6 +192,25 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
                 <DialogHeader>
                     <DialogTitle className="text-2xl">{editing ? 'Edit' : 'Create'} Weekly Lesson Plan</DialogTitle>
                 </DialogHeader>
+
+                {/* AI Pre-fill Banner */}
+                {showAiBanner && (
+                    <div className="flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg px-4 py-2.5">
+                        <div className="flex items-center gap-2 text-sm text-indigo-700">
+                            <Sparkles className="h-4 w-4" />
+                            <span>Pre-filled with AI suggestions — all fields are editable</span>
+                        </div>
+                        <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-indigo-400 hover:text-indigo-600" onClick={() => setShowAiBanner(false)}>
+                            <X className="h-3.5 w-3.5" />
+                        </Button>
+                    </div>
+                )}
+                {!editing && aiLessonPlan.isLoading && (
+                    <div className="flex items-center gap-2 text-sm text-indigo-500 px-1">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Loading AI suggestions...</span>
+                    </div>
+                )}
 
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     {/* Basic Info */}

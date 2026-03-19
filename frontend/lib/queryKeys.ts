@@ -273,6 +273,24 @@ export const queryKeys = {
     global: (query: string, type?: string) => 
       [...queryKeys.search.all, 'global', query, type] as const,
   },
+
+  // AI Agent queries
+  ai: {
+    all: ['ai'] as const,
+    health: () => [...queryKeys.ai.all, 'health'] as const,
+    assessment: (studentId: string) =>
+      [...queryKeys.ai.all, 'assessment', studentId] as const,
+    iep: (studentId: string) =>
+      [...queryKeys.ai.all, 'iep', studentId] as const,
+    lessonPlan: (studentId: string, week?: number) =>
+      [...queryKeys.ai.all, 'lessonPlan', studentId, week] as const,
+    risk: (studentId: string) =>
+      [...queryKeys.ai.all, 'risk', studentId] as const,
+    schoolRisk: (schoolId: string) =>
+      [...queryKeys.ai.all, 'schoolRisk', schoolId] as const,
+    educatorInsights: () =>
+      [...queryKeys.ai.all, 'educatorInsights'] as const,
+  },
 } as const;
 
 /**

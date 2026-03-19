@@ -32,10 +32,15 @@ import {
   Download,
   ArrowUpDown,
   Search,
+  Sparkles,
+  AlertTriangle,
+  ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { useState, useMemo } from 'react';
+import { useAIEducatorInsights } from '@/hooks/useAI';
+import { AIEducatorInsightsCard } from '@/components/ai/AIInsightPanels';
 
 export default function EducatorDashboard() {
   const { user } = useAuth();
@@ -48,10 +53,26 @@ export default function EducatorDashboard() {
   const [sortBy, setSortBy] = useState<string>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [timePeriod, setTimePeriod] = useState<'week' | 'month' | 'quarter'>('month');
+  const [aiInsightsEnabled, setAiInsightsEnabled] = useState(true);
 
   const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useEducatorDashboardAnalytics();
   const { data: students, isLoading: isStudentsLoading, error: studentsError, refetch: refetchStudents } = useStudentsWithAnalytics();
   const { data: trends } = useProgressTrends(timePeriod);
+  const aiInsights = useAIEducatorInsights(aiInsightsEnabled);
+
+  // Build risk lookup from educator agent's student_priority_list (zero extra API calls)
+  const studentRiskMap = useMemo(() => {
+    const map = new Map<string, { status: string; priority: string }>(); 
+    const priorityList = aiInsights?.data?.student_priority_list || aiInsights?.data?.data?.student_priority_list || [];
+    priorityList.forEach((item: any) => {
+      const name = item.student_name || item.name || '';
+      map.set(name.toLowerCase(), {
+        status: item.status || item.risk_level || 'unknown',
+        priority: item.priority || 'normal',
+      });
+    });
+    return map;
+  }, [aiInsights?.data]);
 
   const isLoading = isAnalyticsLoading || isStudentsLoading;
   const hasError = analyticsError || studentsError;
@@ -293,6 +314,16 @@ export default function EducatorDashboard() {
           </Card>
         </div>
 
+        {/* AI Educator Insights — auto-loads, hides on error */}
+        <div className="mb-8">
+          <AIEducatorInsightsCard
+            data={aiInsights.data}
+            isLoading={aiInsights.isLoading}
+            error={aiInsights.error}
+            onLoad={() => setAiInsightsEnabled(true)}
+          />
+        </div>
+
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card>
@@ -485,6 +516,27 @@ export default function EducatorDashboard() {
                             {student.status || 'INACTIVE'}
                           </Badge>
                         </div>
+                        {/* AI Risk Badge from educator insights */}
+                        {(() => {
+                          const riskInfo = studentRiskMap.get((student.fullName || '').toLowerCase());
+                          if (!riskInfo) return null;
+                          const status = riskInfo.status.toLowerCase();
+                          const isHighRisk = status.includes('high') || status.includes('critical') || status.includes('at_risk') || status.includes('at-risk');
+                          const isMedium = status.includes('medium') || status.includes('moderate') || status.includes('watch');
+                          return (
+                            <div className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full mt-1 ${
+                              isHighRisk ? 'bg-red-50 text-red-700 border border-red-200' :
+                              isMedium ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                              'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            }`}>
+                              {isHighRisk ? <AlertTriangle className="h-3 w-3" /> :
+                               isMedium ? <AlertCircle className="h-3 w-3" /> :
+                               <ShieldCheck className="h-3 w-3" />}
+                              <span className="font-medium capitalize">{riskInfo.status.replace(/_/g, ' ')}</span>
+                              <Sparkles className="h-2.5 w-2.5 opacity-50" />
+                            </div>
+                          );
+                        })()}
                       </CardHeader>
 
                       <CardContent className="space-y-4">

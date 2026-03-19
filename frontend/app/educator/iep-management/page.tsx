@@ -30,6 +30,9 @@ import { IEPDocumentForm } from '@/components/iep/IEPDocumentForm';
 import { IEPSubjectSectionForm } from '@/components/iep/IEPSubjectSectionForm';
 import { WeeklyLessonPlanForm } from '@/components/iep/WeeklyLessonPlanForm';
 import { IEPDocumentViewer } from '@/components/iep/IEPDocumentViewer';
+import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
+import { useAIIEPSuggestions } from '@/hooks/useAI';
+import { AIIEPSuggestionsPanel } from '@/components/ai/AIInsightPanels';
 
 interface IEPDocument {
   id: string;
@@ -60,6 +63,23 @@ export default function IEPManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   
+  // AI student selector
+  const [selectedStudentForAI, setSelectedStudentForAI] = useState<any>(null);
+  const [showStudentModalForAI, setShowStudentModalForAI] = useState(false);
+
+  // AI hook — enabled when a student is selected for AI IEP suggestions
+  const aiIEP = useAIIEPSuggestions(selectedStudentForAI?.id || '', !!selectedStudentForAI?.id);
+
+  const handleSaveAIPlan = async (aiData: any) => {
+    try {
+      if (!selectedStudentForAI?.id) return;
+      await apiClient.saveAILessonPlan(selectedStudentForAI.id, aiData);
+      toast.success('AI-generated plan saved as a draft.');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save AI-generated plan');
+    }
+  };
+
   // Dialog states
   const [showCreateDocumentDialog, setShowCreateDocumentDialog] = useState(false);
   const [showAddSubjectDialog, setShowAddSubjectDialog] = useState(false);
@@ -178,12 +198,31 @@ export default function IEPManagementPage() {
           </div>
           
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowStudentModalForAI(true)}
+              className="flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              {selectedStudentForAI ? `AI: ${selectedStudentForAI.fullName}` : 'AI Suggestions'}
+            </Button>
             <Button onClick={() => setShowCreateDocumentDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New IEP
             </Button>
           </div>
         </div>
+
+        {/* AI IEP Suggestions */}
+        {selectedStudentForAI && (
+          <AIIEPSuggestionsPanel
+            data={aiIEP.data}
+            isLoading={aiIEP.isLoading}
+            error={aiIEP.error}
+            onLoad={() => {}}
+            onSave={handleSaveAIPlan}
+          />
+        )}
 
         {/* Filters */}
         <Card className="mb-6">
@@ -391,6 +430,13 @@ export default function IEPManagementPage() {
             )}
           </DialogContent>
         </Dialog>
+
+        <StudentSelectionModal
+          isOpen={showStudentModalForAI}
+          onClose={() => setShowStudentModalForAI(false)}
+          onSelect={(_studentId: string, student: any) => setSelectedStudentForAI(student)}
+          selectedStudentId={selectedStudentForAI?.id}
+        />
       </div>
     </div>
   );

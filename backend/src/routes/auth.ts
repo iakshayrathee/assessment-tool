@@ -79,11 +79,22 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       data: { lastLogin: new Date() }
     });
 
+    // Extract the role-specific profile ID so AI routes receive the correct entity ID
+    const profileId =
+      user.adminProfile?.id ??
+      user.specialEducatorProfile?.id ??
+      user.superSpecialEducatorProfile?.id ??
+      user.centerProfile?.id ??
+      user.parentProfile?.id ??
+      user.schoolViewerProfile?.id;
+
     // Generate JWT token
     const token = generateToken({
+      id: user.id,
       userId: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
+      ...(profileId ? { profileId } : {}),
     });
 
     // Prepare user profile

@@ -3,12 +3,15 @@ import { PrismaClient } from '@prisma/client';
 import { AuthUtils } from '../utils/auth';
 import { UserRole } from '../models';
 import { AIReportController } from '../controllers/AIReportController';
+import { attachProfileId } from '../middleware/profileMiddleware';
 
 const router = Router();
 const prisma = new PrismaClient();
 
 // Apply authentication to all routes
 router.use(AuthUtils.authenticateToken);
+// Resolve User.id → role-specific profile ID (e.g. SpecialEducatorProfile.id)
+router.use(attachProfileId);
 
 // GET /api/reports - Get reports by student ID (query param)
 router.get('/', async (req, res) => {

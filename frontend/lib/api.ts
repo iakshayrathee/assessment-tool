@@ -2367,6 +2367,146 @@ class ApiClient {
     return response.data;
   }
 
+  // ── Lesson Plan CRUD Methods ───────────────────────────────────────────────
+
+  async getLongTermPlansByStudent(studentId: string): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/lesson-plans/long-term/student/${studentId}`);
+    return response.data.data;
+  }
+
+  async getShortTermPlansByStudent(studentId: string): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/lesson-plans/short-term/student/${studentId}`);
+    return response.data.data;
+  }
+
+  async getWeeklyLessonPlansByStudent(studentId: string): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/lesson-plans/weekly/student/${studentId}`);
+    return response.data.data;
+  }
+
+  async createLongTermPlan(planData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>('/lesson-plans/long-term', planData);
+    return response.data.data;
+  }
+
+  async createShortTermPlan(planData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>('/lesson-plans/short-term', planData);
+    return response.data.data;
+  }
+
+  async createWeeklyLessonPlan(planData: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>('/lesson-plans/weekly', planData);
+    return response.data.data;
+  }
+
+  /**
+   * Save AI-generated IEP plan (LTP + STPs + WLPs) to the database as DRAFT records.
+   * Returns the created LTP with its ID so STPs/WLPs can be linked.
+   */
+  async saveAILessonPlan(studentId: string, aiPlanData: {
+    generated_ltp: any;
+    generated_stps: any[];
+    generated_wlps: any[];
+  }): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/ai/iep/${studentId}/save`, aiPlanData, {
+      timeout: 30000,
+    });
+    return response.data.data;
+  }
+
+  // ── AI Agent Methods ───────────────────────────────────────────────────────
+
+  /**
+   * Save AI-generated risk assessment to the student profile.
+   */
+  async saveAIRisk(studentId: string, riskLevel: string): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/ai/risk/${studentId}/save`, { riskLevel });
+    return response.data.data;
+  }
+
+  /**
+   * Get AI-powered assessment analysis for a student.
+   * Returns symptom analysis, severity scores, domain profile, risk classification,
+   * differential indicators, and recommended next steps.
+   */
+  async getAIAssessmentAnalysis(studentId: string, assessmentType: string = 'ALL'): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/ai/assessment/${studentId}`, {
+      params: { type: assessmentType },
+      timeout: 120000, // AI pipelines can take up to 2 minutes
+    });
+    return response.data.data;
+  }
+
+  /**
+   * Generate AI-suggested IEP goals, LTP, STPs, and WLPs.
+   * Optionally pass assessment analysis for better results.
+   */
+  async getAIIEPSuggestions(studentId: string, assessmentAnalysis?: any): Promise<any> {
+    const response = await this.client.post<ApiResponse<any>>(`/ai/iep/${studentId}`, {
+      assessment_analysis: assessmentAnalysis || {},
+    }, {
+      timeout: 120000,
+    });
+    return response.data.data;
+  }
+
+  /**
+   * Get AI-suggested lesson plan for a specific week.
+   */
+  async getAILessonPlan(studentId: string, weekNumber: number = 1): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/ai/lesson-plan/${studentId}`, {
+      params: { week: weekNumber },
+      timeout: 120000,
+    });
+    return response.data.data;
+  }
+
+  /**
+   * Get AI risk analysis for a student.
+   * Returns risk classification, progress trends, early warnings, and recommendations.
+   */
+  async getAIStudentRisk(studentId: string): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/ai/risk/student/${studentId}`, {
+      timeout: 60000,
+    });
+    return response.data.data;
+  }
+
+  /**
+   * Get AI risk distribution across a school.
+   */
+  async getAISchoolRisk(schoolId: string): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>(`/ai/risk/school/${schoolId}`, {
+      timeout: 120000,
+    });
+    return response.data.data;
+  }
+
+  /**
+   * Get AI-powered educator insights — performance summary, mentoring insights,
+   * training recommendations, and student priority list.
+   */
+  async getAIEducatorInsights(): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/ai/educator/insights', {
+      timeout: 120000,
+    });
+    return response.data.data;
+  }
+
+  /**
+   * Check if the AI backend is available.
+   */
+  async checkAIHealth(): Promise<{ available: boolean; data?: any }> {
+    try {
+      const response = await this.client.get<ApiResponse<any>>('/ai/health', {
+        timeout: 5000,
+      });
+      return { available: true, data: response.data.data };
+    } catch {
+      return { available: false };
+    }
+  }
+
 }
 
 export const apiClient = new ApiClient();
