@@ -79,8 +79,8 @@ import { LTPDialog } from '@/components/lesson-plans/LTPDialog';
 import { STPDialog } from '@/components/lesson-plans/STPDialog';
 import { WLPDialog } from '@/components/lesson-plans/WLPDialog';
 import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
-import { useAILessonPlan, useAIIEPSuggestions } from '@/hooks/useAI';
-import { AILessonPlanPanel, AIIEPSuggestionsPanel } from '@/components/ai/AIInsightPanels';
+import { useAILessonPlan } from '@/hooks/useAI';
+import { AILessonPlanPanel } from '@/components/ai/AIInsightPanels';
 
 // Constants
 const DOMAINS = [
@@ -254,8 +254,7 @@ export default function LessonPlansPage() {
     const [expandedLTPs, setExpandedLTPs] = useState<Set<string>>(new Set());
     const [expandedSTPs, setExpandedSTPs] = useState<Set<string>>(new Set());
 
-    // AI hooks — auto-enabled when a student is selected
-    const aiIEP = useAIIEPSuggestions(selectedStudent?.id || '', !!selectedStudent);
+    // AI hook — auto-enabled when a student is selected
     const aiLessonPlan = useAILessonPlan(selectedStudent?.id || '', 1, !!selectedStudent);
 
     const handleSaveAIPlan = async (aiData: any) => {
@@ -380,14 +379,7 @@ export default function LessonPlansPage() {
 
             {selectedStudent && (
                 <>
-                    {/* AI Lesson Plan & IEP Suggestions */}
-                    <AIIEPSuggestionsPanel
-                        data={aiIEP.data}
-                        isLoading={aiIEP.isLoading}
-                        error={aiIEP.error}
-                        onLoad={() => {}}
-                        onSave={handleSaveAIPlan}
-                    />
+                    {/* AI Lesson Plan */}
                     <AILessonPlanPanel
                         data={aiLessonPlan.data}
                         isLoading={aiLessonPlan.isLoading}

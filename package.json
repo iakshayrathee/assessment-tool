@@ -7,15 +7,13 @@
     "build": "npm run build:backend && npm run build:frontend",
     "build:frontend": "cd frontend && npm install && npm run build",
     "build:backend": "cd backend && npm install && npm run build",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
+    "dev:ai-backend": "cd ai-backend && call venv\\Scripts\\activate.bat && python -m uvicorn app.main:app --reload --port 8000",
+    "dev:all": "concurrently \"npm run dev:ai-backend\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "start": "cd frontend && npm start",
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../ai-backend && python -m venv venv && call venv\\Scripts\\activate.bat && pip install -r requirements.txt && cd ..",
     "db:generate": "cd backend && npx prisma generate",
     "db:migrate": "cd backend && npx prisma migrate deploy"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
   }
 }

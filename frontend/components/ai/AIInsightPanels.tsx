@@ -3,189 +3,123 @@
 /**
  * AI Insight Components
  *
- * Shared, reusable components for displaying AI-generated insights
- * across the application. These follow the "inline enhancement" pattern —
- * they augment existing pages rather than replacing them.
+ * Shared, reusable components for displaying AI-generated insights.
+ * Follows the app-wide design system: Tailwind CSS + shadcn/ui + Lucide icons.
  */
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertTriangle,
+  AlertCircle,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  Loader2,
+  BookOpen,
+  Target,
+  Users,
+  TrendingUp,
+  WifiOff,
+  Save,
+  Plus,
+  Clock,
+} from 'lucide-react';
 
-// ── Shared Styles ────────────────────────────────────────────────────────────
+// ── Risk Badge ────────────────────────────────────────────────────────────────
 
-const styles = {
-  // AI section wrapper
-  aiSection: {
-    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%)',
-    border: '1px solid rgba(99, 102, 241, 0.15)',
-    borderRadius: '12px',
-    padding: '20px',
-    marginTop: '16px',
-  } as React.CSSProperties,
-
-  // AI header with sparkle icon
-  aiHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '16px',
-    fontSize: '15px',
-    fontWeight: 600,
-    color: '#4f46e5',
-  } as React.CSSProperties,
-
-  // Loading skeleton
-  skeleton: {
-    background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
-    backgroundSize: '200% 100%',
-    animation: 'shimmer 1.5s infinite',
-    borderRadius: '8px',
-    height: '16px',
-    marginBottom: '8px',
-  } as React.CSSProperties,
-
-  // Risk badge styles
-  riskBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '2px 10px',
-    borderRadius: '999px',
-    fontSize: '12px',
-    fontWeight: 600,
-    letterSpacing: '0.02em',
-  } as React.CSSProperties,
-
-  // Collapsible toggle
-  toggle: {
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    background: 'none',
-    border: 'none',
-    padding: 0,
-    textAlign: 'left' as const,
-  } as React.CSSProperties,
-
-  // Card for individual insights
-  insightCard: {
-    background: 'white',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    padding: '14px',
-    marginBottom: '8px',
-  } as React.CSSProperties,
-
-  // Domain tag
-  domainTag: {
-    display: 'inline-block',
-    padding: '2px 8px',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 600,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.05em',
-  } as React.CSSProperties,
-
-  // Action button
-  actionBtn: {
-    padding: '6px 14px',
-    borderRadius: '6px',
-    fontSize: '12px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    border: '1px solid #d1d5db',
-    background: 'white',
-    color: '#374151',
-    transition: 'all 0.15s ease',
-  } as React.CSSProperties,
-
-  aiActionBtn: {
-    padding: '6px 14px',
-    borderRadius: '6px',
-    fontSize: '12px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    border: 'none',
-    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-    color: 'white',
-    transition: 'all 0.15s ease',
-  } as React.CSSProperties,
-
-  errorBox: {
-    background: 'rgba(239, 68, 68, 0.05)',
-    border: '1px solid rgba(239, 68, 68, 0.2)',
-    borderRadius: '8px',
-    padding: '12px 16px',
-    color: '#dc2626',
-    fontSize: '13px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  } as React.CSSProperties,
-};
-
-// ── Risk Badge Component ─────────────────────────────────────────────────────
-
-const RISK_CONFIG: Record<string, { color: string; bg: string; icon: string; label: string }> = {
-  HIGH_SUPPORT: { color: '#dc2626', bg: 'rgba(239, 68, 68, 0.1)', icon: '🔴', label: 'High Support' },
-  AT_RISK: { color: '#dc2626', bg: 'rgba(239, 68, 68, 0.1)', icon: '🔴', label: 'At Risk' },
-  MODERATE_SUPPORT: { color: '#d97706', bg: 'rgba(245, 158, 11, 0.1)', icon: '🟡', label: 'Moderate' },
-  NEEDS_ATTENTION: { color: '#d97706', bg: 'rgba(245, 158, 11, 0.1)', icon: '🟡', label: 'Needs Attention' },
-  ON_TRACK: { color: '#059669', bg: 'rgba(16, 185, 129, 0.1)', icon: '🟢', label: 'On Track' },
+const RISK_CONFIG: Record<string, { label: string; className: string; Icon: React.ElementType }> = {
+  HIGH_SUPPORT:      { label: 'High Support',    className: 'bg-red-100 text-red-800 border-red-200',     Icon: AlertTriangle },
+  AT_RISK:           { label: 'At Risk',          className: 'bg-red-100 text-red-800 border-red-200',     Icon: AlertTriangle },
+  MODERATE_SUPPORT:  { label: 'Moderate',         className: 'bg-amber-100 text-amber-800 border-amber-200', Icon: AlertCircle },
+  NEEDS_ATTENTION:   { label: 'Needs Attention',  className: 'bg-amber-100 text-amber-800 border-amber-200', Icon: AlertCircle },
+  ON_TRACK:          { label: 'On Track',         className: 'bg-green-100 text-green-800 border-green-200', Icon: ShieldCheck },
 };
 
 export function AIRiskBadge({ riskLevel, size = 'sm' }: { riskLevel: string; size?: 'sm' | 'md' }) {
   const config = RISK_CONFIG[riskLevel] || RISK_CONFIG.ON_TRACK;
+  const { Icon } = config;
   return (
-    <span
-      style={{
-        ...styles.riskBadge,
-        color: config.color,
-        background: config.bg,
-        fontSize: size === 'md' ? '13px' : '11px',
-        padding: size === 'md' ? '4px 12px' : '2px 8px',
-      }}
-      title={`AI Risk Classification: ${config.label}`}
+    <Badge
+      variant="outline"
+      className={`${config.className} ${size === 'md' ? 'text-sm px-3 py-1' : 'text-xs px-2 py-0.5'} flex items-center gap-1 w-fit`}
     >
-      {config.icon} {config.label}
-    </span>
+      <Icon className={size === 'md' ? 'h-3.5 w-3.5' : 'h-3 w-3'} />
+      {config.label}
+    </Badge>
   );
 }
 
-// ── AI Loading Skeleton ──────────────────────────────────────────────────────
+// ── AI Loading Skeleton ───────────────────────────────────────────────────────
 
 export function AILoadingSkeleton({ lines = 3 }: { lines?: number }) {
+  const widths = ['w-3/4', 'w-5/6', 'w-2/3', 'w-4/5', 'w-1/2'];
   return (
-    <div style={styles.aiSection}>
-      <style>{`@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }`}</style>
-      <div style={{ ...styles.aiHeader, opacity: 0.5 }}>✨ Loading AI insights...</div>
+    <div className="space-y-2 pt-2">
       {Array.from({ length: lines }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            ...styles.skeleton,
-            width: `${70 + Math.random() * 30}%`,
-          }}
-        />
+        <Skeleton key={i} className={`h-4 ${widths[i % widths.length]}`} />
       ))}
     </div>
   );
 }
 
-// ── AI Error/Unavailable Message ─────────────────────────────────────────────
+// ── AI Unavailable Notice ─────────────────────────────────────────────────────
 
 export function AIUnavailable({ message }: { message?: string }) {
   return (
-    <div style={styles.errorBox}>
-      <span>⚠️</span>
+    <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-2">
+      <WifiOff className="h-4 w-4 flex-shrink-0" />
       <span>{message || 'AI insights are currently unavailable. Existing data is still shown above.'}</span>
     </div>
   );
 }
 
-// ── AI Assessment Analysis Panel ─────────────────────────────────────────────
+// ── Internal helpers ──────────────────────────────────────────────────────────
+
+function AISectionHeader({ title }: { title: string }) {
+  return (
+    <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
+      <Sparkles className="h-4 w-4 text-indigo-500" />
+      {title}
+    </div>
+  );
+}
+
+function AISection({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50/60 to-purple-50/60 p-4">
+      {children}
+    </div>
+  );
+}
+
+function DomainTag({ domain }: { domain: string }) {
+  const d = domain?.toUpperCase();
+  const cls =
+    d === 'READING'   ? 'bg-blue-100 text-blue-700' :
+    d === 'WRITING'   ? 'bg-green-100 text-green-700' :
+    d === 'MATH'      ? 'bg-amber-100 text-amber-700' :
+    d === 'COGNITIVE' ? 'bg-purple-100 text-purple-700' :
+    (d === 'BEHAVIOURAL' || d === 'ATTENTION_BEHAVIOR') ? 'bg-pink-100 text-pink-700' :
+    'bg-gray-100 text-gray-600';
+  return (
+    <span className={`inline-block text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${cls}`}>
+      {domain}
+    </span>
+  );
+}
+
+function getSeverityTextClass(score: number): string {
+  if (score >= 60) return 'text-red-600';
+  if (score >= 30) return 'text-amber-600';
+  return 'text-green-600';
+}
+
+// ── AI Assessment Analysis Panel ──────────────────────────────────────────────
 
 export function AIAssessmentPanel({
   data,
@@ -206,98 +140,84 @@ export function AIAssessmentPanel({
   const handleToggle = () => {
     const next = !isOpen;
     setIsOpen(next);
-    if (next && !data && !isLoading) {
-      onLoad();
-    }
+    if (next && !data && !isLoading) onLoad();
   };
 
   return (
-    <div style={styles.aiSection}>
-      <button style={styles.toggle} onClick={handleToggle}>
-        <span style={styles.aiHeader as any}>
-          ✨ AI Assessment Analysis
-        </span>
-        <span style={{ fontSize: '18px', color: '#6b7280', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-          ▾
-        </span>
+    <AISection>
+      <button onClick={handleToggle} className="flex items-center justify-between w-full text-left">
+        <AISectionHeader title="AI Assessment Analysis" />
+        {isOpen
+          ? <ChevronUp className="h-4 w-4 text-gray-400" />
+          : <ChevronDown className="h-4 w-4 text-gray-400" />
+        }
       </button>
 
       {isOpen && (
-        <div style={{ marginTop: '8px' }}>
+        <div className="mt-3 space-y-4">
           {isLoading && <AILoadingSkeleton lines={5} />}
           {error && <AIUnavailable message="Could not load AI assessment analysis. Try again later." />}
           {data && !isLoading && (
-            <div>
+            <>
               {/* Risk Classification */}
               {data.risk_classification && (
-                <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '6px' }}>Risk Classification</div>
+                    <p className="text-xs text-gray-500 mb-1">Risk Classification</p>
                     <AIRiskBadge riskLevel={data.risk_classification} size="md" />
                   </div>
-                  
                   {onSaveRisk && (
-                    <button
-                      style={{
-                        ...styles.aiActionBtn,
-                        fontSize: '11px',
-                        padding: '6px 10px',
-                        opacity: isSavingRisk ? 0.7 : 1,
-                        cursor: isSavingRisk ? 'not-allowed' : 'pointer',
-                      }}
+                    <Button
+                      size="sm"
+                      variant="outline"
                       disabled={isSavingRisk}
+                      className="text-indigo-700 border-indigo-200 hover:bg-indigo-50"
                       onClick={async () => {
                         setIsSavingRisk(true);
-                        try {
-                          await onSaveRisk(data.risk_classification);
-                        } finally {
-                          setIsSavingRisk(false);
-                        }
+                        try { await onSaveRisk(data.risk_classification); }
+                        finally { setIsSavingRisk(false); }
                       }}
                     >
-                      {isSavingRisk ? '⏳ Saving...' : '💾 Confirm & Save Risk'}
-                    </button>
+                      {isSavingRisk
+                        ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Saving...</>
+                        : <><Save className="h-3 w-3 mr-1" />Confirm & Save Risk</>
+                      }
+                    </Button>
                   )}
                 </div>
               )}
 
               {/* Severity Scores */}
               {data.severity_scores && (
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>Severity Scores</div>
-                  {/* Domain score percentages */}
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">Severity Scores</p>
+                  <div className="flex gap-3 flex-wrap mb-2">
                     {(['reading', 'writing', 'math'] as const).map((domain) => {
                       const score = data.severity_scores[domain];
                       if (score === undefined) return null;
                       return (
-                        <div key={domain} style={styles.insightCard}>
-                          <div style={{ ...styles.domainTag, ...getDomainColors(domain) }}>{domain}</div>
-                          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px', color: getSeverityColor(score as number) }}>
-                            {score}%
-                          </div>
-                        </div>
+                        <Card key={domain} className="flex-1 min-w-[80px]">
+                          <CardContent className="pt-3 pb-3 text-center">
+                            <DomainTag domain={domain} />
+                            <p className={`text-2xl font-bold mt-1 ${getSeverityTextClass(score as number)}`}>{score}%</p>
+                          </CardContent>
+                        </Card>
                       );
                     })}
                   </div>
-                  {/* Symptom counts — shown as counts, not percentages */}
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className="flex gap-2 flex-wrap">
                     {['reading_symptom_count', 'writing_symptom_count', 'math_symptom_count'].map((key) => {
-                      const domain = key.replace('_symptom_count', '') as string;
+                      const domain = key.replace('_symptom_count', '');
                       const count = data.severity_scores[key];
                       if (count === undefined) return null;
                       return (
-                        <span key={key} style={{ fontSize: '11px', color: '#6b7280',
-                          background: 'rgba(107,114,128,0.08)', borderRadius: '4px',
-                          padding: '2px 8px' }}>
+                        <span key={key} className="text-xs text-gray-500 bg-gray-100 rounded px-2 py-0.5">
                           {domain}: {count} symptoms
                         </span>
                       );
                     })}
                     {data.severity_scores.total_symptom_count !== undefined && (
-                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#374151',
-                        background: 'rgba(99,102,241,0.08)', borderRadius: '4px',
-                        padding: '2px 8px' }}>
+                      <span className="text-xs font-semibold text-gray-700 bg-indigo-50 border border-indigo-100 rounded px-2 py-0.5">
                         Total: {data.severity_scores.total_symptom_count} symptoms
                       </span>
                     )}
@@ -307,95 +227,107 @@ export function AIAssessmentPanel({
 
               {/* Domain Profile */}
               {data.domain_profile && typeof data.domain_profile === 'object' && (
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>Domain Profile</div>
-                  {Object.entries(data.domain_profile).map(([domain, profile]: [string, any]) => {
-                    if (domain === 'overall_summary') {
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">Domain Profile</p>
+                  <div className="space-y-2">
+                    {Object.entries(data.domain_profile).map(([domain, profile]: [string, any]) => {
+                      if (domain === 'overall_summary') {
+                        return (
+                          <Card key={domain} className="border-l-4 border-l-indigo-400">
+                            <CardContent className="pt-3 pb-3">
+                              <p className="text-xs font-semibold mb-1">Overall Summary</p>
+                              <p className="text-sm text-gray-600">{profile}</p>
+                            </CardContent>
+                          </Card>
+                        );
+                      }
+                      if (typeof profile !== 'object') return null;
                       return (
-                        <div key={domain} style={{ ...styles.insightCard, borderLeft: '3px solid #6366f1' }}>
-                          <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>Overall Summary</div>
-                          <div style={{ fontSize: '13px', color: '#4b5563' }}>{profile}</div>
-                        </div>
+                        <Card key={domain}>
+                          <CardContent className="pt-3 pb-3 space-y-1">
+                            <DomainTag domain={domain} />
+                            {profile.strengths?.length > 0 && (
+                              <p className="text-xs">
+                                <span className="font-semibold text-green-700">Strengths: </span>
+                                <span className="text-gray-600">{profile.strengths.join(' • ')}</span>
+                              </p>
+                            )}
+                            {profile.weaknesses?.length > 0 && (
+                              <p className="text-xs">
+                                <span className="font-semibold text-red-600">Weaknesses: </span>
+                                <span className="text-gray-600">{profile.weaknesses.join(' • ')}</span>
+                              </p>
+                            )}
+                            {profile.functional_level && (
+                              <p className="text-xs">
+                                <span className="font-semibold text-indigo-600">Level: </span>
+                                <span className="text-gray-600">{profile.functional_level}</span>
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
                       );
-                    }
-                    if (typeof profile !== 'object') return null;
-                    return (
-                      <div key={domain} style={{ ...styles.insightCard, marginBottom: '8px' }}>
-                        <div style={{ ...styles.domainTag, ...getDomainColors(domain), marginBottom: '8px' }}>{domain}</div>
-                        {profile.strengths?.length > 0 && (
-                          <div style={{ marginBottom: '6px' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#059669' }}>Strengths: </span>
-                            <span style={{ fontSize: '12px', color: '#4b5563' }}>{profile.strengths.join(' • ')}</span>
-                          </div>
-                        )}
-                        {profile.weaknesses?.length > 0 && (
-                          <div style={{ marginBottom: '6px' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#dc2626' }}>Weaknesses: </span>
-                            <span style={{ fontSize: '12px', color: '#4b5563' }}>{profile.weaknesses.join(' • ')}</span>
-                          </div>
-                        )}
-                        {profile.functional_level && (
-                          <div>
-                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#6366f1' }}>Level: </span>
-                            <span style={{ fontSize: '12px', color: '#4b5563' }}>{profile.functional_level}</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                    })}
+                  </div>
                 </div>
               )}
 
               {/* Differential Indicators */}
               {data.differential_indicators?.length > 0 && (
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>Differential Indicators</div>
-                  {data.differential_indicators.map((indicator: any, i: number) => (
-                    <div key={i} style={{ ...styles.insightCard, borderLeft: `3px solid ${indicator.confidence === 'HIGH' ? '#dc2626' : indicator.confidence === 'MODERATE' ? '#d97706' : '#6b7280'}` }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 600 }}>{indicator.condition}</span>
-                        <span style={{
-                          ...styles.riskBadge,
-                          fontSize: '10px',
-                          color: indicator.confidence === 'HIGH' ? '#dc2626' : indicator.confidence === 'MODERATE' ? '#d97706' : '#6b7280',
-                          background: indicator.confidence === 'HIGH' ? 'rgba(239,68,68,0.1)' : indicator.confidence === 'MODERATE' ? 'rgba(245,158,11,0.1)' : 'rgba(107,114,128,0.1)',
-                        }}>
-                          {indicator.confidence}
-                        </span>
-                      </div>
-                      {indicator.supporting_evidence?.length > 0 && (
-                        <div style={{ fontSize: '12px', color: '#4b5563', marginTop: '4px' }}>
-                          Evidence: {indicator.supporting_evidence.join(', ')}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">Differential Indicators</p>
+                  <div className="space-y-2">
+                    {data.differential_indicators.map((indicator: any, i: number) => {
+                      const isHigh = indicator.confidence === 'HIGH';
+                      const isMod = indicator.confidence === 'MODERATE';
+                      return (
+                        <Card key={i} className={`border-l-4 ${isHigh ? 'border-l-red-400' : isMod ? 'border-l-amber-400' : 'border-l-gray-300'}`}>
+                          <CardContent className="pt-3 pb-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-semibold">{indicator.condition}</span>
+                              <Badge
+                                variant="outline"
+                                className={isHigh ? 'text-red-700 border-red-200 bg-red-50' : isMod ? 'text-amber-700 border-amber-200 bg-amber-50' : 'text-gray-600 border-gray-200 bg-gray-50'}
+                              >
+                                {indicator.confidence}
+                              </Badge>
+                            </div>
+                            {indicator.supporting_evidence?.length > 0 && (
+                              <p className="text-xs text-gray-500">Evidence: {indicator.supporting_evidence.join(', ')}</p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
-              {/* Recommendations */}
+              {/* Recommended Next Steps */}
               {data.recommended_next_steps?.length > 0 && (
                 <div>
-                  <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>Recommended Next Steps</div>
-                  {data.recommended_next_steps.map((step: any, i: number) => (
-                    <div key={i} style={{ ...styles.insightCard, display: 'flex', gap: '8px' }}>
-                      <span style={{ fontSize: '14px', minWidth: '20px' }}>📋</span>
-                      <span style={{ fontSize: '13px', color: '#374151' }}>
-                        {typeof step === 'string' ? step : JSON.stringify(step)}
-                      </span>
-                    </div>
-                  ))}
+                  <p className="text-xs text-gray-500 mb-2">Recommended Next Steps</p>
+                  <div className="space-y-2">
+                    {data.recommended_next_steps.map((step: any, i: number) => (
+                      <div key={i} className="flex gap-2 bg-white border border-gray-100 rounded-lg p-3">
+                        <Target className="h-4 w-4 text-indigo-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm text-gray-700">
+                          {typeof step === 'string' ? step : JSON.stringify(step)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       )}
-    </div>
+    </AISection>
   );
 }
 
-// ── AI IEP Suggestions Panel ─────────────────────────────────────────────────
+// ── AI IEP Suggestions Panel ──────────────────────────────────────────────────
 
 export function AIIEPSuggestionsPanel({
   data,
@@ -418,124 +350,112 @@ export function AIIEPSuggestionsPanel({
   const handleToggle = () => {
     const next = !isOpen;
     setIsOpen(next);
-    if (next && !data && !isLoading) {
-      onLoad();
-    }
+    if (next && !data && !isLoading) onLoad();
   };
 
   const goals = data?.generated_goals || data?.gap_analysis?.generated_goals || [];
   const gapAnalysis = data?.gap_analysis;
 
   return (
-    <div style={styles.aiSection}>
-      <button style={styles.toggle} onClick={handleToggle}>
-        <span style={styles.aiHeader as any}>
-          ✨ AI-Suggested IEP Goals
-        </span>
-        <span style={{ fontSize: '18px', color: '#6b7280', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-          ▾
-        </span>
+    <AISection>
+      <button onClick={handleToggle} className="flex items-center justify-between w-full text-left">
+        <AISectionHeader title="AI-Suggested IEP Goals" />
+        {isOpen
+          ? <ChevronUp className="h-4 w-4 text-gray-400" />
+          : <ChevronDown className="h-4 w-4 text-gray-400" />
+        }
       </button>
 
       {isOpen && (
-        <div style={{ marginTop: '8px' }}>
+        <div className="mt-3 space-y-3">
           {isLoading && <AILoadingSkeleton lines={4} />}
           {error && <AIUnavailable message="Could not generate IEP suggestions. Try again later." />}
           {data && !isLoading && (
-            <div>
-              {/* Gap Analysis Summary */}
+            <>
+              {/* Gap Analysis */}
               {gapAnalysis && (
-                <div style={{ ...styles.insightCard, marginBottom: '12px', borderLeft: '3px solid #6366f1' }}>
-                  <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>Gap Analysis</div>
-                  {gapAnalysis.uncovered_domains?.length > 0 ? (
-                    <div style={{ fontSize: '13px', color: '#4b5563' }}>
-                      Uncovered areas: {gapAnalysis.uncovered_domains.join(', ')}
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: '13px', color: '#059669' }}>All domains are covered by existing goals</div>
-                  )}
-                </div>
+                <Card className="border-l-4 border-l-indigo-400">
+                  <CardContent className="pt-3 pb-3">
+                    <p className="text-xs font-semibold mb-1">Gap Analysis</p>
+                    {gapAnalysis.uncovered_domains?.length > 0 ? (
+                      <p className="text-sm text-gray-600">Uncovered areas: {gapAnalysis.uncovered_domains.join(', ')}</p>
+                    ) : (
+                      <p className="text-sm text-green-700">All domains are covered by existing goals</p>
+                    )}
+                  </CardContent>
+                </Card>
               )}
 
               {/* Generated Goals */}
-              {goals.length > 0 && goals.map((goal: any, i: number) => (
-                <div key={i} style={{ ...styles.insightCard, marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                    <span style={{ ...styles.domainTag, ...getDomainColors(goal.domain) }}>{goal.domain}</span>
-                    {goal.priority && (
-                      <span style={{ fontSize: '11px', color: '#6b7280' }}>Priority {goal.priority}</span>
+              {goals.map((goal: any, i: number) => (
+                <Card key={i}>
+                  <CardContent className="pt-3 pb-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <DomainTag domain={goal.domain} />
+                      {goal.priority && (
+                        <span className="text-xs text-gray-500">Priority {goal.priority}</span>
+                      )}
+                    </div>
+                    <p className="text-sm font-medium text-gray-900">{goal.goal_statement}</p>
+                    {goal.strategy && (
+                      <p className="text-xs text-gray-500">Strategy: {goal.strategy}</p>
                     )}
-                  </div>
-                  <div style={{ fontSize: '13px', fontWeight: 500, marginBottom: '6px', color: '#1f2937' }}>
-                    {goal.goal_statement}
-                  </div>
-                  {goal.strategy && (
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                      Strategy: {goal.strategy}
-                    </div>
-                  )}
-                  {goal.rationale && (
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
-                      Rationale: {goal.rationale}
-                    </div>
-                  )}
-                  {onAddGoal && (
-                    <button
-                      style={styles.aiActionBtn}
-                      onClick={() => onAddGoal(goal)}
-                    >
-                      + Add to IEP
-                    </button>
-                  )}
-                </div>
+                    {goal.rationale && (
+                      <p className="text-xs text-gray-500">Rationale: {goal.rationale}</p>
+                    )}
+                    {onAddGoal && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+                        onClick={() => onAddGoal(goal)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />Add to IEP
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
               ))}
 
               {/* Generated LTP Summary */}
               {data.generated_ltp && Object.keys(data.generated_ltp).length > 0 && (
-                <div style={{ ...styles.insightCard, borderLeft: '3px solid #8b5cf6', marginTop: '12px' }}>
-                  <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>Suggested Long-Term Plan</div>
-                  <div style={{ fontSize: '12px', color: '#4b5563' }}>
-                    Duration: {data.generated_ltp.duration_months || 6} months •
-                    Domains: {(data.generated_ltp.domains || []).join(', ')} •
-                    Status: <span style={{ color: '#d97706', fontWeight: 600 }}>AI Draft</span>
-                  </div>
-                </div>
+                <Card className="border-l-4 border-l-purple-400">
+                  <CardContent className="pt-3 pb-3">
+                    <p className="text-xs font-semibold mb-1">Suggested Long-Term Plan</p>
+                    <p className="text-xs text-gray-500">
+                      Duration: {data.generated_ltp.duration_months || 6} months •{' '}
+                      Domains: {(data.generated_ltp.domains || []).join(', ')} •{' '}
+                      <span className="text-amber-600 font-semibold">AI Draft</span>
+                    </p>
+                  </CardContent>
+                </Card>
               )}
 
-              {/* Save entire AI plan to DB */}
+              {/* Save Plan */}
               {onSave && data?.generated_ltp && (
-                <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e5e7eb' }}>
-                  <button
-                    style={{
-                      ...styles.aiActionBtn,
-                      width: '100%',
-                      padding: '10px 14px',
-                      fontSize: '13px',
-                      opacity: isSaving ? 0.7 : 1,
-                      cursor: isSaving ? 'not-allowed' : 'pointer',
-                    }}
+                <div className="pt-2 border-t border-gray-100">
+                  <Button
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
                     disabled={isSaving}
                     onClick={async () => {
                       setIsSaving(true);
-                      try {
-                        await onSave(data);
-                      } finally {
-                        setIsSaving(false);
-                      }
+                      try { await onSave(data); }
+                      finally { setIsSaving(false); }
                     }}
                   >
-                    {isSaving ? '⏳ Saving...' : '💾 Save to Lesson Plans (as Draft)'}
-                  </button>
-                  <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px', textAlign: 'center' }}>
-                    Creates LTP + STPs + WLPs as editable DRAFT records
-                  </div>
+                    {isSaving
+                      ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>
+                      : <><Save className="h-4 w-4 mr-2" />Save to Lesson Plans (as Draft)</>
+                    }
+                  </Button>
+                  <p className="text-xs text-gray-500 text-center mt-1">Creates LTP + STPs + WLPs as editable DRAFT records</p>
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       )}
-    </div>
+    </AISection>
   );
 }
 
@@ -560,111 +480,120 @@ export function AILessonPlanPanel({
   const handleToggle = () => {
     const next = !isOpen;
     setIsOpen(next);
-    if (next && !data && !isLoading) {
-      onLoad();
-    }
+    if (next && !data && !isLoading) onLoad();
   };
 
   const plan = data?.lesson_plan || data;
 
   return (
-    <div style={styles.aiSection}>
-      <button style={styles.toggle} onClick={handleToggle}>
-        <span style={styles.aiHeader as any}>
-          ✨ AI Lesson Plan Suggestion
-        </span>
-        <span style={{ fontSize: '18px', color: '#6b7280', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-          ▾
-        </span>
+    <AISection>
+      <button onClick={handleToggle} className="flex items-center justify-between w-full text-left">
+        <AISectionHeader title="AI Lesson Plan Suggestion" />
+        {isOpen
+          ? <ChevronUp className="h-4 w-4 text-gray-400" />
+          : <ChevronDown className="h-4 w-4 text-gray-400" />
+        }
       </button>
 
       {isOpen && (
-        <div style={{ marginTop: '8px' }}>
+        <div className="mt-3 space-y-3">
           {isLoading && <AILoadingSkeleton lines={4} />}
           {error && <AIUnavailable message="Could not generate lesson plan suggestion." />}
           {plan && !isLoading && (
-            <div>
+            <>
               {/* Progress Analysis */}
               {data?.progress_analysis && (
-                <div style={{ ...styles.insightCard, borderLeft: '3px solid #6366f1', marginBottom: '12px' }}>
-                  <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>Progress Analysis</div>
-                  <div style={{ fontSize: '13px', color: '#4b5563' }}>
-                    {typeof data.progress_analysis === 'string' ? data.progress_analysis : JSON.stringify(data.progress_analysis)}
-                  </div>
-                </div>
+                <Card className="border-l-4 border-l-indigo-400">
+                  <CardContent className="pt-3 pb-3">
+                    <p className="text-xs font-semibold mb-1">Progress Analysis</p>
+                    <p className="text-sm text-gray-600">
+                      {typeof data.progress_analysis === 'string' ? data.progress_analysis : JSON.stringify(data.progress_analysis)}
+                    </p>
+                  </CardContent>
+                </Card>
               )}
 
               {/* Suggested Activities */}
               {data?.suggested_activities?.length > 0 && (
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>Suggested Activities</div>
-                  {data.suggested_activities.map((activity: any, i: number) => (
-                    <div key={i} style={styles.insightCard}>
-                      <div style={{ fontSize: '13px', fontWeight: 500, color: '#1f2937' }}>{activity.name || activity}</div>
-                      {activity.description && (
-                        <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>{activity.description}</div>
-                      )}
-                      {activity.duration_minutes && (
-                        <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>⏱ {activity.duration_minutes} min</div>
-                      )}
-                    </div>
-                  ))}
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">Suggested Activities</p>
+                  <div className="space-y-2">
+                    {data.suggested_activities.map((activity: any, i: number) => (
+                      <Card key={i}>
+                        <CardContent className="pt-3 pb-3">
+                          <p className="text-sm font-medium text-gray-900">{activity.name || activity}</p>
+                          {activity.description && (
+                            <p className="text-xs text-gray-500 mt-1">{activity.description}</p>
+                          )}
+                          {activity.duration_minutes && (
+                            <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
+                              <Clock className="h-3 w-3" />
+                              <span>{activity.duration_minutes} min</span>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {/* Resources & Motivation */}
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              {/* Resources & Motivation Strategy */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {data?.suggested_resources?.length > 0 && (
-                  <div style={{ ...styles.insightCard, flex: 1, minWidth: '200px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', marginBottom: '4px' }}>Resources</div>
-                    {data.suggested_resources.map((r: string, i: number) => (
-                      <div key={i} style={{ fontSize: '12px', color: '#4b5563' }}>📚 {r}</div>
-                    ))}
-                  </div>
+                  <Card>
+                    <CardContent className="pt-3 pb-3">
+                      <p className="text-xs font-semibold text-gray-500 mb-2">Resources</p>
+                      {data.suggested_resources.map((r: string, i: number) => (
+                        <div key={i} className="flex items-center gap-1 text-xs text-gray-600 mb-1">
+                          <BookOpen className="h-3 w-3 text-indigo-400 flex-shrink-0" />
+                          <span>{r}</span>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
                 )}
                 {data?.motivation_strategy && (
-                  <div style={{ ...styles.insightCard, flex: 1, minWidth: '200px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', marginBottom: '4px' }}>Motivation Strategy</div>
-                    <div style={{ fontSize: '12px', color: '#4b5563' }}>🎯 {data.motivation_strategy}</div>
-                  </div>
+                  <Card>
+                    <CardContent className="pt-3 pb-3">
+                      <p className="text-xs font-semibold text-gray-500 mb-2">Motivation Strategy</p>
+                      <div className="flex items-start gap-1 text-xs text-gray-600">
+                        <Target className="h-3 w-3 text-indigo-400 flex-shrink-0 mt-0.5" />
+                        <span>{data.motivation_strategy}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
 
-              {/* Save Plan Button */}
+              {/* Save Plan */}
               {onSave && plan && (
-                <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e5e7eb' }}>
-                  <button
-                    style={{
-                      ...styles.aiActionBtn,
-                      width: '100%',
-                      padding: '10px 14px',
-                      fontSize: '13px',
-                      opacity: isSaving ? 0.7 : 1,
-                      cursor: isSaving ? 'not-allowed' : 'pointer',
-                    }}
+                <div className="pt-2 border-t border-gray-100">
+                  <Button
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
                     disabled={isSaving}
                     onClick={async () => {
                       setIsSaving(true);
-                      try {
-                        await onSave(data);
-                      } finally {
-                        setIsSaving(false);
-                      }
+                      try { await onSave(data); }
+                      finally { setIsSaving(false); }
                     }}
                   >
-                    {isSaving ? '⏳ Saving...' : '💾 Save to Lesson Plans (as Draft)'}
-                  </button>
+                    {isSaving
+                      ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>
+                      : <><Save className="h-4 w-4 mr-2" />Save to Lesson Plans (as Draft)</>
+                    }
+                  </Button>
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       )}
-    </div>
+    </AISection>
   );
 }
 
-// ── AI Educator Insights Card ────────────────────────────────────────────────
+// ── AI Educator Insights Card ─────────────────────────────────────────────────
 
 export function AIEducatorInsightsCard({
   data,
@@ -679,106 +608,92 @@ export function AIEducatorInsightsCard({
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Auto-load on first render
   React.useEffect(() => {
-    if (!data && !isLoading && !error) {
-      onLoad();
-    }
-  }, []);
+    if (!data && !isLoading && !error) onLoad();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (error) return null; // silently hide on error — don't break the dashboard
 
   return (
-    <div style={{
-      ...styles.aiSection,
-      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)',
-    }}>
-      <div style={styles.aiHeader}>
-        ✨ AI Educator Insights
-      </div>
+    <Card className="border-indigo-100 bg-gradient-to-br from-indigo-50/60 to-purple-50/60">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base text-indigo-700">
+          <Sparkles className="h-4 w-4 text-indigo-500" />
+          AI Educator Insights
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading && <AILoadingSkeleton lines={3} />}
 
-      {isLoading && <AILoadingSkeleton lines={3} />}
-
-      {data && !isLoading && (
-        <div>
-          {/* Performance Summary */}
-          {data.performance_summary && (
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
-              {[
-                { label: 'Total Students', value: data.performance_summary.total_students, icon: '👥' },
-                { label: 'Improving', value: data.performance_summary.students_improving, icon: '📈', color: '#059669' },
-                { label: 'At Risk', value: data.performance_summary.students_at_risk, icon: '⚠️', color: '#dc2626' },
-              ].map((stat, i) => (
-                <div key={i} style={{ ...styles.insightCard, flex: 1, minWidth: '100px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '20px' }}>{stat.icon}</div>
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: stat.color || '#1f2937' }}>{stat.value ?? '—'}</div>
-                  <div style={{ fontSize: '11px', color: '#6b7280' }}>{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Priority Students */}
-          {data.student_priority_list?.length > 0 && (
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
-                🎯 Priority Students
+        {data && !isLoading && (
+          <div className="space-y-4">
+            {/* Performance Summary */}
+            {data.performance_summary && (
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Total Students', value: data.performance_summary.total_students,  Icon: Users,          color: 'text-gray-700' },
+                  { label: 'Improving',       value: data.performance_summary.students_improving, Icon: TrendingUp,  color: 'text-green-700' },
+                  { label: 'At Risk',         value: data.performance_summary.students_at_risk,   Icon: AlertTriangle, color: 'text-red-600' },
+                ].map((stat, i) => {
+                  const { Icon } = stat;
+                  return (
+                    <Card key={i} className="text-center">
+                      <CardContent className="pt-3 pb-3">
+                        <Icon className={`h-5 w-5 mx-auto mb-1 ${stat.color}`} />
+                        <p className={`text-xl font-bold ${stat.color}`}>{stat.value ?? '—'}</p>
+                        <p className="text-xs text-gray-500">{stat.label}</p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
-              {data.student_priority_list.slice(0, isExpanded ? undefined : 3).map((s: any, i: number) => (
-                <div key={i} style={{ ...styles.insightCard, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 500 }}>{s.student_name || s.student_id}</div>
-                    <div style={{ fontSize: '11px', color: '#6b7280' }}>
-                      {s.total_symptoms} symptoms • {s.avg_iep_progress}% progress
+            )}
+
+            {/* Priority Students */}
+            {data.student_priority_list?.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1 text-xs font-semibold text-gray-700 mb-2">
+                  <Target className="h-3.5 w-3.5" />
+                  Priority Students
+                </div>
+                <div className="space-y-2">
+                  {data.student_priority_list.slice(0, isExpanded ? undefined : 3).map((s: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between bg-white border border-gray-100 rounded-lg px-3 py-2">
+                      <div>
+                        <p className="text-sm font-medium">{s.student_name || s.student_id}</p>
+                        <p className="text-xs text-gray-500">{s.total_symptoms} symptoms • {s.avg_iep_progress}% progress</p>
+                      </div>
+                      <AIRiskBadge riskLevel={s.status || 'AT_RISK'} size="sm" />
                     </div>
-                  </div>
-                  <AIRiskBadge riskLevel={s.status || 'AT_RISK'} size="sm" />
+                  ))}
                 </div>
-              ))}
-              {data.student_priority_list.length > 3 && (
-                <button
-                  style={{ ...styles.actionBtn, width: '100%', marginTop: '4px', textAlign: 'center' }}
-                  onClick={() => setIsExpanded(!isExpanded)}
-                >
-                  {isExpanded ? 'Show Less' : `Show ${data.student_priority_list.length - 3} More`}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Training Recommendations */}
-          {data.training_recommendations?.length > 0 && (
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
-                📚 Recommended Training
+                {data.student_priority_list.length > 3 && (
+                  <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => setIsExpanded(!isExpanded)}>
+                    {isExpanded ? 'Show Less' : `Show ${data.student_priority_list.length - 3} More`}
+                  </Button>
+                )}
               </div>
-              {data.training_recommendations.slice(0, 3).map((t: any, i: number) => (
-                <div key={i} style={{ fontSize: '12px', color: '#4b5563', marginBottom: '4px' }}>
-                  • {typeof t === 'string' ? t : t.topic || JSON.stringify(t)}
+            )}
+
+            {/* Training Recommendations */}
+            {data.training_recommendations?.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1 text-xs font-semibold text-gray-700 mb-2">
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Recommended Training
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+                <div className="space-y-1">
+                  {data.training_recommendations.slice(0, 3).map((t: any, i: number) => (
+                    <p key={i} className="text-xs text-gray-600 pl-2 border-l-2 border-indigo-200">
+                      {typeof t === 'string' ? t : t.topic || JSON.stringify(t)}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
-}
-
-// ── Helper Functions ─────────────────────────────────────────────────────────
-
-function getDomainColors(domain: string): React.CSSProperties {
-  const d = domain?.toUpperCase();
-  if (d === 'READING') return { background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb' };
-  if (d === 'WRITING') return { background: 'rgba(16, 185, 129, 0.1)', color: '#059669' };
-  if (d === 'MATH') return { background: 'rgba(245, 158, 11, 0.1)', color: '#d97706' };
-  if (d === 'COGNITIVE') return { background: 'rgba(139, 92, 246, 0.1)', color: '#7c3aed' };
-  if (d === 'BEHAVIOURAL' || d === 'ATTENTION_BEHAVIOR') return { background: 'rgba(236, 72, 153, 0.1)', color: '#db2777' };
-  return { background: 'rgba(107, 114, 128, 0.1)', color: '#6b7280' };
-}
-
-function getSeverityColor(score: number): string {
-  if (score >= 60) return '#dc2626';
-  if (score >= 30) return '#d97706';
-  return '#059669';
 }
