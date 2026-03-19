@@ -139,8 +139,7 @@ router.post('/iep/:studentId/save', async (req: AuthenticatedRequest, res: Respo
     for (const stp of generated_stps) {
       const stpStart = new Date();
       const stpEnd = new Date();
-      stpEnd.setWeeks ? stpEnd.setDate(stpEnd.getDate() + (stp.duration_weeks || 6) * 7)
-                      : stpEnd.setDate(stpEnd.getDate() + (stp.duration_weeks || 6) * 7);
+      stpEnd.setDate(stpEnd.getDate() + (stp.duration_weeks || 6) * 7);
 
       const stpPayload = {
         longTermPlanId: ltpId,
