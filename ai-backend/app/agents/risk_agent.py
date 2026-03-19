@@ -211,6 +211,8 @@ async def generate_risk_recommendations(state: RiskProgressState) -> dict:
 
     recommendations = []
     for w in warnings[:5]:
+        if not isinstance(w, dict):
+            continue
         recommendations.append({
             "student_id": w.get("student_id", ""),
             "action": f"Immediate review needed for {w.get('student_name', 'student')}",
