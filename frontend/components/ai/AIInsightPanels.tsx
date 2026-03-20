@@ -28,6 +28,10 @@ import {
   Save,
   Plus,
   Clock,
+  Lightbulb,
+  Star,
+  ArrowUpRight,
+  MessageSquare,
 } from 'lucide-react';
 
 // ── Risk Badge ────────────────────────────────────────────────────────────────

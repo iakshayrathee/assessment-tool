@@ -309,13 +309,29 @@ export default function NewStudentPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="grade">Grade/Standard *</Label>
-                    <Input
-                      id="grade"
-                      value={formData.grade}
-                      onChange={(e) => handleInputChange('grade', e.target.value)}
-                      placeholder="e.g., Grade 2, Class 5"
-                      className={errors.grade ? 'border-red-500' : ''}
-                    />
+                    <Select value={formData.grade} onValueChange={(value) => handleInputChange('grade', value)}>
+                      <SelectTrigger className={errors.grade ? 'border-red-500' : ''}>
+                        <SelectValue placeholder="Select grade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Nursery">Nursery</SelectItem>
+                        <SelectItem value="LKG">LKG</SelectItem>
+                        <SelectItem value="UKG">UKG</SelectItem>
+                        <SelectItem value="Kindergarten">Kindergarten</SelectItem>
+                        <SelectItem value="Grade 1">Grade 1</SelectItem>
+                        <SelectItem value="Grade 2">Grade 2</SelectItem>
+                        <SelectItem value="Grade 3">Grade 3</SelectItem>
+                        <SelectItem value="Grade 4">Grade 4</SelectItem>
+                        <SelectItem value="Grade 5">Grade 5</SelectItem>
+                        <SelectItem value="Grade 6">Grade 6</SelectItem>
+                        <SelectItem value="Grade 7">Grade 7</SelectItem>
+                        <SelectItem value="Grade 8">Grade 8</SelectItem>
+                        <SelectItem value="Grade 9">Grade 9</SelectItem>
+                        <SelectItem value="Grade 10">Grade 10</SelectItem>
+                        <SelectItem value="Grade 11">Grade 11</SelectItem>
+                        <SelectItem value="Grade 12">Grade 12</SelectItem>
+                      </SelectContent>
+                    </Select>
                     {errors.grade && (
                       <p className="text-sm text-red-500 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />

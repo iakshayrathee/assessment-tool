@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense, useEffect, useRef } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useAssessments';
 import { useEducatorStudents } from '@/hooks/useEducator';
@@ -78,43 +78,10 @@ function ReportsPageContent() {
   // Fetch reports for selected student
   const { reports, submitReport, isSubmitting, refetch } = useReports(selectedStudent || undefined);
 
-  // Auto-generate AI report when student selected and no reports exist
-  const autoGenerateTriggeredRef = useRef<string | null>(null);
-
   // Get selected student details
   const selectedStudentObj = students?.find(s => s.id === selectedStudent);
   const selectedStudentName = selectedStudentObj?.fullName || selectedStudentObj?.name || 'Selected Student';
   const selectedStudentGrade = selectedStudentObj?.grade || '';
-
-  // Auto-trigger AI report generation when student is selected and has no reports
-  useEffect(() => {
-    if (
-      selectedStudent &&
-      !isLoadingStudents &&
-      reports !== undefined &&
-      reports?.length === 0 &&
-      !isGeneratingAI &&
-      autoGenerateTriggeredRef.current !== selectedStudent
-    ) {
-      autoGenerateTriggeredRef.current = selectedStudent;
-      // Auto-trigger report generation
-      (async () => {
-        setIsGeneratingAI(true);
-        try {
-          const result = await apiClient.generateAIReport(selectedStudent, selectedReportType);
-          setAiPreview(result);
-          setShowAIPreview(true);
-          toast.success('AI report auto-generated for review');
-          refetch();
-        } catch (error: any) {
-          // Silent fail for auto-generation — user can still manually trigger
-          console.error('Auto-generation failed:', error);
-        } finally {
-          setIsGeneratingAI(false);
-        }
-      })();
-    }
-  }, [selectedStudent, reports, isLoadingStudents, isGeneratingAI, selectedReportType, refetch]);
 
   // Sync URL with selected student
   useEffect(() => {
