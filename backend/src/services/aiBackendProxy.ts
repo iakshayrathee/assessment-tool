@@ -190,25 +190,27 @@ class AIBackendProxyService {
   // ── Error Handling ─────────────────────────────────────────────────────────
 
   private handleError(error: any, context: string): Error {
+    const baseURL = this.client.defaults.baseURL;
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
       if (axiosError.response) {
         const status = axiosError.response.status;
-        const detail = (axiosError.response.data as any)?.detail || 'Unknown error';
-        return new Error(`[AI Backend] ${context}: ${status} - ${detail}`);
+        const rawData = axiosError.response.data;
+        const detail =
+          (rawData as any)?.detail ||
+          (typeof rawData === 'string' ? rawData.slice(0, 500) : JSON.stringify(rawData).slice(0, 500));
+        const msg = `[AI Backend] ${context}: HTTP ${status} from ${baseURL} — ${detail}`;
+        console.error(msg, { status, url: axiosError.config?.url, responseData: rawData });
+        return new Error(msg);
       }
-      if (axiosError.code === 'ECONNREFUSED') {
-        return new Error(
-          `[AI Backend] ${context}: Connection refused. Is the AI backend running at ${this.client.defaults.baseURL}?`
-        );
-      }
-      if (axiosError.code === 'ECONNABORTED') {
-        return new Error(
-          `[AI Backend] ${context}: Request timed out. The agent pipeline may be taking too long.`
-        );
-      }
+      const code = axiosError.code || 'UNKNOWN';
+      const msg = `[AI Backend] ${context}: ${code} — could not reach AI backend at ${baseURL}`;
+      console.error(msg, { code, url: axiosError.config?.url, message: axiosError.message });
+      return new Error(msg);
     }
-    return new Error(`[AI Backend] ${context}: ${(error as Error).message}`);
+    const msg = `[AI Backend] ${context}: ${(error as Error).message}`;
+    console.error(msg, error);
+    return new Error(msg);
   }
 }
 
