@@ -32,10 +32,12 @@ class ReportResponse(BaseModel):
 @router.post("/generate", response_model=ReportResponse)
 async def generate_report(req: ReportRequest):
     """Generate an AI report.
-    
+
     Cost: ~$0.006 per call (GPT-4o-mini, 1 LLM call).
     With caching: $0 if student data hasn't changed.
     """
+    print(f"[report] generate_report called — type={req.report_type} target={req.target_id} educator={req.educator_id}")
+
     valid_types = ("ASSESSMENT", "LESSON_PLAN", "PARENT", "SCHOOL")
     if req.report_type not in valid_types:
         raise HTTPException(status_code=400, detail=f"Invalid report_type. Must be one of: {', '.join(valid_types)}")
@@ -47,8 +49,10 @@ async def generate_report(req: ReportRequest):
             cache_key = make_cache_key("report", req.target_id, {"type": req.report_type})
             cached = get_cached(cache_key)
             if cached:
+                print(f"[report] cache hit — returning cached result")
                 return ReportResponse(**cached, cached=True)
 
+        print(f"[report] invoking agent...")
         agent = get_report_agent()
         config = report_run_config(req.target_id, req.report_type)
 
@@ -56,6 +60,7 @@ async def generate_report(req: ReportRequest):
             {"report_type": req.report_type, "target_id": req.target_id, "educator_id": req.educator_id},
             config=config,
         )
+        print(f"[report] agent completed — error={result.get('error')} keys={list(result.keys())}")
 
         if result.get("error"):
             raise HTTPException(status_code=500, detail=result["error"])
@@ -76,4 +81,5 @@ async def generate_report(req: ReportRequest):
     except HTTPException:
         raise
     except Exception as e:
+        print(f"[report] EXCEPTION: {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail=str(e))

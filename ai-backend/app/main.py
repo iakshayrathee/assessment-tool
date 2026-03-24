@@ -32,12 +32,21 @@ from app.api.educator import router as educator_router
 async def lifespan(app: FastAPI):
     """Startup/shutdown lifecycle."""
     # Startup
+    import os
+    print("[AI Backend] Startup — checking env vars...")
+    print(f"[AI Backend] OPENAI_API_KEY set: {bool(os.environ.get('OPENAI_API_KEY'))}")
+    print(f"[AI Backend] DATABASE_URL set: {bool(os.environ.get('DATABASE_URL'))}")
+    print(f"[AI Backend] BACKEND_API_URL: {os.environ.get('BACKEND_API_URL', '(not set)')}")
+    print(f"[AI Backend] REDIS_URL set: {bool(os.environ.get('REDIS_URL'))}")
+    print(f"[AI Backend] PORT: {os.environ.get('PORT', '(not set, defaulting to 8000)')}")
+
     validate_required_settings()  # Fail fast if OPENAI_API_KEY is missing
     configure_langsmith()
     settings = get_settings()
-    print(f"🧠 AI Backend starting — model: {settings.default_model}")
-    print(f"📊 LangSmith tracing: {settings.langchain_tracing_v2}")
-    print(f"🗄️  Database: {settings.database_url[:30]}...")
+    print(f"[AI Backend] Starting — model: {settings.default_model}")
+    print(f"[AI Backend] LangSmith tracing: {settings.langchain_tracing_v2}")
+    db_url_safe = settings.database_url[:40].replace("://", "://<redacted>@") if "://" in settings.database_url else settings.database_url[:40]
+    print(f"[AI Backend] Database URL prefix: {db_url_safe}...")
 
     yield
 
