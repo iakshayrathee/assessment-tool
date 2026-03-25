@@ -8,6 +8,18 @@
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
+export class AIBackendError extends Error {
+  isAiUnavailable: boolean;
+  statusCode?: number;
+
+  constructor(message: string, isAiUnavailable = false, statusCode?: number) {
+    super(message);
+    this.name = 'AIBackendError';
+    this.isAiUnavailable = isAiUnavailable;
+    this.statusCode = statusCode;
+  }
+}
+
 interface AIBackendConfig {
   baseURL: string;
   timeout: number;
@@ -56,15 +68,17 @@ class AIBackendProxyService {
    * All returned data has status: 'AI_DRAFT' and is editable by the educator.
    */
   async analyzeAssessment(studentId: string, assessmentType: string = 'ALL'): Promise<any> {
-    try {
-      const { data } = await this.client.post('/api/assessment/analyze', {
-        student_id: studentId,
-        assessment_type: assessmentType,
-      });
-      return data;
-    } catch (error) {
-      throw this.handleError(error, 'Assessment analysis failed');
-    }
+    return this.withRetry(async () => {
+      try {
+        const { data } = await this.client.post('/api/assessment/analyze', {
+          student_id: studentId,
+          assessment_type: assessmentType,
+        });
+        return data;
+      } catch (error) {
+        throw this.handleError(error, 'Assessment analysis failed');
+      }
+    });
   }
 
   // ── IEP & Goal Planning Agent ──────────────────────────────────────────────
@@ -76,15 +90,17 @@ class AIBackendProxyService {
    * @param assessmentAnalysis Optional — pass the assessment agent output for better results
    */
   async generateIEP(studentId: string, assessmentAnalysis?: any): Promise<any> {
-    try {
-      const { data } = await this.client.post('/api/iep/generate', {
-        student_id: studentId,
-        assessment_analysis: assessmentAnalysis || {},
-      });
-      return data;
-    } catch (error) {
-      throw this.handleError(error, 'IEP generation failed');
-    }
+    return this.withRetry(async () => {
+      try {
+        const { data } = await this.client.post('/api/iep/generate', {
+          student_id: studentId,
+          assessment_analysis: assessmentAnalysis || {},
+        });
+        return data;
+      } catch (error) {
+        throw this.handleError(error, 'IEP generation failed');
+      }
+    });
   }
 
   // ── Lesson Plan Agent ──────────────────────────────────────────────────────
@@ -93,15 +109,17 @@ class AIBackendProxyService {
    * Generate a weekly lesson plan suggestion.
    */
   async suggestLessonPlan(studentId: string, weekNumber: number = 1): Promise<any> {
-    try {
-      const { data } = await this.client.post('/api/lesson-plan/suggest', {
-        student_id: studentId,
-        week_number: weekNumber,
-      });
-      return data;
-    } catch (error) {
-      throw this.handleError(error, 'Lesson plan suggestion failed');
-    }
+    return this.withRetry(async () => {
+      try {
+        const { data } = await this.client.post('/api/lesson-plan/suggest', {
+          student_id: studentId,
+          week_number: weekNumber,
+        });
+        return data;
+      } catch (error) {
+        throw this.handleError(error, 'Lesson plan suggestion failed');
+      }
+    });
   }
 
   // ── Report Generation Agent ────────────────────────────────────────────────
@@ -116,16 +134,18 @@ class AIBackendProxyService {
     targetId: string,
     educatorId?: string
   ): Promise<any> {
-    try {
-      const { data } = await this.client.post('/api/report/generate', {
-        report_type: reportType,
-        target_id: targetId,
-        educator_id: educatorId || '',
-      });
-      return data;
-    } catch (error) {
-      throw this.handleError(error, 'Report generation failed');
-    }
+    return this.withRetry(async () => {
+      try {
+        const { data } = await this.client.post('/api/report/generate', {
+          report_type: reportType,
+          target_id: targetId,
+          educator_id: educatorId || '',
+        });
+        return data;
+      } catch (error) {
+        throw this.handleError(error, 'Report generation failed');
+      }
+    });
   }
 
   // ── Risk & Progress Agent ──────────────────────────────────────────────────
@@ -135,15 +155,17 @@ class AIBackendProxyService {
    * @param scope STUDENT | SCHOOL | CENTER
    */
   async analyzeRisk(scope: string, targetId: string): Promise<any> {
-    try {
-      const { data } = await this.client.post('/api/risk/analyze', {
-        scope,
-        target_id: targetId,
-      });
-      return data;
-    } catch (error) {
-      throw this.handleError(error, 'Risk analysis failed');
-    }
+    return this.withRetry(async () => {
+      try {
+        const { data } = await this.client.post('/api/risk/analyze', {
+          scope,
+          target_id: targetId,
+        });
+        return data;
+      } catch (error) {
+        throw this.handleError(error, 'Risk analysis failed');
+      }
+    });
   }
 
   // ── Educator Intelligence Agent ────────────────────────────────────────────
@@ -152,14 +174,16 @@ class AIBackendProxyService {
    * Get AI-powered insights for an educator.
    */
   async getEducatorInsights(educatorId: string): Promise<any> {
-    try {
-      const { data } = await this.client.post('/api/educator/insights', {
-        educator_id: educatorId,
-      });
-      return data;
-    } catch (error) {
-      throw this.handleError(error, 'Educator insights failed');
-    }
+    return this.withRetry(async () => {
+      try {
+        const { data } = await this.client.post('/api/educator/insights', {
+          educator_id: educatorId,
+        });
+        return data;
+      } catch (error) {
+        throw this.handleError(error, 'Educator insights failed');
+      }
+    });
   }
 
   // ── Full Pipeline ──────────────────────────────────────────────────────────
@@ -187,30 +211,58 @@ class AIBackendProxyService {
     return { assessment, iep, report };
   }
 
+  // ── Retry Helper ───────────────────────────────────────────────────────────
+
+  /**
+   * Retries fn once when the AI backend returns a gateway error (502/503),
+   * which covers Render free-tier cold starts that resolve within a few seconds.
+   */
+  private async withRetry<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (err: any) {
+      if (
+        err instanceof AIBackendError &&
+        err.isAiUnavailable &&
+        (err.statusCode === 502 || err.statusCode === 503)
+      ) {
+        console.warn('[AI Backend] Gateway error — retrying once in 3s…');
+        await new Promise(r => setTimeout(r, 3000));
+        return await fn();
+      }
+      throw err;
+    }
+  }
+
   // ── Error Handling ─────────────────────────────────────────────────────────
 
-  private handleError(error: any, context: string): Error {
+  private handleError(error: any, context: string): AIBackendError {
     const baseURL = this.client.defaults.baseURL;
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
       if (axiosError.response) {
         const status = axiosError.response.status;
         const rawData = axiosError.response.data;
-        const detail =
-          (rawData as any)?.detail ||
-          (typeof rawData === 'string' ? rawData.slice(0, 500) : JSON.stringify(rawData).slice(0, 500));
+        const isHtml = typeof rawData === 'string' && rawData.trimStart().startsWith('<');
+        const detail = isHtml
+          ? 'Service returned HTML (likely a gateway error)'
+          : (rawData as any)?.detail
+            || (typeof rawData === 'string' ? rawData.slice(0, 300) : JSON.stringify(rawData).slice(0, 300));
+        const isUnavailable = status === 502 || status === 503 || status === 504;
         const msg = `[AI Backend] ${context}: HTTP ${status} from ${baseURL} — ${detail}`;
-        console.error(msg, { status, url: axiosError.config?.url, responseData: rawData });
-        return new Error(msg);
+        console.error(msg, { status, url: axiosError.config?.url });
+        return new AIBackendError(msg, isUnavailable, status);
       }
+      const UNAVAILABLE_CODES = ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'ERR_NETWORK'];
       const code = axiosError.code || 'UNKNOWN';
+      const isUnavailable = UNAVAILABLE_CODES.includes(code);
       const msg = `[AI Backend] ${context}: ${code} — could not reach AI backend at ${baseURL}`;
       console.error(msg, { code, url: axiosError.config?.url, message: axiosError.message });
-      return new Error(msg);
+      return new AIBackendError(msg, isUnavailable);
     }
     const msg = `[AI Backend] ${context}: ${(error as Error).message}`;
     console.error(msg, error);
-    return new Error(msg);
+    return new AIBackendError(msg, false);
   }
 }
 

@@ -38,10 +38,11 @@ router.get('/assessment/:studentId', async (req: AuthenticatedRequest, res: Resp
     });
   } catch (error: any) {
     console.error('AI Assessment analysis error:', error.message);
-    res.status(error.message?.includes('Connection refused') ? 503 : 500).json({
+    const isUnavailable = error?.isAiUnavailable === true;
+    res.status(isUnavailable ? 503 : 500).json({
       success: false,
       error: error.message || 'AI assessment analysis failed',
-      aiUnavailable: error.message?.includes('Connection refused'),
+      aiUnavailable: isUnavailable,
     });
   }
 });
@@ -66,10 +67,11 @@ router.post('/iep/:studentId', async (req: AuthenticatedRequest, res: Response) 
     });
   } catch (error: any) {
     console.error('AI IEP generation error:', error.message);
-    res.status(error.message?.includes('Connection refused') ? 503 : 500).json({
+    const isUnavailable = error?.isAiUnavailable === true;
+    res.status(isUnavailable ? 503 : 500).json({
       success: false,
       error: error.message || 'AI IEP generation failed',
-      aiUnavailable: error.message?.includes('Connection refused'),
+      aiUnavailable: isUnavailable,
     });
   }
 });
@@ -233,10 +235,11 @@ router.get('/lesson-plan/:studentId', async (req: AuthenticatedRequest, res: Res
     });
   } catch (error: any) {
     console.error('AI Lesson plan suggestion error:', error.message);
-    res.status(error.message?.includes('Connection refused') ? 503 : 500).json({
+    const isUnavailable = error?.isAiUnavailable === true;
+    res.status(isUnavailable ? 503 : 500).json({
       success: false,
       error: error.message || 'AI lesson plan suggestion failed',
-      aiUnavailable: error.message?.includes('Connection refused'),
+      aiUnavailable: isUnavailable,
     });
   }
 });
@@ -259,10 +262,11 @@ router.get('/risk/student/:studentId', async (req: AuthenticatedRequest, res: Re
     });
   } catch (error: any) {
     console.error('AI Risk analysis error:', error.message);
-    res.status(error.message?.includes('Connection refused') ? 503 : 500).json({
+    const isUnavailable = error?.isAiUnavailable === true;
+    res.status(isUnavailable ? 503 : 500).json({
       success: false,
       error: error.message || 'AI risk analysis failed',
-      aiUnavailable: error.message?.includes('Connection refused'),
+      aiUnavailable: isUnavailable,
     });
   }
 });
@@ -283,10 +287,11 @@ router.get('/risk/school/:schoolId', async (req: AuthenticatedRequest, res: Resp
     });
   } catch (error: any) {
     console.error('AI School risk analysis error:', error.message);
-    res.status(error.message?.includes('Connection refused') ? 503 : 500).json({
+    const isUnavailable = error?.isAiUnavailable === true;
+    res.status(isUnavailable ? 503 : 500).json({
       success: false,
       error: error.message || 'AI school risk analysis failed',
-      aiUnavailable: error.message?.includes('Connection refused'),
+      aiUnavailable: isUnavailable,
     });
   }
 });
@@ -316,10 +321,11 @@ router.get('/educator/insights', async (req: AuthenticatedRequest, res: Response
     });
   } catch (error: any) {
     console.error('AI Educator insights error:', error.message);
-    res.status(error.message?.includes('Connection refused') ? 503 : 500).json({
+    const isUnavailable = error?.isAiUnavailable === true;
+    res.status(isUnavailable ? 503 : 500).json({
       success: false,
       error: error.message || 'AI educator insights failed',
-      aiUnavailable: error.message?.includes('Connection refused'),
+      aiUnavailable: isUnavailable,
     });
   }
 });
