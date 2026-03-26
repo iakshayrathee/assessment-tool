@@ -170,6 +170,7 @@ async def build_profile_and_differential(state: AssessmentState) -> dict:
     return {
         "domain_profile": parsed.get("domain_profile", {}),
         "differential_indicators": parsed.get("differential_indicators", []),
+        "prompts": [prompt],
     }
 
 
@@ -222,6 +223,7 @@ async def classify_risk_and_recommend(state: AssessmentState) -> dict:
     return {
         "risk_classification": classification,
         "recommended_next_steps": parsed.get("priority_areas", []),
+        "prompts": [prompt],
     }
 
 

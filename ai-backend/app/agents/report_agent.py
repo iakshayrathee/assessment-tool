@@ -124,7 +124,10 @@ async def _build_assessment_sections(data: dict, state: ReportState) -> dict:
         {"role": "user", "content": prompt},
     ])
 
-    return {"structured_sections": _safe_json(response.content)}
+    return {
+        "structured_sections": _safe_json(response.content),
+        "prompts": [prompt],
+    }
 
 
 async def _build_lesson_plan_sections(data: dict, state: ReportState) -> dict:
@@ -168,7 +171,10 @@ async def _build_lesson_plan_sections(data: dict, state: ReportState) -> dict:
         {"role": "user", "content": prompt},
     ])
 
-    return {"structured_sections": _safe_json(response.content)}
+    return {
+        "structured_sections": _safe_json(response.content),
+        "prompts": [prompt],
+    }
 
 
 async def _build_parent_sections(data: dict, state: ReportState) -> dict:
@@ -216,7 +222,10 @@ async def _build_parent_sections(data: dict, state: ReportState) -> dict:
         {"role": "user", "content": prompt},
     ])
 
-    return {"structured_sections": _safe_json(response.content)}
+    return {
+        "structured_sections": _safe_json(response.content),
+        "prompts": [prompt],
+    }
 
 
 async def _build_school_sections(data: dict, state: ReportState) -> dict:
@@ -274,7 +283,10 @@ async def _build_school_sections(data: dict, state: ReportState) -> dict:
         {"role": "user", "content": prompt},
     ])
 
-    return {"structured_sections": _safe_json(response.content)}
+    return {
+        "structured_sections": _safe_json(response.content),
+        "prompts": [prompt],
+    }
 
 
 async def format_output(state: ReportState) -> dict:

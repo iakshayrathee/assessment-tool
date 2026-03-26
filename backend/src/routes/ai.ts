@@ -330,6 +330,32 @@ router.get('/educator/insights', async (req: AuthenticatedRequest, res: Response
   }
 });
 
+// ── AI Transparency (Debug) ──────────────────────────────────────────────────
+
+/**
+ * POST /api/ai/transparency/trigger
+ * Trigger an AI agent and return full transparency data:
+ * raw DB data, constructed prompts, and AI response.
+ */
+router.post('/transparency/trigger', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await aiBackendProxy.triggerTransparency(req.body);
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    console.error('AI Transparency trigger error:', error.message);
+    const isUnavailable = error?.isAiUnavailable === true;
+    res.status(isUnavailable ? 503 : 500).json({
+      success: false,
+      error: error.message || 'Transparency trigger failed',
+      aiUnavailable: isUnavailable,
+    });
+  }
+});
+
 // ── AI Backend Health Check ──────────────────────────────────────────────────
 
 /**

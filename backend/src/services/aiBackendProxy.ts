@@ -186,6 +186,31 @@ class AIBackendProxyService {
     });
   }
 
+  // ── Transparency (Debug) ───────────────────────────────────────────────────
+
+  /**
+   * Trigger an AI agent and return full transparency data:
+   * raw DB data, constructed prompts, and AI response.
+   */
+  async triggerTransparency(params: {
+    agent: string;
+    student_id?: string;
+    educator_id?: string;
+    target_id?: string;
+    report_type?: string;
+    week_number?: number;
+    scope?: string;
+  }): Promise<any> {
+    try {
+      const { data } = await this.client.post('/api/transparency/trigger', params, {
+        timeout: 180000, // 3 minutes — transparency calls run the full pipeline
+      });
+      return data;
+    } catch (error) {
+      throw this.handleError(error, 'Transparency trigger failed');
+    }
+  }
+
   // ── Full Pipeline ──────────────────────────────────────────────────────────
 
   /**
@@ -247,7 +272,7 @@ class AIBackendProxyService {
         const detail = isHtml
           ? 'Service returned HTML (likely a gateway error)'
           : (rawData as any)?.detail
-            || (typeof rawData === 'string' ? rawData.slice(0, 300) : JSON.stringify(rawData).slice(0, 300));
+          || (typeof rawData === 'string' ? rawData.slice(0, 300) : JSON.stringify(rawData).slice(0, 300));
         const isUnavailable = status === 502 || status === 503 || status === 504;
         const msg = `[AI Backend] ${context}: HTTP ${status} from ${baseURL} — ${detail}`;
         console.error(msg, { status, url: axiosError.config?.url });

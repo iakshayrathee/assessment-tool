@@ -126,6 +126,12 @@ const roleNavigations: Record<string, NavigationItem[]> = {
       href: '/educator/reports',
       icon: BarChart3,
       description: 'Generate and view reports'
+    },
+    {
+      title: 'AI Transparency',
+      href: '/educator/ai-transparency',
+      icon: Eye,
+      description: 'Inspect AI agent data and responses'
     }
   ],
   ADMIN: [

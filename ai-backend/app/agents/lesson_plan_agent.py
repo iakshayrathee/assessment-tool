@@ -85,7 +85,10 @@ async def analyze_recent_progress(state: LessonPlanState) -> dict:
     progress_summary = parsed.get("progress_summary")
     if not isinstance(progress_summary, str):
         progress_summary = "Progress analysis unavailable"
-    return {"progress_analysis": progress_summary}
+    return {
+        "progress_analysis": progress_summary,
+        "prompts": [prompt],
+    }
 
 
 async def generate_plan(state: LessonPlanState) -> dict:
@@ -119,6 +122,7 @@ async def generate_plan(state: LessonPlanState) -> dict:
         "motivation_strategy": parsed.get("motivation_strategy", ""),
         "estimated_time": parsed.get("average_time", 45),
         "areas_of_remediation": parsed.get("areas_of_remediation", []),
+        "prompts": [prompt],
     }
 
 

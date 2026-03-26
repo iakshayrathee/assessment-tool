@@ -140,6 +140,7 @@ async def evaluate_and_recommend(state: EducatorIntelligenceState) -> dict:
             for t in parsed.get("training_recommendations", [])
         ],
         "student_priority_list": priority_list[:10],
+        "prompts": [prompt],
     }
 
 

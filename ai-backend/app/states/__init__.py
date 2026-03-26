@@ -32,6 +32,7 @@ class AssessmentState(TypedDict, total=False):
     recommended_next_steps: list    # actionable recommendations
 
     # Metadata
+    prompts: Annotated[list[str], add]
     error: str
 
 
@@ -56,6 +57,7 @@ class IEPPlanningState(TypedDict, total=False):
     generated_wlps: list[dict]      # weekly lesson plan templates
 
     # Metadata
+    prompts: Annotated[list[str], add]
     error: str
 
 
@@ -83,6 +85,7 @@ class LessonPlanState(TypedDict, total=False):
     lesson_plan: dict               # complete lesson plan
 
     # Metadata
+    prompts: Annotated[list[str], add]
     error: str
 
 
@@ -103,6 +106,7 @@ class ReportState(TypedDict, total=False):
     metadata: dict                  # title, date, etc.
 
     # Metadata
+    prompts: Annotated[list[str], add]
     error: str
 
 
@@ -124,6 +128,7 @@ class RiskProgressState(TypedDict, total=False):
     recommendations: list[dict]
 
     # Metadata
+    prompts: Annotated[list[str], add]
     error: str
 
 
@@ -145,4 +150,5 @@ class EducatorIntelligenceState(TypedDict, total=False):
     student_priority_list: list[dict]
 
     # Metadata
+    prompts: Annotated[list[str], add]
     error: str

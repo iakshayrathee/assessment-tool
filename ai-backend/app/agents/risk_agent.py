@@ -172,6 +172,7 @@ async def analyze_trends(state: RiskProgressState) -> dict:
         return {
             "progress_trends": parsed,
             "early_warnings": parsed.get("early_warnings", []),
+            "prompts": [prompt],
         }
 
     # For school-level, aggregate without LLM

@@ -140,7 +140,10 @@ async def generate_goals(state: IEPPlanningState) -> dict:
     llm = _get_llm()
     response = await llm.ainvoke(prompt)
     parsed = _safe_json(response.content)
-    return {"generated_goals": parsed.get("goals", [])}
+    return {
+        "generated_goals": parsed.get("goals", []),
+        "prompts": [prompt],
+    }
 
 
 async def generate_complete_plan(state: IEPPlanningState) -> dict:
@@ -183,6 +186,7 @@ async def generate_complete_plan(state: IEPPlanningState) -> dict:
         "generated_ltp": parsed.get("ltp", {}),
         "generated_stps": parsed.get("stps", []),
         "generated_wlps": parsed.get("wlps", []),
+        "prompts": [prompt],
     }
 
 
