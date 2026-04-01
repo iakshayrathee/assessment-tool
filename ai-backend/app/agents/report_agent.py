@@ -289,6 +289,23 @@ async def _build_school_sections(data: dict, state: ReportState) -> dict:
     }
 
 
+def _to_md(value) -> str:
+    """Convert a section value to a markdown string.
+
+    The LLM occasionally returns a dict instead of a plain string when it
+    interprets the sub-header instructions literally.  This converts any dict
+    into '### Key\\nValue' blocks so the content remains readable markdown.
+    """
+    if isinstance(value, str):
+        return value or "N/A"
+    if isinstance(value, dict):
+        parts = []
+        for k, v in value.items():
+            parts.append(f"### {k}\n{v}" if v else f"### {k}")
+        return "\n\n".join(parts) if parts else "N/A"
+    return str(value) if value else "N/A"
+
+
 async def format_output(state: ReportState) -> dict:
     """Format the final report output."""
     report_type = state.get("report_type", "ASSESSMENT")
@@ -301,14 +318,18 @@ async def format_output(state: ReportState) -> dict:
     student_name = student.get("fullName", "Student") if student else "Student"
 
     if report_type == "ASSESSMENT":
+        assessment_findings = "\n\n".join([
+            f"### Section A: Reading Skills\n{_to_md(sections.get('readingSkills'))}",
+            f"### Section B: Writing Skills\n{_to_md(sections.get('writingSkills'))}",
+            f"### Section C: Numeracy Skills\n{_to_md(sections.get('numeracySkills'))}",
+        ])
         content = "\n\n".join([
-            f"## 1. Reading Feedback\n{sections.get('readingFeedback', 'N/A')}",
-            f"## 2. Writing Feedback\n{sections.get('writingFeedback', 'N/A')}",
-            f"## 3. Math Feedback\n{sections.get('mathFeedback', 'N/A')}",
-            f"## 4. Behaviour & Attention\n{sections.get('behaviourAttention', 'N/A')}",
-            f"## 5. Key Strengths\n{sections.get('keyStrengths', 'N/A')}",
-            f"## 6. Recommended Interventions & Goals\n{sections.get('interventionsAndGoals', 'N/A')}",
-            f"## 7. Closing Statement\n{sections.get('closingStatement', 'N/A')}",
+            f"## Reason for Referral\n{_to_md(sections.get('reasonForReferral'))}",
+            f"## Assessment Findings\n{assessment_findings}",
+            f"## Behaviour & Attention\n{_to_md(sections.get('behaviourAttention'))}",
+            f"## Key Strengths\n{_to_md(sections.get('keyStrengths'))}",
+            f"## Recommended Interventions\n{_to_md(sections.get('interventionsAndGoals'))}",
+            f"## Closing Statement\n{_to_md(sections.get('closingStatement'))}",
         ])
         report = {
             "studentId": state["target_id"],
@@ -316,20 +337,20 @@ async def format_output(state: ReportState) -> dict:
             "type": "ASSESSMENT",
             "title": f"Assessment Report - {student_name} - {date_str}",
             "content": content,
-            "summary": sections.get("keyStrengths", ""),
-            "recommendations": sections.get("interventionsAndGoals", ""),
+            "summary": _to_md(sections.get("keyStrengths")),
+            "recommendations": _to_md(sections.get("interventionsAndGoals")),
             "status": "AI_DRAFT",  # Editable by educator
         }
     elif report_type == "LESSON_PLAN":
         content = "\n\n".join([
-            f"## 1. Executive Summary\n{sections.get('executiveSummary', 'N/A')}",
-            f"## 2. Lesson Plan Analysis\n{sections.get('lessonPlanAnalysis', 'N/A')}",
-            f"## 3. Teaching Effectiveness\n{sections.get('teachingEffectiveness', 'N/A')}",
-            f"## 4. Progress Patterns\n{sections.get('progressPatterns', 'N/A')}",
-            f"## 5. Areas of Remediation\n{sections.get('areasOfRemediation', 'N/A')}",
-            f"## 6. Recommendations\n{sections.get('recommendations', 'N/A')}",
-            f"## 7. Next Steps\n{sections.get('nextSteps', 'N/A')}",
-            f"## 8. Closing Statement\n{sections.get('closingStatement', 'N/A')}",
+            f"## 1. Executive Summary\n{_to_md(sections.get('executiveSummary'))}",
+            f"## 2. Lesson Plan Analysis\n{_to_md(sections.get('lessonPlanAnalysis'))}",
+            f"## 3. Teaching Effectiveness\n{_to_md(sections.get('teachingEffectiveness'))}",
+            f"## 4. Progress Patterns\n{_to_md(sections.get('progressPatterns'))}",
+            f"## 5. Areas of Remediation\n{_to_md(sections.get('areasOfRemediation'))}",
+            f"## 6. Recommendations\n{_to_md(sections.get('recommendations'))}",
+            f"## 7. Next Steps\n{_to_md(sections.get('nextSteps'))}",
+            f"## 8. Closing Statement\n{_to_md(sections.get('closingStatement'))}",
         ])
         report = {
             "studentId": state["target_id"],
@@ -337,8 +358,8 @@ async def format_output(state: ReportState) -> dict:
             "type": "LESSON_PLAN",
             "title": f"Lesson Plan Report - {student_name} - {date_str}",
             "content": content,
-            "summary": sections.get("executiveSummary", ""),
-            "recommendations": sections.get("recommendations", ""),
+            "summary": _to_md(sections.get("executiveSummary")),
+            "recommendations": _to_md(sections.get("recommendations")),
             "status": "AI_DRAFT",
         }
     elif report_type == "PARENT":

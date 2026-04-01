@@ -1154,7 +1154,16 @@ class ApiClient {
   }
 
   async updateReport(reportId: string, reportData: any): Promise<any> {
-    const response = await this.client.put<ApiResponse<any>>(`/educators/reports/${reportId}`, reportData);
+    const response = await this.client.put<ApiResponse<any>>(`/reports/${reportId}`, reportData);
+    return response.data.data;
+  }
+
+  async refineReportWithAI(reportId: string, content: string, prompt: string): Promise<{ refinedContent: string; changes: string[] }> {
+    const response = await this.client.post<ApiResponse<any>>('/reports/ai/refine', {
+      reportId,
+      content,
+      prompt
+    }, { timeout: 120000 });
     return response.data.data;
   }
 

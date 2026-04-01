@@ -352,8 +352,9 @@ Standards you must follow:
   grapheme-phoneme correspondence, procedural fluency, working memory) — this report is
   for qualified educators, not parents.
 - Maintain an objective, evidence-based tone throughout.
-- You must respond with a valid JSON object with exactly these 7 keys:
-  "readingFeedback", "writingFeedback", "mathFeedback", "behaviourAttention",
+- You must respond with a valid JSON object with exactly these 10 keys:
+  "reasonForReferral", "assessmentMethods", "assessmentFindings",
+  "readingSkills", "writingSkills", "numeracySkills", "behaviourAttention",
   "keyStrengths", "interventionsAndGoals", "closingStatement".
   Each value must be a richly detailed string using markdown formatting
   (bold with **, sub-headers with ###, bullet points with -)."""
@@ -463,30 +464,71 @@ ACTIVE IEP GOALS:
 {iep_data}
 
 INSTRUCTIONS:
-Generate a JSON with exactly these 7 keys. Each value must be a richly detailed string
+Generate a JSON with exactly these 10 keys. Each value must be a richly detailed string
 using markdown formatting (bold with **, sub-headers with ###, bullet points with -).
 Minimum length: 3 substantive paragraphs per section, or equivalent bullet content.
 
-1. "readingFeedback"
+1. "reasonForReferral"
+   Write a single short paragraph (3–4 sentences max). State who referred the student,
+   the primary presenting concern, any prior support, and the key question this assessment
+   aims to answer. No sub-headers, no bullet points.
+
+2. "assessmentMethods"
+   Cover using ### sub-headers:
+   ### Formal Assessment Instruments — list each formal tool used (name, publisher, purpose),
+     or note 'No formal standardised instruments administered' if absent
+   ### Informal Assessment Procedures — classroom observations, educator checklists, curriculum-
+     based measures, oral interviews; cite specific tools from the assessment data
+   ### Domain Coverage — which skill domains were assessed (reading, writing, math, attention,
+     motor, visual processing) and the depth of coverage for each
+   ### Data Sources — parents, educators, the student themselves, medical records;
+     note any key informants referenced in the intake form
+   ### Assessment Conditions & Limitations — note any factors that may have affected validity
+     (e.g. student fatigue, language barriers, incomplete data for a domain)
+
+3. "assessmentFindings"
+   This is a cross-domain synthesis, not a replacement for the detailed domain sections below.
+   Cover using ### sub-headers:
+   ### Overall Performance Summary — 2–3 sentences placing the student's performance across all
+     assessed domains relative to grade-level expectations
+   ### Key Patterns & Convergent Evidence — recurring themes across domains that point to a
+     unifying explanation (e.g. phonological processing weakness affecting both reading and
+     spelling; working memory difficulties affecting math and written expression)
+   ### Differential Indicator Summary — briefly name the conditions most strongly indicated by
+     the convergent evidence, referencing the formal/informal data
+   ### Comparison with Referral Questions — explicitly address each referral question from
+     section 1 with a brief, evidence-based answer
+   ### Summary of Risk Level — the student's overall support level (HIGH_SUPPORT /
+     MODERATE_SUPPORT / ON_TRACK) and the primary rationale
+
+4. "readingSkills"
    Cover all of the following sub-topics using ### sub-headers:
-   ### Current Reading Level — functional grade level, grade-level comparison
-   ### Decoding & Word Recognition — phonics skills, sight words, unfamiliar word strategies
-   ### Reading Fluency — rate, accuracy, prosody, error patterns observed
-   ### Reading Comprehension — literal and inferential understanding, recall
-   ### Symptom Profile — reference the specific active reading symptoms from the data
-   ### Evidence-Based Concerns — what patterns suggest and what further assessment may be needed
+   ### Reading Analysis — functional reading level relative to grade expectations
+   ### Decoding and Phonics Skills — Strengths: what the student can decode correctly; Gaps: specific phonics/decoding deficits observed (e.g. CVC words, blends, sight word recognition)
+   ### Fluency — Rate and Accuracy: reading rate and error frequency; Expression Observations: prosody and vocal expression during reading
+   ### Comprehension — Ability to Understand and Recall Text: literal and inferential understanding; Observed Symptoms: specific comprehension difficulties noted during assessment
+   ### Sight Word Knowledge — current sight word bank, observed struggles, impact on text engagement
+   ### Areas of Concern — patterns that indicate need for intervention; what further assessment may be needed
 
-2. "writingFeedback"
-   Cover: ### Fine Motor & Handwriting | ### Spelling & Phonics in Writing |
-   ### Sentence Construction & Written Expression | ### Copying Skills |
-   ### Symptom Profile | ### Evidence-Based Concerns
+5. "writingSkills"
+   Cover all of the following sub-topics using ### sub-headers:
+   ### Writing Analysis — functional writing level relative to grade expectations
+   ### Handwriting Quality — Letter Formation: accuracy and consistency of letter formation; Spacing and Legibility: spacing between letters/words and overall legibility; Pencil Grip/Pressure: grip pattern and pressure applied
+   ### Spelling — Error Patterns: types of spelling errors observed; Phonetic vs Sight Word Errors: whether errors are phonetic attempts or non-phonetic/random
+   ### Sentence Construction and Grammar Ability — Syntax and Semantics: ability to construct grammatically correct sentences and use of vocabulary
+   ### Creative Writing — Idea Generation: ability to generate and organise ideas; Paragraph Structure and Vocabulary: coherence, depth of vocabulary used
+   ### Copying Skills — Near-Copying: copying from a nearby page or book; Board-Copying: copying from a whiteboard or projected content
+   ### Observed Symptoms — specific writing difficulties that indicate need for intervention
 
-3. "mathFeedback"
-   Cover: ### Number Sense & Counting | ### Operations Performance (cite each operation score) |
-   ### Conceptual vs Procedural Understanding | ### Word Problems & Application |
-   ### Symptom Profile | ### Evidence-Based Concerns
+6. "numeracySkills"
+   Cover all of the following sub-topics using ### sub-headers:
+   ### Math Analysis — functional math level relative to grade expectations
+   ### Number Sense — Counting and Number Identification: ability to count, identify, and sequence numbers; Place Value: understanding of place value concepts
+   ### Operations — Addition and Subtraction: performance on addition and subtraction tasks; Multiplication and Division: performance on multiplication and division tasks
+   ### Conceptual Understanding vs Procedural Skills — Conceptual Understanding: grasp of underlying mathematical concepts; Procedural Skills: ability to follow mathematical procedures accurately
+   ### Observed Symptoms — specific math difficulties observed that may hinder grade-level engagement
 
-4. "behaviourAttention"
+7. "behaviourAttention"
    Cover ONLY observable classroom and session behaviours:
    ### Attention & Focus — sustained attention, impulsivity, distractibility
    ### Frustration Tolerance & Emotional Regulation — response to difficulty
@@ -495,14 +537,14 @@ Minimum length: 3 substantive paragraphs per section, or equivalent bullet conte
    ### Relevant Background — link to developmental history (birth, milestones, preschool)
    only if it directly informs observed behaviour
 
-5. "keyStrengths"
+8. "keyStrengths"
    This section is for the EDUCATOR — be specific and asset-focused:
    ### Academic Strengths — specific skills the student performs well
    ### Learning Style Strengths — modalities that work best (verbal, visual, kinesthetic)
    ### Social & Behavioural Strengths — positive dispositions that support learning
    ### Leverage Points — how these strengths can be used in intervention
 
-6. "interventionsAndGoals"
+9. "interventionsAndGoals"
    Organised by domain:
    ### Reading Interventions — specific named approaches and 6-month SMART goals
    ### Writing Interventions — specific named approaches and 6-month SMART goals
@@ -510,7 +552,7 @@ Minimum length: 3 substantive paragraphs per section, or equivalent bullet conte
    ### Classroom Accommodations — practical adjustments for the mainstream classroom
    Reference the active IEP goals where applicable.
 
-7. "closingStatement"
+10. "closingStatement"
    Audience: the special educator and school team (professional tone, not parent-friendly):
    ### Summary of Findings — 2–3 sentence recap of the most critical findings
    ### Prognosis & Trajectory — realistic but optimistic statement about expected progress

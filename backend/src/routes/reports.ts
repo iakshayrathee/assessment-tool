@@ -198,6 +198,38 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// PUT /api/reports/:id - Update report content/title/summary
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, summary, type } = req.body;
+
+    const existing = await prisma.report.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Report not found' });
+    }
+    if (existing.status === 'REVIEWED') {
+      return res.status(400).json({ success: false, error: 'Cannot update a reviewed report' });
+    }
+
+    const updated = await prisma.report.update({
+      where: { id },
+      data: {
+        ...(title !== undefined && { title }),
+        ...(content !== undefined && { content }),
+        ...(summary !== undefined && { summary }),
+        ...(type !== undefined && { type }),
+        updatedAt: new Date(),
+      },
+    });
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('Update report error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update report' });
+  }
+});
+
 // GET /api/reports/:id/download - Download report as PDF
 router.get('/:id/download', async (req, res) => {
   try {

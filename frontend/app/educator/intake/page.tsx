@@ -39,8 +39,11 @@ import {
   Eye,
   MessageSquare,
   Plus,
-  X
+  X,
+  Upload,
+  Info
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
@@ -148,6 +151,7 @@ function IntakeFormPageContent() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [showStudentModal, setShowStudentModal] = useState(false);
+  const [showExcelPreview, setShowExcelPreview] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     // Section 1: Socio Demographic Data
     name: '',
@@ -211,6 +215,120 @@ function IntakeFormPageContent() {
     dominantWritingHand: '',
     strugglesInLanguages: false
   });
+
+  const excelInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows: Record<string, any>[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+        if (rows.length === 0) {
+          toast.error('Excel file is empty');
+          return;
+        }
+
+        // Use first row of data
+        const row = rows[0];
+
+        // Normalise header keys: trim, lowercase, collapse spaces/underscores
+        const norm = (s: string) => s.trim().toLowerCase().replace(/[_\s]+/g, ' ');
+        const get = (keys: string[]): string => {
+          const normKeys = keys.map(norm);
+          for (const [k, v] of Object.entries(row)) {
+            if (normKeys.includes(norm(k))) return String(v).trim();
+          }
+          return '';
+        };
+        const getBool = (keys: string[]): boolean => {
+          const v = get(keys).toLowerCase();
+          return ['yes', 'true', '1', 'y'].includes(v);
+        };
+
+        setFormData(prev => ({
+          ...prev,
+          // Demographics
+          name: get(['name', 'student name', 'full name']) || prev.name,
+          age: get(['age']) || prev.age,
+          gender: get(['gender', 'sex']) || prev.gender,
+          schoolCenter: get(['school', 'school center', 'school/center', 'center']) || prev.schoolCenter,
+          address: get(['address']) || prev.address,
+          class: get(['class', 'grade']) || prev.class,
+          motherTongue: get(['mother tongue', 'native language']) || prev.motherTongue,
+          syllabus: get(['syllabus', 'curriculum', 'board']) || prev.syllabus,
+
+          // Family
+          fatherName: get(['father name', 'fathers name', "father's name"]) || prev.fatherName,
+          motherName: get(['mother name', 'mothers name', "mother's name"]) || prev.motherName,
+          guardianName: get(['guardian name', 'guardians name', "guardian's name"]) || prev.guardianName,
+          familyIncome: get(['family income', 'income']) || prev.familyIncome,
+          familyType: get(['family type']) || prev.familyType,
+          digitalResourcesAtHome: getBool(['digital resources at home', 'digital resources']),
+          dailyDigitalUse: get(['daily digital use', 'digital use hours']) || prev.dailyDigitalUse,
+          enjoysSchool: getBool(['enjoys school']),
+          studyAssistant: get(['study assistant']) || prev.studyAssistant,
+          externalAcademicSupport: getBool(['external academic support']),
+          enjoysReading: getBool(['enjoys reading']),
+          dailyParentChildTime: get(['daily parent child time', 'parent child time']) || prev.dailyParentChildTime,
+          childType: get(['child type']) || prev.childType,
+
+          // Prenatal
+          pregnancyNormal: getBool(['pregnancy normal']),
+          medicationsDuringPregnancy: get(['medications during pregnancy']) || prev.medicationsDuringPregnancy,
+          medicationsDuringPregnancyDetails: get(['medication details during pregnancy', 'medications during pregnancy details']) || prev.medicationsDuringPregnancyDetails,
+          miscarriagesAbortions: getBool(['miscarriages abortions', 'miscarriages/abortions']),
+          fullTermOrPremature: get(['full term or premature', 'term']) || prev.fullTermOrPremature,
+          deliveryType: get(['delivery type', 'delivery']) || prev.deliveryType,
+
+          // Postnatal
+          breastFed: getBool(['breast fed', 'breastfed']),
+          infantJaundice: getBool(['infant jaundice', 'jaundice']),
+          incubation: getBool(['incubation']),
+          immunizationDone: getBool(['immunization done', 'immunization']),
+          consanguineousMarriage: getBool(['consanguineous marriage']),
+          birthCry: get(['birth cry']) || prev.birthCry,
+          delayInNeckStanding: getBool(['delay in neck standing']),
+          delayInNeckStandingDetails: get(['delay in neck standing details']) || prev.delayInNeckStandingDetails,
+          ageOfWalking: get(['age of walking', 'walking age']) || prev.ageOfWalking,
+          ageOfTwoWordSpeech: get(['age of two word speech', 'two word speech age']) || prev.ageOfTwoWordSpeech,
+
+          // Medical
+          healthConcerns: get(['health concerns']) || prev.healthConcerns,
+          epilepticHistory: getBool(['epileptic history', 'epilepsy']),
+          onMedication: getBool(['on medication']),
+          medicationDetails: get(['medication details']) || prev.medicationDetails,
+          asthmaWheezing: getBool(['asthma wheezing', 'asthma/wheezing', 'asthma']),
+          wearsGlasses: getBool(['wears glasses', 'glasses']),
+          visionTestDone: getBool(['vision test done', 'vision test']),
+          hearingTestDone: getBool(['hearing test done', 'hearing test']),
+
+          // Educational
+          attendedPreschool: getBool(['attended preschool', 'preschool']),
+          repeatedGrades: getBool(['repeated grades']),
+          whichGradeRepeated: get(['which grade repeated', 'grade repeated']) || prev.whichGradeRepeated,
+          dominantWritingHand: get(['dominant writing hand', 'writing hand']) || prev.dominantWritingHand,
+          strugglesInLanguages: getBool(['struggles in languages', 'language struggles']),
+        }));
+
+        setHasUnsavedChanges(true);
+        toast.success(`Imported data from "${file.name}"`);
+      } catch (err) {
+        console.error('Excel parse error:', err);
+        toast.error('Failed to parse Excel file. Please check the format.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+
+    // Reset input so re-uploading the same file triggers onChange
+    e.target.value = '';
+  };
 
   // Get students for selection dropdown
   const { students, isLoading: isLoadingStudents } = useEducatorStudents({ limit: 100 }) as { students: Student[] | undefined; isLoading: boolean };
@@ -1865,6 +1983,34 @@ function IntakeFormPageContent() {
                   <Download className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">PDF</span>
                 </Button>
+
+                <input
+                  ref={excelInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                  onChange={handleExcelUpload}
+                />
+                <Button
+                  onClick={() => excelInputRef.current?.click()}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-md px-3 py-2 h-9"
+                  disabled={isFormCompleted}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Upload Excel</span>
+                  <span className="sm:hidden">Excel</span>
+                </Button>
+                <Button
+                  onClick={() => setShowExcelPreview(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-md px-1.5 py-2 h-9"
+                  title="View expected Excel format"
+                >
+                  <Info className="h-4 w-4 text-gray-500" />
+                </Button>
               </div>
             </div>
           </div>
@@ -2070,6 +2216,247 @@ function IntakeFormPageContent() {
         onSelect={handleStudentSelect}
         selectedStudentId={selectedStudentId}
       />
+
+      {/* Excel Format Preview Modal */}
+      {showExcelPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <FileText className="h-5 w-5 text-green-700" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Expected Excel Format</h3>
+                  <p className="text-sm text-gray-500">Your file should have these column headers in the first row</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowExcelPreview(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-auto px-6 py-4 space-y-6">
+              {/* Full Sample Excel Table */}
+              <div className="border rounded-lg overflow-x-auto">
+                <table className="text-xs w-full border-collapse">
+                  {/* Demographics */}
+                  <thead>
+                    <tr>
+                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-blue-800 bg-blue-100 border-b">
+                        <div className="flex items-center gap-2"><User className="h-3.5 w-3.5" /> Demographics</div>
+                      </th>
+                    </tr>
+                    <tr className="bg-blue-50">
+                      {['Name', 'Age', 'Gender', 'School', 'Address', 'Class', 'Mother Tongue', 'Syllabus'].map((h, i) => (
+                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-blue-700 border-b ${i < 7 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="bg-white">
+                      <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Arjun Kumar</td>
+                      <td className="px-3 py-1.5 border-r border-b">8</td>
+                      <td className="px-3 py-1.5 border-r border-b">Male</td>
+                      <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Sunshine Public School</td>
+                      <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">123 Main St</td>
+                      <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Grade 3</td>
+                      <td className="px-3 py-1.5 border-r border-b">Hindi</td>
+                      <td className="px-3 py-1.5 border-b">CBSE</td>
+                    </tr>
+                  </tbody>
+
+                  {/* Family History */}
+                  <thead>
+                    <tr>
+                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-green-800 bg-green-100 border-b">
+                        <div className="flex items-center gap-2"><Home className="h-3.5 w-3.5" /> Family History</div>
+                      </th>
+                    </tr>
+                    <tr className="bg-green-50">
+                      {['Father Name', 'Mother Name', 'Guardian Name', 'Family Income', 'Family Type', 'Daily Digital Use', 'Study Assistant', 'Child Type'].map((h, i) => (
+                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-green-700 border-b ${i < 7 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="bg-white">
+                      <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Rajesh Kumar</td>
+                      <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Priya Kumar</td>
+                      <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Rajesh Kumar</td>
+                      <td className="px-3 py-1.5 border-r border-b">50000</td>
+                      <td className="px-3 py-1.5 border-r border-b">Nuclear</td>
+                      <td className="px-3 py-1.5 border-r border-b">2</td>
+                      <td className="px-3 py-1.5 border-r border-b">Mother</td>
+                      <td className="px-3 py-1.5 border-b whitespace-nowrap">Only Child</td>
+                    </tr>
+                  </tbody>
+                  <thead>
+                    <tr className="bg-green-50">
+                      {['Digital Resources At Home', 'Enjoys School', 'External Academic Support', 'Enjoys Reading', 'Daily Parent Child Time'].map((h, i) => (
+                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-green-700 border-b ${i < 4 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
+                      ))}
+                      <th className="border-b" colSpan={3}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="bg-white">
+                      <td className="px-3 py-1.5 border-r border-b">Yes</td>
+                      <td className="px-3 py-1.5 border-r border-b">Yes</td>
+                      <td className="px-3 py-1.5 border-r border-b">No</td>
+                      <td className="px-3 py-1.5 border-r border-b">Yes</td>
+                      <td className="px-3 py-1.5 border-b">3</td>
+                      <td className="border-b" colSpan={3}></td>
+                    </tr>
+                  </tbody>
+
+                  {/* Prenatal & Birth */}
+                  <thead>
+                    <tr>
+                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-amber-800 bg-amber-100 border-b">
+                        <div className="flex items-center gap-2"><Baby className="h-3.5 w-3.5" /> Prenatal & Birth</div>
+                      </th>
+                    </tr>
+                    <tr className="bg-amber-50">
+                      {['Pregnancy Normal', 'Medications During Pregnancy', 'Miscarriages/Abortions', 'Full Term Or Premature', 'Delivery Type'].map((h, i) => (
+                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-amber-700 border-b ${i < 4 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
+                      ))}
+                      <th className="border-b" colSpan={3}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="bg-white">
+                      <td className="px-3 py-1.5 border-r border-b">Yes</td>
+                      <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Vitamins only</td>
+                      <td className="px-3 py-1.5 border-r border-b">No</td>
+                      <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Full Term</td>
+                      <td className="px-3 py-1.5 border-b">Normal</td>
+                      <td className="border-b" colSpan={3}></td>
+                    </tr>
+                  </tbody>
+
+                  {/* Post Natal */}
+                  <thead>
+                    <tr>
+                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-pink-800 bg-pink-100 border-b">
+                        <div className="flex items-center gap-2"><Heart className="h-3.5 w-3.5" /> Post Natal</div>
+                      </th>
+                    </tr>
+                    <tr className="bg-pink-50">
+                      {['Breast Fed', 'Infant Jaundice', 'Incubation', 'Immunization Done', 'Consanguineous Marriage', 'Birth Cry', 'Age Of Walking', 'Age Of Two Word Speech'].map((h, i) => (
+                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-pink-700 border-b ${i < 7 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="bg-white">
+                      <td className="px-3 py-1.5 border-r border-b">Yes</td>
+                      <td className="px-3 py-1.5 border-r border-b">No</td>
+                      <td className="px-3 py-1.5 border-r border-b">No</td>
+                      <td className="px-3 py-1.5 border-r border-b">Yes</td>
+                      <td className="px-3 py-1.5 border-r border-b">No</td>
+                      <td className="px-3 py-1.5 border-r border-b">Immediate</td>
+                      <td className="px-3 py-1.5 border-r border-b">12</td>
+                      <td className="px-3 py-1.5 border-b">18</td>
+                    </tr>
+                  </tbody>
+                  <thead>
+                    <tr className="bg-pink-50">
+                      {['Delay In Neck Standing'].map((h) => (
+                        <th key={h} className="px-3 py-1.5 text-left font-semibold text-pink-700 border-b border-r whitespace-nowrap">{h}</th>
+                      ))}
+                      <th className="border-b" colSpan={7}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="bg-white">
+                      <td className="px-3 py-1.5 border-r border-b">No</td>
+                      <td className="border-b" colSpan={7}></td>
+                    </tr>
+                  </tbody>
+
+                  {/* Medical History */}
+                  <thead>
+                    <tr>
+                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-red-800 bg-red-100 border-b">
+                        <div className="flex items-center gap-2"><Stethoscope className="h-3.5 w-3.5" /> Medical History</div>
+                      </th>
+                    </tr>
+                    <tr className="bg-red-50">
+                      {['Health Concerns', 'Epileptic History', 'On Medication', 'Medication Details', 'Asthma/Wheezing', 'Wears Glasses', 'Vision Test Done', 'Hearing Test Done'].map((h, i) => (
+                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-red-700 border-b ${i < 7 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="bg-white">
+                      <td className="px-3 py-1.5 border-r border-b">None</td>
+                      <td className="px-3 py-1.5 border-r border-b">No</td>
+                      <td className="px-3 py-1.5 border-r border-b">No</td>
+                      <td className="px-3 py-1.5 border-r border-b"></td>
+                      <td className="px-3 py-1.5 border-r border-b">No</td>
+                      <td className="px-3 py-1.5 border-r border-b">No</td>
+                      <td className="px-3 py-1.5 border-r border-b">Yes</td>
+                      <td className="px-3 py-1.5 border-b">Yes</td>
+                    </tr>
+                  </tbody>
+
+                  {/* Educational History */}
+                  <thead>
+                    <tr>
+                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-purple-800 bg-purple-100 border-b">
+                        <div className="flex items-center gap-2"><GraduationCap className="h-3.5 w-3.5" /> Educational History</div>
+                      </th>
+                    </tr>
+                    <tr className="bg-purple-50">
+                      {['Attended Preschool', 'Repeated Grades', 'Which Grade Repeated', 'Dominant Writing Hand', 'Struggles In Languages'].map((h, i) => (
+                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-purple-700 border-b ${i < 4 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
+                      ))}
+                      <th className="border-b" colSpan={3}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="bg-white">
+                      <td className="px-3 py-1.5 border-r">Yes</td>
+                      <td className="px-3 py-1.5 border-r">No</td>
+                      <td className="px-3 py-1.5 border-r"></td>
+                      <td className="px-3 py-1.5 border-r">Right</td>
+                      <td className="px-3 py-1.5">No</td>
+                      <td colSpan={3}></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Notes */}
+              <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600 space-y-1.5">
+                <p className="font-medium text-gray-800">Notes:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>Column headers are <strong>case-insensitive</strong> — "Father Name", "father name", "father_name" all work</li>
+                  <li>Boolean fields (Yes/No) accept: <code className="bg-white px-1 rounded">Yes</code>, <code className="bg-white px-1 rounded">True</code>, <code className="bg-white px-1 rounded">1</code>, <code className="bg-white px-1 rounded">Y</code></li>
+                  <li>Only the <strong>first row</strong> of data is used to fill the form</li>
+                  <li>Supported formats: <code className="bg-white px-1 rounded">.xlsx</code>, <code className="bg-white px-1 rounded">.xls</code>, <code className="bg-white px-1 rounded">.csv</code></li>
+                  <li>Empty cells are skipped — existing form values are preserved</li>
+                  <li>All columns are <strong>optional</strong> — include only the ones you have data for</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t">
+              <Button variant="outline" onClick={() => setShowExcelPreview(false)}>
+                Close
+              </Button>
+              <Button onClick={() => { setShowExcelPreview(false); excelInputRef.current?.click(); }} disabled={isFormCompleted}>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Excel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
