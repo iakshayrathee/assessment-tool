@@ -17,17 +17,17 @@ import {
     ResponsiveContainer
 } from 'recharts';
 
-// Color palette for charts
+// Brand color palette — matches CSS vars from globals.css
 const COLORS = {
-    primary: '#3b82f6',
-    success: '#10b981',
-    warning: '#f59e0b',
-    danger: '#ef4444',
-    purple: '#8b5cf6',
-    teal: '#14b8a6'
+    primary: 'hsl(239, 84%, 67%)',
+    success: 'hsl(142, 71%, 45%)',
+    warning: 'hsl(38, 92%, 50%)',
+    danger: 'hsl(0, 84%, 60%)',
+    info: 'hsl(199, 89%, 48%)',
+    purple: 'hsl(280, 65%, 60%)',
 };
 
-const PERFORMANCE_COLORS = ['#10b981', '#3b82f6', '#f59e0b'];
+const PERFORMANCE_COLORS = [COLORS.success, COLORS.primary, COLORS.warning];
 
 /**
  * Performance Distribution Pie Chart

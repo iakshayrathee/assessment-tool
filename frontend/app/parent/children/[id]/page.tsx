@@ -1,627 +1,248 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  User, 
-  School, 
-  Phone, 
-  Mail,
-  MapPin,
-  Calendar,
-  Target,
-  FileText,
-  TrendingUp,
-  ArrowLeft,
-  AlertCircle,
-  Clock,
-  CheckCircle,
-  BookOpen,
-  Users
-} from 'lucide-react';
-import Link from 'next/link';
-import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { Eye, EyeOff, Mail, Lock, GraduationCap } from 'lucide-react';
+import { motion } from 'motion/react';
 
-interface ChildDetails {
-  id: string;
-  fullName: string;
-  dateOfBirth: string;
-  age: number;
-  gender: string;
-  grade: string;
-  status: string;
-  center: {
-    centerName: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-  };
-  school?: {
-    name: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-  };
-  assignments: Array<{
-    specialEducator: {
-      id: string;
-      fullName: string;
-      phone?: string;
-    };
-  }>;
-  iepGoals: Array<{
-    id: string;
-    domain: string;
-    goalStatement: string;
-    status: string;
-    progressPercent: number;
-    targetDate: string;
-    progressUpdates: Array<{
-      updateDate: string;
-      notes: string;
-      progressPercent: number;
-    }>;
-  }>;
-  reports: Array<{
-    id: string;
-    type: string;
-    title: string;
-    createdAt: string;
-  }>;
-  sessionNotes: Array<{
-    id: string;
-    sessionDate: string;
-    notes: string;
-    specialEducator: {
-      fullName: string;
-    };
-  }>;
-}
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-export default function ChildDetails() {
-  const params = useParams();
-  const childId = params.id as string;
-  const { user } = useAuth();
-  const [child, setChild] = useState<ChildDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { login, isLoggingIn, isAuthenticated, user } = useAuth();
+  const router = useRouter();
 
+  // Redirect if already authenticated
   useEffect(() => {
-    if (childId) {
-      loadChildDetails();
+    if (isAuthenticated && user) {
+      const redirectPath = getRoleBasedRedirect(user.role);
+      router.push(redirectPath);
     }
-  }, [childId]);
+  }, [isAuthenticated, user, router]);
 
-  const loadChildDetails = async () => {
-    try {
-      setLoading(true);
-      const childData = await apiClient.getChildDetails(childId);
-      setChild(childData);
-    } catch (error) {
-      console.error('Failed to load child details:', error);
-      toast.error('Failed to load child details');
-      // Mock data for demonstration
-      setChild({
-        id: childId,
-        fullName: 'Aarav Sharma',
-        dateOfBirth: '2016-03-15',
-        age: 8,
-        gender: 'MALE',
-        grade: 'Grade 3',
-        status: 'ACTIVE',
-        center: {
-          centerName: 'Knowled Learning Center - Mumbai',
-          phone: '+91 98765 43210',
-          email: 'mumbai@knowled.com',
-          address: '123 Learning Street, Mumbai, Maharashtra 400001'
-        },
-        school: {
-          name: 'St. Mary\'s School',
-          phone: '+91 98765 43211',
-          email: 'info@stmarys.edu',
-          address: '456 School Road, Mumbai, Maharashtra 400002'
-        },
-        assignments: [{
-          specialEducator: {
-            id: '1',
-            fullName: 'Ms. Priya Patel',
-            phone: '+91 98765 43212'
-          }
-        }],
-        iepGoals: [
-          {
-            id: '1',
-            domain: 'Reading',
-            goalStatement: 'Read 50 sight words fluently with 90% accuracy',
-            status: 'IN_PROGRESS',
-            progressPercent: 70,
-            targetDate: '2024-03-15',
-            progressUpdates: [
-              {
-                updateDate: '2024-01-15',
-                notes: 'Good progress on sight word recognition. Can now read 35 words fluently.',
-                progressPercent: 70
-              },
-              {
-                updateDate: '2024-01-01',
-                notes: 'Started with basic sight words. Shows good interest in reading activities.',
-                progressPercent: 40
-              }
-            ]
-          },
-          {
-            id: '2',
-            domain: 'Math',
-            goalStatement: 'Count to 100 without assistance and identify numbers 1-50',
-            status: 'IN_PROGRESS',
-            progressPercent: 85,
-            targetDate: '2024-02-28',
-            progressUpdates: [
-              {
-                updateDate: '2024-01-15',
-                notes: 'Excellent progress in counting. Can count to 85 independently.',
-                progressPercent: 85
-              }
-            ]
-          },
-          {
-            id: '3',
-            domain: 'Writing',
-            goalStatement: 'Write name independently and form basic letters correctly',
-            status: 'ACHIEVED',
-            progressPercent: 100,
-            targetDate: '2024-01-30',
-            progressUpdates: [
-              {
-                updateDate: '2024-01-25',
-                notes: 'Goal achieved! Can write name clearly and forms most letters correctly.',
-                progressPercent: 100
-              }
-            ]
-          }
-        ],
-        reports: [
-          {
-            id: '1',
-            type: 'ASSESSMENT',
-            title: 'Reading Assessment Report',
-            createdAt: '2024-01-15T10:00:00Z'
-          },
-          {
-            id: '2',
-            type: 'PROGRESS',
-            title: 'Monthly Progress Report - January',
-            createdAt: '2024-01-10T10:00:00Z'
-          },
-          {
-            id: '3',
-            type: 'IEP',
-            title: 'Individual Education Plan - Q1 Review',
-            createdAt: '2024-01-05T10:00:00Z'
-          }
-        ],
-        sessionNotes: [
-          {
-            id: '1',
-            sessionDate: '2024-01-15',
-            notes: 'Great session today. Aarav showed improved focus during reading activities and completed all tasks.',
-            specialEducator: {
-              fullName: 'Ms. Priya Patel'
-            }
-          },
-          {
-            id: '2',
-            sessionDate: '2024-01-12',
-            notes: 'Worked on math concepts. Aarav is making good progress with number recognition.',
-            specialEducator: {
-              fullName: 'Ms. Priya Patel'
-            }
-          }
-        ]
-      });
-    } finally {
-      setLoading(false);
+  const getRoleBasedRedirect = (role: string): string => {
+    switch (role) {
+      case 'ADMIN':
+        return '/admin/overview';
+      case 'SUPER_SPECIAL_EDUCATOR':
+        return '/super-special-educator';
+      case 'SPECIAL_EDUCATOR':
+        return '/educator/dashboard';
+      case 'CENTER':
+        return '/center/dashboard';
+      case 'PARENT':
+        return '/parent/dashboard';
+      case 'SCHOOL_VIEWER':
+        return '/school-viewer/dashboard';
+      default:
+        return '/dashboard';
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'INACTIVE': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const validateForm = () => {
+    const newErrors: { email?: string; password?: string } = {};
+
+    if (!email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Email is invalid';
+    }
+
+    if (!password) {
+      newErrors.password = 'Password is required';
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (validateForm()) {
+      login({ email, password });
     }
   };
 
-  const getGoalStatusIcon = (status: string) => {
-    switch (status) {
-      case 'IN_PROGRESS': return <Clock className="h-4 w-4" />;
-      case 'ACHIEVED': return <CheckCircle className="h-4 w-4" />;
-      case 'NOT_STARTED': return <AlertCircle className="h-4 w-4" />;
-      default: return <Clock className="h-4 w-4" />;
-    }
-  };
+  // const demoCredentials = [
+  //   { role: 'Admin', email: 'admin@knowled.com', password: 'admin123' },
+  //   { role: 'Super Special Educator', email: 'super.educator@knowled.com', password: 'super123' },
+  //   { role: 'Special Educator', email: 'educator@knowled.com', password: 'educator123' },
+  //   { role: 'Center Manager', email: 'center@knowled.com', password: 'center123' },
+  //   { role: 'Parent', email: 'parent@knowled.com', password: 'parent123' },
+  //   { role: 'School Viewer', email: 'viewer@knowled.com', password: 'viewer123' },
+  // ];
 
-  const getGoalStatusColor = (status: string) => {
-    switch (status) {
-      case 'IN_PROGRESS': return 'bg-blue-100 text-blue-800';
-      case 'ACHIEVED': return 'bg-green-100 text-green-800';
-      case 'NOT_STARTED': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getReportTypeColor = (type: string) => {
-    switch (type) {
-      case 'ASSESSMENT': return 'bg-blue-100 text-blue-800';
-      case 'IEP': return 'bg-purple-100 text-purple-800';
-      case 'PROGRESS': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading child details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!child) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-          <p className="text-gray-600">Failed to load child details</p>
-          <Button onClick={loadChildDetails} className="mt-4">
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // const fillDemoCredentials = (email: string, password: string) => {
+  //   setEmail(email);
+  //   setPassword(password);
+  //   setErrors({});
+  // };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center space-x-4">
-              <Link href="/parent/dashboard">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{child.fullName}</h1>
-                <p className="text-gray-600">{child.age} years • {child.grade}</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-8 items-center">
+        {/* Left Side - Branding */}
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="hidden lg:block"
+        >
+          <div className="text-center lg:text-left">
+            <div className="flex items-center justify-center lg:justify-start mb-8">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-2xl">
+                <GraduationCap className="h-8 w-8 text-white" />
+              </div>
+              <h1 className="ml-3 text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Knowled
+              </h1>
+            </div>
+
+            <h2 className="text-4xl font-bold text-foreground mb-6">
+              Welcome to the Future of
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                Special Education
+              </span>
+            </h2>
+
+            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+              Comprehensive platform for managing special education programs,
+              assessments, and student progress tracking with advanced analytics
+              and collaborative tools.
+            </p>
+
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">For Educators</h3>
+                <p className="text-muted-foreground">Create assessments, track progress, and manage IEP goals</p>
+              </div>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">For Parents</h3>
+                <p className="text-muted-foreground">Monitor your child's progress and stay connected</p>
+              </div>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">For Administrators</h3>
+                <p className="text-muted-foreground">Manage centers, users, and generate reports</p>
+              </div>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">For Schools</h3>
+                <p className="text-muted-foreground">View student progress and collaborate with educators</p>
               </div>
             </div>
-            <Badge className={getStatusColor(child.status)}>
-              {child.status}
-            </Badge>
           </div>
-        </div>
-      </div>
+        </motion.div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center">
-                <Target className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Active Goals</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {child.iepGoals.filter(goal => goal.status === 'IN_PROGRESS').length}
-                  </p>
+        {/* Right Side - Login Form */}
+        <motion.div
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="w-full max-w-md mx-auto"
+        >
+          <div className="bg-background/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
+            <div className="text-center mb-8">
+              <div className="lg:hidden flex items-center justify-center mb-6">
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-2xl">
+                  <GraduationCap className="h-6 w-6 text-white" />
                 </div>
+                <h1 className="ml-3 text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Knowled
+                </h1>
               </div>
-            </CardContent>
-          </Card>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Sign In</h2>
+              <p className="text-muted-foreground">Access your dashboard</p>
+            </div>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Achieved Goals</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {child.iepGoals.filter(goal => goal.status === 'ACHIEVED').length}
-                  </p>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.email ? 'border-destructive/30' : 'border-border'
+                      }`}
+                    placeholder="Enter your email"
+                  />
                 </div>
+                {errors.email && (
+                  <p className="mt-1 text-sm text-destructive">{errors.email}</p>
+                )}
               </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center">
-                <FileText className="h-8 w-8 text-purple-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Reports</p>
-                  <p className="text-2xl font-bold text-gray-900">{child.reports.length}</p>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.password ? 'border-destructive/30' : 'border-border'
+                      }`}
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
+                {errors.password && (
+                  <p className="mt-1 text-sm text-destructive">{errors.password}</p>
+                )}
               </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center">
-                <TrendingUp className="h-8 w-8 text-orange-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Avg Progress</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {Math.round(child.iepGoals.reduce((acc, goal) => acc + goal.progressPercent, 0) / child.iepGoals.length)}%
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="goals">IEP Goals</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="sessions">Session Notes</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Child Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <User className="h-5 w-5 mr-2" />
-                    Child Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Full Name</p>
-                      <p className="text-sm text-gray-900">{child.fullName}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Age</p>
-                      <p className="text-sm text-gray-900">{child.age} years</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Grade</p>
-                      <p className="text-sm text-gray-900">{child.grade}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Date of Birth</p>
-                      <p className="text-sm text-gray-900">
-                        {new Date(child.dateOfBirth).toLocaleDateString()}
-                      </p>
-                    </div>
+              <button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                {isLoggingIn ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Signing In...
                   </div>
-                </CardContent>
-              </Card>
+                ) : (
+                  'Sign In'
+                )}
+              </button>
+            </form>
 
-              {/* Assigned Educator */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="h-5 w-5 mr-2" />
-                    Assigned Educator
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {child.assignments.length > 0 ? (
-                    <div className="space-y-3">
-                      {child.assignments.map((assignment, index) => (
-                        <div key={index} className="p-3 bg-blue-50 rounded-lg">
-                          <p className="font-medium text-blue-900">
-                            {assignment.specialEducator.fullName}
-                          </p>
-                          {assignment.specialEducator.phone && (
-                            <p className="text-sm text-blue-700 flex items-center mt-1">
-                              <Phone className="h-3 w-3 mr-1" />
-                              {assignment.specialEducator.phone}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-600">No educator assigned</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Center Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <School className="h-5 w-5 mr-2" />
-                    Learning Center
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="font-medium text-gray-900">{child.center.centerName}</p>
-                  </div>
-                  {child.center.phone && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Phone className="h-4 w-4 mr-2" />
-                      {child.center.phone}
-                    </div>
-                  )}
-                  {child.center.email && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Mail className="h-4 w-4 mr-2" />
-                      {child.center.email}
-                    </div>
-                  )}
-                  {child.center.address && (
-                    <div className="flex items-start text-sm text-gray-600">
-                      <MapPin className="h-4 w-4 mr-2 mt-0.5" />
-                      {child.center.address}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* School Information */}
-              {child.school && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <BookOpen className="h-5 w-5 mr-2" />
-                      School
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
-                      <p className="font-medium text-gray-900">{child.school.name}</p>
-                    </div>
-                    {child.school.phone && (
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Phone className="h-4 w-4 mr-2" />
-                        {child.school.phone}
-                      </div>
-                    )}
-                    {child.school.email && (
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Mail className="h-4 w-4 mr-2" />
-                        {child.school.email}
-                      </div>
-                    )}
-                    {child.school.address && (
-                      <div className="flex items-start text-sm text-gray-600">
-                        <MapPin className="h-4 w-4 mr-2 mt-0.5" />
-                        {child.school.address}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="goals" className="space-y-6">
-            <div className="grid grid-cols-1 gap-6">
-              {child.iepGoals.map((goal) => (
-                <Card key={goal.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{goal.domain}</CardTitle>
-                        <CardDescription className="mt-1">
-                          {goal.goalStatement}
-                        </CardDescription>
-                      </div>
-                      <Badge className={getGoalStatusColor(goal.status)}>
-                        {getGoalStatusIcon(goal.status)}
-                        <span className="ml-1">{goal.status.replace('_', ' ')}</span>
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium">Progress</span>
-                        <span className="text-sm text-gray-600">{goal.progressPercent}%</span>
-                      </div>
-                      <Progress value={goal.progressPercent} className="mb-2" />
-                      <p className="text-xs text-gray-500">
-                        Target Date: {new Date(goal.targetDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                    
-                    {goal.progressUpdates.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-sm mb-2">Recent Updates</h4>
-                        <div className="space-y-2">
-                          {goal.progressUpdates.slice(0, 2).map((update, index) => (
-                            <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs text-gray-500">
-                                  {new Date(update.updateDate).toLocaleDateString()}
-                                </span>
-                                <span className="text-xs font-medium">
-                                  {update.progressPercent}%
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-700">{update.notes}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="reports" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {child.reports.map((report) => (
-                <Card key={report.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between mb-3">
-                      <FileText className="h-8 w-8 text-gray-600" />
-                      <Badge className={getReportTypeColor(report.type)}>
-                        {report.type}
-                      </Badge>
-                    </div>
-                    <h3 className="font-semibold text-lg mb-2">{report.title}</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Created: {new Date(report.createdAt).toLocaleDateString()}
-                    </p>
-                    <Link href={`/parent/children/${child.id}/reports/${report.id}`}>
-                      <Button variant="outline" className="w-full">
-                        View Report
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="sessions" className="space-y-6">
-            <div className="space-y-4">
-              {child.sessionNotes.map((session) => (
-                <Card key={session.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          Session with {session.specialEducator.fullName}
-                        </p>
-                        <p className="text-sm text-gray-600 flex items-center mt-1">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {new Date(session.sessionDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-gray-700">{session.notes}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+            {/* Demo Credentials - Commented out */}
+            {/* <div className="mt-8 pt-6 border-t border-border">
+              <h3 className="text-sm font-medium text-foreground mb-3">Demo Credentials:</h3>
+              <div className="grid grid-cols-1 gap-2 text-xs">
+                {demoCredentials.map((cred, index) => (
+                  <button
+                    key={index}
+                    onClick={() => fillDemoCredentials(cred.email, cred.password)}
+                    className="text-left p-2 rounded bg-muted/40 hover:bg-muted transition-colors"
+                  >
+                    <div className="font-medium text-foreground">{cred.role}</div>
+                    <div className="text-muted-foreground">{cred.email}</div>
+                  </button>
+                ))}
+              </div>
+            </div> */}
+          </div>
+        </motion.div>
       </div>
     </div>
   );

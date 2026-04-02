@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -183,7 +183,7 @@ export default function CenterSchoolSelectionModal({
           <div className="space-y-2">
             <Label htmlFor="center">Select Center *</Label>
             {loading ? (
-              <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-500">
+              <div className="p-3 bg-muted/40 rounded-md text-sm text-muted-foreground">
                 Loading centers...
               </div>
             ) : (
@@ -206,7 +206,7 @@ export default function CenterSchoolSelectionModal({
                   </SelectContent>
                 </Select>
                 {centers.length === 0 && (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     No centers assigned to your account. Please contact your administrator.
                   </p>
                 )}
@@ -219,7 +219,7 @@ export default function CenterSchoolSelectionModal({
             <>
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search schools..."
                   value={searchTerm}
@@ -233,11 +233,11 @@ export default function CenterSchoolSelectionModal({
               <div className="border rounded-lg overflow-hidden">
                 <div className="max-h-64 overflow-y-auto">
                   {loading ? (
-                    <div className="p-4 text-center text-gray-500">
+                    <div className="p-4 text-center text-muted-foreground">
                       Loading schools...
                     </div>
                   ) : currentSchools.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">
+                    <div className="p-4 text-center text-muted-foreground">
                       {searchTerm ? 'No schools found matching your search' : 'No schools available for this center'}
                     </div>
                   ) : (
@@ -246,14 +246,14 @@ export default function CenterSchoolSelectionModal({
                         <button
                           key={school.id}
                           onClick={() => handleSchoolSelect(school)}
-                          className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                          className="w-full p-4 text-left hover:bg-muted/40 transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <SchoolIcon className="h-5 w-5 text-blue-600" />
+                            <SchoolIcon className="h-5 w-5 text-primary" />
                             <div>
                               <p className="font-medium">{school.name}</p>
                               {school.address && (
-                                <p className="text-sm text-gray-500">{school.address}</p>
+                                <p className="text-sm text-muted-foreground">{school.address}</p>
                               )}
                             </div>
                           </div>
@@ -265,8 +265,8 @@ export default function CenterSchoolSelectionModal({
 
                 {/* Pagination */}
                 {(filteredSchools || []).length > itemsPerPage && (
-                  <div className="flex items-center justify-between p-4 border-t bg-gray-50">
-                    <div className="text-sm text-gray-500">
+                  <div className="flex items-center justify-between p-4 border-t bg-muted/40">
+                    <div className="text-sm text-muted-foreground">
                       Showing {startIndex + 1}-{Math.min(endIndex, (filteredSchools || []).length)} of {(filteredSchools || []).length} schools
                     </div>
                     <div className="flex items-center gap-2">

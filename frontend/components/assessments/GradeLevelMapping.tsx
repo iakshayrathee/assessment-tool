@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -77,7 +77,7 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         {mappings.length === 0 && (
-          <p className="text-sm text-gray-500 text-center py-4">
+          <p className="text-sm text-muted-foreground text-center py-4">
             No grade levels added yet. Click "Add Grade Level" to begin.
           </p>
         )}
@@ -93,7 +93,7 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={() => removeMapping(index)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -116,7 +116,7 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
                 <div className="space-y-3">
                   <Label className="text-sm font-semibold">Performance Levels (Select all that apply)</Label>
 
-                  <div className="space-y-2 border rounded-md p-3 bg-gray-50">
+                  <div className="space-y-2 border rounded-md p-3 bg-muted/40">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
@@ -129,7 +129,7 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
                     </label>
                   </div>
 
-                  <div className="space-y-2 border rounded-md p-3 bg-gray-50">
+                  <div className="space-y-2 border rounded-md p-3 bg-muted/40">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
@@ -142,7 +142,7 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
                     </label>
                   </div>
 
-                  <div className="space-y-2 border rounded-md p-3 bg-gray-50">
+                  <div className="space-y-2 border rounded-md p-3 bg-muted/40">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"

@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/table';
 import { Plus, Trash2, Loader2, Sparkles, X } from 'lucide-react';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { addMonths } from 'date-fns';
 import { useAIIEPSuggestions } from '@/hooks/useAI';
@@ -225,7 +225,7 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
                             <Sparkles className="h-4 w-4" />
                             <span>Pre-filled with AI suggestions — all fields are editable</span>
                         </div>
-                        <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-indigo-400 hover:text-indigo-600" onClick={() => setShowAiBanner(false)}>
+                        <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-indigo-400 hover:text-primary" onClick={() => setShowAiBanner(false)}>
                             <X className="h-3.5 w-3.5" />
                         </Button>
                     </div>
@@ -298,7 +298,7 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
                                     {...form.register('durationMonths', { valueAsNumber: true })}
                                 />
                                 {form.formState.errors.durationMonths && (
-                                    <p className="text-sm text-red-600">{form.formState.errors.durationMonths.message}</p>
+                                    <p className="text-sm text-destructive">{form.formState.errors.durationMonths.message}</p>
                                 )}
                             </div>
                             <div>
@@ -327,7 +327,7 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="font-semibold text-lg">Goals (1-5 required)</h3>
-                                <p className="text-sm text-gray-600">Add specific, measurable goals for this plan</p>
+                                <p className="text-sm text-muted-foreground">Add specific, measurable goals for this plan</p>
                             </div>
                             <Button
                                 type="button"
@@ -348,7 +348,7 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
                         <div className="border rounded-lg overflow-hidden">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-gray-50">
+                                    <TableRow className="bg-muted/40">
                                         <TableHead className="w-12">#</TableHead>
                                         <TableHead className="w-40">Domain *</TableHead>
                                         <TableHead>Goal Statement *</TableHead>
@@ -381,7 +381,7 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
                                                     placeholder="e.g., Student will read CVC words with 80% accuracy"
                                                 />
                                                 {form.formState.errors.goals?.[index]?.goalStatement && (
-                                                    <p className="text-xs text-red-600 mt-1">
+                                                    <p className="text-xs text-destructive mt-1">
                                                         {form.formState.errors.goals[index]?.goalStatement?.message}
                                                     </p>
                                                 )}
@@ -402,7 +402,7 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
                                                     onClick={() => remove(index)}
                                                     disabled={fields.length <= 1}
                                                 >
-                                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -411,7 +411,7 @@ export function LTPDialog({ open, onOpenChange, studentId, editing, onSuccess }:
                             </Table>
                         </div>
                         {form.formState.errors.goals && typeof form.formState.errors.goals === 'object' && 'message' in form.formState.errors.goals && (
-                            <p className="text-sm text-red-600">{form.formState.errors.goals.message}</p>
+                            <p className="text-sm text-destructive">{form.formState.errors.goals.message}</p>
                         )}
                     </div>
 

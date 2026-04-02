@@ -29,6 +29,7 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import { GradeDisplay } from '@/components/ui/GradeDisplay';
 import { GradeSelect } from '@/components/ui/GradeSelect';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface Student {
   id: string;
@@ -110,22 +111,22 @@ export default function SchoolViewerStudents() {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-foreground';
       case 'inactive':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
       case 'graduated':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'transferred':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning/10 text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 75) return 'text-green-600';
-    if (progress >= 50) return 'text-yellow-600';
-    return 'text-red-600';
+    if (progress >= 75) return 'text-success';
+    if (progress >= 50) return 'text-warning';
+    return 'text-destructive';
   };
 
   const formatStatus = (status: string) => {
@@ -135,9 +136,9 @@ export default function SchoolViewerStudents() {
   if (error) {
     return (
       <div className="text-center py-12">
-        <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Students</h3>
-        <p className="text-gray-600 mb-4">Unable to load student data. Please try again.</p>
+        <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">Error Loading Students</h3>
+        <p className="text-muted-foreground mb-4">Unable to load student data. Please try again.</p>
         <Button onClick={() => refetch()}>
           Retry
         </Button>
@@ -146,24 +147,21 @@ export default function SchoolViewerStudents() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Students</h1>
-          <p className="text-gray-600">View and monitor students from your school</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center space-x-2"
-          >
-            <Filter className="h-4 w-4" />
-            <span>Filters</span>
-          </Button>
-        </div>
-      </div>
+    <PageWrapper
+      title="Students"
+      description="View and monitor students from your school"
+      breadcrumbs={[{ label: 'School Viewer', href: '/school-viewer' }, { label: 'Students' }]}
+      actions={
+        <Button
+          variant="outline"
+          onClick={() => setShowFilters(!showFilters)}
+          className="flex items-center space-x-2"
+        >
+          <Filter className="h-4 w-4" />
+          <span>Filters</span>
+        </Button>
+      }
+    >
 
       {/* Search and Filters */}
       <Card>
@@ -171,7 +169,7 @@ export default function SchoolViewerStudents() {
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search students by name..."
                 value={search}
@@ -227,15 +225,15 @@ export default function SchoolViewerStudents() {
       {/* Students Table */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-          <span className="ml-2 text-gray-600">Loading students...</span>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Loading students...</span>
         </div>
       ) : students.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
-            <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Students Found</h3>
-            <p className="text-gray-600">
+            <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No Students Found</h3>
+            <p className="text-muted-foreground">
               {search || status || grade
                 ? 'No students match your current filters. Try adjusting your search criteria.'
                 : 'No students are currently enrolled at your school.'
@@ -265,11 +263,11 @@ export default function SchoolViewerStudents() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-indigo-600" />
+                          <User className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{student.fullName}</p>
-                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                          <p className="font-medium text-foreground">{student.fullName}</p>
+                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                             <GradeDisplay grade={student.grade} />
                             <span>•</span>
                             <span>Age {student.age}</span>
@@ -285,20 +283,20 @@ export default function SchoolViewerStudents() {
                     <TableCell>
                       {student.parent ? (
                         <div className="space-y-1">
-                          <p className="text-sm font-medium text-gray-900">{student.parent.fullName}</p>
+                          <p className="text-sm font-medium text-foreground">{student.parent.fullName}</p>
                           {student.parent.phone && (
-                            <div className="flex items-center text-xs text-gray-600">
+                            <div className="flex items-center text-xs text-muted-foreground">
                               <Phone className="h-3 w-3 mr-1" />
                               <span>{student.parent.phone}</span>
                             </div>
                           )}
-                          <div className="flex items-center text-xs text-gray-600">
+                          <div className="flex items-center text-xs text-muted-foreground">
                             <Mail className="h-3 w-3 mr-1" />
                             <span>{student.parent.user.email}</span>
                           </div>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-500">No parent info</span>
+                        <span className="text-sm text-muted-foreground">No parent info</span>
                       )}
                     </TableCell>
 
@@ -306,19 +304,19 @@ export default function SchoolViewerStudents() {
                     <TableCell>
                       {student.assignments.length > 0 ? (
                         <div className="space-y-1">
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-foreground">
                             {student.assignments[0].specialEducator.fullName}
                           </p>
-                          <p className="text-xs text-gray-600">Special Educator</p>
+                          <p className="text-xs text-muted-foreground">Special Educator</p>
                           {student.assignments[0].specialEducator.phone && (
-                            <div className="flex items-center text-xs text-gray-600">
+                            <div className="flex items-center text-xs text-muted-foreground">
                               <Phone className="h-3 w-3 mr-1" />
                               <span>{student.assignments[0].specialEducator.phone}</span>
                             </div>
                           )}
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-500">Not assigned</span>
+                        <span className="text-sm text-muted-foreground">Not assigned</span>
                       )}
                     </TableCell>
 
@@ -326,14 +324,14 @@ export default function SchoolViewerStudents() {
                     <TableCell>
                       <div className="space-y-2">
                         <div className="flex items-center">
-                          <Target className="h-4 w-4 mr-2 text-indigo-600" />
+                          <Target className="h-4 w-4 mr-2 text-primary" />
                           <span className={`text-sm font-medium ${getProgressColor(student.iepProgress)}`}>
                             {student.iepProgress}% IEP Progress
                           </span>
                         </div>
                         <div className="flex items-center">
-                          <TrendingUp className="h-4 w-4 mr-2 text-green-600" />
-                          <span className="text-sm text-gray-900">
+                          <TrendingUp className="h-4 w-4 mr-2 text-success" />
+                          <span className="text-sm text-foreground">
                             {student.activeGoalsCount} Active Goals
                           </span>
                         </div>
@@ -345,7 +343,7 @@ export default function SchoolViewerStudents() {
                       <div className="space-y-1">
                         {student.latestAssessment && (
                           <div className="flex items-center text-xs">
-                            <FileText className="h-3 w-3 mr-1 text-blue-600" />
+                            <FileText className="h-3 w-3 mr-1 text-primary" />
                             <Badge variant="outline" className="text-xs">
                               {formatStatus(student.latestAssessment.status)}
                             </Badge>
@@ -353,26 +351,26 @@ export default function SchoolViewerStudents() {
                         )}
                         {student.latestReport && (
                           <div className="flex items-center text-xs">
-                            <FileText className="h-3 w-3 mr-1 text-purple-600" />
+                            <FileText className="h-3 w-3 mr-1 text-info" />
                             <Badge variant="outline" className="text-xs">
                               {formatStatus(student.latestReport.status)}
                             </Badge>
                           </div>
                         )}
                         {!student.latestAssessment && !student.latestReport && (
-                          <span className="text-xs text-gray-500">No recent activity</span>
+                          <span className="text-xs text-muted-foreground">No recent activity</span>
                         )}
                       </div>
                     </TableCell>
 
                     {/* Enrollment */}
                     <TableCell>
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4 mr-2" />
                         <span>{format(new Date(student.registrationDate), 'MMM dd, yyyy')}</span>
                       </div>
                       {student.motherTongue && (
-                        <div className="flex items-center text-xs text-gray-600 mt-1">
+                        <div className="flex items-center text-xs text-muted-foreground mt-1">
                           <span className="w-4 h-4 mr-1 text-center">🗣️</span>
                           <span>{student.motherTongue}</span>
                         </div>
@@ -397,7 +395,7 @@ export default function SchoolViewerStudents() {
           {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
                 {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
                 {pagination.total} students
@@ -412,7 +410,7 @@ export default function SchoolViewerStudents() {
                   <ChevronLeft className="h-4 w-4" />
                   Previous
                 </Button>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-muted-foreground">
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
                 <Button
@@ -429,6 +427,6 @@ export default function SchoolViewerStudents() {
           )}
         </>
       )}
-    </div>
+    </PageWrapper>
   );
 }

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,7 +21,7 @@ export default function SchoolViewerLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-muted/40">
       {/* Sidebar */}
       <UnifiedSidebar
         userRole="SCHOOL_VIEWER"
@@ -40,7 +40,7 @@ export default function SchoolViewerLayout({
         />
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto bg-gray-50 p-4 md:p-6">
+        <main className="flex-1 overflow-auto bg-muted/40 p-4 md:p-6">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

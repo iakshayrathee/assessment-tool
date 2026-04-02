@@ -25,6 +25,7 @@ import {
   School
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 
 interface AuditLog {
@@ -82,13 +83,13 @@ export default function AdminAuditLogsPage() {
 
   const getActionIcon = (action: string) => {
     switch (action) {
-      case 'LOGIN': return <LogIn className="h-4 w-4 text-green-600" />;
-      case 'LOGOUT': return <LogOut className="h-4 w-4 text-gray-600" />;
-      case 'CREATE': return <Plus className="h-4 w-4 text-blue-600" />;
-      case 'UPDATE': return <Edit className="h-4 w-4 text-yellow-600" />;
-      case 'DELETE': return <Trash2 className="h-4 w-4 text-red-600" />;
-      case 'VIEW': return <Eye className="h-4 w-4 text-purple-600" />;
-      default: return <Activity className="h-4 w-4 text-gray-600" />;
+      case 'LOGIN': return <LogIn className="h-4 w-4 text-success" />;
+      case 'LOGOUT': return <LogOut className="h-4 w-4 text-muted-foreground" />;
+      case 'CREATE': return <Plus className="h-4 w-4 text-primary" />;
+      case 'UPDATE': return <Edit className="h-4 w-4 text-warning" />;
+      case 'DELETE': return <Trash2 className="h-4 w-4 text-destructive" />;
+      case 'VIEW': return <Eye className="h-4 w-4 text-info" />;
+      default: return <Activity className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -107,13 +108,13 @@ export default function AdminAuditLogsPage() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'ADMIN': return 'bg-red-100 text-red-800';
-      case 'SUPER_SPECIAL_EDUCATOR': return 'bg-purple-100 text-purple-800';
-      case 'SPECIAL_EDUCATOR': return 'bg-blue-100 text-blue-800';
-      case 'CENTER': return 'bg-green-100 text-green-800';
-      case 'PARENT': return 'bg-yellow-100 text-yellow-800';
-      case 'SCHOOL_VIEWER': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ADMIN': return 'bg-destructive/10 text-foreground';
+      case 'SUPER_SPECIAL_EDUCATOR': return 'bg-info/10 text-foreground';
+      case 'SPECIAL_EDUCATOR': return 'bg-primary/10 text-primary';
+      case 'CENTER': return 'bg-success/10 text-foreground';
+      case 'PARENT': return 'bg-warning/10 text-foreground';
+      case 'SCHOOL_VIEWER': return 'bg-muted text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -143,8 +144,8 @@ export default function AdminAuditLogsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading audit logs...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading audit logs...</p>
         </div>
       </div>
     );
@@ -152,26 +153,17 @@ export default function AdminAuditLogsPage() {
 
   if (!logsData) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
-                <p className="text-gray-600">Monitor system activities and user actions</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <PageWrapper
+        title="Audit Logs"
+        description="Monitor system activities and user actions"
+        breadcrumbs={[{ label: 'Admin' }, { label: 'Audit Logs' }]}
+      >
           <Card>
             <CardContent className="py-12">
               <div className="text-center">
-                <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Audit Logs Not Available</h3>
-                <p className="text-gray-600 mb-4">
+                <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">Audit Logs Not Available</h3>
+                <p className="text-muted-foreground mb-4">
                   The audit logs feature is currently under development. 
                   The backend API endpoints for audit log management are not yet implemented.
                 </p>
@@ -182,21 +174,28 @@ export default function AdminAuditLogsPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
+      </PageWrapper>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
-              <p className="text-gray-600">Monitor system activities and user actions</p>
-            </div>
+    <PageWrapper
+      title="Audit Logs"
+      description="Monitor system activities and user actions"
+      breadcrumbs={[{ label: 'Admin' }, { label: 'Audit Logs' }]}
+      actions={
+        <>
+          <Button variant="outline" onClick={loadAuditLogs}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button variant="outline" onClick={exportLogs}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+        </>
+      }
+    >
             <div className="flex gap-3">
               <Button variant="outline" onClick={loadAuditLogs}>
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -207,11 +206,8 @@ export default function AdminAuditLogsPage() {
                 Export
               </Button>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="p-6">
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="pt-6">
@@ -220,7 +216,7 @@ export default function AdminAuditLogsPage() {
               <select
                 value={selectedAction}
                 onChange={(e) => setSelectedAction(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Actions</option>
                 <option value="LOGIN">Login</option>
@@ -235,7 +231,7 @@ export default function AdminAuditLogsPage() {
               <select
                 value={selectedResource}
                 onChange={(e) => setSelectedResource(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Resources</option>
                 <option value="User">User</option>
@@ -266,13 +262,13 @@ export default function AdminAuditLogsPage() {
 
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <input
                 type="text"
                 placeholder="Search by user email, details, or IP address..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </CardContent>
@@ -304,7 +300,7 @@ export default function AdminAuditLogsPage() {
                 </thead>
                 <tbody>
                   {logsData?.logs.map((log) => (
-                    <tr key={log.id} className="border-b hover:bg-gray-50">
+                    <tr key={log.id} className="border-b hover:bg-muted/40">
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-2">
                           {getActionIcon(log.action)}
@@ -324,26 +320,26 @@ export default function AdminAuditLogsPage() {
                       </td>
                       <td className="py-4 px-4">
                         <div>
-                          <div className="font-medium text-gray-900">{log.user.email}</div>
+                          <div className="font-medium text-foreground">{log.user.email}</div>
                           <Badge className={`text-xs ${getRoleColor(log.user.role)}`}>
                             {log.user.role.replace('_', ' ')}
                           </Badge>
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="text-sm text-gray-600 max-w-xs truncate">
+                        <div className="text-sm text-muted-foreground max-w-xs truncate">
                           {log.details || 'No details available'}
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="text-sm text-gray-600 font-mono">
+                        <div className="text-sm text-muted-foreground font-mono">
                           {log.ipAddress || 'N/A'}
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-muted-foreground">
                           <div>{new Date(log.createdAt).toLocaleDateString()}</div>
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs text-muted-foreground">
                             {new Date(log.createdAt).toLocaleTimeString()}
                           </div>
                         </div>
@@ -357,7 +353,7 @@ export default function AdminAuditLogsPage() {
             {/* Pagination */}
             {logsData && logsData.totalPages > 1 && (
               <div className="flex items-center justify-between mt-6">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   Showing {((logsData.page - 1) * 20) + 1} to {Math.min(logsData.page * 20, logsData.total)} of {logsData.total} logs
                 </div>
                 <div className="flex gap-2">
@@ -383,6 +379,6 @@ export default function AdminAuditLogsPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

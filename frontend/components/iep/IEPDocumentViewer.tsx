@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Printer, Download } from 'lucide-react';
 import { format } from 'date-fns';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 
 interface IEPDocumentViewerProps {
   document: any;
@@ -133,20 +133,20 @@ export function IEPDocumentViewer({ document, onPrint, onExport }: IEPDocumentVi
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300">
+                <table className="w-full border-collapse border border-border">
                   <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border border-gray-300 p-3 text-left font-semibold">Subject</th>
-                      <th className="border border-gray-300 p-3 text-left font-semibold">Test Goal</th>
-                      <th className="border border-gray-300 p-3 text-left font-semibold">Analysis</th>
-                      <th className="border border-gray-300 p-3 text-left font-semibold">Assessment</th>
-                      <th className="border border-gray-300 p-3 text-center font-semibold rotate-180" style={{ writingMode: 'vertical-rl' }}>
+                    <tr className="bg-muted">
+                      <th className="border border-border p-3 text-left font-semibold">Subject</th>
+                      <th className="border border-border p-3 text-left font-semibold">Test Goal</th>
+                      <th className="border border-border p-3 text-left font-semibold">Analysis</th>
+                      <th className="border border-border p-3 text-left font-semibold">Assessment</th>
+                      <th className="border border-border p-3 text-center font-semibold rotate-180" style={{ writingMode: 'vertical-rl' }}>
                         Attention
                       </th>
-                      <th className="border border-gray-300 p-3 text-center font-semibold rotate-180" style={{ writingMode: 'vertical-rl' }}>
+                      <th className="border border-border p-3 text-center font-semibold rotate-180" style={{ writingMode: 'vertical-rl' }}>
                         Behavioral Sitting Tolerance
                       </th>
-                      <th className="border border-gray-300 p-3 text-center font-semibold rotate-180" style={{ writingMode: 'vertical-rl' }}>
+                      <th className="border border-border p-3 text-center font-semibold rotate-180" style={{ writingMode: 'vertical-rl' }}>
                         Task Completion
                       </th>
                     </tr>
@@ -154,14 +154,14 @@ export function IEPDocumentViewer({ document, onPrint, onExport }: IEPDocumentVi
                   <tbody>
                     {document.weeklyEvaluations.flatMap((evaluation: any) =>
                       evaluation.activities?.map((activity: any, idx: number) => (
-                        <tr key={`${evaluation.id}-${idx}`} className="hover:bg-gray-50">
-                          <td className="border border-gray-300 p-3 font-medium">{activity.subject}</td>
-                          <td className="border border-gray-300 p-3">{activity.testGoalActivity}</td>
-                          <td className="border border-gray-300 p-3">{activity.analysis}</td>
-                          <td className="border border-gray-300 p-3">{activity.assessment}</td>
-                          <td className="border border-gray-300 p-3 text-center">{activity.attentionLevel || 'N/A'}</td>
-                          <td className="border border-gray-300 p-3 text-center">{activity.sittingTolerance || 'N/A'}</td>
-                          <td className="border border-gray-300 p-3 text-center">{activity.taskCompletion || 'N/A'}</td>
+                        <tr key={`${evaluation.id}-${idx}`} className="hover:bg-muted/40">
+                          <td className="border border-border p-3 font-medium">{activity.subject}</td>
+                          <td className="border border-border p-3">{activity.testGoalActivity}</td>
+                          <td className="border border-border p-3">{activity.analysis}</td>
+                          <td className="border border-border p-3">{activity.assessment}</td>
+                          <td className="border border-border p-3 text-center">{activity.attentionLevel || 'N/A'}</td>
+                          <td className="border border-border p-3 text-center">{activity.sittingTolerance || 'N/A'}</td>
+                          <td className="border border-border p-3 text-center">{activity.taskCompletion || 'N/A'}</td>
                         </tr>
                       ))
                     )}
@@ -189,7 +189,7 @@ export function IEPDocumentViewer({ document, onPrint, onExport }: IEPDocumentVi
                         <h4 className="font-semibold text-lg mb-2">Receptive</h4>
                         <div className="pl-4 space-y-2">
                           {section.presentLevelReceptive?.split('\n').map((line: string, idx: number) => (
-                            <p key={idx} className="text-gray-700">{line}</p>
+                            <p key={idx} className="text-foreground">{line}</p>
                           ))}
                         </div>
                       </div>
@@ -197,7 +197,7 @@ export function IEPDocumentViewer({ document, onPrint, onExport }: IEPDocumentVi
                         <h4 className="font-semibold text-lg mb-2">Expressive</h4>
                         <div className="pl-4 space-y-2">
                           {section.presentLevelExpressive?.split('\n').map((line: string, idx: number) => (
-                            <p key={idx} className="text-gray-700">{line}</p>
+                            <p key={idx} className="text-foreground">{line}</p>
                           ))}
                         </div>
                       </div>
@@ -213,9 +213,9 @@ export function IEPDocumentViewer({ document, onPrint, onExport }: IEPDocumentVi
                           <div key={goal.id} className="flex gap-2">
                             <span className="font-semibold">{idx + 1}.</span>
                             <div className="flex-1">
-                              <p className="text-gray-700">{goal.description}</p>
+                              <p className="text-foreground">{goal.description}</p>
                               {goal.durationMonths && (
-                                <p className="text-sm text-gray-500 mt-1">
+                                <p className="text-sm text-muted-foreground mt-1">
                                   Duration: {goal.durationMonths} months
                                 </p>
                               )}
@@ -231,15 +231,15 @@ export function IEPDocumentViewer({ document, onPrint, onExport }: IEPDocumentVi
                     <div>
                       <h3 className="text-xl font-bold mb-4">Short Term Goal</h3>
                       <div className="pl-4">
-                        <p className="mb-3 text-gray-700">Will be able to -</p>
+                        <p className="mb-3 text-foreground">Will be able to -</p>
                         <div className="space-y-3">
                           {section.shortTermGoals.map((goal: any, idx: number) => (
                             <div key={goal.id} className="flex gap-2">
                               <span className="font-semibold">{idx + 1}</span>
                               <div className="flex-1">
-                                <p className="text-gray-700">{goal.description}</p>
+                                <p className="text-foreground">{goal.description}</p>
                                 {goal.teacherAssistance && (
-                                  <p className="text-sm text-gray-500 mt-1">
+                                  <p className="text-sm text-muted-foreground mt-1">
                                     Teacher Assistance: {goal.teacherAssistance.replace('_', ' ')}
                                   </p>
                                 )}
@@ -270,36 +270,36 @@ export function IEPDocumentViewer({ document, onPrint, onExport }: IEPDocumentVi
                       Week of {formatDate(evaluation.weekStartDate)} (Week {evaluation.weekNumber})
                     </h3>
                     <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 text-sm">
+                      <table className="w-full border-collapse border border-border text-sm">
                         <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 p-2 text-left font-semibold">Day</th>
-                            <th className="border border-gray-300 p-2 text-left font-semibold">Subject</th>
-                            <th className="border border-gray-300 p-2 text-left font-semibold">Test Goal/Activity</th>
-                            <th className="border border-gray-300 p-2 text-left font-semibold">Analysis</th>
-                            <th className="border border-gray-300 p-2 text-left font-semibold">Assessment</th>
-                            <th className="border border-gray-300 p-2 text-left font-semibold">Attention</th>
-                            <th className="border border-gray-300 p-2 text-left font-semibold">Sitting Tolerance</th>
-                            <th className="border border-gray-300 p-2 text-left font-semibold">Task Completion</th>
+                          <tr className="bg-muted">
+                            <th className="border border-border p-2 text-left font-semibold">Day</th>
+                            <th className="border border-border p-2 text-left font-semibold">Subject</th>
+                            <th className="border border-border p-2 text-left font-semibold">Test Goal/Activity</th>
+                            <th className="border border-border p-2 text-left font-semibold">Analysis</th>
+                            <th className="border border-border p-2 text-left font-semibold">Assessment</th>
+                            <th className="border border-border p-2 text-left font-semibold">Attention</th>
+                            <th className="border border-border p-2 text-left font-semibold">Sitting Tolerance</th>
+                            <th className="border border-border p-2 text-left font-semibold">Task Completion</th>
                           </tr>
                         </thead>
                         <tbody>
                           {evaluation.activities && evaluation.activities.length > 0 ? (
                             evaluation.activities.map((activity: any, idx: number) => (
-                              <tr key={idx} className="hover:bg-gray-50">
-                                <td className="border border-gray-300 p-2 font-medium capitalize">{activity.day?.toLowerCase() || 'N/A'}</td>
-                                <td className="border border-gray-300 p-2">{activity.subject?.replace('_', ' ') || 'N/A'}</td>
-                                <td className="border border-gray-300 p-2">{activity.testGoalActivity || activity.activity || 'N/A'}</td>
-                                <td className="border border-gray-300 p-2">{activity.analysis || 'N/A'}</td>
-                                <td className="border border-gray-300 p-2">{activity.assessment || 'N/A'}</td>
-                                <td className="border border-gray-300 p-2">{activity.attentionLevel || 'N/A'}</td>
-                                <td className="border border-gray-300 p-2">{activity.sittingTolerance || 'N/A'}</td>
-                                <td className="border border-gray-300 p-2">{activity.taskCompletion || 'N/A'}</td>
+                              <tr key={idx} className="hover:bg-muted/40">
+                                <td className="border border-border p-2 font-medium capitalize">{activity.day?.toLowerCase() || 'N/A'}</td>
+                                <td className="border border-border p-2">{activity.subject?.replace('_', ' ') || 'N/A'}</td>
+                                <td className="border border-border p-2">{activity.testGoalActivity || activity.activity || 'N/A'}</td>
+                                <td className="border border-border p-2">{activity.analysis || 'N/A'}</td>
+                                <td className="border border-border p-2">{activity.assessment || 'N/A'}</td>
+                                <td className="border border-border p-2">{activity.attentionLevel || 'N/A'}</td>
+                                <td className="border border-border p-2">{activity.sittingTolerance || 'N/A'}</td>
+                                <td className="border border-border p-2">{activity.taskCompletion || 'N/A'}</td>
                               </tr>
                             ))
                           ) : (
                             <tr>
-                              <td colSpan={8} className="border border-gray-300 p-4 text-center text-gray-500">
+                              <td colSpan={8} className="border border-border p-4 text-center text-muted-foreground">
                                 No activities recorded for this week
                               </td>
                             </tr>

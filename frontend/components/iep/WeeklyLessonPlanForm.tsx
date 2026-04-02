@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import {
   BehavioralAttentionLevel,
   BehavioralSittingTolerance,

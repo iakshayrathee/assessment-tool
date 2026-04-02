@@ -32,14 +32,14 @@ export const ConceptPerformanceMapping: React.FC<ConceptPerformanceMappingProps>
     showErrorPattern = true,
 }) => {
     const performanceLevels = [
-        { value: 'Independent', label: 'Independent', color: 'text-green-600' },
-        { value: 'Instructional', label: 'Instructional', color: 'text-yellow-600' },
-        { value: 'Frustration', label: 'Frustration', color: 'text-red-600' },
+        { value: 'Independent', label: 'Independent', color: 'text-success' },
+        { value: 'Instructional', label: 'Instructional', color: 'text-warning' },
+        { value: 'Frustration', label: 'Frustration', color: 'text-destructive' },
     ];
 
     const getPerformanceColor = (performance: string) => {
         const level = performanceLevels.find((l) => l.value === performance);
-        return level?.color || 'text-gray-600';
+        return level?.color || 'text-muted-foreground';
     };
 
     return (
@@ -51,7 +51,7 @@ export const ConceptPerformanceMapping: React.FC<ConceptPerformanceMappingProps>
                 {/* Performance Status Dropdown */}
                 <div>
                     <Label htmlFor={`${concept}-performance`}>
-                        Performance Status {!disabled && <span className="text-red-500">*</span>}
+                        Performance Status {!disabled && <span className="text-destructive">*</span>}
                     </Label>
                     <Select
                         value={value.performance}
@@ -77,7 +77,7 @@ export const ConceptPerformanceMapping: React.FC<ConceptPerformanceMappingProps>
                 {/* Summary Text Area */}
                 <div>
                     <Label htmlFor={`${concept}-summary`}>
-                        Performance Summary {!disabled && <span className="text-red-500">*</span>}
+                        Performance Summary {!disabled && <span className="text-destructive">*</span>}
                     </Label>
                     <Textarea
                         id={`${concept}-summary`}
@@ -111,10 +111,10 @@ export const ConceptPerformanceMapping: React.FC<ConceptPerformanceMappingProps>
                     <div className="flex items-center gap-2 text-sm">
                         <div
                             className={`h-2 w-2 rounded-full ${value.performance === 'Independent'
-                                    ? 'bg-green-500'
+                                    ? 'bg-success'
                                     : value.performance === 'Instructional'
-                                        ? 'bg-yellow-500'
-                                        : 'bg-red-500'
+                                        ? 'bg-warning'
+                                        : 'bg-destructive'
                                 }`}
                         />
                         <span className={getPerformanceColor(value.performance)}>
@@ -147,7 +147,7 @@ export const MultiConceptMapping: React.FC<MultiConceptMappingProps> = ({
 }) => {
     return (
         <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">{title}</h3>
+            <h3 className="text-lg font-semibold text-foreground border-b pb-2">{title}</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {concepts.map((concept) => (
                     <ConceptPerformanceMapping

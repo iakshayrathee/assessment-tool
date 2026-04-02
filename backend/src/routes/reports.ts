@@ -60,6 +60,58 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/reports/educator - Get report coverage summary for all students
+// assigned to the authenticated special educator.
+router.get('/educator', async (req: any, res) => {
+  try {
+    const educatorId = req.user?.profileId;
+    if (!educatorId) {
+      return res.status(401).json({ success: false, error: 'Educator profile not found' });
+    }
+
+    const assignments = await prisma.studentAssignment.findMany({
+      where: { specialEducatorId: educatorId, isActive: true },
+      include: {
+        student: {
+          select: {
+            id: true,
+            fullName: true,
+            grade: true,
+            reports: {
+              where: { type: { in: ['ASSESSMENT', 'LESSON_PLAN'] } },
+              select: { id: true, type: true, status: true, createdAt: true },
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+        },
+      },
+    });
+
+    const roster = assignments.map(({ student }) => {
+      const reports = student.reports;
+      const latestReport = reports[0];
+      return {
+        studentId: student.id,
+        studentName: student.fullName,
+        grade: student.grade,
+        reportCount: reports.length,
+        latestReportAt: latestReport?.createdAt || null,
+        latestReportType: latestReport?.type || null,
+        hasAssessmentReport: reports.some((r) => r.type === 'ASSESSMENT'),
+        hasLessonPlanReport: reports.some((r) => r.type === 'LESSON_PLAN'),
+        pendingCount: reports.filter((r) => r.status === 'PENDING' || r.status === 'IN_PROGRESS').length,
+        completedCount: reports.filter((r) => r.status === 'COMPLETED').length,
+        reviewedCount: reports.filter((r) => r.status === 'REVIEWED').length,
+      };
+    });
+
+    res.json({ success: true, data: roster });
+  } catch (error) {
+    console.error('Get educator report roster error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get educator report roster' });
+  }
+});
+
 // GET /api/reports/:id - Get report by ID
 router.get('/:id', async (req, res) => {
   try {
@@ -115,79 +167,9 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    // Add mock data for different report types
-    let reportData: any = { ...report };
-
-    if (report.type === 'ASSESSMENT') {
-      reportData.assessmentData = {
-        domains: [
-          { name: 'Reading', score: 75, maxScore: 100, percentage: 75 },
-          { name: 'Writing', score: 68, maxScore: 100, percentage: 68 },
-          { name: 'Math', score: 82, maxScore: 100, percentage: 82 },
-          { name: 'Visual Perception', score: 70, maxScore: 100, percentage: 70 },
-          { name: 'Motor Skills', score: 85, maxScore: 100, percentage: 85 },
-          { name: 'Attention', score: 65, maxScore: 100, percentage: 65 }
-        ],
-        overallScore: 74,
-        recommendations: [
-          'Focus on reading comprehension exercises',
-          'Implement visual learning aids',
-          'Provide structured attention training'
-        ]
-      };
-    } else if (report.type === 'IEP') {
-      reportData.iepData = {
-        goals: [
-          {
-            id: '1',
-            goal: 'Improve reading fluency by 20 words per minute',
-            progressPercent: 65,
-            status: 'IN_PROGRESS',
-            targetDate: '2024-06-30'
-          },
-          {
-            id: '2',
-            goal: 'Complete math problems with 80% accuracy',
-            progressPercent: 45,
-            status: 'IN_PROGRESS',
-            targetDate: '2024-07-15'
-          }
-        ],
-        accommodations: [
-          'Extended time for tests',
-          'Preferential seating',
-          'Use of assistive technology'
-        ],
-        modifications: [
-          'Reduced homework assignments',
-          'Alternative assessment methods',
-          'Simplified instructions'
-        ]
-      };
-    } else if (report.type === 'PROGRESS') {
-      reportData.progressData = {
-        period: 'Q2 2024',
-        achievements: [
-          'Improved reading comprehension by 15%',
-          'Successfully completed all math assignments',
-          'Demonstrated better attention span in class'
-        ],
-        challenges: [
-          'Still struggles with complex word problems',
-          'Needs more support with writing tasks'
-        ],
-        nextSteps: [
-          'Continue reading intervention program',
-          'Implement additional math support',
-          'Schedule parent conference'
-        ],
-        parentFeedback: 'We have noticed significant improvement in homework completion and overall confidence.'
-      };
-    }
-
     res.json({
       success: true,
-      data: reportData
+      data: report
     });
   } catch (error) {
     console.error('Get report error:', error);
@@ -230,7 +212,9 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// GET /api/reports/:id/download - Download report as PDF
+// GET /api/reports/:id/download - DEPRECATED: returns a placeholder response.
+// PDF generation is handled client-side via html2pdf.js in the frontend.
+// Do not add consumers of this endpoint.
 router.get('/:id/download', async (req, res) => {
   try {
     const { id } = req.params;

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Download, FileText, Loader2 } from 'lucide-react';
 import { Button } from './button';
@@ -21,8 +21,8 @@ export function FileViewer({ files, isLoading = false }: FileViewerProps) {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                <span className="ml-2 text-gray-600">Loading files...</span>
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2 text-muted-foreground">Loading files...</span>
             </div>
         );
     }
@@ -30,27 +30,27 @@ export function FileViewer({ files, isLoading = false }: FileViewerProps) {
     if (files.length === 0) {
         return (
             <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">No files attached</p>
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No files attached</p>
             </div>
         );
     }
 
     return (
         <div className="space-y-2">
-            <h4 className="text-sm font-medium text-gray-700">Attached Files</h4>
+            <h4 className="text-sm font-medium text-foreground">Attached Files</h4>
             {files.map((file, index) => (
                 <div
                     key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex items-center justify-between p-3 bg-muted/40 border border-border rounded-lg hover:bg-muted transition-colors"
                 >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                        <FileText className="h-5 w-5 text-primary flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
+                            <p className="text-sm font-medium text-foreground truncate">
                                 {file.name}
                             </p>
-                            <p className="text-xs text-gray-500">Click download to view</p>
+                            <p className="text-xs text-muted-foreground">Click download to view</p>
                         </div>
                     </div>
                     <Button

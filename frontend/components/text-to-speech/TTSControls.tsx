@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Play, Pause, Square, Volume2, Gauge } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,14 +67,14 @@ export function TTSControls({
 
     if (!isSpeechSupported) {
         return (
-            <Card className="border-red-200 bg-red-50">
+            <Card className="border-destructive/20 bg-destructive/10">
                 <CardContent className="pt-6">
                     <div className="text-center">
                         <Volume2 className="h-12 w-12 mx-auto mb-4 text-red-400" />
                         <h3 className="text-lg font-semibold text-red-900 mb-2">
                             Text-to-Speech Not Supported
                         </h3>
-                        <p className="text-sm text-red-700">
+                        <p className="text-sm text-destructive">
                             Your browser doesn't support the Web Speech API. Please use a modern browser like
                             Chrome, Edge, Safari, or Firefox.
                         </p>
@@ -128,7 +128,7 @@ export function TTSControls({
 
                 {/* Progress Indicator */}
                 <div className="space-y-2">
-                    <div className="flex justify-between text-sm text-gray-600">
+                    <div className="flex justify-between text-sm text-muted-foreground">
                         <span>Progress</span>
                         <span>
                             {currentSentenceIndex} / {totalSentences} sentences
@@ -139,7 +139,7 @@ export function TTSControls({
 
                 {/* Voice Selection */}
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                    <label className="text-sm font-medium text-foreground flex items-center space-x-2">
                         <Volume2 className="h-4 w-4" />
                         <span>Voice</span>
                     </label>
@@ -166,7 +166,7 @@ export function TTSControls({
                         </SelectContent>
                     </Select>
                     {indianEnglishVoices.length > 0 && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                             {indianEnglishVoices.some((v) => v.lang.startsWith('en-IN'))
                                 ? '✓ Indian English voices available'
                                 : 'Using English voices (Indian English not available)'}
@@ -176,12 +176,12 @@ export function TTSControls({
 
                 {/* Speed Control */}
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 flex items-center justify-between">
+                    <label className="text-sm font-medium text-foreground flex items-center justify-between">
                         <span className="flex items-center space-x-2">
                             <Gauge className="h-4 w-4" />
                             <span>Speed</span>
                         </span>
-                        <span className="text-gray-600">{settings.rate.toFixed(1)}x</span>
+                        <span className="text-muted-foreground">{settings.rate.toFixed(1)}x</span>
                     </label>
                     <Slider
                         value={[settings.rate]}
@@ -192,7 +192,7 @@ export function TTSControls({
                         disabled={disabled}
                         className="w-full"
                     />
-                    <div className="flex justify-between text-xs text-gray-500">
+                    <div className="flex justify-between text-xs text-muted-foreground">
                         <span>0.5x (Slow)</span>
                         <span>1.0x (Normal)</span>
                         <span>2.0x (Fast)</span>
@@ -202,13 +202,13 @@ export function TTSControls({
                 {/* Status Indicator */}
                 <div className="pt-4 border-t">
                     <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Status:</span>
+                        <span className="text-muted-foreground">Status:</span>
                         <span
                             className={`font-medium ${isPlaying
-                                    ? 'text-green-600'
+                                    ? 'text-success'
                                     : isPaused
-                                        ? 'text-yellow-600'
-                                        : 'text-gray-600'
+                                        ? 'text-warning'
+                                        : 'text-muted-foreground'
                                 }`}
                         >
                             {isPlaying ? '▶ Playing' : isPaused ? '⏸ Paused' : '⏹ Stopped'}

@@ -25,7 +25,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useEducatorStudents } from '@/hooks/useEducator';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { IEPDocumentForm } from '@/components/iep/IEPDocumentForm';
 import { IEPSubjectSectionForm } from '@/components/iep/IEPSubjectSectionForm';
 import { WeeklyLessonPlanForm } from '@/components/iep/WeeklyLessonPlanForm';
@@ -33,6 +33,7 @@ import { IEPDocumentViewer } from '@/components/iep/IEPDocumentViewer';
 import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
 import { useAIIEPSuggestions } from '@/hooks/useAI';
 import { AIIEPSuggestionsPanel } from '@/components/ai/AIInsightPanels';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface IEPDocument {
   id: string;
@@ -150,10 +151,10 @@ export default function IEPManagementPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      ACTIVE: { color: 'bg-green-100 text-green-800', label: 'Active' },
-      COMPLETED: { color: 'bg-blue-100 text-blue-800', label: 'Completed' },
-      DRAFT: { color: 'bg-gray-100 text-gray-800', label: 'Draft' },
-      ARCHIVED: { color: 'bg-purple-100 text-purple-800', label: 'Archived' }
+      ACTIVE: { color: 'bg-success/10 text-foreground', label: 'Active' },
+      COMPLETED: { color: 'bg-primary/10 text-primary', label: 'Completed' },
+      DRAFT: { color: 'bg-muted text-foreground', label: 'Draft' },
+      ARCHIVED: { color: 'bg-info/10 text-foreground', label: 'Archived' }
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.DRAFT;
@@ -178,40 +179,37 @@ export default function IEPManagementPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading IEP documents...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading IEP documents...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">IEP Management</h1>
-            <p className="text-gray-600">Create and manage Individualized Education Programs</p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowStudentModalForAI(true)}
-              className="flex items-center gap-2"
-            >
-              <Users className="h-4 w-4" />
-              {selectedStudentForAI ? `AI: ${selectedStudentForAI.fullName}` : 'AI Suggestions'}
-            </Button>
-            <Button onClick={() => setShowCreateDocumentDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New IEP
-            </Button>
-          </div>
+    <PageWrapper
+      title="IEP Management"
+      description="Create and manage Individualized Education Programs"
+      breadcrumbs={[{ label: 'Educator' }, { label: 'IEP Management' }]}
+      actions={
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowStudentModalForAI(true)}
+            className="flex items-center gap-2"
+          >
+            <Users className="h-4 w-4" />
+            {selectedStudentForAI ? `AI: ${selectedStudentForAI.fullName}` : 'AI Suggestions'}
+          </Button>
+          <Button onClick={() => setShowCreateDocumentDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            New IEP
+          </Button>
         </div>
+      }
+    >
 
         {/* AI IEP Suggestions */}
         {selectedStudentForAI && (
@@ -277,9 +275,9 @@ export default function IEPManagementPage() {
           <CardContent>
             {filteredDocuments?.length === 0 ? (
               <div className="text-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-2">No IEP documents found</p>
-                <p className="text-sm text-gray-500">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground mb-2">No IEP documents found</p>
+                <p className="text-sm text-muted-foreground">
                   Create your first IEP document to get started
                 </p>
               </div>
@@ -294,7 +292,7 @@ export default function IEPManagementPage() {
                           {getStatusBadge(document.status)}
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground mb-3">
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
                             <span>{document.studentName}</span>
@@ -313,7 +311,7 @@ export default function IEPManagementPage() {
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <span>{document.subjectSections?.length || 0} subject sections</span>
                           <span>•</span>
                           <span>{document.weeklyEvaluations?.length || 0} weekly evaluations</span>
@@ -437,7 +435,6 @@ export default function IEPManagementPage() {
           onSelect={(_studentId: string, student: any) => setSelectedStudentForAI(student)}
           selectedStudentId={selectedStudentForAI?.id}
         />
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

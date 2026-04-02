@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -247,7 +247,7 @@ export default function AddStudentModal({ isOpen, onClose, onStudentAdded }: Add
                 className={errors.fullName ? 'border-red-500' : ''}
               />
               {errors.fullName && (
-                <p className="text-sm text-red-600">{errors.fullName}</p>
+                <p className="text-sm text-destructive">{errors.fullName}</p>
               )}
             </div>
 
@@ -264,7 +264,7 @@ export default function AddStudentModal({ isOpen, onClose, onStudentAdded }: Add
                   toYear={new Date().getFullYear()}
                 />
                 {formData.dateOfBirth && (
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Age: {calculateAge(formData.dateOfBirth)} years
                   </p>
                 )}
@@ -285,7 +285,7 @@ export default function AddStudentModal({ isOpen, onClose, onStudentAdded }: Add
                   </SelectContent>
                 </Select>
                 {errors.gender && (
-                  <p className="text-sm text-red-600">{errors.gender}</p>
+                  <p className="text-sm text-destructive">{errors.gender}</p>
                 )}
               </div>
             </div>
@@ -303,7 +303,7 @@ export default function AddStudentModal({ isOpen, onClose, onStudentAdded }: Add
                   error={errors.grade}
                 />
                 {errors.grade && (
-                  <p className="text-sm text-red-600">{errors.grade}</p>
+                  <p className="text-sm text-destructive">{errors.grade}</p>
                 )}
               </div>
 
@@ -325,7 +325,7 @@ export default function AddStudentModal({ isOpen, onClose, onStudentAdded }: Add
                   </SelectContent>
                 </Select>
                 {errors.schoolId && (
-                  <p className="text-sm text-red-600">{errors.schoolId}</p>
+                  <p className="text-sm text-destructive">{errors.schoolId}</p>
                 )}
               </div>
             </div>

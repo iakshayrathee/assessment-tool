@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ReactDOMServer from 'react-dom/server';
-import toast from 'react-hot-toast';
+import toast from '@/lib/toast';
 import { useIntakeForm } from '@/hooks/useAssessments';
 import { useEducatorStudents } from '@/hooks/useEducator';
 import { useStudent } from '@/hooks/useStudents';
@@ -44,7 +44,7 @@ import {
   Info
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -1064,7 +1064,7 @@ function IntakeFormPageContent() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+                <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -1075,7 +1075,7 @@ function IntakeFormPageContent() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="age">Age <span className="text-red-500">*</span></Label>
+                <Label htmlFor="age">Age <span className="text-destructive">*</span></Label>
                 <Input
                   id="age"
                   type="number"
@@ -1089,7 +1089,7 @@ function IntakeFormPageContent() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="gender">Gender <span className="text-red-500">*</span></Label>
+                <Label htmlFor="gender">Gender <span className="text-destructive">*</span></Label>
                 <Select
                   value={formData.gender}
                   onValueChange={(value) => handleInputChange('gender', value)}
@@ -1106,7 +1106,7 @@ function IntakeFormPageContent() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="schoolCenter">School/Center <span className="text-red-500">*</span></Label>
+                <Label htmlFor="schoolCenter">School/Center <span className="text-destructive">*</span></Label>
                 <Input
                   id="schoolCenter"
                   value={formData.schoolCenter}
@@ -1127,7 +1127,7 @@ function IntakeFormPageContent() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="class">Class <span className="text-red-500">*</span></Label>
+                <Label htmlFor="class">Class <span className="text-destructive">*</span></Label>
                 <Input
                   id="class"
                   value={formData.class}
@@ -1148,7 +1148,7 @@ function IntakeFormPageContent() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="syllabus">Syllabus <span className="text-red-500">*</span></Label>
+                <Label htmlFor="syllabus">Syllabus <span className="text-destructive">*</span></Label>
                 <Select
                   value={formData.syllabus}
                   onValueChange={(value) => handleInputChange('syllabus', value)}
@@ -1214,7 +1214,7 @@ function IntakeFormPageContent() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="familyType">Family Type <span className="text-red-500">*</span></Label>
+                <Label htmlFor="familyType">Family Type <span className="text-destructive">*</span></Label>
                 <Select
                   value={formData.familyType}
                   onValueChange={(value) => handleInputChange('familyType', value)}
@@ -1646,7 +1646,7 @@ function IntakeFormPageContent() {
           <div className="space-y-4">
             <div className="text-center pb-2">
               <h3 className="text-lg font-semibold mb-1">Review Your Information</h3>
-              <p className="text-gray-600 text-xs">Please review all information before submitting. Click on any section to view details.</p>
+              <p className="text-muted-foreground text-xs">Please review all information before submitting. Click on any section to view details.</p>
             </div>
 
             {/* Compact Section Cards */}
@@ -1665,7 +1665,7 @@ function IntakeFormPageContent() {
                   <p className="truncate"><span className="font-medium">Gender:</span> {formData.gender || '-'}</p>
                   <p className="truncate"><span className="font-medium">Class:</span> {formData.class || '-'}</p>
                   <div className="mt-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('demographics') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('demographics') ? 'bg-success/10 text-foreground' : 'bg-muted text-muted-foreground'
                       }`}>
                       {isTabCompleted('demographics') ? '✓ Complete' : 'Incomplete'}
                     </span>
@@ -1686,7 +1686,7 @@ function IntakeFormPageContent() {
                   <p className="truncate"><span className="font-medium">Income:</span> {formData.familyIncome || '-'}</p>
                   <p className="truncate"><span className="font-medium">Digital:</span> {formData.digitalResourcesAtHome ? 'Yes' : 'No'}</p>
                   <div className="mt-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('family') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('family') ? 'bg-success/10 text-foreground' : 'bg-muted text-muted-foreground'
                       }`}>
                       {isTabCompleted('family') ? '✓ Complete' : 'Incomplete'}
                     </span>
@@ -1707,7 +1707,7 @@ function IntakeFormPageContent() {
                   <p className="truncate"><span className="font-medium">Delivery:</span> {formData.deliveryType || '-'}</p>
                   <p className="truncate"><span className="font-medium">Term:</span> {formData.fullTermOrPremature || '-'}</p>
                   <div className="mt-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('prenatal') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('prenatal') ? 'bg-success/10 text-foreground' : 'bg-muted text-muted-foreground'
                       }`}>
                       {isTabCompleted('prenatal') ? '✓ Complete' : 'Incomplete'}
                     </span>
@@ -1728,7 +1728,7 @@ function IntakeFormPageContent() {
                   <p className="truncate"><span className="font-medium">Immunization:</span> {formData.immunizationDone ? 'Done' : 'No'}</p>
                   <p className="truncate"><span className="font-medium">Walking:</span> {formData.ageOfWalking ? `${formData.ageOfWalking}m` : '-'}</p>
                   <div className="mt-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('postnatal') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('postnatal') ? 'bg-success/10 text-foreground' : 'bg-muted text-muted-foreground'
                       }`}>
                       {isTabCompleted('postnatal') ? '✓ Complete' : 'Incomplete'}
                     </span>
@@ -1749,7 +1749,7 @@ function IntakeFormPageContent() {
                   <p className="truncate"><span className="font-medium">Medication:</span> {formData.onMedication ? 'Yes' : 'No'}</p>
                   <p className="truncate"><span className="font-medium">Vision:</span> {formData.wearsGlasses ? 'Glasses' : 'Normal'}</p>
                   <div className="mt-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('medical') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('medical') ? 'bg-success/10 text-foreground' : 'bg-muted text-muted-foreground'
                       }`}>
                       {isTabCompleted('medical') ? '✓ Complete' : 'Incomplete'}
                     </span>
@@ -1770,7 +1770,7 @@ function IntakeFormPageContent() {
                   <p className="truncate"><span className="font-medium">Repeated:</span> {formData.repeatedGrades ? 'Yes' : 'No'}</p>
                   <p className="truncate"><span className="font-medium">Hand:</span> {formData.dominantWritingHand || '-'}</p>
                   <div className="mt-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('educational') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${isTabCompleted('educational') ? 'bg-success/10 text-foreground' : 'bg-muted text-muted-foreground'
                       }`}>
                       {isTabCompleted('educational') ? '✓ Complete' : 'Incomplete'}
                     </span>
@@ -1780,7 +1780,7 @@ function IntakeFormPageContent() {
             </div>
 
             {/* Summary Card */}
-            <Card className="border-2 border-blue-200 bg-blue-50/30">
+            <Card className="border-2 border-primary/20 bg-primary/10/30">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2 text-blue-900">
                   <CheckCircle className="h-5 w-5" />
@@ -1790,62 +1790,62 @@ function IntakeFormPageContent() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
                   <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('demographics') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('demographics') ? 'bg-success text-white' : 'bg-muted text-muted-foreground'
                       }`}>
                       <User className="h-4 w-4" />
                     </div>
                     <p className="font-medium">Demographics</p>
-                    <p className={isTabCompleted('demographics') ? 'text-green-600' : 'text-gray-500'}>
+                    <p className={isTabCompleted('demographics') ? 'text-success' : 'text-muted-foreground'}>
                       {isTabCompleted('demographics') ? 'Complete' : 'Incomplete'}
                     </p>
                   </div>
                   <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('family') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('family') ? 'bg-success text-white' : 'bg-muted text-muted-foreground'
                       }`}>
                       <Users className="h-4 w-4" />
                     </div>
                     <p className="font-medium">Family</p>
-                    <p className={isTabCompleted('family') ? 'text-green-600' : 'text-gray-500'}>
+                    <p className={isTabCompleted('family') ? 'text-success' : 'text-muted-foreground'}>
                       {isTabCompleted('family') ? 'Complete' : 'Incomplete'}
                     </p>
                   </div>
                   <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('prenatal') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('prenatal') ? 'bg-success text-white' : 'bg-muted text-muted-foreground'
                       }`}>
                       <Baby className="h-4 w-4" />
                     </div>
                     <p className="font-medium">Prenatal</p>
-                    <p className={isTabCompleted('prenatal') ? 'text-green-600' : 'text-gray-500'}>
+                    <p className={isTabCompleted('prenatal') ? 'text-success' : 'text-muted-foreground'}>
                       {isTabCompleted('prenatal') ? 'Complete' : 'Incomplete'}
                     </p>
                   </div>
                   <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('postnatal') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('postnatal') ? 'bg-success text-white' : 'bg-muted text-muted-foreground'
                       }`}>
                       <Heart className="h-4 w-4" />
                     </div>
                     <p className="font-medium">Postnatal</p>
-                    <p className={isTabCompleted('postnatal') ? 'text-green-600' : 'text-gray-500'}>
+                    <p className={isTabCompleted('postnatal') ? 'text-success' : 'text-muted-foreground'}>
                       {isTabCompleted('postnatal') ? 'Complete' : 'Incomplete'}
                     </p>
                   </div>
                   <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('medical') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('medical') ? 'bg-success text-white' : 'bg-muted text-muted-foreground'
                       }`}>
                       <Stethoscope className="h-4 w-4" />
                     </div>
                     <p className="font-medium">Medical</p>
-                    <p className={isTabCompleted('medical') ? 'text-green-600' : 'text-gray-500'}>
+                    <p className={isTabCompleted('medical') ? 'text-success' : 'text-muted-foreground'}>
                       {isTabCompleted('medical') ? 'Complete' : 'Incomplete'}
                     </p>
                   </div>
                   <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('educational') ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${isTabCompleted('educational') ? 'bg-success text-white' : 'bg-muted text-muted-foreground'
                       }`}>
                       <GraduationCap className="h-4 w-4" />
                     </div>
                     <p className="font-medium">Educational</p>
-                    <p className={isTabCompleted('educational') ? 'text-green-600' : 'text-gray-500'}>
+                    <p className={isTabCompleted('educational') ? 'text-success' : 'text-muted-foreground'}>
                       {isTabCompleted('educational') ? 'Complete' : 'Incomplete'}
                     </p>
                   </div>
@@ -1858,7 +1858,7 @@ function IntakeFormPageContent() {
       default:
         return (
           <div className="text-center py-8">
-            <p className="text-gray-500">This section is under development</p>
+            <p className="text-muted-foreground">This section is under development</p>
           </div>
         );
     }
@@ -1867,24 +1867,24 @@ function IntakeFormPageContent() {
   return (
     <>
       {/* Sticky Header */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <div className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             {/* Top Row - Navigation and Child Selector */}
             <div className="flex items-center justify-between lg:justify-start gap-4 flex-1 min-w-0">
               {/* Child Selector */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Child:</span>
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">Child:</span>
                 {selectedStudentId ? (
                   <div
-                    className="flex items-center gap-4 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200 min-w-[250px] cursor-pointer hover:bg-blue-100 transition-colors"
+                    className="flex items-center gap-4 bg-primary/10 px-4 py-3 rounded-lg border border-primary/20 min-w-[250px] cursor-pointer hover:bg-primary/10 transition-colors"
                     onClick={() => setShowStudentModal(true)}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-blue-900 text-sm truncate">
                         {selectedStudentData?.fullName || 'Loading...'}
                       </p>
-                      <p className="text-xs text-blue-700">
+                      <p className="text-xs text-primary">
                         Grade {selectedStudentData?.grade || 'N/A'}
                       </p>
                     </div>
@@ -1916,22 +1916,22 @@ function IntakeFormPageContent() {
               {/* Status Indicator */}
               <div className="flex items-center">
                 {intakeForm?.status === 'COMPLETED' ? (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-800 rounded-full">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-success/10 text-foreground rounded-full">
                     <CheckCircle className="h-4 w-4" />
                     <span className="text-sm font-medium">Completed</span>
                   </div>
                 ) : hasUnsavedChanges ? (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-800 rounded-full">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-warning/10 text-amber-800 rounded-full">
                     <AlertTriangle className="h-4 w-4" />
                     <span className="text-sm font-medium">Unsaved Changes</span>
                   </div>
                 ) : intakeForm ? (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full">
                     <Clock className="h-4 w-4" />
                     <span className="text-sm font-medium">In Progress</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-muted text-muted-foreground rounded-full">
                     <FileText className="h-4 w-4" />
                     <span className="text-sm font-medium">New Form</span>
                   </div>
@@ -2009,7 +2009,7 @@ function IntakeFormPageContent() {
                   className="rounded-md px-1.5 py-2 h-9"
                   title="View expected Excel format"
                 >
-                  <Info className="h-4 w-4 text-gray-500" />
+                  <Info className="h-4 w-4 text-muted-foreground" />
                 </Button>
               </div>
             </div>
@@ -2021,21 +2021,21 @@ function IntakeFormPageContent() {
 
         {/* Student Selection Message - Show when no student selected */}
         {!selectedStudentId && (
-          <Card className="border-2 border-blue-200 bg-blue-50/30">
+          <Card className="border-2 border-primary/20 bg-primary/10/30">
             <CardHeader className="text-center pb-4">
               <CardTitle className="flex items-center justify-center gap-3 text-xl text-blue-900">
-                <Users className="h-6 w-6 text-blue-600" />
+                <Users className="h-6 w-6 text-primary" />
                 Select a Student to Begin
               </CardTitle>
-              <p className="text-gray-600 mt-2 text-base">
+              <p className="text-muted-foreground mt-2 text-base">
                 Use the student selector in the top bar to choose a student and create their intake assessment form
               </p>
             </CardHeader>
             {wasRedirectedFromRegistration && (
               <CardContent>
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-lg mx-auto">
-                  <p className="text-blue-800 font-medium">Looking for your newly registered student?</p>
-                  <p className="text-blue-600 text-sm mt-1">
+                <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg max-w-lg mx-auto">
+                  <p className="text-primary font-medium">Looking for your newly registered student?</p>
+                  <p className="text-primary text-sm mt-1">
                     The student may take a moment to appear in the list. Please try refreshing using the button below.
                   </p>
                   <Button
@@ -2057,11 +2057,11 @@ function IntakeFormPageContent() {
         {selectedStudentId && !isLoadingStudentData && (
           <div className="space-y-6">
             {selectedStudentData && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-800 text-sm font-medium">
+              <div className="p-3 bg-success/10 border border-success/20 rounded-lg">
+                <p className="text-foreground text-sm font-medium">
                   ✓ Form prefilled with {selectedStudentData.fullName}'s information
                 </p>
-                <p className="text-green-600 text-xs mt-1">
+                <p className="text-success text-xs mt-1">
                   Basic details have been automatically filled. Please review and complete the remaining sections.
                 </p>
               </div>
@@ -2071,7 +2071,7 @@ function IntakeFormPageContent() {
             <div className="mb-8">
               <div className="relative">
                 {/* Progress Line */}
-                <div className="absolute top-6 left-6 right-6 h-0.5 bg-gray-200 z-0">
+                <div className="absolute top-6 left-6 right-6 h-0.5 bg-border z-0">
                   <div
                     className="h-full bg-blue-500 transition-all duration-500 ease-in-out"
                     style={{
@@ -2096,10 +2096,10 @@ function IntakeFormPageContent() {
                             relative w-12 h-12 rounded-full border-2 flex items-center justify-center
                             transition-all duration-300 ease-in-out transform hover:scale-110
                             ${isCompleted
-                              ? 'bg-green-500 border-green-500 text-white shadow-lg'
+                              ? 'bg-success border-green-500 text-white shadow-lg'
                               : isActive
                                 ? 'bg-blue-500 border-blue-500 text-white shadow-lg'
-                                : 'bg-white border-gray-300 text-gray-500 hover:border-blue-300 hover:text-blue-500'
+                                : 'bg-background border-border text-muted-foreground hover:border-primary/30 hover:text-primary'
                             }
                           `}
                         >
@@ -2111,7 +2111,7 @@ function IntakeFormPageContent() {
 
                           {/* Active indicator */}
                           {isActive && (
-                            <div className="absolute -inset-1 rounded-full border-2 border-blue-300 animate-pulse" />
+                            <div className="absolute -inset-1 rounded-full border-2 border-primary/30 animate-pulse" />
                           )}
                         </button>
 
@@ -2120,15 +2120,15 @@ function IntakeFormPageContent() {
                           <p className={`
                             text-xs font-medium transition-colors duration-200 h-4 flex items-center justify-center
                             ${isCompleted
-                              ? 'text-green-600'
+                              ? 'text-success'
                               : isActive
-                                ? 'text-blue-600'
-                                : 'text-gray-500 group-hover:text-blue-500'
+                                ? 'text-primary'
+                                : 'text-muted-foreground group-hover:text-primary'
                             }
                           `}>
                             {tab.title}
                           </p>
-                          <p className="text-xs text-gray-400 mt-1 max-w-20 leading-tight h-8 flex items-start justify-center">
+                          <p className="text-xs text-muted-foreground mt-1 max-w-20 leading-tight h-8 flex items-start justify-center">
                             {tab.description}
                           </p>
                         </div>
@@ -2146,7 +2146,7 @@ function IntakeFormPageContent() {
                   {React.createElement(TABS.find(tab => tab.id === activeTab)?.icon || User, { className: "h-5 w-5" })}
                   {TABS.find(tab => tab.id === activeTab)?.title}
                 </CardTitle>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {TABS.find(tab => tab.id === activeTab)?.description}
                 </p>
               </CardHeader>
@@ -2168,20 +2168,20 @@ function IntakeFormPageContent() {
       {/* Save Changes Modal */}
       {showSaveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-background rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center gap-3 mb-4">
               <AlertTriangle className="h-6 w-6 text-amber-500" />
-              <h3 className="text-lg font-semibold text-gray-900">Unsaved Changes</h3>
+              <h3 className="text-lg font-semibold text-foreground">Unsaved Changes</h3>
             </div>
 
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               You have unsaved changes in the current form. What would you like to do?
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 onClick={handleSaveAndContinue}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                className="flex-1 bg-primary hover:bg-primary text-white"
                 disabled={isCreating || isUpdating}
               >
                 <Save className="h-4 w-4 mr-2" />
@@ -2191,7 +2191,7 @@ function IntakeFormPageContent() {
               <Button
                 onClick={handleDiscardAndContinue}
                 variant="outline"
-                className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                className="flex-1 border-destructive/30 text-destructive hover:bg-destructive/10"
               >
                 <X className="h-4 w-4 mr-2" />
                 Discard Changes
@@ -2220,16 +2220,16 @@ function IntakeFormPageContent() {
       {/* Excel Format Preview Modal */}
       {showExcelPreview && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[85vh] flex flex-col">
+          <div className="bg-background rounded-xl shadow-2xl max-w-5xl w-full max-h-[85vh] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <FileText className="h-5 w-5 text-green-700" />
+                <div className="p-2 bg-success/10 rounded-lg">
+                  <FileText className="h-5 w-5 text-success" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Expected Excel Format</h3>
-                  <p className="text-sm text-gray-500">Your file should have these column headers in the first row</p>
+                  <h3 className="text-lg font-semibold text-foreground">Expected Excel Format</h3>
+                  <p className="text-sm text-muted-foreground">Your file should have these column headers in the first row</p>
                 </div>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setShowExcelPreview(false)}>
@@ -2245,18 +2245,18 @@ function IntakeFormPageContent() {
                   {/* Demographics */}
                   <thead>
                     <tr>
-                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-blue-800 bg-blue-100 border-b">
+                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-primary bg-primary/10 border-b">
                         <div className="flex items-center gap-2"><User className="h-3.5 w-3.5" /> Demographics</div>
                       </th>
                     </tr>
-                    <tr className="bg-blue-50">
+                    <tr className="bg-primary/10">
                       {['Name', 'Age', 'Gender', 'School', 'Address', 'Class', 'Mother Tongue', 'Syllabus'].map((h, i) => (
-                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-blue-700 border-b ${i < 7 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
+                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-primary border-b ${i < 7 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="bg-white">
+                    <tr className="bg-background">
                       <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Arjun Kumar</td>
                       <td className="px-3 py-1.5 border-r border-b">8</td>
                       <td className="px-3 py-1.5 border-r border-b">Male</td>
@@ -2271,18 +2271,18 @@ function IntakeFormPageContent() {
                   {/* Family History */}
                   <thead>
                     <tr>
-                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-green-800 bg-green-100 border-b">
+                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-foreground bg-success/10 border-b">
                         <div className="flex items-center gap-2"><Home className="h-3.5 w-3.5" /> Family History</div>
                       </th>
                     </tr>
-                    <tr className="bg-green-50">
+                    <tr className="bg-success/10">
                       {['Father Name', 'Mother Name', 'Guardian Name', 'Family Income', 'Family Type', 'Daily Digital Use', 'Study Assistant', 'Child Type'].map((h, i) => (
-                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-green-700 border-b ${i < 7 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
+                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-success border-b ${i < 7 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="bg-white">
+                    <tr className="bg-background">
                       <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Rajesh Kumar</td>
                       <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Priya Kumar</td>
                       <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Rajesh Kumar</td>
@@ -2294,15 +2294,15 @@ function IntakeFormPageContent() {
                     </tr>
                   </tbody>
                   <thead>
-                    <tr className="bg-green-50">
+                    <tr className="bg-success/10">
                       {['Digital Resources At Home', 'Enjoys School', 'External Academic Support', 'Enjoys Reading', 'Daily Parent Child Time'].map((h, i) => (
-                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-green-700 border-b ${i < 4 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
+                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-success border-b ${i < 4 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
                       ))}
                       <th className="border-b" colSpan={3}></th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="bg-white">
+                    <tr className="bg-background">
                       <td className="px-3 py-1.5 border-r border-b">Yes</td>
                       <td className="px-3 py-1.5 border-r border-b">Yes</td>
                       <td className="px-3 py-1.5 border-r border-b">No</td>
@@ -2315,19 +2315,19 @@ function IntakeFormPageContent() {
                   {/* Prenatal & Birth */}
                   <thead>
                     <tr>
-                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-amber-800 bg-amber-100 border-b">
+                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-amber-800 bg-warning/10 border-b">
                         <div className="flex items-center gap-2"><Baby className="h-3.5 w-3.5" /> Prenatal & Birth</div>
                       </th>
                     </tr>
-                    <tr className="bg-amber-50">
+                    <tr className="bg-warning/10">
                       {['Pregnancy Normal', 'Medications During Pregnancy', 'Miscarriages/Abortions', 'Full Term Or Premature', 'Delivery Type'].map((h, i) => (
-                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-amber-700 border-b ${i < 4 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
+                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-warning border-b ${i < 4 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
                       ))}
                       <th className="border-b" colSpan={3}></th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="bg-white">
+                    <tr className="bg-background">
                       <td className="px-3 py-1.5 border-r border-b">Yes</td>
                       <td className="px-3 py-1.5 border-r border-b whitespace-nowrap">Vitamins only</td>
                       <td className="px-3 py-1.5 border-r border-b">No</td>
@@ -2351,7 +2351,7 @@ function IntakeFormPageContent() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="bg-white">
+                    <tr className="bg-background">
                       <td className="px-3 py-1.5 border-r border-b">Yes</td>
                       <td className="px-3 py-1.5 border-r border-b">No</td>
                       <td className="px-3 py-1.5 border-r border-b">No</td>
@@ -2371,7 +2371,7 @@ function IntakeFormPageContent() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="bg-white">
+                    <tr className="bg-background">
                       <td className="px-3 py-1.5 border-r border-b">No</td>
                       <td className="border-b" colSpan={7}></td>
                     </tr>
@@ -2380,18 +2380,18 @@ function IntakeFormPageContent() {
                   {/* Medical History */}
                   <thead>
                     <tr>
-                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-red-800 bg-red-100 border-b">
+                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-foreground bg-destructive/10 border-b">
                         <div className="flex items-center gap-2"><Stethoscope className="h-3.5 w-3.5" /> Medical History</div>
                       </th>
                     </tr>
-                    <tr className="bg-red-50">
+                    <tr className="bg-destructive/10">
                       {['Health Concerns', 'Epileptic History', 'On Medication', 'Medication Details', 'Asthma/Wheezing', 'Wears Glasses', 'Vision Test Done', 'Hearing Test Done'].map((h, i) => (
-                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-red-700 border-b ${i < 7 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
+                        <th key={h} className={`px-3 py-1.5 text-left font-semibold text-destructive border-b ${i < 7 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="bg-white">
+                    <tr className="bg-background">
                       <td className="px-3 py-1.5 border-r border-b">None</td>
                       <td className="px-3 py-1.5 border-r border-b">No</td>
                       <td className="px-3 py-1.5 border-r border-b">No</td>
@@ -2406,11 +2406,11 @@ function IntakeFormPageContent() {
                   {/* Educational History */}
                   <thead>
                     <tr>
-                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-purple-800 bg-purple-100 border-b">
+                      <th colSpan={8} className="px-3 py-2 text-left text-sm font-semibold text-foreground bg-info/10 border-b">
                         <div className="flex items-center gap-2"><GraduationCap className="h-3.5 w-3.5" /> Educational History</div>
                       </th>
                     </tr>
-                    <tr className="bg-purple-50">
+                    <tr className="bg-info/10">
                       {['Attended Preschool', 'Repeated Grades', 'Which Grade Repeated', 'Dominant Writing Hand', 'Struggles In Languages'].map((h, i) => (
                         <th key={h} className={`px-3 py-1.5 text-left font-semibold text-purple-700 border-b ${i < 4 ? 'border-r' : ''} whitespace-nowrap`}>{h}</th>
                       ))}
@@ -2418,7 +2418,7 @@ function IntakeFormPageContent() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="bg-white">
+                    <tr className="bg-background">
                       <td className="px-3 py-1.5 border-r">Yes</td>
                       <td className="px-3 py-1.5 border-r">No</td>
                       <td className="px-3 py-1.5 border-r"></td>
@@ -2431,13 +2431,13 @@ function IntakeFormPageContent() {
               </div>
 
               {/* Notes */}
-              <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600 space-y-1.5">
-                <p className="font-medium text-gray-800">Notes:</p>
+              <div className="bg-muted/40 rounded-lg p-4 text-sm text-muted-foreground space-y-1.5">
+                <p className="font-medium text-foreground">Notes:</p>
                 <ul className="list-disc list-inside space-y-1 text-xs">
                   <li>Column headers are <strong>case-insensitive</strong> — "Father Name", "father name", "father_name" all work</li>
-                  <li>Boolean fields (Yes/No) accept: <code className="bg-white px-1 rounded">Yes</code>, <code className="bg-white px-1 rounded">True</code>, <code className="bg-white px-1 rounded">1</code>, <code className="bg-white px-1 rounded">Y</code></li>
+                  <li>Boolean fields (Yes/No) accept: <code className="bg-background px-1 rounded">Yes</code>, <code className="bg-background px-1 rounded">True</code>, <code className="bg-background px-1 rounded">1</code>, <code className="bg-background px-1 rounded">Y</code></li>
                   <li>Only the <strong>first row</strong> of data is used to fill the form</li>
-                  <li>Supported formats: <code className="bg-white px-1 rounded">.xlsx</code>, <code className="bg-white px-1 rounded">.xls</code>, <code className="bg-white px-1 rounded">.csv</code></li>
+                  <li>Supported formats: <code className="bg-background px-1 rounded">.xlsx</code>, <code className="bg-background px-1 rounded">.xls</code>, <code className="bg-background px-1 rounded">.csv</code></li>
                   <li>Empty cells are skipped — existing form values are preserved</li>
                   <li>All columns are <strong>optional</strong> — include only the ones you have data for</li>
                 </ul>
@@ -2463,10 +2463,10 @@ function IntakeFormPageContent() {
 
 export default function IntakeFormPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading intake form...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-primary border-t-transparent mx-auto mb-4"></div>
+        <p className="text-muted-foreground">Loading intake form...</p>
       </div>
     </div>}>
       <IntakeFormPageContent />

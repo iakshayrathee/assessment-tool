@@ -10,6 +10,7 @@ import { useGenerateSnapshot, useSchoolSnapshots, useCompleteReportData } from '
 import { useToast } from '@/hooks/use-toast';
 import ReactDOMServer from 'react-dom/server';
 import { Badge } from '@/components/ui/badge';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 import StudentOverviewDashboard from '@/components/school-viewer/StudentOverviewDashboard';
 import AssessmentCoverageReport from '@/components/school-viewer/AssessmentCoverageReport';
@@ -313,21 +314,19 @@ export default function SchoolReportsPage() {
 
     const getPeriodBadgeColor = (type: string) => {
         switch (type) {
-            case 'MONTHLY': return 'bg-blue-100 text-blue-800';
-            case 'QUARTERLY': return 'bg-purple-100 text-purple-800';
-            case 'YEARLY': return 'bg-green-100 text-green-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'MONTHLY': return 'bg-primary/10 text-primary';
+            case 'QUARTERLY': return 'bg-info/10 text-foreground';
+            case 'YEARLY': return 'bg-success/10 text-foreground';
+            default: return 'bg-muted text-foreground';
         }
     };
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">School Reports</h1>
-                    <p className="text-gray-600 mt-1">Comprehensive analytics and insights for your school</p>
-                </div>
+        <PageWrapper
+            title="School Reports"
+            description="Comprehensive analytics and insights for your school"
+            breadcrumbs={[{ label: 'School Viewer', href: '/school-viewer' }, { label: 'Reports' }]}
+            actions={
                 <div className="flex gap-2">
                     <Button
                         onClick={handleGenerateReport}
@@ -348,13 +347,14 @@ export default function SchoolReportsPage() {
                         </Button>
                     )}
                 </div>
-            </div>
+            }
+        >
 
             {/* Period Type Selector */}
             <Card>
                 <CardContent className="p-4">
                     <div className="flex items-center gap-4">
-                        <label className="text-sm font-medium text-gray-700">Filter by Period:</label>
+                        <label className="text-sm font-medium text-foreground">Filter by Period:</label>
                         <Select value={periodType} onValueChange={(value: any) => {
                             setPeriodType(value);
                             setSelectedSnapshotId(null); // Reset selection when changing period
@@ -381,14 +381,14 @@ export default function SchoolReportsPage() {
                 <CardContent>
                     {loadingSnapshots ? (
                         <div className="flex items-center justify-center py-8">
-                            <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
-                            <span className="ml-2 text-gray-600">Loading reports...</span>
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            <span className="ml-2 text-muted-foreground">Loading reports...</span>
                         </div>
                     ) : snapshots.length === 0 ? (
                         <div className="text-center py-12">
-                            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-600 mb-2">No reports generated yet for this period</p>
-                            <p className="text-sm text-gray-500">Click "Generate New Report" to create your first report</p>
+                            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-muted-foreground mb-2">No reports generated yet for this period</p>
+                            <p className="text-sm text-muted-foreground">Click "Generate New Report" to create your first report</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -409,15 +409,15 @@ export default function SchoolReportsPage() {
                                             )}
                                         </div>
                                         <div className="space-y-2">
-                                            <div className="flex items-center text-sm text-gray-600">
+                                            <div className="flex items-center text-sm text-muted-foreground">
                                                 <Calendar className="h-4 w-4 mr-2" />
                                                 {formatDate(snapshot.createdAt)}
                                             </div>
-                                            <div className="flex items-center text-sm text-gray-600">
+                                            <div className="flex items-center text-sm text-muted-foreground">
                                                 <TrendingUp className="h-4 w-4 mr-2" />
                                                 {snapshot.totalSupported} students supported
                                             </div>
-                                            <div className="text-xs text-gray-500 mt-2">
+                                            <div className="text-xs text-muted-foreground mt-2">
                                                 Period: {new Date(snapshot.periodStart).toLocaleDateString()} - {new Date(snapshot.periodEnd).toLocaleDateString()}
                                             </div>
                                         </div>
@@ -435,8 +435,8 @@ export default function SchoolReportsPage() {
                     <Card>
                         <CardContent className="p-12">
                             <div className="flex items-center justify-center">
-                                <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-                                <span className="ml-3 text-gray-600">Loading report data...</span>
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <span className="ml-3 text-muted-foreground">Loading report data...</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -462,6 +462,6 @@ export default function SchoolReportsPage() {
                     </Tabs>
                 ) : null
             )}
-        </div>
+        </PageWrapper>
     );
 }

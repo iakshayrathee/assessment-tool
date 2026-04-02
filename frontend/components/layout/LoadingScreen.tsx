@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Loader2, GraduationCap } from 'lucide-react';
 
 export function LoadingScreen() {
@@ -32,7 +32,7 @@ export function LoadingScreen() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-3xl font-bold text-gray-900 dark:text-white mb-2"
+          className="text-3xl font-bold text-foreground dark:text-white mb-2"
         >
           Knowled
         </motion.h1>
@@ -42,7 +42,7 @@ export function LoadingScreen() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="text-gray-600 dark:text-gray-300 mb-8"
+          className="text-muted-foreground dark:text-muted-foreground mb-8"
         >
           Special Education Management Platform
         </motion.p>
@@ -55,7 +55,7 @@ export function LoadingScreen() {
           className="flex items-center justify-center space-x-2"
         >
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <span className="text-gray-600 dark:text-gray-300">Loading your dashboard...</span>
+          <span className="text-muted-foreground dark:text-muted-foreground">Loading your dashboard...</span>
         </motion.div>
 
         {/* Progress Dots */}

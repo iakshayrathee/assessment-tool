@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EnhancedCard } from '@/components/ui/enhanced-card';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
-import { PageHeader } from '@/components/ui/page-header';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { 
   AlertTriangle,
   CheckCircle,
@@ -99,9 +99,9 @@ export default function CompliancePage() {
   };
 
   const getComplianceColor = (rate: number) => {
-    if (rate >= 90) return 'text-green-600 bg-green-50';
-    if (rate >= 70) return 'text-yellow-600 bg-yellow-50';
-    return 'text-red-600 bg-red-50';
+    if (rate >= 90) return 'text-success bg-success/10';
+    if (rate >= 70) return 'text-warning bg-warning/10';
+    return 'text-destructive bg-destructive/10';
   };
 
   const getComplianceLabel = (rate: number) => {
@@ -156,29 +156,23 @@ export default function CompliancePage() {
   }
 
   return (
-    <div className="">
-      <PageHeader
-        title="Compliance Monitoring"
-        description="Monitor regulatory compliance and track overdue items"
-        badge={{
-          text: getComplianceLabel(complianceData.complianceRate),
-          variant: complianceData.complianceRate >= 90 ? 'default' : 'destructive'
-        }}
-        actions={[
-          {
-            label: 'Refresh Data',
-            onClick: handleRefresh,
-            icon: RefreshCw,
-            variant: 'outline',
-            disabled: refreshing
-          },
-          {
-            label: 'Export Report',
-            onClick: () => console.log('Export compliance report'),
-            icon: Download
-          }
-        ]}
-      />
+    <PageWrapper
+      title="Compliance Monitoring"
+      description="Monitor regulatory compliance and track overdue items"
+      breadcrumbs={[{ label: 'Center', href: '/center' }, { label: 'Compliance' }]}
+      actions={
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Data
+          </Button>
+          <Button onClick={() => console.log('Export compliance report')}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
+        </div>
+      }
+    >
 
       {/* Compliance Overview */}
       <motion.div
@@ -192,8 +186,8 @@ export default function CompliancePage() {
           value={`${complianceData.complianceRate}%`}
           description="Students with reports"
           icon={CheckCircle}
-          iconColor="text-green-600"
-          iconBgColor="bg-green-50"
+          iconColor="text-success"
+          iconBgColor="bg-success/10"
           change={`${complianceData.studentsWithReports}/${complianceData.totalStudents} students`}
           changeType="positive"
         />
@@ -202,8 +196,8 @@ export default function CompliancePage() {
           value={complianceData.overdueReports}
           description="Require immediate attention"
           icon={AlertTriangle}
-          iconColor="text-red-600"
-          iconBgColor="bg-red-50"
+          iconColor="text-destructive"
+          iconBgColor="bg-destructive/10"
           change="Past 30 days threshold"
           changeType="negative"
         />
@@ -212,8 +206,8 @@ export default function CompliancePage() {
           value={`${complianceData.reportCompletionRate}%`}
           description="On-time completion rate"
           icon={TrendingUp}
-          iconColor="text-blue-600"
-          iconBgColor="bg-blue-50"
+          iconColor="text-primary"
+          iconBgColor="bg-primary/10"
           change={`${complianceData.completedReports} completed`}
           changeType="positive"
         />
@@ -222,8 +216,8 @@ export default function CompliancePage() {
           value={complianceData.pendingAssessments + complianceData.expiredIEPs}
           description="Assessments & expired IEPs"
           icon={Clock}
-          iconColor="text-orange-600"
-          iconBgColor="bg-orange-50"
+          iconColor="text-warning"
+          iconBgColor="bg-warning/10"
           change="Require action"
           changeType="neutral"
         />
@@ -236,20 +230,20 @@ export default function CompliancePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="border-red-200 bg-red-50">
+          <Card className="border-destructive/20 bg-destructive/10">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-red-800">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <AlertTriangle className="h-5 w-5" />
                 Compliance Alerts
               </CardTitle>
-              <CardDescription className="text-red-700">
+              <CardDescription className="text-destructive">
                 Items requiring immediate attention
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
                 {complianceData.alerts.map((alert, index) => (
-                  <li key={index} className="flex items-start gap-2 text-red-800">
+                  <li key={index} className="flex items-start gap-2 text-foreground">
                     <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     <span className="text-sm">{alert}</span>
                   </li>
@@ -292,17 +286,17 @@ export default function CompliancePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50"
+                        className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg bg-destructive/10"
                       >
                         <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                            <FileText className="h-6 w-6 text-red-600" />
+                          <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center">
+                            <FileText className="h-6 w-6 text-destructive" />
                           </div>
                           <div>
                             <h3 className="font-semibold text-red-900">
                               {report.type.replace('_', ' ')} Report
                             </h3>
-                            <p className="text-sm text-red-700">
+                            <p className="text-sm text-destructive">
                               {report.student.fullName} (Grade {report.student.grade})
                             </p>
                             <div className="flex items-center gap-2 mt-1">
@@ -310,7 +304,7 @@ export default function CompliancePage() {
                                 {getDaysOverdue(report.createdAt)} days overdue
                               </Badge>
                               {report.specialEducator && (
-                                <span className="text-xs text-red-600">
+                                <span className="text-xs text-destructive">
                                   Assigned to: {report.specialEducator.fullName}
                                 </span>
                               )}
@@ -337,7 +331,7 @@ export default function CompliancePage() {
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                    <CheckCircle className="h-12 w-12 text-success mx-auto mb-4" />
                     <p className="text-muted-foreground mb-2">No overdue reports</p>
                     <p className="text-sm text-muted-foreground">
                       All reports are being completed on time
@@ -365,7 +359,7 @@ export default function CompliancePage() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Students with Reports</span>
-                      <span className="font-semibold text-green-600">{complianceData.studentsWithReports}</span>
+                      <span className="font-semibold text-success">{complianceData.studentsWithReports}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Coverage Rate</span>
@@ -373,7 +367,7 @@ export default function CompliancePage() {
                         {complianceData.complianceRate}%
                       </Badge>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div className="w-full bg-muted rounded-full h-3">
                       <div 
                         className="bg-green-600 h-3 rounded-full transition-all duration-300"
                         style={{ width: `${complianceData.complianceRate}%` }}
@@ -400,15 +394,15 @@ export default function CompliancePage() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Pending Assessments</span>
-                      <span className="font-semibold text-orange-600">{complianceData.pendingAssessments}</span>
+                      <span className="font-semibold text-warning">{complianceData.pendingAssessments}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Expired IEP Goals</span>
-                      <span className="font-semibold text-red-600">{complianceData.expiredIEPs}</span>
+                      <span className="font-semibold text-destructive">{complianceData.expiredIEPs}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Overdue Reports</span>
-                      <span className="font-semibold text-red-600">{complianceData.overdueReports}</span>
+                      <span className="font-semibold text-destructive">{complianceData.overdueReports}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -417,6 +411,6 @@ export default function CompliancePage() {
           </TabsContent>
         </Tabs>
       </motion.div>
-    </div>
+    </PageWrapper>
   );
 }

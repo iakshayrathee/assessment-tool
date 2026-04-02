@@ -100,16 +100,16 @@ export function FileUpload({ onFileSelect, isLoading, currentFile, onClearFile }
 
     if (currentFile) {
         return (
-            <Card className="border-2 border-green-200 bg-green-50">
+            <Card className="border-2 border-success/20 bg-success/10">
                 <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <File className="h-6 w-6 text-green-600" />
+                            <div className="p-2 bg-success/10 rounded-lg">
+                                <File className="h-6 w-6 text-success" />
                             </div>
                             <div>
-                                <p className="font-medium text-gray-900">{currentFile.name}</p>
-                                <p className="text-sm text-gray-600">{formatFileSize(currentFile.size)}</p>
+                                <p className="font-medium text-foreground">{currentFile.name}</p>
+                                <p className="text-sm text-muted-foreground">{formatFileSize(currentFile.size)}</p>
                             </div>
                         </div>
                         {onClearFile && !isLoading && (
@@ -117,7 +117,7 @@ export function FileUpload({ onFileSelect, isLoading, currentFile, onClearFile }
                                 variant="ghost"
                                 size="sm"
                                 onClick={onClearFile}
-                                className="text-gray-500 hover:text-red-600"
+                                className="text-muted-foreground hover:text-destructive"
                             >
                                 <X className="h-5 w-5" />
                             </Button>
@@ -132,8 +132,8 @@ export function FileUpload({ onFileSelect, isLoading, currentFile, onClearFile }
         <div className="space-y-4">
             <Card
                 className={`border-2 border-dashed transition-all ${isDragging
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 hover:border-gray-400 bg-white'
+                    ? 'border-blue-500 bg-primary/10'
+                    : 'border-border hover:border-gray-400 bg-background'
                     }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -142,18 +142,18 @@ export function FileUpload({ onFileSelect, isLoading, currentFile, onClearFile }
                 <CardContent className="pt-6">
                     <div className="flex flex-col items-center justify-center py-8 px-4">
                         <div
-                            className={`p-4 rounded-full mb-4 transition-colors ${isDragging ? 'bg-blue-100' : 'bg-gray-100'
+                            className={`p-4 rounded-full mb-4 transition-colors ${isDragging ? 'bg-primary/10' : 'bg-muted'
                                 }`}
                         >
                             <Upload
-                                className={`h-8 w-8 ${isDragging ? 'text-blue-600' : 'text-gray-400'}`}
+                                className={`h-8 w-8 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`}
                             />
                         </div>
 
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        <h3 className="text-lg font-semibold text-foreground mb-2">
                             Upload Document
                         </h3>
-                        <p className="text-sm text-gray-600 text-center mb-4">
+                        <p className="text-sm text-muted-foreground text-center mb-4">
                             Drag and drop your PDF or DOCX file here, or click to browse
                         </p>
 
@@ -180,7 +180,7 @@ export function FileUpload({ onFileSelect, isLoading, currentFile, onClearFile }
                             disabled={isLoading}
                         />
 
-                        <p className="text-xs text-gray-500 mt-4">
+                        <p className="text-xs text-muted-foreground mt-4">
                             Supported formats: PDF, DOCX • Max size: 50MB
                         </p>
                     </div>
@@ -188,9 +188,9 @@ export function FileUpload({ onFileSelect, isLoading, currentFile, onClearFile }
             </Card>
 
             {error && (
-                <Card className="border-red-200 bg-red-50">
+                <Card className="border-destructive/20 bg-destructive/10">
                     <CardContent className="pt-4">
-                        <div className="flex items-center space-x-2 text-red-800">
+                        <div className="flex items-center space-x-2 text-foreground">
                             <AlertCircle className="h-5 w-5 flex-shrink-0" />
                             <p className="text-sm font-medium">{error}</p>
                         </div>

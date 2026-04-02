@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -16,7 +16,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 export default function NewConcern() {
   const router = useRouter();
@@ -66,42 +67,25 @@ export default function NewConcern() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center space-x-4">
-              <Link href="/parent/concerns">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Concerns
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Submit New Concern</h1>
-                <p className="text-gray-600">Share your observations or concerns about your child</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <PageWrapper
+      title="Submit New Concern"
+      description="Share your observations or concerns about your child"
+      breadcrumbs={[{ label: 'Dashboard', href: '/parent/dashboard' }, { label: 'Concerns', href: '/parent/concerns' }, { label: 'New Concern' }]}
+    >
+      <div className="max-w-4xl grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Guidelines */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <AlertTriangle className="h-5 w-5 mr-2 text-yellow-600" />
+                  <AlertTriangle className="h-5 w-5 mr-2 text-warning" />
                   Guidelines
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <h4 className="font-semibold text-sm mb-2">What to include:</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
+                  <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• Specific behaviors or situations</li>
                     <li>• When and where it occurs</li>
                     <li>• How often it happens</li>
@@ -112,15 +96,15 @@ export default function NewConcern() {
                 
                 <div>
                   <h4 className="font-semibold text-sm mb-2">Response time:</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
+                  <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• High priority: 24-48 hours</li>
                     <li>• Medium priority: 3-5 days</li>
                     <li>• Low priority: 1-2 weeks</li>
                   </ul>
                 </div>
 
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <p className="text-sm text-primary">
                     <strong>Emergency:</strong> For urgent medical or safety concerns, 
                     please contact your child's educator directly or call the center.
                   </p>
@@ -195,7 +179,7 @@ export default function NewConcern() {
                       rows={6}
                       required
                     />
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       The more specific information you provide, the better we can help.
                     </p>
                   </div>
@@ -225,7 +209,6 @@ export default function NewConcern() {
             </Card>
           </div>
         </div>
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

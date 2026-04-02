@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface PendingRequest {
   id: string;
@@ -156,13 +157,13 @@ export default function PendingApprovalsPage() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'ADMIN': return 'bg-red-100 text-red-800';
-      case 'SUPER_SPECIAL_EDUCATOR': return 'bg-purple-100 text-purple-800';
-      case 'SPECIAL_EDUCATOR': return 'bg-blue-100 text-blue-800';
-      case 'CENTER': return 'bg-green-100 text-green-800';
-      case 'PARENT': return 'bg-yellow-100 text-yellow-800';
-      case 'SCHOOL_VIEWER': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ADMIN': return 'bg-destructive/10 text-foreground';
+      case 'SUPER_SPECIAL_EDUCATOR': return 'bg-info/10 text-foreground';
+      case 'SPECIAL_EDUCATOR': return 'bg-primary/10 text-primary';
+      case 'CENTER': return 'bg-success/10 text-foreground';
+      case 'PARENT': return 'bg-warning/10 text-foreground';
+      case 'SCHOOL_VIEWER': return 'bg-muted text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -263,15 +264,11 @@ export default function PendingApprovalsPage() {
   }
 
   return (
-    <div className="space-y-8 p-6">
-      {/* Header */}
-      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Pending Approvals</h1>
-          <p className="text-muted-foreground">
-            Review and approve user creation requests and role assignments
-          </p>
-        </div>
+    <PageWrapper
+      title="Pending Approvals"
+      description="Review and approve user creation requests and role assignments"
+      breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Approvals' }]}
+      actions={
         <div className="flex items-center space-x-2">
           <Badge variant="secondary">
             {filteredRequests.length} Pending
@@ -281,7 +278,8 @@ export default function PendingApprovalsPage() {
             Refresh
           </Button>
         </div>
-      </div>
+      }
+    >
 
       {/* Filters */}
       <motion.div
@@ -292,7 +290,7 @@ export default function PendingApprovalsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-blue-600" />
+              <Filter className="h-5 w-5 text-primary" />
               Filter Requests
             </CardTitle>
           </CardHeader>
@@ -334,7 +332,7 @@ export default function PendingApprovalsPage() {
         <Card>
           <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950">
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-600" />
+              <Clock className="h-5 w-5 text-warning" />
               Pending Requests ({filteredRequests.length})
             </CardTitle>
             <CardDescription>
@@ -402,7 +400,7 @@ export default function PendingApprovalsPage() {
                         
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700">
+                            <Button variant="ghost" size="sm" className="text-success hover:text-success">
                               <CheckCircle className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
@@ -427,7 +425,7 @@ export default function PendingApprovalsPage() {
 
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
                               <XCircle className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
@@ -468,6 +466,6 @@ export default function PendingApprovalsPage() {
           </CardContent>
         </Card>
       </motion.div>
-    </div>
+    </PageWrapper>
   );
 }

@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface CrossCenterData {
   centerId: string;
@@ -145,39 +146,39 @@ export default function AnalyticsPage() {
   const getPerformanceColor = (rating: string) => {
     switch (rating) {
       case 'EXCELLENT':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-foreground';
       case 'GOOD':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'AVERAGE':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning/10 text-foreground';
       case 'NEEDS_IMPROVEMENT':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'IMPROVING':
-        return <TrendingUp className="h-4 w-4 text-green-600" />;
+        return <TrendingUp className="h-4 w-4 text-success" />;
       case 'DECLINING':
-        return <TrendingDown className="h-4 w-4 text-red-600" />;
+        return <TrendingDown className="h-4 w-4 text-destructive" />;
       default:
-        return <Activity className="h-4 w-4 text-blue-600" />;
+        return <Activity className="h-4 w-4 text-primary" />;
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'HIGH':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-foreground';
       case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning/10 text-foreground';
       case 'LOW':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -234,29 +235,17 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-primary border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-            <p className="text-gray-600">Cross-center performance analysis and insights</p>
-          </div>
-        </div>
+    <PageWrapper
+      title="Analytics Dashboard"
+      description="Cross-center performance analysis and insights"
+      breadcrumbs={[{ label: 'Super Special Educator', href: '/super-special-educator' }, { label: 'Analytics' }]}
+      actions={
         <div className="flex gap-3">
           <Select value={selectedTimeframe} onValueChange={setSelectedTimeframe}>
             <SelectTrigger className="w-40">
@@ -274,7 +263,8 @@ export default function AnalyticsPage() {
             Export Report
           </Button>
         </div>
-      </div>
+      }
+    >
 
       {/* Overall Metrics */}
       {performanceData && (
@@ -283,10 +273,10 @@ export default function AnalyticsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Centers</p>
+                  <p className="text-sm text-muted-foreground">Total Centers</p>
                   <p className="text-2xl font-bold">{performanceData?.overallMetrics?.totalCenters || 0}</p>
                 </div>
-                <Building2 className="h-8 w-8 text-blue-600" />
+                <Building2 className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -294,10 +284,10 @@ export default function AnalyticsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Students</p>
+                  <p className="text-sm text-muted-foreground">Total Students</p>
                   <p className="text-2xl font-bold">{performanceData?.overallMetrics?.totalStudents || 0}</p>
                 </div>
-                <Users className="h-8 w-8 text-green-600" />
+                <Users className="h-8 w-8 text-success" />
               </div>
             </CardContent>
           </Card>
@@ -305,10 +295,10 @@ export default function AnalyticsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Educators</p>
+                  <p className="text-sm text-muted-foreground">Total Educators</p>
                   <p className="text-2xl font-bold">{performanceData?.overallMetrics?.totalEducators || 0}</p>
                 </div>
-                <GraduationCap className="h-8 w-8 text-purple-600" />
+                <GraduationCap className="h-8 w-8 text-info" />
               </div>
             </CardContent>
           </Card>
@@ -316,10 +306,10 @@ export default function AnalyticsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Avg Performance</p>
+                  <p className="text-sm text-muted-foreground">Avg Performance</p>
                   <p className="text-2xl font-bold">{formatPercentage(performanceData?.overallMetrics?.averagePerformanceScore || 0)}</p>
                 </div>
-                <Target className="h-8 w-8 text-orange-600" />
+                <Target className="h-8 w-8 text-warning" />
               </div>
             </CardContent>
           </Card>
@@ -327,12 +317,12 @@ export default function AnalyticsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Improvement Rate</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-sm text-muted-foreground">Improvement Rate</p>
+                  <p className="text-2xl font-bold text-success">
                     +{formatPercentage(performanceData?.overallMetrics?.improvementRate || 0)}
                   </p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-green-600" />
+                <TrendingUp className="h-8 w-8 text-success" />
               </div>
             </CardContent>
           </Card>
@@ -340,10 +330,10 @@ export default function AnalyticsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Case Resolution</p>
+                  <p className="text-sm text-muted-foreground">Case Resolution</p>
                   <p className="text-2xl font-bold">{formatPercentage(performanceData?.overallMetrics?.flaggedCasesResolutionRate || 0)}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-blue-600" />
+                <CheckCircle className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -395,52 +385,52 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-gray-600">IEP Goal Completion</p>
-                      <p className="text-xl font-bold text-blue-600">
+                    <div className="text-center p-3 bg-primary/10 rounded-lg">
+                      <p className="text-sm text-muted-foreground">IEP Goal Completion</p>
+                      <p className="text-xl font-bold text-primary">
                         {formatPercentage(center.averageIEPGoalCompletion)}
                       </p>
                     </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Attendance Rate</p>
-                      <p className="text-xl font-bold text-green-600">
+                    <div className="text-center p-3 bg-success/10 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Attendance Rate</p>
+                      <p className="text-xl font-bold text-success">
                         {formatPercentage(center.averageAttendanceRate)}
                       </p>
                     </div>
-                    <div className="text-center p-3 bg-purple-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Progress Score</p>
-                      <p className="text-xl font-bold text-purple-600">
+                    <div className="text-center p-3 bg-info/10 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Progress Score</p>
+                      <p className="text-xl font-bold text-info">
                         {formatPercentage(center.averageProgressScore)}
                       </p>
                     </div>
-                    <div className="text-center p-3 bg-orange-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Open Cases</p>
-                      <p className="text-xl font-bold text-orange-600">
+                    <div className="text-center p-3 bg-warning/10 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Open Cases</p>
+                      <p className="text-xl font-bold text-warning">
                         {center.flaggedCasesCount}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-100">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border">
                     <div className="text-center">
-                      <p className="text-sm text-gray-600">Student Engagement</p>
+                      <p className="text-sm text-muted-foreground">Student Engagement</p>
                       <p className="text-lg font-semibold">{formatPercentage(center.keyMetrics?.studentEngagement)}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-600">Educator Effectiveness</p>
+                      <p className="text-sm text-muted-foreground">Educator Effectiveness</p>
                       <p className="text-lg font-semibold">{formatPercentage(center.keyMetrics.educatorEffectiveness)}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-600">Resource Utilization</p>
+                      <p className="text-sm text-muted-foreground">Resource Utilization</p>
                       <p className="text-lg font-semibold">{formatPercentage(center.keyMetrics.resourceUtilization)}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-600">Parent Satisfaction</p>
+                      <p className="text-sm text-muted-foreground">Parent Satisfaction</p>
                       <p className="text-lg font-semibold">{formatPercentage(center.keyMetrics.parentSatisfaction)}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-sm text-gray-600 pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground pt-3 border-t border-border">
                     <div className="flex items-center gap-4">
                       <span>Pending Reviews: <strong>{center.pendingReviewsCount}</strong></span>
                       <span>Last Assessment: <strong>{new Date(center.lastAssessmentDate).toLocaleDateString()}</strong></span>
@@ -468,27 +458,27 @@ export default function AnalyticsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5 text-yellow-600" />
+                    <Award className="h-5 w-5 text-warning" />
                     Top Performing Centers
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {(performanceData.topPerformingCenters || []).map((center, index) => (
-                      <div key={center.centerId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={center.centerId} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                            index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-orange-500'
+                            index === 0 ? 'bg-warning' : index === 1 ? 'bg-gray-400' : 'bg-orange-500'
                           }`}>
                             {index + 1}
                           </div>
                           <div>
                             <p className="font-semibold">{center.centerName}</p>
-                            <p className="text-sm text-gray-600">Score: {formatPercentage(center.score)}</p>
+                            <p className="text-sm text-muted-foreground">Score: {formatPercentage(center.score)}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-green-600 font-medium">
+                          <p className="text-sm text-success font-medium">
                             +{formatPercentage(center.improvement)} improvement
                           </p>
                         </div>
@@ -502,16 +492,16 @@ export default function AnalyticsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                    <BarChart3 className="h-5 w-5 text-primary" />
                     Monthly Performance Trends
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                  <div className="h-64 flex items-center justify-center bg-muted/40 rounded-lg">
                     <div className="text-center">
-                      <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600">Interactive charts would be displayed here</p>
-                      <p className="text-sm text-gray-500">Showing trends for student progress, educator performance, etc.</p>
+                      <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">Interactive charts would be displayed here</p>
+                      <p className="text-sm text-muted-foreground">Showing trends for student progress, educator performance, etc.</p>
                     </div>
                   </div>
                 </CardContent>
@@ -529,37 +519,37 @@ export default function AnalyticsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-orange-600" />
+                    <AlertTriangle className="h-5 w-5 text-warning" />
                     Areas for Improvement
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {(performanceData.areasForImprovement || []).map((area, index) => (
-                      <div key={index} className="p-4 border border-gray-200 rounded-lg">
+                      <div key={index} className="p-4 border border-border rounded-lg">
                         <div className="flex items-center justify-between mb-3">
-                          <h3 className="font-semibold text-gray-900">{area.area}</h3>
+                          <h3 className="font-semibold text-foreground">{area.area}</h3>
                           <Badge className={getPriorityColor(area.priority)}>
                             {area.priority} Priority
                           </Badge>
                         </div>
                         <div className="grid grid-cols-3 gap-4 text-sm">
                           <div>
-                            <p className="text-gray-600">Current Score</p>
+                            <p className="text-muted-foreground">Current Score</p>
                             <p className="font-semibold">{formatPercentage(area.currentScore)}</p>
                           </div>
                           <div>
-                            <p className="text-gray-600">Target Score</p>
-                            <p className="font-semibold text-green-600">{formatPercentage(area.targetScore)}</p>
+                            <p className="text-muted-foreground">Target Score</p>
+                            <p className="font-semibold text-success">{formatPercentage(area.targetScore)}</p>
                           </div>
                           <div>
-                            <p className="text-gray-600">Affected Centers</p>
+                            <p className="text-muted-foreground">Affected Centers</p>
                             <p className="font-semibold">{area.affectedCenters}</p>
                           </div>
                         </div>
-                        <div className="mt-3 bg-gray-100 rounded-full h-2">
+                        <div className="mt-3 bg-muted rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                            className="bg-primary h-2 rounded-full" 
                             style={{ width: `${(area.currentScore / area.targetScore) * 100}%` }}
                           ></div>
                         </div>
@@ -573,31 +563,31 @@ export default function AnalyticsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <CheckCircle className="h-5 w-5 text-success" />
                     Recommended Actions
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
                       <h4 className="font-semibold text-blue-900 mb-1">Immediate Actions</h4>
-                      <ul className="text-sm text-blue-800 space-y-1">
+                      <ul className="text-sm text-primary space-y-1">
                         <li>• Schedule additional training sessions for underperforming centers</li>
                         <li>• Review and update IEP goal setting processes</li>
                         <li>• Implement peer mentoring programs between high and low performing centers</li>
                       </ul>
                     </div>
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="p-3 bg-success/10 border border-success/20 rounded-lg">
                       <h4 className="font-semibold text-green-900 mb-1">Long-term Strategies</h4>
-                      <ul className="text-sm text-green-800 space-y-1">
+                      <ul className="text-sm text-foreground space-y-1">
                         <li>• Develop standardized assessment protocols across all centers</li>
                         <li>• Create resource sharing platform for best practices</li>
                         <li>• Establish quarterly cross-center collaboration meetings</li>
                       </ul>
                     </div>
-                    <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <div className="p-3 bg-info/10 border border-purple-200 rounded-lg">
                       <h4 className="font-semibold text-purple-900 mb-1">Resource Allocation</h4>
-                      <ul className="text-sm text-purple-800 space-y-1">
+                      <ul className="text-sm text-foreground space-y-1">
                         <li>• Allocate additional support staff to centers with high caseloads</li>
                         <li>• Invest in technology upgrades for data tracking and reporting</li>
                         <li>• Provide specialized training for complex learning disabilities</li>
@@ -645,21 +635,21 @@ export default function AnalyticsPage() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Total Students:</span>
+                        <span className="text-muted-foreground">Total Students:</span>
                         <span className="font-semibold">{selectedCenterForDetails.totalStudents}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Total Educators:</span>
+                        <span className="text-muted-foreground">Total Educators:</span>
                         <span className="font-semibold">{selectedCenterForDetails.totalEducators}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Performance Rating:</span>
+                        <span className="text-muted-foreground">Performance Rating:</span>
                         <Badge className={getPerformanceColor(selectedCenterForDetails.performanceRating)}>
                           {selectedCenterForDetails.performanceRating?.replace('_', ' ')}
                         </Badge>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Monthly Trend:</span>
+                        <span className="text-muted-foreground">Monthly Trend:</span>
                         <div className="flex items-center gap-1">
                           {getTrendIcon(selectedCenterForDetails.monthlyTrend)}
                           <span className="font-semibold">{selectedCenterForDetails.monthlyTrend}</span>
@@ -677,15 +667,15 @@ export default function AnalyticsPage() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Flagged Cases:</span>
-                        <span className="font-semibold text-orange-600">{selectedCenterForDetails.flaggedCasesCount}</span>
+                        <span className="text-muted-foreground">Flagged Cases:</span>
+                        <span className="font-semibold text-warning">{selectedCenterForDetails.flaggedCasesCount}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Pending Reviews:</span>
-                        <span className="font-semibold text-blue-600">{selectedCenterForDetails.pendingReviewsCount}</span>
+                        <span className="text-muted-foreground">Pending Reviews:</span>
+                        <span className="font-semibold text-primary">{selectedCenterForDetails.pendingReviewsCount}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Last Assessment:</span>
+                        <span className="text-muted-foreground">Last Assessment:</span>
                         <span className="font-semibold">{new Date(selectedCenterForDetails.lastAssessmentDate).toLocaleDateString()}</span>
                       </div>
                     </CardContent>
@@ -701,31 +691,31 @@ export default function AnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <BookOpen className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">IEP Goal Completion</p>
-                        <p className="text-2xl font-bold text-blue-600">
+                      <div className="text-center p-4 bg-primary/10 rounded-lg">
+                        <BookOpen className="h-8 w-8 text-primary mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">IEP Goal Completion</p>
+                        <p className="text-2xl font-bold text-primary">
                           {formatPercentage(selectedCenterForDetails.averageIEPGoalCompletion)}
                         </p>
                       </div>
-                      <div className="text-center p-4 bg-green-50 rounded-lg">
-                        <UserCheck className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Attendance Rate</p>
-                        <p className="text-2xl font-bold text-green-600">
+                      <div className="text-center p-4 bg-success/10 rounded-lg">
+                        <UserCheck className="h-8 w-8 text-success mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Attendance Rate</p>
+                        <p className="text-2xl font-bold text-success">
                           {formatPercentage(selectedCenterForDetails.averageAttendanceRate)}
                         </p>
                       </div>
-                      <div className="text-center p-4 bg-purple-50 rounded-lg">
-                        <Star className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Progress Score</p>
-                        <p className="text-2xl font-bold text-purple-600">
+                      <div className="text-center p-4 bg-info/10 rounded-lg">
+                        <Star className="h-8 w-8 text-info mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Progress Score</p>
+                        <p className="text-2xl font-bold text-info">
                           {formatPercentage(selectedCenterForDetails.averageProgressScore)}
                         </p>
                       </div>
-                      <div className="text-center p-4 bg-orange-50 rounded-lg">
-                        <AlertTriangle className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Open Cases</p>
-                        <p className="text-2xl font-bold text-orange-600">
+                      <div className="text-center p-4 bg-warning/10 rounded-lg">
+                        <AlertTriangle className="h-8 w-8 text-warning mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Open Cases</p>
+                        <p className="text-2xl font-bold text-warning">
                           {selectedCenterForDetails.flaggedCasesCount}
                         </p>
                       </div>
@@ -748,11 +738,11 @@ export default function AnalyticsPage() {
                         <div>
                           <div className="flex justify-between mb-2">
                             <span className="text-sm font-medium">Student Engagement</span>
-                            <span className="text-sm text-gray-600">{formatPercentage(selectedCenterForDetails.keyMetrics?.studentEngagement || 0)}</span>
+                            <span className="text-sm text-muted-foreground">{formatPercentage(selectedCenterForDetails.keyMetrics?.studentEngagement || 0)}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="w-full bg-muted rounded-full h-2">
                             <div 
-                              className="bg-blue-600 h-2 rounded-full" 
+                              className="bg-primary h-2 rounded-full" 
                               style={{ width: `${selectedCenterForDetails.keyMetrics?.studentEngagement || 0}%` }}
                             ></div>
                           </div>
@@ -760,9 +750,9 @@ export default function AnalyticsPage() {
                         <div>
                           <div className="flex justify-between mb-2">
                             <span className="text-sm font-medium">Educator Effectiveness</span>
-                            <span className="text-sm text-gray-600">{formatPercentage(selectedCenterForDetails.keyMetrics?.educatorEffectiveness || 0)}</span>
+                            <span className="text-sm text-muted-foreground">{formatPercentage(selectedCenterForDetails.keyMetrics?.educatorEffectiveness || 0)}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="w-full bg-muted rounded-full h-2">
                             <div 
                               className="bg-green-600 h-2 rounded-full" 
                               style={{ width: `${selectedCenterForDetails.keyMetrics?.educatorEffectiveness || 0}%` }}
@@ -774,9 +764,9 @@ export default function AnalyticsPage() {
                         <div>
                           <div className="flex justify-between mb-2">
                             <span className="text-sm font-medium">Resource Utilization</span>
-                            <span className="text-sm text-gray-600">{formatPercentage(selectedCenterForDetails.keyMetrics?.resourceUtilization || 0)}</span>
+                            <span className="text-sm text-muted-foreground">{formatPercentage(selectedCenterForDetails.keyMetrics?.resourceUtilization || 0)}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="w-full bg-muted rounded-full h-2">
                             <div 
                               className="bg-purple-600 h-2 rounded-full" 
                               style={{ width: `${selectedCenterForDetails.keyMetrics?.resourceUtilization || 0}%` }}
@@ -786,9 +776,9 @@ export default function AnalyticsPage() {
                         <div>
                           <div className="flex justify-between mb-2">
                             <span className="text-sm font-medium">Parent Satisfaction</span>
-                            <span className="text-sm text-gray-600">{formatPercentage(selectedCenterForDetails.keyMetrics?.parentSatisfaction || 0)}</span>
+                            <span className="text-sm text-muted-foreground">{formatPercentage(selectedCenterForDetails.keyMetrics?.parentSatisfaction || 0)}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="w-full bg-muted rounded-full h-2">
                             <div 
                               className="bg-orange-600 h-2 rounded-full" 
                               style={{ width: `${selectedCenterForDetails.keyMetrics?.parentSatisfaction || 0}%` }}
@@ -811,24 +801,24 @@ export default function AnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-3 gap-4 mb-6">
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Total Students</p>
-                        <p className="text-2xl font-bold text-blue-600">{selectedCenterForDetails.totalStudents}</p>
+                      <div className="text-center p-4 bg-primary/10 rounded-lg">
+                        <Users className="h-8 w-8 text-primary mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Total Students</p>
+                        <p className="text-2xl font-bold text-primary">{selectedCenterForDetails.totalStudents}</p>
                       </div>
-                      <div className="text-center p-4 bg-green-50 rounded-lg">
-                        <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Active Students</p>
-                        <p className="text-2xl font-bold text-green-600">{Math.round(selectedCenterForDetails.totalStudents * 0.92)}</p>
+                      <div className="text-center p-4 bg-success/10 rounded-lg">
+                        <CheckCircle className="h-8 w-8 text-success mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Active Students</p>
+                        <p className="text-2xl font-bold text-success">{Math.round(selectedCenterForDetails.totalStudents * 0.92)}</p>
                       </div>
-                      <div className="text-center p-4 bg-orange-50 rounded-lg">
-                        <AlertTriangle className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Needs Attention</p>
-                        <p className="text-2xl font-bold text-orange-600">{selectedCenterForDetails.flaggedCasesCount}</p>
+                      <div className="text-center p-4 bg-warning/10 rounded-lg">
+                        <AlertTriangle className="h-8 w-8 text-warning mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Needs Attention</p>
+                        <p className="text-2xl font-bold text-warning">{selectedCenterForDetails.flaggedCasesCount}</p>
                       </div>
                     </div>
-                    <div className="text-center py-4 text-gray-500">
-                      <Users className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                    <div className="text-center py-4 text-muted-foreground">
+                      <Users className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
                       <p>Detailed student analytics would be displayed here</p>
                     </div>
                   </CardContent>
@@ -845,24 +835,24 @@ export default function AnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-3 gap-4 mb-6">
-                      <div className="text-center p-4 bg-purple-50 rounded-lg">
-                        <GraduationCap className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Total Educators</p>
-                        <p className="text-2xl font-bold text-purple-600">{selectedCenterForDetails.totalEducators}</p>
+                      <div className="text-center p-4 bg-info/10 rounded-lg">
+                        <GraduationCap className="h-8 w-8 text-info mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Total Educators</p>
+                        <p className="text-2xl font-bold text-info">{selectedCenterForDetails.totalEducators}</p>
                       </div>
-                      <div className="text-center p-4 bg-green-50 rounded-lg">
-                        <Star className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Effectiveness Score</p>
-                        <p className="text-2xl font-bold text-green-600">{formatPercentage(selectedCenterForDetails.keyMetrics?.educatorEffectiveness || 0)}</p>
+                      <div className="text-center p-4 bg-success/10 rounded-lg">
+                        <Star className="h-8 w-8 text-success mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Effectiveness Score</p>
+                        <p className="text-2xl font-bold text-success">{formatPercentage(selectedCenterForDetails.keyMetrics?.educatorEffectiveness || 0)}</p>
                       </div>
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <Activity className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Avg Caseload</p>
-                        <p className="text-2xl font-bold text-blue-600">{Math.round(selectedCenterForDetails.totalStudents / selectedCenterForDetails.totalEducators)}</p>
+                      <div className="text-center p-4 bg-primary/10 rounded-lg">
+                        <Activity className="h-8 w-8 text-primary mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Avg Caseload</p>
+                        <p className="text-2xl font-bold text-primary">{Math.round(selectedCenterForDetails.totalStudents / selectedCenterForDetails.totalEducators)}</p>
                       </div>
                     </div>
-                    <div className="text-center py-4 text-gray-500">
-                      <GraduationCap className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                    <div className="text-center py-4 text-muted-foreground">
+                      <GraduationCap className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
                       <p>Detailed educator performance metrics would be displayed here</p>
                     </div>
                   </CardContent>
@@ -918,19 +908,19 @@ export default function AnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="p-3 bg-muted/40 rounded-lg">
                         <div className="flex justify-between items-start mb-2">
                           <span className="font-medium text-sm">Improve IEP Goal Tracking</span>
-                          <span className="text-xs text-gray-500">2 weeks ago</span>
+                          <span className="text-xs text-muted-foreground">2 weeks ago</span>
                         </div>
-                        <p className="text-sm text-gray-600">Implement digital tracking system for better IEP goal monitoring and progress reporting.</p>
+                        <p className="text-sm text-muted-foreground">Implement digital tracking system for better IEP goal monitoring and progress reporting.</p>
                       </div>
-                      <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="p-3 bg-muted/40 rounded-lg">
                         <div className="flex justify-between items-start mb-2">
                           <span className="font-medium text-sm">Enhance Parent Communication</span>
-                          <span className="text-xs text-gray-500">1 month ago</span>
+                          <span className="text-xs text-muted-foreground">1 month ago</span>
                         </div>
-                        <p className="text-sm text-gray-600">Establish regular parent-educator meetings to improve satisfaction scores.</p>
+                        <p className="text-sm text-muted-foreground">Establish regular parent-educator meetings to improve satisfaction scores.</p>
                       </div>
                     </div>
                   </CardContent>
@@ -940,6 +930,6 @@ export default function AnalyticsPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </PageWrapper>
   );
 }

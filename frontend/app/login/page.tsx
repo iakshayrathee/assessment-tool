@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Eye, EyeOff, Mail, Lock, GraduationCap } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -104,35 +104,35 @@ export default function LoginPage() {
               </h1>
             </div>
 
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl font-bold text-foreground mb-6">
               Welcome to the Future of
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
                 Special Education
               </span>
             </h2>
 
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               Comprehensive platform for managing special education programs,
               assessments, and student progress tracking with advanced analytics
               and collaborative tools.
             </p>
 
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">For Educators</h3>
-                <p className="text-gray-600">Create assessments, track progress, and manage IEP goals</p>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">For Educators</h3>
+                <p className="text-muted-foreground">Create assessments, track progress, and manage IEP goals</p>
               </div>
-              <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">For Parents</h3>
-                <p className="text-gray-600">Monitor your child's progress and stay connected</p>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">For Parents</h3>
+                <p className="text-muted-foreground">Monitor your child's progress and stay connected</p>
               </div>
-              <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">For Administrators</h3>
-                <p className="text-gray-600">Manage centers, users, and generate reports</p>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">For Administrators</h3>
+                <p className="text-muted-foreground">Manage centers, users, and generate reports</p>
               </div>
-              <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">For Schools</h3>
-                <p className="text-gray-600">View student progress and collaborate with educators</p>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">For Schools</h3>
+                <p className="text-muted-foreground">View student progress and collaborate with educators</p>
               </div>
             </div>
           </div>
@@ -145,7 +145,7 @@ export default function LoginPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="w-full max-w-md mx-auto"
         >
-          <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
+          <div className="bg-background/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
             <div className="text-center mb-8">
               <div className="lg:hidden flex items-center justify-center mb-6">
                 <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-2xl">
@@ -155,57 +155,57 @@ export default function LoginPage() {
                   Knowled
                 </h1>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign In</h2>
-              <p className="text-gray-600">Access your dashboard</p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Sign In</h2>
+              <p className="text-muted-foreground">Access your dashboard</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.email ? 'border-red-300' : 'border-gray-300'
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.email ? 'border-destructive/30' : 'border-border'
                       }`}
                     placeholder="Enter your email"
                   />
                 </div>
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  <p className="mt-1 text-sm text-destructive">{errors.email}</p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.password ? 'border-red-300' : 'border-gray-300'
+                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.password ? 'border-destructive/30' : 'border-border'
                       }`}
                     placeholder="Enter your password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                  <p className="mt-1 text-sm text-destructive">{errors.password}</p>
                 )}
               </div>
 
@@ -226,17 +226,17 @@ export default function LoginPage() {
             </form>
 
             {/* Demo Credentials - Commented out */}
-            {/* <div className="mt-8 pt-6 border-t border-gray-200">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</h3>
+            {/* <div className="mt-8 pt-6 border-t border-border">
+              <h3 className="text-sm font-medium text-foreground mb-3">Demo Credentials:</h3>
               <div className="grid grid-cols-1 gap-2 text-xs">
                 {demoCredentials.map((cred, index) => (
                   <button
                     key={index}
                     onClick={() => fillDemoCredentials(cred.email, cred.password)}
-                    className="text-left p-2 rounded bg-gray-50 hover:bg-gray-100 transition-colors"
+                    className="text-left p-2 rounded bg-muted/40 hover:bg-muted transition-colors"
                   >
-                    <div className="font-medium text-gray-900">{cred.role}</div>
-                    <div className="text-gray-600">{cred.email}</div>
+                    <div className="font-medium text-foreground">{cred.role}</div>
+                    <div className="text-muted-foreground">{cred.email}</div>
                   </button>
                 ))}
               </div>

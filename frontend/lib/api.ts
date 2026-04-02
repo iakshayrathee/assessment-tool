@@ -483,6 +483,11 @@ class ApiClient {
     return response.data.data!;
   }
 
+  async getEducatorReportRoster(): Promise<any[]> {
+    const response = await this.client.get<ApiResponse<any[]>>('/reports/educator');
+    return response.data.data!;
+  }
+
   async submitReport(reportId: string, signature: string): Promise<any> {
     const response = await this.client.post<ApiResponse<any>>(`/assessments/reports/${reportId}/submit`, { signature });
     return response.data.data;
@@ -1715,16 +1720,17 @@ class ApiClient {
     status?: string;
   }): Promise<PaginatedResponse<any>> {
     const response = await this.client.get('/special-educators/students', { params });
-    // Backend returns { success: true, data: students[], pagination: {...} }
+    // Backend returns { success: true, data: students[], pagination: { currentPage, totalPages, totalCount, ... } }
+    // Normalize to the standard PaginatedResponse shape: { page, limit, total, totalPages }
+    const raw = response.data.pagination;
     return {
       data: response.data.data || [],
-      pagination: response.data.pagination || {
-        currentPage: 1,
-        totalPages: 1,
-        totalCount: response.data.data?.length || 0,
-        hasNext: false,
-        hasPrev: false
-      }
+      pagination: {
+        page: raw?.currentPage ?? 1,
+        limit: params?.limit ?? 10,
+        total: raw?.totalCount ?? 0,
+        totalPages: raw?.totalPages ?? 1,
+      },
     };
   }
 

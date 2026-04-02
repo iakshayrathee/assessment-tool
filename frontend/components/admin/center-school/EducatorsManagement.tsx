@@ -128,7 +128,7 @@ export default function EducatorsManagement({ centerId, educators, onUpdate }: E
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-orange-600" />
+              <Users className="h-5 w-5 text-warning" />
               Educators ({activeEducators.length} active, {inactiveEducators.length} inactive)
             </CardTitle>
             <CardDescription>
@@ -143,7 +143,7 @@ export default function EducatorsManagement({ centerId, educators, onUpdate }: E
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-blue-600" />
+            <Filter className="h-5 w-5 text-primary" />
             Search & Filter
           </CardTitle>
         </CardHeader>
@@ -179,7 +179,7 @@ export default function EducatorsManagement({ centerId, educators, onUpdate }: E
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
+            <CheckCircle className="h-5 w-5 text-success" />
             Active Educators ({activeEducators.length})
           </CardTitle>
         </CardHeader>
@@ -205,8 +205,8 @@ export default function EducatorsManagement({ centerId, educators, onUpdate }: E
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex flex-col md:flex-row md:items-center gap-4">
-                          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
-                            <User className="h-8 w-8 text-orange-600" />
+                          <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center">
+                            <User className="h-8 w-8 text-warning" />
                           </div>
                           <div className="space-y-2">
                             <h3 className="text-xl font-semibold">{educatorInfo.name}</h3>
@@ -241,7 +241,7 @@ export default function EducatorsManagement({ centerId, educators, onUpdate }: E
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
                               disabled={loading}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -281,7 +281,7 @@ export default function EducatorsManagement({ centerId, educators, onUpdate }: E
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-gray-600" />
+              <XCircle className="h-5 w-5 text-muted-foreground" />
               Inactive Educators ({inactiveEducators.length})
             </CardTitle>
           </CardHeader>
@@ -292,14 +292,14 @@ export default function EducatorsManagement({ centerId, educators, onUpdate }: E
                 if (!educatorInfo) return null;
 
                 return (
-                  <Card key={assignment.id} className="border-gray-200 bg-gray-50">
+                  <Card key={assignment.id} className="border-border bg-muted/40">
                     <CardContent className="p-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                          <User className="h-6 w-6 text-gray-600" />
+                        <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                          <User className="h-6 w-6 text-muted-foreground" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-700">{educatorInfo.name}</h3>
+                          <h3 className="text-lg font-semibold text-foreground">{educatorInfo.name}</h3>
                           <div className="flex items-center gap-4 mt-1">
                             <Badge variant="secondary">{educatorInfo.type}</Badge>
                             <Badge variant="secondary">Inactive</Badge>
@@ -328,18 +328,18 @@ export default function EducatorsManagement({ centerId, educators, onUpdate }: E
       {/* Summary Stats - Redesigned with better visual hierarchy */}
       {educators.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="md:col-span-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+          <Card className="md:col-span-4 bg-gradient-to-r from-primary/5 to-primary/10 border-blue-100">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-blue-800">Educator Overview</CardTitle>
+              <CardTitle className="text-lg text-primary">Educator Overview</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="flex items-center gap-4">
-                  <div className="bg-green-100 p-3 rounded-full">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  <div className="bg-success/10 p-3 rounded-full">
+                    <CheckCircle className="h-8 w-8 text-success" />
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-green-600">
+                    <div className="text-3xl font-bold text-success">
                       {activeEducators.length}
                     </div>
                     <div className="text-sm text-muted-foreground">Active Educators</div>
@@ -347,11 +347,11 @@ export default function EducatorsManagement({ centerId, educators, onUpdate }: E
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  <div className="bg-blue-100 p-3 rounded-full">
-                    <Users className="h-8 w-8 text-blue-600" />
+                  <div className="bg-primary/10 p-3 rounded-full">
+                    <Users className="h-8 w-8 text-primary" />
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-blue-600">
+                    <div className="text-3xl font-bold text-primary">
                       {activeEducators.filter(e => e.specialEducator).length}
                     </div>
                     <div className="text-sm text-muted-foreground">Special Educators</div>
@@ -359,11 +359,11 @@ export default function EducatorsManagement({ centerId, educators, onUpdate }: E
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  <div className="bg-purple-100 p-3 rounded-full">
-                    <Award className="h-8 w-8 text-purple-600" />
+                  <div className="bg-info/10 p-3 rounded-full">
+                    <Award className="h-8 w-8 text-info" />
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-purple-600">
+                    <div className="text-3xl font-bold text-info">
                       {activeEducators.filter(e => e.superSpecialEducator).length}
                     </div>
                     <div className="text-sm text-muted-foreground">Super Special Educators</div>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { VersionSelectionDialog } from './VersionSelectionDialog';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { Upload, X } from 'lucide-react';
 
 const ASSESSMENT_TYPES = [
@@ -378,10 +378,10 @@ export function FormalAssessmentForm({
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="file-upload" className="cursor-pointer">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
-                    <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-600">Click to upload PDF or images</p>
-                    <p className="text-xs text-gray-500 mt-1">Multiple files supported</p>
+                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Click to upload PDF or images</p>
+                    <p className="text-xs text-muted-foreground mt-1">Multiple files supported</p>
                   </div>
                 </Label>
                 <input
@@ -398,7 +398,7 @@ export function FormalAssessmentForm({
               <div className="space-y-2">
                 <Label>Uploaded Files</Label>
                 {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div key={index} className="flex items-center justify-between p-2 bg-muted/40 rounded">
                     <span className="text-sm">{file}</span>
                     <Button
                       type="button"
@@ -424,7 +424,7 @@ export function FormalAssessmentForm({
             <CardContent>
               <div className="space-y-2">
                 {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center p-2 bg-gray-50 rounded">
+                  <div key={index} className="flex items-center p-2 bg-muted/40 rounded">
                     <span className="text-sm">{file}</span>
                   </div>
                 ))}

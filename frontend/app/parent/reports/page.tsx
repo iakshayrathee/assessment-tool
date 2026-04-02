@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,7 @@ import {
 import { useCompleteParentReportData, useGenerateParentSnapshot, useParentSnapshots } from '@/hooks/useParentReports';
 import ReactDOMServer from 'react-dom/server';
 import { useToast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 type PeriodType = 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
 
@@ -398,8 +399,8 @@ export default function ParentReportsPage() {
             <div className="p-6">
                 <Card>
                     <CardContent className="p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-4 text-gray-600">Loading...</p>
+                        <div className="animate-spin rounded-full h-12 w-12 border-primary border-t-transparent mx-auto"></div>
+                        <p className="mt-4 text-muted-foreground">Loading...</p>
                     </CardContent>
                 </Card>
             </div>
@@ -420,13 +421,11 @@ export default function ParentReportsPage() {
     }
 
     return (
-        <div className="space-y-6 p-6">
-            {/* Header */}
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Progress Reports</h1>
-                    <p className="text-gray-600 mt-1">View your child's learning progress and intervention plan</p>
-                </div>
+        <PageWrapper
+            title="Progress Reports"
+            description="View your child's learning progress and intervention plan"
+            breadcrumbs={[{ label: 'Parent', href: '/parent' }, { label: 'Reports' }]}
+            actions={
                 <div className="flex gap-2">
                     <Button
                         onClick={handleGenerateReport}
@@ -446,7 +445,8 @@ export default function ParentReportsPage() {
                         </Button>
                     )}
                 </div>
-            </div>
+            }
+        >
 
             {/* Period Selector & Child Selector */}
             <Card>
@@ -513,9 +513,9 @@ export default function ParentReportsPage() {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden"
+                        className="bg-background rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden"
                     >
-                        <div className="p-6 border-b border-gray-200">
+                        <div className="p-6 border-b border-border">
                             <div className="flex justify-between items-center">
                                 <h2 className="text-2xl font-bold">Report History</h2>
                                 <Button
@@ -553,15 +553,15 @@ export default function ParentReportsPage() {
                         <div className="p-6 overflow-y-auto max-h-[50vh]">
                             {snapshotsLoading ? (
                                 <div className="text-center py-8">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                                    <p className="mt-2 text-gray-600">Loading reports...</p>
+                                    <div className="animate-spin rounded-full h-8 w-8 border-primary border-t-transparent mx-auto"></div>
+                                    <p className="mt-2 text-muted-foreground">Loading reports...</p>
                                 </div>
                             ) : snapshotsData && snapshotsData.data.length > 0 ? (
                                 <div className="space-y-3">
                                     {snapshotsData.data.map((snap: any) => (
                                         <div
                                             key={snap.id}
-                                            className={`p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${selectedSnapshotId === snap.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                                            className={`p-4 border rounded-lg cursor-pointer hover:bg-muted/40 transition-colors ${selectedSnapshotId === snap.id ? 'border-blue-500 bg-primary/10' : 'border-border'
                                                 }`}
                                             onClick={() => {
                                                 setSelectedSnapshotId(snap.id);
@@ -583,16 +583,16 @@ export default function ParentReportsPage() {
                                                             {snap.periodType}
                                                         </Badge>
                                                         {selectedSnapshotId === snap.id && (
-                                                            <Badge variant="default" className="bg-green-500">
+                                                            <Badge variant="default" className="bg-success">
                                                                 Currently Viewing
                                                             </Badge>
                                                         )}
                                                     </div>
-                                                    <div className="text-sm font-medium text-gray-900">
+                                                    <div className="text-sm font-medium text-foreground">
                                                         Period: {new Date(snap.periodStart).toLocaleDateString()} -{' '}
                                                         {new Date(snap.periodEnd).toLocaleDateString()}
                                                     </div>
-                                                    <div className="text-xs text-gray-500 mt-1">
+                                                    <div className="text-xs text-muted-foreground mt-1">
                                                         Generated: {new Date(snap.createdAt).toLocaleString('en-US', {
                                                             month: 'short',
                                                             day: 'numeric',
@@ -603,10 +603,10 @@ export default function ParentReportsPage() {
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <div className="text-xs text-gray-500">
+                                                    <div className="text-xs text-muted-foreground">
                                                         {snap.totalAssessments} assessments
                                                     </div>
-                                                    <div className="text-xs text-gray-500">
+                                                    <div className="text-xs text-muted-foreground">
                                                         {snap.sessionsAttended}/{snap.totalSessionsScheduled} sessions
                                                     </div>
                                                 </div>
@@ -615,7 +615,7 @@ export default function ParentReportsPage() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-8 text-gray-500">
+                                <div className="text-center py-8 text-muted-foreground">
                                     No reports found for the selected filter
                                 </div>
                             )}
@@ -623,9 +623,9 @@ export default function ParentReportsPage() {
 
                         {/* Pagination */}
                         {snapshotsData && snapshotsData.pagination.totalPages > 1 && (
-                            <div className="p-6 border-t border-gray-200">
+                            <div className="p-6 border-t border-border">
                                 <div className="flex justify-between items-center">
-                                    <div className="text-sm text-gray-600">
+                                    <div className="text-sm text-muted-foreground">
                                         Page {snapshotsData.pagination.page} of {snapshotsData.pagination.totalPages} (
                                         {snapshotsData.pagination.total} total reports)
                                     </div>
@@ -660,8 +660,8 @@ export default function ParentReportsPage() {
             {reportLoading ? (
                 <Card>
                     <CardContent className="p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-4 text-gray-600">Loading report...</p>
+                        <div className="animate-spin rounded-full h-12 w-12 border-primary border-t-transparent mx-auto"></div>
+                        <p className="mt-4 text-muted-foreground">Loading report...</p>
                     </CardContent>
                 </Card>
             ) : snapshot ? (
@@ -677,26 +677,26 @@ export default function ParentReportsPage() {
                         <CardContent>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div>
-                                    <div className="text-sm text-gray-500">Name</div>
+                                    <div className="text-sm text-muted-foreground">Name</div>
                                     <div className="font-semibold">{snapshot.studentName}</div>
                                 </div>
                                 <div>
-                                    <div className="text-sm text-gray-500">Grade</div>
+                                    <div className="text-sm text-muted-foreground">Grade</div>
                                     <div className="font-semibold">{snapshot.studentGrade}</div>
                                 </div>
                                 <div>
-                                    <div className="text-sm text-gray-500">Age</div>
+                                    <div className="text-sm text-muted-foreground">Age</div>
                                     <div className="font-semibold">{snapshot.studentAge} years</div>
                                 </div>
                                 <div>
-                                    <div className="text-sm text-gray-500">Special Educator</div>
+                                    <div className="text-sm text-muted-foreground">Special Educator</div>
                                     <div className="font-semibold">{snapshot.assignedEducatorName || 'Not assigned'}</div>
                                 </div>
                             </div>
                             {snapshot.parentFriendlySummary && (
-                                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <div className="mt-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
                                     <div className="text-sm font-semibold text-blue-900 mb-2">Summary</div>
-                                    <div className="text-sm text-blue-800">{snapshot.parentFriendlySummary}</div>
+                                    <div className="text-sm text-primary">{snapshot.parentFriendlySummary}</div>
                                 </div>
                             )}
                         </CardContent>
@@ -712,20 +712,20 @@ export default function ParentReportsPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <div className="text-sm text-gray-500">Total Assessments</div>
+                                <div className="p-4 bg-muted/40 rounded-lg">
+                                    <div className="text-sm text-muted-foreground">Total Assessments</div>
                                     <div className="text-2xl font-bold">{snapshot.totalAssessments}</div>
                                 </div>
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <div className="text-sm text-gray-500">Latest Score</div>
+                                <div className="p-4 bg-muted/40 rounded-lg">
+                                    <div className="text-sm text-muted-foreground">Latest Score</div>
                                     <div className="text-2xl font-bold">{snapshot.latestAssessmentScore?.toFixed(0) || 'N/A'}%</div>
                                 </div>
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <div className="text-sm text-gray-500">Support Level</div>
+                                <div className="p-4 bg-muted/40 rounded-lg">
+                                    <div className="text-sm text-muted-foreground">Support Level</div>
                                     <div className="text-2xl font-bold">{snapshot.riskLevel || 'N/A'}</div>
                                 </div>
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <div className="text-sm text-gray-500">Last Assessment</div>
+                                <div className="p-4 bg-muted/40 rounded-lg">
+                                    <div className="text-sm text-muted-foreground">Last Assessment</div>
                                     <div className="text-sm font-semibold">{snapshot.latestAssessmentDate ? new Date(snapshot.latestAssessmentDate).toLocaleDateString() : 'N/A'}</div>
                                 </div>
                             </div>
@@ -755,18 +755,18 @@ export default function ParentReportsPage() {
                                                 {area.progress !== null ? `${area.progress > 0 ? '+' : ''}${area.progress.toFixed(1)}%` : 'N/A'}
                                             </span>
                                         </div>
-                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div className="w-full bg-muted rounded-full h-2">
                                             <div
-                                                className={`h-2 rounded-full ${area.progress && area.progress > 0 ? 'bg-green-500' : 'bg-orange-500'}`}
+                                                className={`h-2 rounded-full ${area.progress && area.progress > 0 ? 'bg-success' : 'bg-orange-500'}`}
                                                 style={{ width: `${Math.min(Math.abs(area.progress || 0), 100)}%` }}
                                             ></div>
                                         </div>
                                     </div>
                                 ))}
                                 {snapshot.overallGoalCompletion !== null && (
-                                    <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                                    <div className="mt-4 p-4 bg-success/10 rounded-lg border border-success/20">
                                         <div className="text-sm font-semibold text-green-900">Overall Goal Completion</div>
-                                        <div className="text-3xl font-bold text-green-700">{snapshot.overallGoalCompletion.toFixed(0)}%</div>
+                                        <div className="text-3xl font-bold text-success">{snapshot.overallGoalCompletion.toFixed(0)}%</div>
                                     </div>
                                 )}
                             </div>
@@ -783,20 +783,20 @@ export default function ParentReportsPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <div className="text-sm text-gray-500">Sessions Scheduled</div>
+                                <div className="p-4 bg-muted/40 rounded-lg">
+                                    <div className="text-sm text-muted-foreground">Sessions Scheduled</div>
                                     <div className="text-2xl font-bold">{snapshot.totalSessionsScheduled}</div>
                                 </div>
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <div className="text-sm text-gray-500">Sessions Attended</div>
+                                <div className="p-4 bg-muted/40 rounded-lg">
+                                    <div className="text-sm text-muted-foreground">Sessions Attended</div>
                                     <div className="text-2xl font-bold">{snapshot.sessionsAttended}</div>
                                 </div>
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <div className="text-sm text-gray-500">Attendance Rate</div>
+                                <div className="p-4 bg-muted/40 rounded-lg">
+                                    <div className="text-sm text-muted-foreground">Attendance Rate</div>
                                     <div className="text-2xl font-bold">{snapshot.participationRate?.toFixed(0) || 'N/A'}%</div>
                                 </div>
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <div className="text-sm text-gray-500">Last Session</div>
+                                <div className="p-4 bg-muted/40 rounded-lg">
+                                    <div className="text-sm text-muted-foreground">Last Session</div>
                                     <div className="text-sm font-semibold">{snapshot.lastSessionDate ? new Date(snapshot.lastSessionDate).toLocaleDateString() : 'N/A'}</div>
                                 </div>
                             </div>
@@ -823,7 +823,7 @@ export default function ParentReportsPage() {
                                         { name: 'Attention', value: snapshot.focusAttention },
                                         { name: 'Confidence', value: snapshot.focusConfidence }
                                     ].map((area) => (
-                                        <div key={area.name} className={`p-3 rounded-lg border ${area.value ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-300'}`}>
+                                        <div key={area.name} className={`p-3 rounded-lg border ${area.value ? 'bg-primary/10 border-primary/30' : 'bg-muted/40 border-border'}`}>
                                             <div className="text-sm font-medium">{area.name}</div>
                                             <div className="text-xs mt-1">{area.value ? 'Yes' : 'No'}</div>
                                         </div>
@@ -835,11 +835,11 @@ export default function ParentReportsPage() {
                             <div>
                                 <h3 className="font-semibold mb-3">Intervention Goals</h3>
                                 <div className="space-y-4">
-                                    <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                                    <div className="p-4 bg-warning/10 rounded-lg border border-warning/20">
                                         <div className="font-medium text-sm mb-2">Short-Term Goals (Next 4-6 Weeks)</div>
                                         <div className="text-sm whitespace-pre-wrap">{snapshot.shortTermGoals || 'Goals will be set by your child\'s educator'}</div>
                                     </div>
-                                    <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                                    <div className="p-4 bg-success/10 rounded-lg border border-success/20">
                                         <div className="font-medium text-sm mb-2">Long-Term Goals (Overall Plan Period)</div>
                                         <div className="text-sm whitespace-pre-wrap">{snapshot.longTermGoals || 'Long-term goals will be developed based on progress'}</div>
                                     </div>
@@ -857,9 +857,9 @@ export default function ParentReportsPage() {
                                         { name: 'Attention', strategy: snapshot.attentionStrategy },
                                         { name: 'Confidence', strategy: snapshot.confidenceStrategy }
                                     ].filter(s => s.strategy).map((area) => (
-                                        <div key={area.name} className="p-3 bg-gray-50 rounded-lg">
+                                        <div key={area.name} className="p-3 bg-muted/40 rounded-lg">
                                             <div className="font-medium text-sm">{area.name}</div>
-                                            <div className="text-sm text-gray-700 mt-1">{area.strategy}</div>
+                                            <div className="text-sm text-foreground mt-1">{area.strategy}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -867,7 +867,7 @@ export default function ParentReportsPage() {
 
                             {/* Next Review */}
                             {snapshot.nextReviewDate && (
-                                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                <div className="p-4 bg-info/10 rounded-lg border border-purple-200">
                                     <div className="font-medium text-sm text-purple-900">Next Review Date</div>
                                     <div className="text-lg font-bold text-purple-700">{new Date(snapshot.nextReviewDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
                                 </div>
@@ -878,11 +878,11 @@ export default function ParentReportsPage() {
             ) : (
                 <Card>
                     <CardContent className="p-12 text-center">
-                        <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">No report data available. Generate a new report to get started.</p>
+                        <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No report data available. Generate a new report to get started.</p>
                     </CardContent>
                 </Card>
             )}
-        </div>
+        </PageWrapper>
     );
 }

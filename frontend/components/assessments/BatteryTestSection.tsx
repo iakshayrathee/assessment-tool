@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+﻿import React, { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -50,14 +50,14 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
     };
 
     return (
-        <Card className="border-blue-200 bg-blue-50/30">
+        <Card className="border-primary/20 bg-primary/10/30">
             <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-blue-600" />
+                    <FileText className="h-5 w-5 text-primary" />
                     {title}
                 </CardTitle>
                 {description && (
-                    <p className="text-sm text-gray-600 mt-1">{description}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{description}</p>
                 )}
             </CardHeader>
             <CardContent className="space-y-4">
@@ -69,7 +69,7 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
                         checked={conducted}
                         onChange={(e) => onConductedChange(e.target.checked)}
                         disabled={disabled}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-blue-500"
                     />
                     <Label
                         htmlFor="batteryTestConducted"
@@ -85,7 +85,7 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
                         {/* Summary Text Area */}
                         <div>
                             <Label htmlFor="batteryTestSummary">
-                                Test Summary {!disabled && <span className="text-red-500">*</span>}
+                                Test Summary {!disabled && <span className="text-destructive">*</span>}
                             </Label>
                             <Textarea
                                 id="batteryTestSummary"
@@ -96,7 +96,7 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
                                 className="mt-1"
                                 rows={4}
                             />
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-muted-foreground mt-1">
                                 Provide a comprehensive summary of the battery test results
                             </p>
                         </div>
@@ -107,9 +107,9 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
                                 <Label>Test Report (Optional)</Label>
                                 <div className="mt-2 space-y-2">
                                     {reportUrl ? (
-                                        <div className="flex items-center justify-between p-3 border rounded-lg bg-white">
+                                        <div className="flex items-center justify-between p-3 border rounded-lg bg-background">
                                             <div className="flex items-center gap-2">
-                                                <FileText className="h-5 w-5 text-blue-600" />
+                                                <FileText className="h-5 w-5 text-primary" />
                                                 <span className="text-sm font-medium">Report Uploaded</span>
                                             </div>
                                             <div className="flex items-center gap-2">
@@ -128,7 +128,7 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={onReportRemove}
-                                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                                     >
                                                         <X className="h-4 w-4" />
                                                     </Button>
@@ -155,7 +155,7 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
                                                 <Upload className="h-4 w-4" />
                                                 Upload PDF Report (Max 10MB)
                                             </Button>
-                                            <p className="text-xs text-gray-500 mt-1">
+                                            <p className="text-xs text-muted-foreground mt-1">
                                                 Upload the battery test report in PDF format
                                             </p>
                                         </div>
@@ -167,7 +167,7 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
                 )}
 
                 {!conducted && (
-                    <p className="text-sm text-gray-500 italic">
+                    <p className="text-sm text-muted-foreground italic">
                         Check "Battery Test Conducted" to add test results
                     </p>
                 )}

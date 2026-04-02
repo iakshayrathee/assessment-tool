@@ -17,6 +17,7 @@ import { Plus, Eye, Loader2, ClipboardList } from 'lucide-react';
 import { FileUpload } from '@/components/ui/file-upload';
 import { FileViewer } from '@/components/ui/file-viewer';
 import { GradeDisplay } from '@/components/ui/GradeDisplay';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface Student {
     id: string;
@@ -199,12 +200,12 @@ export default function EducatorHomeworkPage() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'ASSIGNED': return 'bg-blue-100 text-blue-800';
-            case 'IN_PROGRESS': return 'bg-yellow-100 text-yellow-800';
-            case 'SUBMITTED': return 'bg-green-100 text-green-800';
-            case 'REVIEWED': return 'bg-purple-100 text-purple-800';
-            case 'COMPLETED': return 'bg-gray-100 text-gray-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'ASSIGNED': return 'bg-primary/10 text-primary';
+            case 'IN_PROGRESS': return 'bg-warning/10 text-foreground';
+            case 'SUBMITTED': return 'bg-success/10 text-foreground';
+            case 'REVIEWED': return 'bg-info/10 text-foreground';
+            case 'COMPLETED': return 'bg-muted text-foreground';
+            default: return 'bg-muted text-foreground';
         }
     };
 
@@ -234,26 +235,25 @@ export default function EducatorHomeworkPage() {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-                    <p className="text-gray-600">Loading homework...</p>
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading homework...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="p-6 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Homework Management</h1>
-                    <p className="text-gray-600">Assign and track student homework</p>
-                </div>
+        <PageWrapper
+            title="Homework Management"
+            description="Assign and track student homework"
+            breadcrumbs={[{ label: 'Educator' }, { label: 'Homework' }]}
+            actions={
                 <Button onClick={() => setShowAssignModal(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Assign Homework
                 </Button>
-            </div>
+            }
+        >
 
             {/* Homework List */}
             <Card>
@@ -263,9 +263,9 @@ export default function EducatorHomeworkPage() {
                 <CardContent>
                     {homework.length === 0 ? (
                         <div className="text-center py-12">
-                            <ClipboardList className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                            <h3 className="text-xl font-medium text-gray-900 mb-2">No homework assigned yet</h3>
-                            <p className="text-gray-500 mb-6">Start by assigning homework to your students</p>
+                            <ClipboardList className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-xl font-medium text-foreground mb-2">No homework assigned yet</h3>
+                            <p className="text-muted-foreground mb-6">Start by assigning homework to your students</p>
                             <Button onClick={() => setShowAssignModal(true)}>
                                 <Plus className="h-5 w-5 mr-2" />
                                 Assign First Homework
@@ -274,43 +274,43 @@ export default function EducatorHomeworkPage() {
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                                <thead className="bg-muted/40">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                             Student
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                             Title
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                             Subject
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                             Due Date
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                             Status
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="bg-background divide-y divide-gray-200">
                                     {homework.map((hw: Homework) => (
-                                        <tr key={hw.id} className="hover:bg-gray-50">
+                                        <tr key={hw.id} className="hover:bg-muted/40">
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">{hw.student.fullName}</div>
-                                                <div className="text-sm text-gray-500">Grade {hw.student.grade}</div>
+                                                <div className="text-sm font-medium text-foreground">{hw.student.fullName}</div>
+                                                <div className="text-sm text-muted-foreground">Grade {hw.student.grade}</div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="text-sm text-gray-900">{hw.title}</div>
+                                                <div className="text-sm text-foreground">{hw.title}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{hw.subject}</div>
+                                                <div className="text-sm text-foreground">{hw.subject}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">
+                                                <div className="text-sm text-foreground">
                                                     {new Date(hw.dueDate).toLocaleDateString()}
                                                 </div>
                                             </td>
@@ -358,10 +358,10 @@ export default function EducatorHomeworkPage() {
                                 {selectedStudent ? (
                                     <div>
                                         <div className="font-medium">{selectedStudent.fullName}</div>
-                                        <div className="text-sm text-gray-500">Grade {selectedStudent.grade}</div>
+                                        <div className="text-sm text-muted-foreground">Grade {selectedStudent.grade}</div>
                                     </div>
                                 ) : (
-                                    <span className="text-gray-500">Click to select a student</span>
+                                    <span className="text-muted-foreground">Click to select a student</span>
                                 )}
                             </Button>
                         </div>
@@ -537,16 +537,16 @@ export default function EducatorHomeworkPage() {
                                 <Card
                                     key={student.id}
                                     className={`cursor-pointer transition-all hover:shadow-md ${formData.studentId === student.id
-                                        ? 'border-2 border-blue-500 bg-blue-50'
-                                        : 'border hover:border-gray-300'
+                                        ? 'border-2 border-blue-500 bg-primary/10'
+                                        : 'border hover:border-border'
                                         }`}
                                     onClick={() => handleStudentSelect(student.id)}
                                 >
                                     <CardContent className="p-4">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <h3 className="font-medium text-gray-900">{student.fullName}</h3>
-                                                <p className="text-sm text-gray-600">
+                                                <h3 className="font-medium text-foreground">{student.fullName}</h3>
+                                                <p className="text-sm text-muted-foreground">
                                                     <GradeDisplay grade={student.grade} /> • Age {student.age}
                                                 </p>
                                             </div>
@@ -562,7 +562,7 @@ export default function EducatorHomeworkPage() {
                         {/* Pagination */}
                         {totalPages > 1 && (
                             <div className="flex items-center justify-between pt-4 border-t">
-                                <div className="text-sm text-gray-600">
+                                <div className="text-sm text-muted-foreground">
                                     Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredStudents.length)} of{' '}
                                     {filteredStudents.length} students
                                 </div>
@@ -575,7 +575,7 @@ export default function EducatorHomeworkPage() {
                                     >
                                         Previous
                                     </Button>
-                                    <span className="text-sm text-gray-600">
+                                    <span className="text-sm text-muted-foreground">
                                         Page {currentPage} of {totalPages}
                                     </span>
                                     <Button
@@ -602,7 +602,7 @@ export default function EducatorHomeworkPage() {
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1 min-w-0">
                                         <DialogTitle className="text-2xl pr-2">{selectedHomework.title}</DialogTitle>
-                                        <p className="text-sm text-gray-600 mt-1">
+                                        <p className="text-sm text-muted-foreground mt-1">
                                             Assigned on {new Date(selectedHomework.createdAt).toLocaleDateString()}
                                         </p>
                                     </div>
@@ -615,26 +615,26 @@ export default function EducatorHomeworkPage() {
                             <div className="space-y-6 pt-4">
                                 {/* Basic Information Section */}
                                 <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Basic Information</h3>
+                                    <h3 className="text-lg font-semibold text-foreground border-b pb-2">Basic Information</h3>
                                     <div className="grid grid-cols-3 gap-6">
                                         <div>
-                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Student</Label>
-                                            <p className="font-medium text-gray-900 mt-1">{selectedHomework.student.fullName}</p>
-                                            <p className="text-sm text-gray-600 mt-0.5">Grade {selectedHomework.student.grade}</p>
+                                            <Label className="text-muted-foreground text-xs uppercase tracking-wide">Student</Label>
+                                            <p className="font-medium text-foreground mt-1">{selectedHomework.student.fullName}</p>
+                                            <p className="text-sm text-muted-foreground mt-0.5">Grade {selectedHomework.student.grade}</p>
                                         </div>
                                         <div>
-                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Subject</Label>
-                                            <p className="font-medium text-gray-900 mt-1">{selectedHomework.subject}</p>
+                                            <Label className="text-muted-foreground text-xs uppercase tracking-wide">Subject</Label>
+                                            <p className="font-medium text-foreground mt-1">{selectedHomework.subject}</p>
                                         </div>
                                         <div>
-                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Due Date</Label>
-                                            <p className="font-medium text-gray-900 mt-1">
+                                            <Label className="text-muted-foreground text-xs uppercase tracking-wide">Due Date</Label>
+                                            <p className="font-medium text-foreground mt-1">
                                                 {new Date(selectedHomework.dueDate).toLocaleDateString()}
                                             </p>
                                         </div>
                                         <div>
-                                            <Label className="text-gray-600 text-xs uppercase tracking-wide">Estimated Time</Label>
-                                            <p className="font-medium text-gray-900 mt-1">
+                                            <Label className="text-muted-foreground text-xs uppercase tracking-wide">Estimated Time</Label>
+                                            <p className="font-medium text-foreground mt-1">
                                                 {selectedHomework.estimatedTime ? `${selectedHomework.estimatedTime} minutes` : 'Not specified'}
                                             </p>
                                         </div>
@@ -643,10 +643,10 @@ export default function EducatorHomeworkPage() {
 
                                 {/* Instructions Section */}
                                 <div className="space-y-3">
-                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Instructions</h3>
-                                    <Card className="bg-gray-50 border-gray-200">
+                                    <h3 className="text-lg font-semibold text-foreground border-b pb-2">Instructions</h3>
+                                    <Card className="bg-muted/40 border-border">
                                         <CardContent className="p-4">
-                                            <p className="text-sm text-gray-900 leading-relaxed">{selectedHomework.instructions}</p>
+                                            <p className="text-sm text-foreground leading-relaxed">{selectedHomework.instructions}</p>
                                         </CardContent>
                                     </Card>
                                 </div>
@@ -654,8 +654,8 @@ export default function EducatorHomeworkPage() {
                                 {/* Skill Targeted */}
                                 {selectedHomework.skillTargeted && (
                                     <div className="space-y-3">
-                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Skill Targeted</h3>
-                                        <Card className="bg-blue-50 border-blue-200">
+                                        <h3 className="text-lg font-semibold text-foreground border-b pb-2">Skill Targeted</h3>
+                                        <Card className="bg-primary/10 border-primary/20">
                                             <CardContent className="p-4">
                                                 <p className="text-sm text-blue-900 font-medium">{selectedHomework.skillTargeted}</p>
                                             </CardContent>
@@ -666,10 +666,10 @@ export default function EducatorHomeworkPage() {
                                 {/* Additional Notes */}
                                 {selectedHomework.additionalNotes && (
                                     <div className="space-y-3">
-                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Additional Notes</h3>
-                                        <Card className="bg-amber-50 border-amber-200">
+                                        <h3 className="text-lg font-semibold text-foreground border-b pb-2">Additional Notes</h3>
+                                        <Card className="bg-warning/10 border-warning/20">
                                             <CardContent className="p-4">
-                                                <p className="text-sm text-gray-900">{selectedHomework.additionalNotes}</p>
+                                                <p className="text-sm text-foreground">{selectedHomework.additionalNotes}</p>
                                             </CardContent>
                                         </Card>
                                     </div>
@@ -678,10 +678,10 @@ export default function EducatorHomeworkPage() {
                                 {/* Parent Feedback */}
                                 {selectedHomework.parentFeedback && (
                                     <div className="space-y-3">
-                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Parent Feedback</h3>
-                                        <Card className="bg-green-50 border-green-200">
+                                        <h3 className="text-lg font-semibold text-foreground border-b pb-2">Parent Feedback</h3>
+                                        <Card className="bg-success/10 border-success/20">
                                             <CardContent className="p-4">
-                                                <p className="text-sm text-gray-900">{selectedHomework.parentFeedback}</p>
+                                                <p className="text-sm text-foreground">{selectedHomework.parentFeedback}</p>
                                             </CardContent>
                                         </Card>
                                     </div>
@@ -690,10 +690,10 @@ export default function EducatorHomeworkPage() {
                                 {/* Educator Feedback */}
                                 {selectedHomework.educatorFeedback && (
                                     <div className="space-y-3">
-                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Your Feedback</h3>
-                                        <Card className="bg-purple-50 border-purple-200">
+                                        <h3 className="text-lg font-semibold text-foreground border-b pb-2">Your Feedback</h3>
+                                        <Card className="bg-info/10 border-purple-200">
                                             <CardContent className="p-4">
-                                                <p className="text-sm text-gray-900">{selectedHomework.educatorFeedback}</p>
+                                                <p className="text-sm text-foreground">{selectedHomework.educatorFeedback}</p>
                                             </CardContent>
                                         </Card>
                                     </div>
@@ -702,7 +702,7 @@ export default function EducatorHomeworkPage() {
                                 {/* Attached Files */}
                                 {homeworkFiles.length > 0 && (
                                     <div className="space-y-3">
-                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Attached Files</h3>
+                                        <h3 className="text-lg font-semibold text-foreground border-b pb-2">Attached Files</h3>
                                         <FileViewer
                                             files={homeworkFiles}
                                             isLoading={isLoadingFiles}
@@ -714,6 +714,6 @@ export default function EducatorHomeworkPage() {
                     )}
                 </DialogContent>
             </Dialog>
-        </div>
+        </PageWrapper>
     );
 }

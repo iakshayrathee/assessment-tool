@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import {
   Pencil, Bot, Save, X, Loader2, FileText, AlertCircle
 } from 'lucide-react';
@@ -82,18 +82,18 @@ export function ReportEditorModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-[95vw] w-[1200px] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
         {/* ─── Header ─── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-slate-50 to-blue-50/30 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-gradient-to-r from-slate-50 to-blue-50/30 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <FileText className="h-4.5 w-4.5 text-blue-600" />
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <FileText className="h-4.5 w-4.5 text-primary" />
             </div>
             <div className="min-w-0">
-              <h2 className="font-semibold text-gray-900 text-base truncate">{report.title || 'Edit Report'}</h2>
+              <h2 className="font-semibold text-foreground text-base truncate">{report.title || 'Edit Report'}</h2>
               <div className="flex items-center gap-2 mt-0.5">
                 <Badge variant="outline" className="text-xs">{reportTypeLabel}</Badge>
                 <Badge className={`text-xs border ${statusClasses}`}>{report.status || 'DRAFT'}</Badge>
                 {isDirty && (
-                  <Badge className="text-xs bg-amber-100 text-amber-700 border-amber-200 animate-pulse">
+                  <Badge className="text-xs bg-warning/10 text-warning border-warning/20 animate-pulse">
                     Unsaved changes
                   </Badge>
                 )}
@@ -104,13 +104,13 @@ export function ReportEditorModal({
 
         {/* ─── Tabs ─── */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
-          <div className="px-6 pt-3 pb-0 bg-white border-b border-gray-200 flex-shrink-0">
-            <TabsList className="h-10 bg-gray-100/80 p-1 rounded-lg">
-              <TabsTrigger value="edit" className="gap-1.5 data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm rounded-md px-4">
+          <div className="px-6 pt-3 pb-0 bg-background border-b border-border flex-shrink-0">
+            <TabsList className="h-10 bg-muted/80 p-1 rounded-lg">
+              <TabsTrigger value="edit" className="gap-1.5 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-md px-4">
                 <Pencil className="h-3.5 w-3.5" />
                 Edit Report
               </TabsTrigger>
-              <TabsTrigger value="ai" className="gap-1.5 data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-sm rounded-md px-4">
+              <TabsTrigger value="ai" className="gap-1.5 data-[state=active]:bg-background data-[state=active]:text-purple-700 data-[state=active]:shadow-sm rounded-md px-4">
                 <Bot className="h-3.5 w-3.5" />
                 AI Assist
                 {isRefining && <Loader2 className="h-3 w-3 animate-spin ml-1" />}
@@ -143,13 +143,13 @@ export function ReportEditorModal({
         </Tabs>
 
         {/* ─── Footer ─── */}
-        <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50/50 flex-shrink-0">
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+        <div className="flex items-center justify-between px-6 py-3 border-t border-border bg-muted/40/50 flex-shrink-0">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {isDirty && (
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex items-center gap-1 text-amber-600"
+                className="flex items-center gap-1 text-warning"
               >
                 <AlertCircle className="h-3 w-3" /> You have unsaved changes
               </motion.span>

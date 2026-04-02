@@ -41,9 +41,9 @@ export default function StudentDetailsModal({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'INACTIVE': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ACTIVE': return 'bg-success/10 text-foreground';
+      case 'INACTIVE': return 'bg-muted text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -95,7 +95,7 @@ export default function StudentDetailsModal({
         ) : error ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <p className="text-red-500 mb-2">Failed to load student details</p>
+              <p className="text-destructive mb-2">Failed to load student details</p>
               <Button variant="outline" onClick={() => window.location.reload()}>
                 Try Again
               </Button>
@@ -108,8 +108,8 @@ export default function StudentDetailsModal({
               <CardContent className="pt-6">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
-                    <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
-                      <span className="text-blue-600 font-semibold text-lg">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-primary font-semibold text-lg">
                         {student.fullName?.split(' ').map((n: string) => n[0]).join('') || 'N/A'}
                       </span>
                     </div>

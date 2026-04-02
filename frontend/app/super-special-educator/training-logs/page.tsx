@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import Link from 'next/link';
 
 interface TrainingLog {
@@ -174,19 +175,19 @@ export default function TrainingLogsPage() {
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'MENTORSHIP':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'WORKSHOP':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-foreground';
       case 'OBSERVATION':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-info/10 text-foreground';
       case 'FEEDBACK_SESSION':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-warning/10 text-foreground';
       case 'PROFESSIONAL_DEVELOPMENT':
         return 'bg-indigo-100 text-indigo-800';
       case 'CASE_CONSULTATION':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -203,36 +204,23 @@ export default function TrainingLogsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-primary border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/super-special-educator')}
-            className="flex items-center"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Training Logs</h1>
-            <p className="text-gray-600 mt-1">
-              Record and track training interactions with Special Educators
-            </p>
-          </div>
-        </div>
+    <PageWrapper
+      title="Training Logs"
+      description="Record and track training interactions with Special Educators"
+      breadcrumbs={[{ label: 'Super Special Educator', href: '/super-special-educator' }, { label: 'Training Logs' }]}
+      actions={
         <Button onClick={() => setShowCreateDialog(true)} className="flex items-center">
           <Plus className="mr-2 h-4 w-4" />
           Add Training Log
         </Button>
-      </div>
+      }
+    >
 
       {/* Filters */}
       <Card>
@@ -247,7 +235,7 @@ export default function TrainingLogsPage() {
             <div>
               <Label htmlFor="search">Search</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="search"
                   placeholder="Search logs..."
@@ -333,36 +321,36 @@ export default function TrainingLogsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-gray-600">{log.description}</p>
+              <p className="text-sm text-muted-foreground">{log.description}</p>
               
               {log.specialEducator && (
                 <div className="flex items-center space-x-2 text-sm">
-                  <User className="h-4 w-4 text-gray-400" />
+                  <User className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">{log.specialEducator.fullName}</span>
                 </div>
               )}
 
               {log.participants.length > 0 && (
                 <div className="flex items-center space-x-2 text-sm">
-                  <Users className="h-4 w-4 text-gray-400" />
+                  <Users className="h-4 w-4 text-muted-foreground" />
                   <span>{log.participants.length} participant(s)</span>
                 </div>
               )}
 
               {log.notes && (
-                <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="bg-muted/40 p-3 rounded-lg">
                   <div className="flex items-center space-x-2 mb-2">
-                    <MessageSquare className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">Notes</span>
+                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-foreground">Notes</span>
                   </div>
-                  <p className="text-sm text-gray-600">{log.notes}</p>
+                  <p className="text-sm text-muted-foreground">{log.notes}</p>
                 </div>
               )}
 
               {log.followUpRequired && (
-                <div className="flex items-center space-x-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <span className="text-sm text-yellow-800">
+                <div className="flex items-center space-x-2 p-2 bg-warning/10 border border-warning/20 rounded-lg">
+                  <AlertCircle className="h-4 w-4 text-warning" />
+                  <span className="text-sm text-foreground">
                     Follow-up required
                     {log.followUpDate && ` by ${new Date(log.followUpDate).toLocaleDateString()}`}
                   </span>
@@ -370,7 +358,7 @@ export default function TrainingLogsPage() {
               )}
 
               <div className="flex justify-between items-center pt-2 border-t">
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted-foreground">
                   Last updated: {new Date(log.updatedAt).toLocaleDateString()}
                 </div>
                 <div className="flex space-x-2">
@@ -390,9 +378,9 @@ export default function TrainingLogsPage() {
       {filteredLogs.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
-            <BookOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No training logs found</h3>
-            <p className="text-gray-500 mb-4">
+            <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No training logs found</h3>
+            <p className="text-muted-foreground mb-4">
               {searchTerm || typeFilter !== 'all' || educatorFilter !== 'all'
                 ? 'Try adjusting your filters to see more results.'
                 : 'Start by creating your first training log.'}
@@ -526,6 +514,6 @@ export default function TrainingLogsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageWrapper>
   );
 }

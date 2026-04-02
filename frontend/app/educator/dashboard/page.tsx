@@ -1,25 +1,39 @@
 'use client';
 
+/**
+ * Educator Dashboard — Redesigned
+ *
+ * Design philosophy (Linear/Stripe-inspired command center):
+ * - Dashboard = "what should I do right now?" NOT an analytics dump
+ * - Removed the full student grid (it lives on /students page)
+ * - Top: 4 key metrics → AI insights → 2-column: charts | watchlist+actions
+ * - "Priority Watchlist" surfaces up to 5 students that need attention (AI-driven)
+ * - Skeleton loading replaces the jarring full-screen spinner
+ * - Quick Actions panel makes navigation obvious for new users
+ */
+
 import { useAuth } from '@/hooks/useAuth';
-import { useEducatorDashboardAnalytics, useStudentsWithAnalytics, useProgressTrends } from '@/hooks/useEducatorAnalytics';
+import {
+  useEducatorDashboardAnalytics,
+  useStudentsWithAnalytics,
+  useProgressTrends,
+} from '@/hooks/useEducatorAnalytics';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
+import { StatCard } from '@/components/ui/stat-card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import {
   PerformanceDistributionChart,
   DomainPerformanceChart,
-  ProgressTrendsChart
+  ProgressTrendsChart,
 } from '@/components/educator/AnalyticsCharts';
+import { AIEducatorInsightsCard } from '@/components/ai/AIInsightPanels';
 import {
-  Users,
-  Target,
-  CheckCircle,
   TrendingUp,
-  TrendingDown,
-  Minus,
   Calendar,
   ClipboardList,
   Plus,
@@ -30,41 +44,356 @@ import {
   BookOpen,
   Award,
   Download,
-  ArrowUpDown,
-  Search,
-  Sparkles,
   AlertTriangle,
   ShieldCheck,
+  Users,
+  Target,
+  Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { useState, useMemo } from 'react';
 import { useAIEducatorInsights } from '@/hooks/useAI';
-import { AIEducatorInsightsCard } from '@/components/ai/AIInsightPanels';
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
+
+interface RiskInfo {
+  status: string;
+  priority: string;
+}
+
+// ─── Sub-components ────────────────────────────────────────────────────────────
+
+/**
+ * Skeleton shown during the initial data load.
+ * Using fixed-width skeletons (no Math.random) as required by design conventions.
+ */
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="rounded-xl border p-5 space-y-3">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-3 w-36" />
+          </div>
+        ))}
+      </div>
+      <Skeleton className="h-32 w-full rounded-xl" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <Skeleton className="h-64 rounded-xl" />
+            <Skeleton className="h-64 rounded-xl" />
+          </div>
+          <Skeleton className="h-72 rounded-xl" />
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-80 rounded-xl" />
+          <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-36 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A single row in the Priority Watchlist.
+ * Shows avatar, name, grade + progress, and an AI risk badge.
+ * The eye icon reveals on hover — keeps the row scannable.
+ */
+function WatchlistRow({
+  student,
+  riskInfo,
+}: {
+  student: any;
+  riskInfo?: RiskInfo;
+}) {
+  const initials =
+    student.fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'ST';
+  const progress = student.progressSummary?.averageProgress || 0;
+  const statusLower = riskInfo?.status?.toLowerCase() || '';
+  const isHigh =
+    statusLower.includes('high') ||
+    statusLower.includes('critical') ||
+    statusLower.includes('at_risk') ||
+    statusLower.includes('at-risk');
+  const isMedium =
+    statusLower.includes('medium') ||
+    statusLower.includes('moderate') ||
+    statusLower.includes('watch');
+
+  const badgeCls = isHigh
+    ? 'bg-destructive/10 text-destructive border-destructive/20'
+    : isMedium
+    ? 'bg-amber-50 text-amber-700 border-amber-200'
+    : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+
+  const RiskIcon = isHigh ? AlertTriangle : isMedium ? AlertCircle : ShieldCheck;
+
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/40 transition-colors group">
+      {/* Avatar */}
+      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+        <span className="text-primary font-semibold text-xs">{initials}</span>
+      </div>
+
+      {/* Name + meta */}
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm truncate">{student.fullName}</p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-xs text-muted-foreground">{student.grade || 'Grade N/A'}</span>
+          <Progress value={progress} className="h-1.5 w-16 flex-shrink-0" />
+          <span className="text-xs text-muted-foreground tabular-nums">{progress}%</span>
+        </div>
+      </div>
+
+      {/* AI Risk badge */}
+      {riskInfo && (
+        <span
+          className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium flex-shrink-0 ${badgeCls}`}
+        >
+          <RiskIcon className="h-3 w-3" />
+          <span className="capitalize hidden sm:inline">
+            {riskInfo.status.replace(/_/g, ' ')}
+          </span>
+          <Sparkles className="h-2.5 w-2.5 opacity-40" />
+        </span>
+      )}
+
+      {/* Quick view — always subtly visible; becomes opaque on hover.
+          opacity-0 was the original — on touch devices :hover never fires,
+          making this permanently invisible for iPad/tablet users. */}
+      <Link href={`/educator/students/${student.id}`}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0 opacity-40 group-hover:opacity-100 transition-opacity rounded-md flex-shrink-0"
+          title="View student profile"
+        >
+          <Eye className="h-3.5 w-3.5" />
+        </Button>
+      </Link>
+    </div>
+  );
+}
+
+/**
+ * Priority Watchlist — shows up to 5 students that need the most attention.
+ * Sorted: high-risk first (AI-driven), then by lowest progress.
+ * Zero extra API calls — consumes the already-fetched students + AI risk map.
+ */
+function PriorityWatchlist({
+  students,
+  riskMap,
+  isLoading,
+}: {
+  students: any[];
+  riskMap: Map<string, RiskInfo>;
+  isLoading: boolean;
+}) {
+  const prioritized = useMemo(() => {
+    return [...students]
+      .sort((a, b) => {
+        const aRisk = riskMap.get((a.fullName || '').toLowerCase());
+        const bRisk = riskMap.get((b.fullName || '').toLowerCase());
+        const getWeight = (r?: RiskInfo) => {
+          const s = r?.status?.toLowerCase() || '';
+          if (s.includes('high') || s.includes('critical') || s.includes('at_risk')) return 2;
+          if (s.includes('medium') || s.includes('moderate') || s.includes('watch')) return 1;
+          return 0;
+        };
+        const wDiff = getWeight(bRisk) - getWeight(aRisk);
+        if (wDiff !== 0) return wDiff;
+        // Tie-break: lowest progress first
+        return (a.progressSummary?.averageProgress || 0) - (b.progressSummary?.averageProgress || 0);
+      })
+      .slice(0, 5);
+  }, [students, riskMap]);
+
+  const skeletonRows = [1, 2, 3, 4];
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-sm font-semibold">Student Watchlist</CardTitle>
+            <CardDescription className="text-xs">Priority students needing attention</CardDescription>
+          </div>
+          <Link href="/educator/students">
+            <Button variant="ghost" size="sm" className="text-xs h-7 gap-1">
+              All students
+              <Eye className="h-3 w-3" />
+            </Button>
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            {skeletonRows.map((i) => (
+              <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
+                <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : prioritized.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="No students yet"
+            description="Add your first student to get started."
+            action={{
+              label: 'Add Student',
+              onClick: () => (window.location.href = '/educator/students/new'),
+            }}
+            className="py-6 border-0 bg-transparent"
+          />
+        ) : (
+          <div className="space-y-2">
+            {prioritized.map((student) => (
+              <WatchlistRow
+                key={student.id}
+                student={student}
+                riskInfo={riskMap.get((student.fullName || '').toLowerCase())}
+              />
+            ))}
+
+            {/* "N more" overflow link */}
+            {students.length > 5 && (
+              <Link href="/educator/students" className="block mt-1">
+                <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground">
+                  +{students.length - 5} more students
+                </Button>
+              </Link>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * A compact monthly summary + quick action links.
+ * Grouped together in the right sidebar to reduce visual weight.
+ */
+function SidebarSummary({ analytics }: { analytics: any }) {
+  const summaryItems = [
+    {
+      label: 'Completed Reports',
+      value: analytics?.completedReports ?? 0,
+      icon: Award,
+      color: 'text-emerald-600',
+    },
+    {
+      label: 'Upcoming Sessions',
+      value: analytics?.upcomingSessions ?? 0,
+      icon: Calendar,
+      color: 'text-blue-600',
+    },
+    {
+      label: 'Pending Assessments',
+      value: analytics?.pendingAssessments ?? 0,
+      icon: BookOpen,
+      color: 'text-amber-600',
+    },
+  ];
+
+  const quickActions = [
+    { href: '/educator/students', icon: Users, label: 'View All Students' },
+    { href: '/educator/reports', icon: FileText, label: 'Generate Report' },
+    { href: '/educator/assessments', icon: ClipboardList, label: 'Start Assessment' },
+  ];
+
+  return (
+    <>
+      {/* Monthly snapshot */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold">This Month</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          {summaryItems.map(({ label, value, icon: Icon, color }) => (
+            <div
+              key={label}
+              className="flex items-center justify-between py-2.5 border-b last:border-0"
+            >
+              <div className="flex items-center gap-2">
+                <Icon className={`h-4 w-4 ${color} flex-shrink-0`} />
+                <span className="text-sm text-muted-foreground">{label}</span>
+              </div>
+              <span className="font-semibold text-sm tabular-nums">{value}</span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Quick actions */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold">Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1.5">
+          {quickActions.map(({ href, icon: Icon, label }) => (
+            <Link key={href} href={href} className="block">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start gap-2 text-sm font-normal"
+              >
+                <Icon className="h-4 w-4 text-muted-foreground" />
+                {label}
+              </Button>
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export default function EducatorDashboard() {
   const { user } = useAuth();
-
-  // State for filtering and sorting
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [gradeFilter, setGradeFilter] = useState<string>('all');
-  const [performanceFilter, setPerformanceFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [timePeriod, setTimePeriod] = useState<'week' | 'month' | 'quarter'>('month');
-  const [aiInsightsEnabled, setAiInsightsEnabled] = useState(true);
+  const [aiInsightsEnabled] = useState(true);
 
-  const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useEducatorDashboardAnalytics();
-  const { data: students, isLoading: isStudentsLoading, error: studentsError, refetch: refetchStudents } = useStudentsWithAnalytics();
+  const {
+    data: analytics,
+    isLoading: isAnalyticsLoading,
+    error: analyticsError,
+    refetch: refetchAnalytics,
+  } = useEducatorDashboardAnalytics();
+
+  const {
+    data: students,
+    isLoading: isStudentsLoading,
+    error: studentsError,
+    refetch: refetchStudents,
+  } = useStudentsWithAnalytics();
+
   const { data: trends } = useProgressTrends(timePeriod);
   const aiInsights = useAIEducatorInsights(aiInsightsEnabled);
 
-  // Build risk lookup from educator agent's student_priority_list (zero extra API calls)
+  // Build risk lookup from AI agent data — zero extra API calls
   const studentRiskMap = useMemo(() => {
-    const map = new Map<string, { status: string; priority: string }>(); 
-    const priorityList = aiInsights?.data?.student_priority_list || aiInsights?.data?.data?.student_priority_list || [];
-    priorityList.forEach((item: any) => {
+    const map = new Map<string, RiskInfo>();
+    const list =
+      aiInsights?.data?.student_priority_list ||
+      aiInsights?.data?.data?.student_priority_list ||
+      [];
+    list.forEach((item: any) => {
       const name = item.student_name || item.name || '';
       map.set(name.toLowerCase(), {
         status: item.status || item.risk_level || 'unknown',
@@ -77,151 +406,72 @@ export default function EducatorDashboard() {
   const isLoading = isAnalyticsLoading || isStudentsLoading;
   const hasError = analyticsError || studentsError;
 
-  // Filter and sort students
-  const filteredAndSortedStudents = useMemo(() => {
-    if (!students) return [];
+  const displayName =
+    user?.profile?.fullName ||
+    user?.specialEducatorProfile?.fullName ||
+    'Special Educator';
 
-    let filtered = students.filter((student: any) => {
-      // Search filter
-      const matchesSearch = student.fullName?.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Status filter
-      const matchesStatus = statusFilter === 'all' || student.status === statusFilter;
-
-      // Grade filter
-      const matchesGrade = gradeFilter === 'all' || student.grade === gradeFilter;
-
-      // Performance filter
-      const avgProgress = student.progressSummary?.averageProgress || 0;
-      let matchesPerformance = true;
-      if (performanceFilter === 'high') matchesPerformance = avgProgress >= 75;
-      else if (performanceFilter === 'ontrack') matchesPerformance = avgProgress >= 50 && avgProgress < 75;
-      else if (performanceFilter === 'needs-support') matchesPerformance = avgProgress < 50;
-
-      return matchesSearch && matchesStatus && matchesGrade && matchesPerformance;
-    });
-
-    // Sort students
-    filtered.sort((a: any, b: any) => {
-      let comparison = 0;
-
-      switch (sortBy) {
-        case 'name':
-          comparison = (a.fullName || '').localeCompare(b.fullName || '');
-          break;
-        case 'progress':
-          comparison = (a.progressSummary?.averageProgress || 0) - (b.progressSummary?.averageProgress || 0);
-          break;
-        case 'lastSession':
-          const dateA = a.lastSession ? new Date(a.lastSession).getTime() : 0;
-          const dateB = b.lastSession ? new Date(b.lastSession).getTime() : 0;
-          comparison = dateA - dateB;
-          break;
-        case 'grade':
-          comparison = (a.grade || '').localeCompare(b.grade || '');
-          break;
-      }
-
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-
-    return filtered;
-  }, [students, searchQuery, statusFilter, gradeFilter, performanceFilter, sortBy, sortOrder]);
-
-
-  // Get unique grades for filter
-  const uniqueGrades = useMemo(() => {
-    if (!students) return [];
-    const grades = students.map((s: any) => s.grade).filter(Boolean);
-    return Array.from(new Set(grades)).sort();
-  }, [students]);
-
-  // Export to PDF
-  const exportToPDF = async () => {
-    const element = document.getElementById('dashboard-content');
-    if (!element) return;
-
-    // Dynamic import to avoid SSR issues
-    const html2pdf = (await import('html2pdf.js')).default;
-
-    const opt = {
-      margin: 10,
-      filename: `educator-analytics-${format(new Date(), 'yyyy-MM-dd')}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
-    };
-
-    html2pdf().set(opt).from(element).save();
-  };
-
-  // Export to CSV
-  const exportToCSV = () => {
+  // CSV export — unchanged business logic, just scoped here
+  const exportStudentsCSV = () => {
     if (!students) return;
-
-    const headers = ['Name', 'Age', 'Grade', 'Status', 'Overall Progress', 'Remediation Plans (Completed/Total)', 'Last Session'];
-    const rows = students.map((student: any) => [
-      student.fullName || '',
-      student.age || '',
-      student.grade || '',
-      student.status || '',
-      `${student.progressSummary?.averageProgress || 0}%`,
-      `${student.progressSummary?.completedGoals || 0}/${student.progressSummary?.totalGoals || 0}`,
-      student.lastSession ? format(new Date(student.lastSession), 'yyyy-MM-dd') : 'N/A'
+    const headers = [
+      'Name', 'Age', 'Grade', 'Status',
+      'Progress', 'Goals (Done/Total)', 'Last Session',
+    ];
+    const rows = (students as any[]).map((s) => [
+      s.fullName || '',
+      s.age || '',
+      s.grade || '',
+      s.status || '',
+      `${s.progressSummary?.averageProgress || 0}%`,
+      `${s.progressSummary?.completedGoals || 0}/${s.progressSummary?.totalGoals || 0}`,
+      s.lastSession ? format(new Date(s.lastSession), 'yyyy-MM-dd') : 'N/A',
     ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map((row: any[]) => row.join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `student-analytics-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+    const csv = [headers, ...rows].map((r) => r.join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    Object.assign(document.createElement('a'), {
+      href: url,
+      download: `students-${format(new Date(), 'yyyy-MM-dd')}.csv`,
+    }).click();
+    URL.revokeObjectURL(url);
   };
 
-  // Helper function to get status color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'INACTIVE': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
+  // ── Skeleton loading — much better UX than a full-screen spinner ──
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading analytics dashboard...</p>
-        </div>
-      </div>
+      <PageWrapper
+        title={`Welcome back, ${displayName}`}
+        description="Here's what's happening with your students today"
+        breadcrumbs={[{ label: 'Dashboard' }]}
+      >
+        <DashboardSkeleton />
+      </PageWrapper>
     );
   }
 
+  // ── Error state ──
   if (hasError) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Card className="border-red-200 bg-red-50">
+      <PageWrapper
+        title="Dashboard"
+        breadcrumbs={[{ label: 'Dashboard' }]}
+      >
+        <Card className="border-destructive/20 bg-destructive/5">
           <CardContent className="pt-6">
-            <div className="flex items-center space-x-4">
-              <AlertCircle className="h-8 w-8 text-red-600 flex-shrink-0" />
+            <div className="flex items-center gap-4">
+              <AlertCircle className="h-8 w-8 text-destructive flex-shrink-0" />
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-red-900">Failed to load dashboard data</h3>
-                <p className="text-red-700 mt-1">Please try refreshing the page or contact support if the issue persists.</p>
+                <h3 className="font-semibold">Failed to load dashboard</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Please try refreshing or contact support if the issue persists.
+                </p>
               </div>
               <Button
                 variant="outline"
                 onClick={() => {
-                  refetchAnalytics();
-                  refetchStudents();
+                  void refetchAnalytics();
+                  void refetchStudents();
                 }}
-                className="flex-shrink-0"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Retry
@@ -229,421 +479,164 @@ export default function EducatorDashboard() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </PageWrapper>
     );
   }
 
   return (
-    <>
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Welcome back, {user?.profile?.fullName || user?.specialEducatorProfile?.fullName || 'Special Educator'}
-              </h1>
-              <p className="text-gray-600 mt-1">Analytics Dashboard - Track your students' progress and performance</p>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={exportToCSV}>
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
-              <Button variant="outline" onClick={exportToPDF}>
-                <Download className="h-4 w-4 mr-2" />
-                Export PDF
-              </Button>
-              <Link href="/educator/students/new">
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Student
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
+    <PageWrapper
+      title={`Welcome back, ${displayName}`}
+      description="Here's what's happening with your students today"
+      breadcrumbs={[{ label: 'Dashboard' }]}
+      actions={
+        <>
+          <Button variant="outline" size="sm" onClick={exportStudentsCSV}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Link href="/educator/students/new">
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Student
+            </Button>
+          </Link>
+        </>
+      }
+    >
+      {/* ── Section 1: Key Metrics ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Students"
+          value={analytics?.totalStudents ?? 0}
+          description="Active students under your care"
+          icon={Users}
+          variant="primary"
+        />
+        <StatCard
+          title="Average Progress"
+          value={`${analytics?.averageStudentProgress ?? 0}%`}
+          description="Across all remediation plans"
+          icon={TrendingUp}
+          variant="success"
+        />
+        <StatCard
+          title="Active Plans"
+          value={analytics?.activeIEPGoals ?? 0}
+          description="Goals currently in progress"
+          icon={Target}
+          variant="default"
+        />
+        <StatCard
+          title="Pending Tasks"
+          value={analytics?.pendingTasks ?? 0}
+          description="Assessments & homework"
+          icon={ClipboardList}
+          variant="warning"
+        />
       </div>
 
-      <div id="dashboard-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* ── Section 2: AI Insights (auto-hides on error) ────────────────────── */}
+      <AIEducatorInsightsCard
+        data={aiInsights.data}
+        isLoading={aiInsights.isLoading}
+        error={aiInsights.error}
+        onLoad={() => {}}
+      />
 
-        {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics?.totalStudents || 0}</div>
-              <p className="text-xs text-muted-foreground">Active students under your care</p>
-            </CardContent>
-          </Card>
+      {/* ── Section 3: Charts (2/3) + Watchlist + Actions (1/3) ────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Progress</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics?.averageStudentProgress || 0}%</div>
-              <p className="text-xs text-muted-foreground">Across all remediation plans</p>
-            </CardContent>
-          </Card>
+        {/* Left column: chart stack */}
+        <div className="lg:col-span-2 space-y-6">
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Remediation Plans</CardTitle>
-              <Target className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics?.activeIEPGoals || 0}</div>
-              <p className="text-xs text-muted-foreground">Goals currently in progress</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
-              <ClipboardList className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics?.pendingTasks || 0}</div>
-              <p className="text-xs text-muted-foreground">Assessments & homework</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* AI Educator Insights — auto-loads, hides on error */}
-        <div className="mb-8">
-          <AIEducatorInsightsCard
-            data={aiInsights.data}
-            isLoading={aiInsights.isLoading}
-            error={aiInsights.error}
-            onLoad={() => setAiInsightsEnabled(true)}
-          />
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Student Performance Distribution</CardTitle>
-              <CardDescription>Distribution of students by performance level</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {analytics?.performanceDistribution && (
-                <PerformanceDistributionChart data={analytics.performanceDistribution} />
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Domain Performance Overview</CardTitle>
-              <CardDescription>Average progress across learning domains</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {analytics?.domainAverages && (
-                <DomainPerformanceChart data={analytics.domainAverages} />
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Progress Trends */}
-        <Card className="mb-8">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle>Progress Trends</CardTitle>
-                <CardDescription>Track progress over time</CardDescription>
-              </div>
-              <Select value={timePeriod} onValueChange={(value: any) => setTimePeriod(value)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select period" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week">Last Week</SelectItem>
-                  <SelectItem value="month">Last Month</SelectItem>
-                  <SelectItem value="quarter">Last Quarter</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {trends?.trendData && trends.trendData.length > 0 ? (
-              <ProgressTrendsChart data={trends.trendData} />
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>No trend data available for this period</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Student Analytics Cards with Filters */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Student Analytics</CardTitle>
-            <CardDescription>Detailed performance metrics for each student</CardDescription>
-
-            {/* Filters and Search */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search students..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="ACTIVE">Active</SelectItem>
-                  <SelectItem value="INACTIVE">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={gradeFilter} onValueChange={setGradeFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Grades" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Grades</SelectItem>
-                  {uniqueGrades.map((grade: string) => (
-                    <SelectItem key={grade} value={grade}>{grade}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={performanceFilter} onValueChange={setPerformanceFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Performance" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Performance</SelectItem>
-                  <SelectItem value="high">High Performers (≥75%)</SelectItem>
-                  <SelectItem value="ontrack">On Track (50-74%)</SelectItem>
-                  <SelectItem value="needs-support">Needs Support (&lt;50%)</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">Name</SelectItem>
-                  <SelectItem value="progress">Progress</SelectItem>
-                  <SelectItem value="lastSession">Last Session</SelectItem>
-                  <SelectItem value="grade">Grade</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="mt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              >
-                <ArrowUpDown className="h-4 w-4 mr-2" />
-                {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-              </Button>
-              <span className="ml-4 text-sm text-gray-600">
-                Showing {filteredAndSortedStudents.length} of {students?.length || 0} students
-              </span>
-            </div>
-          </CardHeader>
-
-          <CardContent>
-            {isStudentsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : studentsError ? (
-              <div className="text-center py-8">
-                <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-400" />
-                <p className="text-gray-600">Failed to load students</p>
-              </div>
-            ) : filteredAndSortedStudents.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-gray-600 mb-4">
-                  {students?.length === 0 ? 'No students assigned yet' : 'No students match your filters'}
-                </p>
-                {students?.length === 0 && (
-                  <Link href="/educator/students/new">
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Your First Student
-                    </Button>
-                  </Link>
+          {/* Two compact distribution charts side by side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">Performance Distribution</CardTitle>
+                <CardDescription className="text-xs">Students by performance tier</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {analytics?.performanceDistribution ? (
+                  <PerformanceDistributionChart data={analytics.performanceDistribution} />
+                ) : (
+                  <EmptyState
+                    icon={Target}
+                    title="No data yet"
+                    className="py-8 border-0 bg-transparent"
+                  />
                 )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredAndSortedStudents.map((student: any) => {
-                  const progressSummary = student.progressSummary || {};
-                  const avgProgress = progressSummary.averageProgress || 0;
+              </CardContent>
+            </Card>
 
-                  return (
-                    <Card key={student.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                              <span className="text-blue-600 font-semibold text-sm">
-                                {student.fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'ST'}
-                              </span>
-                            </div>
-                            <div>
-                              <h3 className="font-semibold text-base">{student.fullName || 'Unknown Student'}</h3>
-                              <p className="text-xs text-gray-600">
-                                {student.age ? `${student.age} years` : 'Age N/A'} • {student.grade || 'Grade N/A'}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge className={getStatusColor(student.status || 'INACTIVE')}>
-                            {student.status || 'INACTIVE'}
-                          </Badge>
-                        </div>
-                        {/* AI Risk Badge from educator insights */}
-                        {(() => {
-                          const riskInfo = studentRiskMap.get((student.fullName || '').toLowerCase());
-                          if (!riskInfo) return null;
-                          const status = riskInfo.status.toLowerCase();
-                          const isHighRisk = status.includes('high') || status.includes('critical') || status.includes('at_risk') || status.includes('at-risk');
-                          const isMedium = status.includes('medium') || status.includes('moderate') || status.includes('watch');
-                          return (
-                            <div className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full mt-1 ${
-                              isHighRisk ? 'bg-red-50 text-red-700 border border-red-200' :
-                              isMedium ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                              'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            }`}>
-                              {isHighRisk ? <AlertTriangle className="h-3 w-3" /> :
-                               isMedium ? <AlertCircle className="h-3 w-3" /> :
-                               <ShieldCheck className="h-3 w-3" />}
-                              <span className="font-medium capitalize">{riskInfo.status.replace(/_/g, ' ')}</span>
-                              <Sparkles className="h-2.5 w-2.5 opacity-50" />
-                            </div>
-                          );
-                        })()}
-                      </CardHeader>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">Domain Performance</CardTitle>
+                <CardDescription className="text-xs">Average across learning domains</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {analytics?.domainAverages ? (
+                  <DomainPerformanceChart data={analytics.domainAverages} />
+                ) : (
+                  <EmptyState
+                    icon={BookOpen}
+                    title="No data yet"
+                    className="py-8 border-0 bg-transparent"
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-                      <CardContent className="space-y-4">
-                        <div>
-                          <div className="flex justify-between text-sm mb-2">
-                            <span className="text-gray-600">Overall Progress</span>
-                            <span className="font-semibold">{avgProgress}%</span>
-                          </div>
-                          <Progress value={avgProgress} className="h-2" />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div className="bg-blue-50 p-2 rounded">
-                            <div className="flex items-center gap-1 text-blue-700 mb-1">
-                              <Target className="h-3 w-3" />
-                              <span className="font-medium">Remediation Plans</span>
-                            </div>
-                            <p className="text-lg font-bold text-blue-900">
-                              {progressSummary.completedGoals || 0}/{progressSummary.totalGoals || 0}
-                            </p>
-                          </div>
-
-                          <div className="bg-green-50 p-2 rounded">
-                            <div className="flex items-center gap-1 text-green-700 mb-1">
-                              <CheckCircle className="h-3 w-3" />
-                              <span className="font-medium">Completed</span>
-                            </div>
-                            <p className="text-lg font-bold text-green-900">
-                              {progressSummary.completedGoals || 0}
-                            </p>
-                          </div>
-                        </div>
-
-                        {student.lastSession && (
-                          <div className="flex items-center gap-2 text-xs text-gray-600">
-                            <Calendar className="h-3 w-3" />
-                            <span>Last session: {format(new Date(student.lastSession), 'MMM dd, yyyy')}</span>
-                          </div>
-                        )}
-
-                        <div className="flex gap-2 pt-2">
-                          <Link href={`/educator/students/${student.id}`} className="flex-1">
-                            <Button variant="outline" size="sm" className="w-full">
-                              <Eye className="h-3 w-3 mr-1" />
-                              View Details
-                            </Button>
-                          </Link>
-                          <Link href={`/educator/assessments?studentId=${student.id}`}>
-                            <Button size="sm">
-                              <FileText className="h-3 w-3 mr-1" />
-                              Assess
-                            </Button>
-                          </Link>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-
-            {filteredAndSortedStudents.length > 0 && (
-              <div className="mt-6 text-center">
-                <Link href="/educator/students">
-                  <Button variant="outline">View All Students</Button>
-                </Link>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Quick Stats Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Progress Trends — full width, period selector in header */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed Reports</CardTitle>
-              <Award className="h-4 w-4 text-green-600" />
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm font-semibold">Progress Trends</CardTitle>
+                  <CardDescription className="text-xs">Track improvement over time</CardDescription>
+                </div>
+                {/* Period selector is part of the chart header — belongs here, not below */}
+                <Select value={timePeriod} onValueChange={(v: any) => setTimePeriod(v)}>
+                  <SelectTrigger className="w-36 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="week">Last Week</SelectItem>
+                    <SelectItem value="month">Last Month</SelectItem>
+                    <SelectItem value="quarter">Last Quarter</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{analytics?.completedReports || 0}</div>
-              <p className="text-xs text-muted-foreground">This month</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Sessions</CardTitle>
-              <Calendar className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics?.upcomingSessions || 0}</div>
-              <p className="text-xs text-muted-foreground">Next 7 days</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Assessments</CardTitle>
-              <BookOpen className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics?.pendingAssessments || 0}</div>
-              <p className="text-xs text-muted-foreground">Requiring attention</p>
+              {trends?.trendData && trends.trendData.length > 0 ? (
+                <ProgressTrendsChart data={trends.trendData} />
+              ) : (
+                <EmptyState
+                  icon={TrendingUp}
+                  title="No trend data"
+                  description="Trends appear after students have session history."
+                  className="py-10 border-0 bg-transparent"
+                />
+              )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Right column: watchlist + summary + quick actions */}
+        <div className="space-y-4">
+          {/* AI-driven student watchlist — replaces the old 220-line student grid */}
+          <PriorityWatchlist
+            students={students || []}
+            riskMap={studentRiskMap}
+            isLoading={isStudentsLoading}
+          />
+
+          {/* Monthly summary + quick links — consolidated from the old orphaned bottom cards */}
+          <SidebarSummary analytics={analytics} />
+        </div>
       </div>
-    </>
+    </PageWrapper>
   );
 }

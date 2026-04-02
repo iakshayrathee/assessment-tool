@@ -31,6 +31,7 @@ import {
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface CenterAssignment {
   id: string;
@@ -107,8 +108,8 @@ export default function CentersPage() {
 
   const getStatusColor = (isActive: boolean) => {
     return isActive 
-      ? 'bg-green-100 text-green-800'
-      : 'bg-red-100 text-red-800';
+      ? 'bg-success/10 text-foreground'
+      : 'bg-destructive/10 text-foreground';
   };
 
   const formatDate = (dateString: string) => {
@@ -170,35 +171,22 @@ export default function CentersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-primary border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Assigned Centers</h1>
-            <p className="text-gray-600">Manage and monitor your assigned centers</p>
-          </div>
-        </div>
-      </div>
+    <PageWrapper
+      title="Assigned Centers"
+      description="Manage and monitor your assigned centers"
+      breadcrumbs={[{ label: 'Super Special Educator', href: '/super-special-educator' }, { label: 'Centers' }]}
+    >
 
       {/* Search and Stats */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search centers..."
             value={searchTerm}
@@ -206,7 +194,7 @@ export default function CentersPage() {
             className="pl-10"
           />
         </div>
-        <div className="flex gap-4 text-sm text-gray-600">
+        <div className="flex gap-4 text-sm text-muted-foreground">
           <span>Total Centers: <strong>{centerAssignments.length}</strong></span>
           <span>Active: <strong>{centerAssignments.filter(a => a.isActive).length}</strong></span>
         </div>
@@ -216,11 +204,11 @@ export default function CentersPage() {
       {filteredAssignments.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Building2 className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               {searchTerm ? 'No centers found' : 'No centers assigned'}
             </h3>
-            <p className="text-gray-600 text-center max-w-md">
+            <p className="text-muted-foreground text-center max-w-md">
               {searchTerm 
                 ? 'Try adjusting your search terms to find the centers you\'re looking for.'
                 : 'You don\'t have any centers assigned yet. Please contact your administrator.'
@@ -246,10 +234,10 @@ export default function CentersPage() {
               <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-lg font-semibold text-gray-900 mb-1">
+                      <CardTitle className="text-lg font-semibold text-foreground mb-1">
                         {center.centerName}
                       </CardTitle>
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
+                      <div className="flex items-center text-sm text-muted-foreground mb-2">
                         <MapPin className="h-4 w-4 mr-1" />
                         {center.address || 'No address provided'}
                       </div>
@@ -263,63 +251,63 @@ export default function CentersPage() {
                 {/* Contact Information */}
                 <div className="space-y-2">
                   <div className="flex items-center text-sm">
-                    <UserCheck className="h-4 w-4 mr-2 text-gray-400" />
+                    <UserCheck className="h-4 w-4 mr-2 text-muted-foreground" />
                     <span className="font-medium">{center.contactPerson || 'Not provided'}</span>
                   </div>
                   {center.contactPhone && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
                       {center.contactPhone}
                     </div>
                   )}
                   {center.contactEmail && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
                       {center.contactEmail}
                     </div>
                   )}
                 </div>
 
                 {/* Statistics */}
-                <div className="grid grid-cols-2 gap-4 py-3 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-4 py-3 border-t border-border">
                   <div className="text-center">
                     <div className="flex items-center justify-center mb-1">
-                      <Users className="h-4 w-4 mr-1 text-blue-600" />
+                      <Users className="h-4 w-4 mr-1 text-primary" />
                     </div>
-                    <div className="text-2xl font-bold text-gray-900">{center.students?.length || 0}</div>
-                    <div className="text-xs text-gray-600">Students</div>
+                    <div className="text-2xl font-bold text-foreground">{center.students?.length || 0}</div>
+                    <div className="text-xs text-muted-foreground">Students</div>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center mb-1">
-                      <UserCheck className="h-4 w-4 mr-1 text-green-600" />
+                      <UserCheck className="h-4 w-4 mr-1 text-success" />
                     </div>
-                    <div className="text-2xl font-bold text-gray-900">{center.assignments?.length || 0}</div>
-                    <div className="text-xs text-gray-600">Educators</div>
+                    <div className="text-2xl font-bold text-foreground">{center.assignments?.length || 0}</div>
+                    <div className="text-xs text-muted-foreground">Educators</div>
                   </div>
                 </div>
 
                 {/* Dates */}
-                <div className="space-y-2 text-sm border-t border-gray-100 pt-3">
+                <div className="space-y-2 text-sm border-t border-border pt-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Assigned:</span>
+                    <span className="text-muted-foreground">Assigned:</span>
                     <span className="font-medium">{formatDate(assignment.assignedDate)}</span>
                   </div>
                   {assignment.lastVisitDate && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Last Visit:</span>
+                      <span className="text-muted-foreground">Last Visit:</span>
                       <span className="font-medium">{formatDate(assignment.lastVisitDate)}</span>
                     </div>
                   )}
                   {assignment.nextScheduledVisit && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Next Visit:</span>
-                      <span className="font-medium text-blue-600">{formatDate(assignment.nextScheduledVisit)}</span>
+                      <span className="text-muted-foreground">Next Visit:</span>
+                      <span className="font-medium text-primary">{formatDate(assignment.nextScheduledVisit)}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-3 border-t border-gray-100">
+                <div className="flex gap-2 pt-3 border-t border-border">
                   <Button
                     variant="outline"
                     size="sm"
@@ -466,7 +454,7 @@ export default function CentersPage() {
                   <CardContent>
                     <div className="space-y-3">
                       <div className="flex items-center gap-3 p-3 border rounded-lg">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <CheckCircle className="h-4 w-4 text-success" />
                         <div className="flex-1">
                           <p className="font-medium">Evaluation Completed</p>
                           <p className="text-sm text-muted-foreground">Monthly assessment completed</p>
@@ -474,7 +462,7 @@ export default function CentersPage() {
                         <span className="text-sm text-muted-foreground">2 days ago</span>
                       </div>
                       <div className="flex items-center gap-3 p-3 border rounded-lg">
-                        <Calendar className="h-4 w-4 text-blue-500" />
+                        <Calendar className="h-4 w-4 text-primary" />
                         <div className="flex-1">
                           <p className="font-medium">Visit Scheduled</p>
                           <p className="text-sm text-muted-foreground">Routine inspection scheduled</p>
@@ -503,7 +491,7 @@ export default function CentersPage() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          <FileText className="h-4 w-4 text-blue-500" />
+                          <FileText className="h-4 w-4 text-primary" />
                           <div>
                             <p className="font-medium">Monthly Progress Report</p>
                             <p className="text-sm text-muted-foreground">December 2024</p>
@@ -516,7 +504,7 @@ export default function CentersPage() {
                       </div>
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          <FileText className="h-4 w-4 text-green-500" />
+                          <FileText className="h-4 w-4 text-success" />
                           <div>
                             <p className="font-medium">Evaluation Report</p>
                             <p className="text-sm text-muted-foreground">November 2024</p>
@@ -630,6 +618,6 @@ export default function CentersPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageWrapper>
   );
 }

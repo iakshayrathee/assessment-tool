@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/table';
 import { Plus, Trash2, Loader2, Sparkles, X } from 'lucide-react';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { addWeeks } from 'date-fns';
 import { useAIIEPSuggestions } from '@/hooks/useAI';
@@ -223,7 +223,7 @@ export function STPDialog({ open, onOpenChange, studentId, ltps, editing, onSucc
                             <Sparkles className="h-4 w-4" />
                             <span>Pre-filled with AI suggestions — all fields are editable</span>
                         </div>
-                        <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-indigo-400 hover:text-indigo-600" onClick={() => setShowAiBanner(false)}>
+                        <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-indigo-400 hover:text-primary" onClick={() => setShowAiBanner(false)}>
                             <X className="h-3.5 w-3.5" />
                         </Button>
                     </div>
@@ -291,7 +291,7 @@ export function STPDialog({ open, onOpenChange, studentId, ltps, editing, onSucc
                                 rows={2}
                             />
                             {form.formState.errors.stpGoal && (
-                                <p className="text-sm text-red-600 mt-1">{form.formState.errors.stpGoal.message}</p>
+                                <p className="text-sm text-destructive mt-1">{form.formState.errors.stpGoal.message}</p>
                             )}
                         </div>
                         <div className="grid grid-cols-4 gap-4">
@@ -337,7 +337,7 @@ export function STPDialog({ open, onOpenChange, studentId, ltps, editing, onSucc
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="font-semibold text-lg">Sub-Goals (at least 1 required)</h3>
-                                <p className="text-sm text-gray-600">Break down the STP goal into measurable sub-goals</p>
+                                <p className="text-sm text-muted-foreground">Break down the STP goal into measurable sub-goals</p>
                             </div>
                             <Button
                                 type="button"
@@ -357,7 +357,7 @@ export function STPDialog({ open, onOpenChange, studentId, ltps, editing, onSucc
                         <div className="border rounded-lg overflow-hidden">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-gray-50">
+                                    <TableRow className="bg-muted/40">
                                         <TableHead className="w-12">#</TableHead>
                                         <TableHead>Goal Statement *</TableHead>
                                         <TableHead className="w-24">Achieved</TableHead>
@@ -375,7 +375,7 @@ export function STPDialog({ open, onOpenChange, studentId, ltps, editing, onSucc
                                                     placeholder="e.g., Recognise A-F"
                                                 />
                                                 {form.formState.errors.subGoals?.[index]?.goalStatement && (
-                                                    <p className="text-xs text-red-600 mt-1">
+                                                    <p className="text-xs text-destructive mt-1">
                                                         {form.formState.errors.subGoals[index]?.goalStatement?.message}
                                                     </p>
                                                 )}
@@ -417,7 +417,7 @@ export function STPDialog({ open, onOpenChange, studentId, ltps, editing, onSucc
                                                     onClick={() => remove(index)}
                                                     disabled={fields.length <= 1}
                                                 >
-                                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -426,7 +426,7 @@ export function STPDialog({ open, onOpenChange, studentId, ltps, editing, onSucc
                             </Table>
                         </div>
                         {form.formState.errors.subGoals && typeof form.formState.errors.subGoals === 'object' && 'message' in form.formState.errors.subGoals && (
-                            <p className="text-sm text-red-600">{form.formState.errors.subGoals.message}</p>
+                            <p className="text-sm text-destructive">{form.formState.errors.subGoals.message}</p>
                         )}
                     </div>
 

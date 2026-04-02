@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { PageHeader } from '@/components/ui/page-header';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -39,6 +38,7 @@ import { useCenterStudents, useCenterSchools, useCenterEducators } from '@/hooks
 import AssignEducatorModal from '@/components/modals/AssignEducatorModal';
 import StudentDetailsModal from '@/components/modals/StudentDetailsModal';
 import { useToast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api';
 
@@ -243,24 +243,17 @@ export default function CenterStudents() {
   }
 
   return (
-    <div className="">
-      <PageHeader
-        title="Students Management"
-        description="Manage all students assigned to your center"
-        badge={{
-          text: `${filteredStudents.length} Students`,
-          variant: 'secondary'
-        }}
-        actions={[
-          {
-            label: 'Student Onboarding',
-            onClick: () => window.location.href = '/center/students/onboarding',
-            icon: Plus
-          }
-        ]}
-      />
-
-      <div className="p-6 space-y-6">
+    <PageWrapper
+      title="Students Management"
+      description="Manage all students assigned to your center"
+      breadcrumbs={[{ label: 'Center' }, { label: 'Students' }]}
+      actions={
+        <Button onClick={() => window.location.href = '/center/students/onboarding'}>
+          <Plus className="h-4 w-4 mr-2" />
+          Student Onboarding
+        </Button>
+      }
+    >
         {/* Filters Section */}
         <Card>
           <CardHeader>
@@ -419,12 +412,12 @@ export default function CenterStudents() {
                             variant={student.status === 'ACTIVE' ? 'default' : 'secondary'}
                             className={
                               student.status === 'ACTIVE' 
-                                ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                ? 'bg-success/10 text-foreground hover:bg-green-200' 
                                 : student.status === 'INACTIVE'
-                                ? 'bg-gray-100 text-gray-800'
+                                ? 'bg-muted text-foreground'
                                 : student.status === 'GRADUATED'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-orange-100 text-orange-800'
+                                ? 'bg-primary/10 text-primary'
+                                : 'bg-warning/10 text-foreground'
                             }
                           >
                             {student.status}
@@ -433,7 +426,7 @@ export default function CenterStudents() {
                         <TableCell>
                           {student.hasAssignment && student.assignedEducator ? (
                             <div className="flex items-center gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              <CheckCircle className="h-4 w-4 text-success" />
                               <div className="flex flex-col">
                                 <span className="text-sm font-medium">
                                   {student.assignedEducator.fullName}
@@ -445,8 +438,8 @@ export default function CenterStudents() {
                             </div>
                           ) : (
                             <div className="flex items-center gap-2">
-                              <AlertCircle className="h-4 w-4 text-orange-600" />
-                              <span className="text-sm text-orange-600">Unassigned</span>
+                              <AlertCircle className="h-4 w-4 text-warning" />
+                              <span className="text-sm text-warning">Unassigned</span>
                             </div>
                           )}
                         </TableCell>
@@ -740,7 +733,6 @@ export default function CenterStudents() {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

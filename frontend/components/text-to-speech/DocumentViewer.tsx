@@ -117,7 +117,7 @@ export function DocumentViewer({
                     key={`match-${idx}`}
                     className={`${isCurrentResult && idx === 0
                             ? 'bg-orange-300 font-medium'
-                            : 'bg-orange-100'
+                            : 'bg-warning/10'
                         } px-0.5 rounded`}
                 >
                     {matchText}
@@ -142,7 +142,7 @@ export function DocumentViewer({
         const sentences = currentPageContent.sentences;
 
         return (
-            <div className="prose max-w-none p-6 bg-white rounded-lg border shadow-sm">
+            <div className="prose max-w-none p-6 bg-background rounded-lg border shadow-sm">
                 {sentences.map((sentence, index) => {
                     const isHighlighted = isPlaying && index === currentSentenceIndex;
                     const hasSearchHighlight = getSentenceSearchHighlight(index);
@@ -155,8 +155,8 @@ export function DocumentViewer({
                             className={`transition-all duration-200 ${isHighlighted
                                     ? 'bg-yellow-200 font-medium px-1 rounded'
                                     : hasSearchHighlight
-                                        ? 'cursor-pointer hover:bg-gray-100'
-                                        : 'cursor-pointer hover:bg-gray-50'
+                                        ? 'cursor-pointer hover:bg-muted'
+                                        : 'cursor-pointer hover:bg-muted/40'
                                 }`}
                             title={onSentenceClick ? 'Click to jump to this sentence' : ''}
                         >
@@ -194,7 +194,7 @@ export function DocumentViewer({
                                 onChange={handlePageInputChange}
                                 className="w-16 text-center"
                             />
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-muted-foreground">
                                 / {document.totalPages}
                             </span>
                         </form>
@@ -214,8 +214,8 @@ export function DocumentViewer({
             <CardContent className="flex-1 overflow-auto p-4" ref={containerRef}>
                 <div className="max-w-4xl mx-auto">
                     {document.type === 'pdf' && (
-                        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <p className="text-sm text-blue-800">
+                        <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                            <p className="text-sm text-primary">
                                 📄 PDF Document - Page {currentPage} of {document.totalPages}
                             </p>
                         </div>
@@ -225,11 +225,11 @@ export function DocumentViewer({
                         // DOCX with HTML content
                         <div className="space-y-4">
                             <div
-                                className="prose max-w-none p-6 bg-white rounded-lg border shadow-sm"
+                                className="prose max-w-none p-6 bg-background rounded-lg border shadow-sm"
                                 dangerouslySetInnerHTML={{ __html: currentPageContent.htmlContent }}
                             />
-                            <div className="p-4 bg-gray-50 rounded-lg border">
-                                <p className="text-sm font-medium text-gray-700 mb-2">
+                            <div className="p-4 bg-muted/40 rounded-lg border">
+                                <p className="text-sm font-medium text-foreground mb-2">
                                     Text with Highlighting:
                                 </p>
                                 {renderTextWithHighlight()}

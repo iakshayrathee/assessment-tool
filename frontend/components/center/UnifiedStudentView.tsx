@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -85,9 +85,9 @@ export function UnifiedStudentView({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'INACTIVE': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ACTIVE': return 'bg-success/10 text-foreground';
+      case 'INACTIVE': return 'bg-muted text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -123,7 +123,7 @@ export function UnifiedStudentView({
         </div>
 
         {viewType === 'unassigned' && (
-          <Badge variant="outline" className="text-orange-600 border-orange-200">
+          <Badge variant="outline" className="text-warning border-warning/20">
             Needs Assignment
           </Badge>
         )}
@@ -201,7 +201,7 @@ export function UnifiedStudentView({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 font-semibold">
+                      <span className="text-primary font-semibold">
                         {student.fullName.split(' ').map((n: string) => n[0]).join('')}
                       </span>
                     </div>
@@ -213,7 +213,7 @@ export function UnifiedStudentView({
                           {student.status}
                         </Badge>
                         {!student.hasAssignment && (
-                          <Badge variant="outline" className="text-orange-600">
+                          <Badge variant="outline" className="text-warning">
                             Unassigned
                           </Badge>
                         )}

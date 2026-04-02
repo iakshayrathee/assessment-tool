@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Loader2, Database, Trash2, Eye, Upload, Search } from 'lucide-react';
 import { FileUpload } from '@/components/ui/file-upload';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface Document {
     key: string;
@@ -138,33 +139,32 @@ export default function DataBankPage() {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-                    <p className="text-gray-600">Loading documents...</p>
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading documents...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="p-6 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Data Bank</h1>
-                    <p className="text-gray-600">Manage your documents and resources</p>
-                </div>
+        <PageWrapper
+            title="Data Bank"
+            description="Manage your documents and resources"
+            breadcrumbs={[{ label: 'Educator' }, { label: 'Data Bank' }]}
+            actions={
                 <Button onClick={() => setShowUploadModal(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Upload Documents
                 </Button>
-            </div>
+            }
+        >
 
             {/* Search and Stats */}
             <Card>
                 <CardContent className="pt-6">
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex-1 relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search documents..."
                                 value={searchTerm}
@@ -188,11 +188,11 @@ export default function DataBankPage() {
                 <CardContent>
                     {filteredDocuments.length === 0 ? (
                         <div className="text-center py-12">
-                            <Database className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                            <h3 className="text-xl font-medium text-gray-900 mb-2">
+                            <Database className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-xl font-medium text-foreground mb-2">
                                 {searchTerm ? 'No documents found' : 'No documents yet'}
                             </h3>
-                            <p className="text-gray-500 mb-6">
+                            <p className="text-muted-foreground mb-6">
                                 {searchTerm ? 'Try a different search term' : 'Start by uploading your first document'}
                             </p>
                             {!searchTerm && (
@@ -205,36 +205,36 @@ export default function DataBankPage() {
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                                <thead className="bg-muted/40">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                             File Name
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                             Size
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                             Uploaded
                                         </th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="bg-background divide-y divide-gray-200">
                                     {filteredDocuments.map((doc) => (
-                                        <tr key={doc.key} className="hover:bg-gray-50">
+                                        <tr key={doc.key} className="hover:bg-muted/40">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <span className="text-2xl mr-3">{getFileIcon(doc.fileName)}</span>
-                                                    <div className="text-sm font-medium text-gray-900">{doc.fileName}</div>
+                                                    <div className="text-sm font-medium text-foreground">{doc.fileName}</div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{formatFileSize(doc.size)}</div>
+                                                <div className="text-sm text-foreground">{formatFileSize(doc.size)}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-500">{formatDate(doc.lastModified)}</div>
+                                                <div className="text-sm text-muted-foreground">{formatDate(doc.lastModified)}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <div className="flex items-center justify-end gap-2">
@@ -252,7 +252,7 @@ export default function DataBankPage() {
                                                         onClick={() => handleDelete(doc)}
                                                         disabled={deleteMutation.isPending}
                                                     >
-                                                        <Trash2 className="h-4 w-4 mr-1 text-red-600" />
+                                                        <Trash2 className="h-4 w-4 mr-1 text-destructive" />
                                                         Delete
                                                     </Button>
                                                 </div>
@@ -313,6 +313,6 @@ export default function DataBankPage() {
                     </div>
                 </DialogContent>
             </Dialog>
-        </div>
+        </PageWrapper>
     );
 }

@@ -18,9 +18,10 @@ import {
   CheckCircle,
   Calendar
 } from 'lucide-react';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 
 interface Concern {
   id: string;
@@ -131,26 +132,26 @@ export default function ParentConcerns() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Open':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-foreground';
       case 'In Progress':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning/10 text-foreground';
       case 'Resolved':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'High':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-foreground';
       case 'Medium':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning/10 text-foreground';
       case 'Low':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -163,49 +164,34 @@ export default function ParentConcerns() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading concerns...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading concerns...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center space-x-4">
-              <Link href="/parent/dashboard">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">My Concerns</h1>
-                <p className="text-gray-600">Submit and track your concerns</p>
-              </div>
-            </div>
-            <Link href="/parent/concerns/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Submit New Concern
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <PageWrapper
+      title="My Concerns"
+      description="Submit and track your concerns"
+      breadcrumbs={[{ label: 'Dashboard', href: '/parent/dashboard' }, { label: 'Concerns' }]}
+      actions={
+        <Link href="/parent/concerns/new">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Submit New Concern
+          </Button>
+        </Link>
+      }
+    >
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     placeholder="Search concerns..."
                     value={searchTerm}
@@ -237,9 +223,9 @@ export default function ParentConcerns() {
           {filteredConcerns.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
-                <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No concerns found</h3>
-                <p className="text-gray-600 mb-4">
+                <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No concerns found</h3>
+                <p className="text-muted-foreground mb-4">
                   {searchTerm || statusFilter
                     ? 'No concerns match your current filters.'
                     : 'You haven\'t submitted any concerns yet.'}
@@ -268,8 +254,8 @@ export default function ParentConcerns() {
                           {concern.priority}
                         </Badge>
                       </div>
-                      <p className="text-gray-600 mb-3 line-clamp-2">{concern.description}</p>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <p className="text-muted-foreground mb-3 line-clamp-2">{concern.description}</p>
+                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         <div className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
                           Submitted: {new Date(concern.createdAt).toLocaleDateString()}
@@ -302,7 +288,7 @@ export default function ParentConcerns() {
               >
                 Previous
               </Button>
-              <span className="flex items-center px-4 py-2 text-sm text-gray-700">
+              <span className="flex items-center px-4 py-2 text-sm text-foreground">
                 Page {pagination.page} of {pagination.pages}
               </span>
               <Button
@@ -315,7 +301,6 @@ export default function ParentConcerns() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { DiffViewer } from './DiffViewer';
 import { DiffLine } from '@/lib/reportUtils';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Send, Loader2, CheckCircle, XCircle, Sparkles,
   Check, X, ArrowRight, MessageSquare, Clock, AlertCircle
@@ -72,25 +72,25 @@ export function ReportAIAssistTab({
     <div className="flex flex-col h-full">
       {/* Prompt History */}
       {promptHistory.length > 0 && (
-        <div className="border-b border-gray-200 max-h-40 overflow-y-auto">
-          <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs font-medium text-gray-500 flex items-center gap-1.5 sticky top-0">
+        <div className="border-b border-border max-h-40 overflow-y-auto">
+          <div className="px-4 py-2 bg-muted/40 border-b border-border text-xs font-medium text-muted-foreground flex items-center gap-1.5 sticky top-0">
             <Clock className="h-3 w-3" /> Prompt History
           </div>
           <div className="space-y-0">
             {promptHistory.map((entry, idx) => (
               <div key={idx} className="flex items-start gap-2 px-4 py-2 border-b border-gray-50 last:border-0">
                 <div className="mt-0.5">
-                  {entry.status === 'success' && <CheckCircle className="h-3.5 w-3.5 text-green-500" />}
-                  {entry.status === 'error' && <XCircle className="h-3.5 w-3.5 text-red-500" />}
-                  {entry.status === 'pending' && <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />}
+                  {entry.status === 'success' && <CheckCircle className="h-3.5 w-3.5 text-success" />}
+                  {entry.status === 'error' && <XCircle className="h-3.5 w-3.5 text-destructive" />}
+                  {entry.status === 'pending' && <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-700 truncate">{entry.prompt}</p>
+                  <p className="text-sm text-foreground truncate">{entry.prompt}</p>
                   {entry.errorMessage && (
-                    <p className="text-xs text-red-500 mt-0.5">{entry.errorMessage}</p>
+                    <p className="text-xs text-destructive mt-0.5">{entry.errorMessage}</p>
                   )}
                 </div>
-                <span className="text-xs text-gray-400 flex-shrink-0">
+                <span className="text-xs text-muted-foreground flex-shrink-0">
                   {entry.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -114,13 +114,13 @@ export function ReportAIAssistTab({
             >
               <div className="relative">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
-                  <Sparkles className="h-8 w-8 text-purple-600 animate-pulse" />
+                  <Sparkles className="h-8 w-8 text-info animate-pulse" />
                 </div>
-                <Loader2 className="absolute -bottom-1 -right-1 h-6 w-6 text-blue-600 animate-spin" />
+                <Loader2 className="absolute -bottom-1 -right-1 h-6 w-6 text-primary animate-spin" />
               </div>
               <div className="text-center">
-                <p className="font-semibold text-gray-800">AI is refining your report...</p>
-                <p className="text-sm text-gray-500 mt-1">This may take a few seconds</p>
+                <p className="font-semibold text-foreground">AI is refining your report...</p>
+                <p className="text-sm text-muted-foreground mt-1">This may take a few seconds</p>
               </div>
             </motion.div>
           ) : aiRefinedContent ? (
@@ -133,16 +133,16 @@ export function ReportAIAssistTab({
               className="space-y-4"
             >
               {/* Actions bar */}
-              <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
+              <div className="flex items-center justify-between bg-info/10 border border-purple-200 rounded-xl px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm font-medium text-purple-800">AI suggested changes</span>
-                  <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
+                  <Sparkles className="h-4 w-4 text-info" />
+                  <span className="text-sm font-medium text-foreground">AI suggested changes</span>
+                  <span className="text-xs text-info bg-info/10 px-2 py-0.5 rounded-full">
                     +{diffStats.added} / -{diffStats.removed}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" onClick={onReject} className="gap-1 h-8 text-xs border-red-200 text-red-700 hover:bg-red-50">
+                  <Button size="sm" variant="outline" onClick={onReject} className="gap-1 h-8 text-xs border-destructive/20 text-destructive hover:bg-destructive/10">
                     <X className="h-3 w-3" /> Reject
                   </Button>
                   <Button size="sm" onClick={onApply} className="gap-1 h-8 text-xs bg-green-600 hover:bg-green-700 text-white">
@@ -167,22 +167,22 @@ export function ReportAIAssistTab({
                 <MessageSquare className="h-7 w-7 text-purple-500" />
               </div>
               <div className="text-center max-w-md">
-                <h4 className="font-semibold text-gray-800 mb-1">AI Report Assistant</h4>
-                <p className="text-sm text-gray-500">
+                <h4 className="font-semibold text-foreground mb-1">AI Report Assistant</h4>
+                <p className="text-sm text-muted-foreground">
                   Describe the changes you want to make to the report. The AI will suggest modifications and show you exactly what changed.
                 </p>
               </div>
 
               {/* Suggested prompts */}
               <div className="w-full max-w-lg space-y-2">
-                <p className="text-xs font-medium text-gray-400 text-center">Try a suggestion:</p>
+                <p className="text-xs font-medium text-muted-foreground text-center">Try a suggestion:</p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {SUGGESTED_PROMPTS.map((suggestion, idx) => (
                     <button
                       key={idx}
                       onClick={() => setPromptText(suggestion)}
-                      className="text-xs px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-purple-100 
-                               hover:text-purple-700 transition-colors border border-gray-200 hover:border-purple-200"
+                      className="text-xs px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:bg-info/10 
+                               hover:text-purple-700 transition-colors border border-border hover:border-purple-200"
                     >
                       {suggestion}
                     </button>
@@ -195,7 +195,7 @@ export function ReportAIAssistTab({
       </div>
 
       {/* Prompt Input Area (always visible at bottom) */}
-      <div className="border-t border-gray-200 bg-gray-50/50 p-4">
+      <div className="border-t border-border bg-muted/40/50 p-4">
         <div className="flex gap-2">
           <div className="flex-1 relative">
             <textarea
@@ -206,11 +206,11 @@ export function ReportAIAssistTab({
               placeholder="Describe the changes you want AI to make..."
               disabled={isRefining}
               rows={2}
-              className="w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm 
-                       placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 
-                       focus:border-purple-400 disabled:opacity-50 disabled:bg-gray-100 transition-all"
+              className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm 
+                       placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/30 
+                       focus:border-purple-400 disabled:opacity-50 disabled:bg-muted transition-all"
             />
-            <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+            <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
               Ctrl+Enter to send
             </div>
           </div>

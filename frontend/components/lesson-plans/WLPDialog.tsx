@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/table';
 import { Plus, Trash2, Loader2, Sparkles, X } from 'lucide-react';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { useAILessonPlan } from '@/hooks/useAI';
 
@@ -200,7 +200,7 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
                             <Sparkles className="h-4 w-4" />
                             <span>Pre-filled with AI suggestions — all fields are editable</span>
                         </div>
-                        <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-indigo-400 hover:text-indigo-600" onClick={() => setShowAiBanner(false)}>
+                        <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-indigo-400 hover:text-primary" onClick={() => setShowAiBanner(false)}>
                             <X className="h-3.5 w-3.5" />
                         </Button>
                     </div>
@@ -265,7 +265,7 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
                                 rows={2}
                             />
                             {form.formState.errors.topics && (
-                                <p className="text-sm text-red-600 mt-1">{form.formState.errors.topics.message}</p>
+                                <p className="text-sm text-destructive mt-1">{form.formState.errors.topics.message}</p>
                             )}
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -293,7 +293,7 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="font-semibold text-lg">Areas of Remediation</h3>
-                                <p className="text-sm text-gray-600">Specific areas to focus on during this session</p>
+                                <p className="text-sm text-muted-foreground">Specific areas to focus on during this session</p>
                             </div>
                             <Button
                                 type="button"
@@ -308,7 +308,7 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
                         <div className="border rounded-lg overflow-hidden">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-gray-50">
+                                    <TableRow className="bg-muted/40">
                                         <TableHead className="w-12">#</TableHead>
                                         <TableHead>Area of Remediation *</TableHead>
                                         <TableHead className="w-20">Actions</TableHead>
@@ -332,7 +332,7 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
                                                     onClick={() => removeArea(index)}
                                                     disabled={areaFields.length <= 1}
                                                 >
-                                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -341,7 +341,7 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
                             </Table>
                         </div>
                         {form.formState.errors.areasOfRemediation && typeof form.formState.errors.areasOfRemediation === 'object' && 'message' in form.formState.errors.areasOfRemediation && (
-                            <p className="text-sm text-red-600">{form.formState.errors.areasOfRemediation.message}</p>
+                            <p className="text-sm text-destructive">{form.formState.errors.areasOfRemediation.message}</p>
                         )}
                     </div>
 
@@ -350,7 +350,7 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="font-semibold text-lg">Resources Used</h3>
-                                <p className="text-sm text-gray-600">Materials and tools for this session</p>
+                                <p className="text-sm text-muted-foreground">Materials and tools for this session</p>
                             </div>
                             <Button
                                 type="button"
@@ -365,7 +365,7 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
                         <div className="border rounded-lg overflow-hidden">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-gray-50">
+                                    <TableRow className="bg-muted/40">
                                         <TableHead className="w-12">#</TableHead>
                                         <TableHead>Resource *</TableHead>
                                         <TableHead className="w-20">Actions</TableHead>
@@ -389,7 +389,7 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
                                                     onClick={() => removeResource(index)}
                                                     disabled={resourceFields.length <= 1}
                                                 >
-                                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -398,7 +398,7 @@ export function WLPDialog({ open, onOpenChange, studentId, stps, editing, onSucc
                             </Table>
                         </div>
                         {form.formState.errors.resourcesUsed && typeof form.formState.errors.resourcesUsed === 'object' && 'message' in form.formState.errors.resourcesUsed && (
-                            <p className="text-sm text-red-600">{form.formState.errors.resourcesUsed.message}</p>
+                            <p className="text-sm text-destructive">{form.formState.errors.resourcesUsed.message}</p>
                         )}
                     </div>
 

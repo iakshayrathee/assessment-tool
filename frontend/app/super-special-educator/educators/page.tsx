@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { useSuperSpecialEducatorSpecialEducators } from '@/hooks/useSuperSpecialEducator';
 
 interface SpecialEducator {
@@ -258,36 +259,23 @@ export default function EducatorsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-primary border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/super-special-educator')}
-            className="flex items-center"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Special Educators</h1>
-            <p className="text-gray-600 mt-1">
-              Manage and oversee Special Educators across your assigned centers
-            </p>
-          </div>
-        </div>
+    <PageWrapper
+      title="Special Educators"
+      description="Manage and oversee Special Educators across your assigned centers"
+      breadcrumbs={[{ label: 'Super Special Educator', href: '/super-special-educator' }, { label: 'Educators' }]}
+      actions={
         <Button onClick={() => setShowCreateModal(true)} className="flex items-center">
           <Plus className="mr-2 h-4 w-4" />
           Add Special Educator
         </Button>
-      </div>
+      }
+    >
 
       {/* Filters */}
       <Card>
@@ -302,7 +290,7 @@ export default function EducatorsPage() {
             <div>
               <Label htmlFor="search">Search</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="search"
                   placeholder="Search educators..."
@@ -383,24 +371,24 @@ export default function EducatorsPage() {
                   <TableRow key={educator.id}>
                     <TableCell>
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Users className="h-4 w-4 text-blue-600" />
+                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                          <Users className="h-4 w-4 text-primary" />
                         </div>
                         <div>
                           <div className="font-medium">{educator.specialEducator?.fullName || 'N/A'}</div>
-                          <div className="text-sm text-gray-500">{educator.center?.centerName}</div>
+                          <div className="text-sm text-muted-foreground">{educator.center?.centerName}</div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
                         <div className="flex items-center text-sm">
-                          <Mail className="h-3 w-3 mr-1 text-gray-400" />
+                          <Mail className="h-3 w-3 mr-1 text-muted-foreground" />
                           {educator.specialEducator?.user?.email || 'N/A'}
                         </div>
                         {educator.specialEducator?.phone && (
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Phone className="h-3 w-3 mr-1 text-gray-400" />
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Phone className="h-3 w-3 mr-1 text-muted-foreground" />
                             {educator.specialEducator.phone}
                           </div>
                         )}
@@ -424,7 +412,7 @@ export default function EducatorsPage() {
                       <div className="text-sm">
                         {educator.specialEducator?.yearsOfExperience ? (
                           <div className="flex items-center">
-                            <Award className="h-3 w-3 mr-1 text-gray-400" />
+                            <Award className="h-3 w-3 mr-1 text-muted-foreground" />
                             {educator.specialEducator.yearsOfExperience} years
                           </div>
                         ) : (
@@ -439,10 +427,10 @@ export default function EducatorsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="text-center">
-                        <div className="text-lg font-semibold text-blue-600">
+                        <div className="text-lg font-semibold text-primary">
                           {educator.specialEducator?.assignedStudents?.length || 0}
                         </div>
-                        <div className="text-xs text-gray-500">Students</div>
+                        <div className="text-xs text-muted-foreground">Students</div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -479,7 +467,7 @@ export default function EducatorsPage() {
           {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total} results
               </div>
               <div className="flex items-center space-x-2">
@@ -502,7 +490,7 @@ export default function EducatorsPage() {
                     .map((pageNum, index, array) => (
                       <div key={pageNum} className="flex items-center">
                         {index > 0 && array[index - 1] !== pageNum - 1 && (
-                          <span className="px-2 text-gray-400">...</span>
+                          <span className="px-2 text-muted-foreground">...</span>
                         )}
                         <Button
                           variant={pageNum === page ? "default" : "outline"}
@@ -553,7 +541,7 @@ export default function EducatorsPage() {
                     onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
                     placeholder="educator@example.com"
                   />
-                  {formErrors.email && <p className="text-sm text-red-600 mt-1">{formErrors.email}</p>}
+                  {formErrors.email && <p className="text-sm text-destructive mt-1">{formErrors.email}</p>}
                 </div>
                 <div>
                   <Label htmlFor="password">Password *</Label>
@@ -564,7 +552,7 @@ export default function EducatorsPage() {
                     onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
                     placeholder="Minimum 6 characters"
                   />
-                  {formErrors.password && <p className="text-sm text-red-600 mt-1">{formErrors.password}</p>}
+                  {formErrors.password && <p className="text-sm text-destructive mt-1">{formErrors.password}</p>}
                 </div>
                 <div>
                   <Label htmlFor="confirmPassword">Confirm Password *</Label>
@@ -575,7 +563,7 @@ export default function EducatorsPage() {
                     onChange={(e) => setCreateForm({ ...createForm, confirmPassword: e.target.value })}
                     placeholder="Re-enter password"
                   />
-                  {formErrors.confirmPassword && <p className="text-sm text-red-600 mt-1">{formErrors.confirmPassword}</p>}
+                  {formErrors.confirmPassword && <p className="text-sm text-destructive mt-1">{formErrors.confirmPassword}</p>}
                 </div>
               </div>
             </div>
@@ -595,7 +583,7 @@ export default function EducatorsPage() {
                     })}
                     placeholder="Enter full name"
                   />
-                  {formErrors.fullName && <p className="text-sm text-red-600 mt-1">{formErrors.fullName}</p>}
+                  {formErrors.fullName && <p className="text-sm text-destructive mt-1">{formErrors.fullName}</p>}
                 </div>
                 <div>
                   <Label htmlFor="phone">Phone Number</Label>
@@ -658,7 +646,7 @@ export default function EducatorsPage() {
                     })}
                     placeholder="e.g., M.Ed in Special Education"
                   />
-                  {formErrors.specialEdQualification && <p className="text-sm text-red-600 mt-1">{formErrors.specialEdQualification}</p>}
+                  {formErrors.specialEdQualification && <p className="text-sm text-destructive mt-1">{formErrors.specialEdQualification}</p>}
                 </div>
                 <div>
                   <Label htmlFor="yearsOfExperience">Years of Experience</Label>
@@ -712,7 +700,7 @@ export default function EducatorsPage() {
                       <button
                         type="button"
                         onClick={() => removeFromArray('specializationAreas', area)}
-                        className="ml-1 text-red-500 hover:text-red-700"
+                        className="ml-1 text-destructive hover:text-destructive"
                       >
                         ×
                       </button>
@@ -736,7 +724,7 @@ export default function EducatorsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                {formErrors.specializationAreas && <p className="text-sm text-red-600">{formErrors.specializationAreas}</p>}
+                {formErrors.specializationAreas && <p className="text-sm text-destructive">{formErrors.specializationAreas}</p>}
               </div>
             </div>
 
@@ -755,7 +743,7 @@ export default function EducatorsPage() {
                   />
                   <Label htmlFor="consentToShare">I consent to share my information with relevant stakeholders *</Label>
                 </div>
-                {formErrors.consentToShare && <p className="text-sm text-red-600">{formErrors.consentToShare}</p>}
+                {formErrors.consentToShare && <p className="text-sm text-destructive">{formErrors.consentToShare}</p>}
                 
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -768,7 +756,7 @@ export default function EducatorsPage() {
                   />
                   <Label htmlFor="agreementToPolicies">I agree to the platform policies and terms of use *</Label>
                 </div>
-                {formErrors.agreementToPolicies && <p className="text-sm text-red-600">{formErrors.agreementToPolicies}</p>}
+                {formErrors.agreementToPolicies && <p className="text-sm text-destructive">{formErrors.agreementToPolicies}</p>}
               </div>
             </div>
           </div>
@@ -783,6 +771,6 @@ export default function EducatorsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageWrapper>
   );
 }

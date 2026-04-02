@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -20,11 +20,12 @@ import {
   School,
   AlertCircle
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import CenterSchoolSelectionModal from '@/components/modals/CenterSchoolSelectionModal';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface StudentFormData {
   fullName: string;
@@ -218,21 +219,20 @@ export default function NewStudentPage() {
   };
 
   return (
-    <>
-      <div className="p-6 max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Link href="/educator/students">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Students
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Register New Student</h1>
-            <p className="text-gray-600">Add a new student with basic details</p>
-          </div>
-        </div>
+    <PageWrapper
+      title="Register New Student"
+      description="Add a new student with basic details"
+      breadcrumbs={[{ label: 'Educator', href: '/educator' }, { label: 'Students', href: '/educator/students' }, { label: 'New Student' }]}
+      className="max-w-4xl mx-auto"
+      actions={
+        <Link href="/educator/students">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Students
+          </Button>
+        </Link>
+      }
+    >
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Student Basic Information */}
@@ -263,7 +263,7 @@ export default function NewStudentPage() {
                       className={errors.fullName ? 'border-red-500' : ''}
                     />
                     {errors.fullName && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
+                      <p className="text-sm text-destructive flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         {errors.fullName}
                       </p>
@@ -281,7 +281,7 @@ export default function NewStudentPage() {
                       toYear={new Date().getFullYear()}
                     />
                     {formData.dateOfBirth && (
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         Age: {calculateAge(formData.dateOfBirth)} years
                       </p>
                     )}
@@ -300,7 +300,7 @@ export default function NewStudentPage() {
                       </SelectContent>
                     </Select>
                     {errors.gender && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
+                      <p className="text-sm text-destructive flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         {errors.gender}
                       </p>
@@ -333,7 +333,7 @@ export default function NewStudentPage() {
                       </SelectContent>
                     </Select>
                     {errors.grade && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
+                      <p className="text-sm text-destructive flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         {errors.grade}
                       </p>
@@ -364,7 +364,7 @@ export default function NewStudentPage() {
                       </SelectContent>
                     </Select>
                     {errors.syllabus && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
+                      <p className="text-sm text-destructive flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         {errors.syllabus}
                       </p>
@@ -403,7 +403,7 @@ export default function NewStudentPage() {
                       className={errors.parentFullName ? 'border-red-500' : ''}
                     />
                     {errors.parentFullName && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
+                      <p className="text-sm text-destructive flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         {errors.parentFullName}
                       </p>
@@ -426,7 +426,7 @@ export default function NewStudentPage() {
                       </SelectContent>
                     </Select>
                     {errors.relationship && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
+                      <p className="text-sm text-destructive flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         {errors.relationship}
                       </p>
@@ -443,7 +443,7 @@ export default function NewStudentPage() {
                       className={errors.parentPhone ? 'border-red-500' : ''}
                     />
                     {errors.parentPhone && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
+                      <p className="text-sm text-destructive flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         {errors.parentPhone}
                       </p>
@@ -461,7 +461,7 @@ export default function NewStudentPage() {
                       className={errors.parentEmail ? 'border-red-500' : ''}
                     />
                     {errors.parentEmail && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
+                      <p className="text-sm text-destructive flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         {errors.parentEmail}
                       </p>
@@ -479,7 +479,7 @@ export default function NewStudentPage() {
                       className={errors.parentPassword ? 'border-red-500' : ''}
                     />
                     {errors.parentPassword && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
+                      <p className="text-sm text-destructive flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         {errors.parentPassword}
                       </p>
@@ -523,9 +523,9 @@ export default function NewStudentPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Assigned Educator</Label>
-                    <div className="p-3 bg-gray-50 rounded-md">
+                    <div className="p-3 bg-muted/40 rounded-md">
                       <p className="font-medium">{user?.profile?.fullName || 'You'}</p>
-                      <p className="text-sm text-gray-600">Auto-assigned to you</p>
+                      <p className="text-sm text-muted-foreground">Auto-assigned to you</p>
                     </div>
                   </div>
                 </div>
@@ -550,12 +550,12 @@ export default function NewStudentPage() {
                     </Button>
                   </div>
                   {errors.schoolId && (
-                    <p className="text-sm text-red-500 flex items-center gap-1">
+                    <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {errors.schoolId}
                     </p>
                   )}
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     School selection is now required. Choose from your assigned centers.
                   </p>
                 </div>
@@ -592,12 +592,11 @@ export default function NewStudentPage() {
         </form>
 
         {/* School Selection Modal */}
-        <CenterSchoolSelectionModal
-          isOpen={isSchoolModalOpen}
-          onClose={() => setIsSchoolModalOpen(false)}
-          onSchoolSelected={handleSchoolSelect}
-        />
-      </div>
-    </>
+      <CenterSchoolSelectionModal
+        isOpen={isSchoolModalOpen}
+        onClose={() => setIsSchoolModalOpen(false)}
+        onSchoolSelected={handleSchoolSelect}
+      />
+    </PageWrapper>
   );
 }

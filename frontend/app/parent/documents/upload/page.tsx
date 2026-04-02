@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface UploadedFile {
   file: File;
@@ -174,52 +175,35 @@ export default function UploadDocument() {
 
   const getFileIcon = (file: File) => {
     if (file.type.includes('pdf')) {
-      return <FileText className="h-8 w-8 text-red-600" />;
+      return <FileText className="h-8 w-8 text-destructive" />;
     } else if (file.type.includes('word') || file.type.includes('document')) {
-      return <FileText className="h-8 w-8 text-blue-600" />;
+      return <FileText className="h-8 w-8 text-primary" />;
     } else if (file.type.includes('image')) {
-      return <FileText className="h-8 w-8 text-green-600" />;
+      return <FileText className="h-8 w-8 text-success" />;
     }
-    return <FileText className="h-8 w-8 text-gray-600" />;
+    return <FileText className="h-8 w-8 text-muted-foreground" />;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center space-x-4">
-              <Link href="/parent/documents">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Documents
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Upload Documents</h1>
-                <p className="text-gray-600">Share medical records, reports, or other important documents</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <PageWrapper
+      title="Upload Documents"
+      description="Share medical records, reports, or other important documents"
+      breadcrumbs={[{ label: 'Dashboard', href: '/parent/dashboard' }, { label: 'Documents', href: '/parent/documents' }, { label: 'Upload' }]}
+    >
+      <div className="max-w-4xl grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Upload Guidelines */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <AlertCircle className="h-5 w-5 mr-2 text-blue-600" />
+                  <AlertCircle className="h-5 w-5 mr-2 text-primary" />
                   Upload Guidelines
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <h4 className="font-semibold text-sm mb-2">Accepted file types:</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
+                  <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• PDF documents (.pdf)</li>
                     <li>• Word documents (.doc, .docx)</li>
                     <li>• Images (.jpg, .png, .gif)</li>
@@ -228,7 +212,7 @@ export default function UploadDocument() {
                 
                 <div>
                   <h4 className="font-semibold text-sm mb-2">File requirements:</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
+                  <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• Maximum file size: 10MB</li>
                     <li>• Clear, readable documents</li>
                     <li>• Multiple files can be uploaded</li>
@@ -237,7 +221,7 @@ export default function UploadDocument() {
 
                 <div>
                   <h4 className="font-semibold text-sm mb-2">Document categories:</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
+                  <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• Medical: Reports, prescriptions</li>
                     <li>• Academic: School reports, evaluations</li>
                     <li>• Therapy: Session notes, assessments</li>
@@ -245,8 +229,8 @@ export default function UploadDocument() {
                   </ul>
                 </div>
 
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <p className="text-sm text-green-800">
+                <div className="p-3 bg-success/10 rounded-lg">
+                  <p className="text-sm text-foreground">
                     <strong>Privacy:</strong> All uploaded documents are secure and 
                     only accessible to you and your child's educational team.
                   </p>
@@ -270,17 +254,17 @@ export default function UploadDocument() {
                   <div className="space-y-2">
                     <Label>Select Files *</Label>
                     <div 
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer"
+                      className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer"
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-lg font-medium text-gray-900 mb-2">
+                      <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-lg font-medium text-foreground mb-2">
                         Click to upload files
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         or drag and drop files here
                       </p>
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-xs text-muted-foreground mt-2">
                         PDF, DOC, DOCX, JPG, PNG up to 10MB each
                       </p>
                     </div>
@@ -305,20 +289,20 @@ export default function UploadDocument() {
                               {getFileIcon(fileData.file)}
                               <div>
                                 <p className="font-medium text-sm">{fileData.file.name}</p>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-muted-foreground">
                                   {formatFileSize(fileData.file.size)}
                                 </p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
                               {fileData.uploading && (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                <div className="animate-spin rounded-full h-4 w-4 border-primary border-t-transparent"></div>
                               )}
                               {fileData.uploaded && (
-                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <CheckCircle className="h-4 w-4 text-success" />
                               )}
                               {fileData.error && (
-                                <AlertCircle className="h-4 w-4 text-red-600" />
+                                <AlertCircle className="h-4 w-4 text-destructive" />
                               )}
                               {!fileData.uploading && !fileData.uploaded && (
                                 <Button
@@ -391,7 +375,6 @@ export default function UploadDocument() {
             </Card>
           </div>
         </div>
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

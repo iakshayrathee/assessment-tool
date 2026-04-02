@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
 import { queryKeys, invalidationPatterns } from '@/lib/queryKeys';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 
 // Global Search
 export function useGlobalSearch(params?: {

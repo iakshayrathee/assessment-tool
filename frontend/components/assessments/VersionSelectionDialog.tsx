@@ -49,7 +49,7 @@ export function VersionSelectionDialog({
                 <div className="space-y-4 py-4">
                     <RadioGroup value={selectedAction} onValueChange={(value) => setSelectedAction(value as any)}>
                         {/* New Version Option */}
-                        <div className="flex items-start space-x-3 p-3 rounded-lg border-2 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-start space-x-3 p-3 rounded-lg border-2 hover:bg-muted/40 transition-colors">
                             <RadioGroupItem
                                 value="new-version"
                                 id="new-version"
@@ -58,11 +58,11 @@ export function VersionSelectionDialog({
                             <div className="flex-1">
                                 <Label
                                     htmlFor="new-version"
-                                    className={`font-medium cursor-pointer ${!canCreateNewVersion ? 'text-gray-400' : ''}`}
+                                    className={`font-medium cursor-pointer ${!canCreateNewVersion ? 'text-muted-foreground' : ''}`}
                                 >
                                     Save as {versionLabel}
                                 </Label>
-                                <p className="text-sm text-gray-600 mt-1">
+                                <p className="text-sm text-muted-foreground mt-1">
                                     {canCreateNewVersion
                                         ? 'Create a new version while keeping the previous one'
                                         : 'Maximum versions (3) reached'}
@@ -71,13 +71,13 @@ export function VersionSelectionDialog({
                         </div>
 
                         {/* Overwrite Option */}
-                        <div className="flex items-start space-x-3 p-3 rounded-lg border-2 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-start space-x-3 p-3 rounded-lg border-2 hover:bg-muted/40 transition-colors">
                             <RadioGroupItem value="overwrite" id="overwrite" />
                             <div className="flex-1">
                                 <Label htmlFor="overwrite" className="font-medium cursor-pointer">
                                     Overwrite Current Version
                                 </Label>
-                                <p className="text-sm text-gray-600 mt-1">
+                                <p className="text-sm text-muted-foreground mt-1">
                                     Replace the existing assessment data
                                 </p>
                             </div>
@@ -85,8 +85,8 @@ export function VersionSelectionDialog({
                     </RadioGroup>
 
                     {!canCreateNewVersion && (
-                        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                            <AlertCircle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
                             <div className="text-sm text-amber-800">
                                 <p className="font-medium">Maximum versions reached</p>
                                 <p className="mt-1">

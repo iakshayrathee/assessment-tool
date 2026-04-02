@@ -25,7 +25,7 @@ export default function StudentOverviewDashboard({ data, snapshot }: Props) {
         return (
             <Card>
                 <CardContent className="text-center py-12">
-                    <p className="text-gray-600">No data available</p>
+                    <p className="text-muted-foreground">No data available</p>
                 </CardContent>
             </Card>
         );
@@ -63,7 +63,7 @@ export default function StudentOverviewDashboard({ data, snapshot }: Props) {
                         <CardDescription>AI-generated insights for this period</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="prose max-w-none text-gray-700 whitespace-pre-wrap">
+                        <div className="prose max-w-none text-foreground whitespace-pre-wrap">
                             {snapshot.executiveSummary}
                         </div>
                     </CardContent>
@@ -223,23 +223,23 @@ export default function StudentOverviewDashboard({ data, snapshot }: Props) {
                 <CardContent>
                     <div className="space-y-4">
                         {snapshot.highSupportReduction !== null && (
-                            <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+                            <div className="flex items-center justify-between p-4 bg-destructive/10 rounded-lg">
                                 <div>
                                     <p className="text-sm font-medium text-red-900">High Support</p>
-                                    <p className="text-xs text-red-700">{snapshot.highSupportCount} students</p>
+                                    <p className="text-xs text-destructive">{snapshot.highSupportCount} students</p>
                                 </div>
                                 <div className="flex items-center">
                                     {snapshot.highSupportReduction > 0 ? (
                                         <>
-                                            <TrendingDown className="h-5 w-5 text-green-600 mr-1" />
-                                            <span className="text-lg font-bold text-green-600">
+                                            <TrendingDown className="h-5 w-5 text-success mr-1" />
+                                            <span className="text-lg font-bold text-success">
                                                 {snapshot.highSupportReduction.toFixed(1)}%
                                             </span>
                                         </>
                                     ) : (
                                         <>
-                                            <TrendingUp className="h-5 w-5 text-red-600 mr-1" />
-                                            <span className="text-lg font-bold text-red-600">
+                                            <TrendingUp className="h-5 w-5 text-destructive mr-1" />
+                                            <span className="text-lg font-bold text-destructive">
                                                 {Math.abs(snapshot.highSupportReduction).toFixed(1)}%
                                             </span>
                                         </>
@@ -249,7 +249,7 @@ export default function StudentOverviewDashboard({ data, snapshot }: Props) {
                         )}
 
                         {snapshot.moderateSupportReduction !== null && (
-                            <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
+                            <div className="flex items-center justify-between p-4 bg-warning/10 rounded-lg">
                                 <div>
                                     <p className="text-sm font-medium text-orange-900">Moderate Support</p>
                                     <p className="text-xs text-orange-700">{snapshot.moderateSupportCount} students</p>
@@ -257,15 +257,15 @@ export default function StudentOverviewDashboard({ data, snapshot }: Props) {
                                 <div className="flex items-center">
                                     {snapshot.moderateSupportReduction > 0 ? (
                                         <>
-                                            <TrendingDown className="h-5 w-5 text-green-600 mr-1" />
-                                            <span className="text-lg font-bold text-green-600">
+                                            <TrendingDown className="h-5 w-5 text-success mr-1" />
+                                            <span className="text-lg font-bold text-success">
                                                 {snapshot.moderateSupportReduction.toFixed(1)}%
                                             </span>
                                         </>
                                     ) : (
                                         <>
-                                            <TrendingUp className="h-5 w-5 text-orange-600 mr-1" />
-                                            <span className="text-lg font-bold text-orange-600">
+                                            <TrendingUp className="h-5 w-5 text-warning mr-1" />
+                                            <span className="text-lg font-bold text-warning">
                                                 {Math.abs(snapshot.moderateSupportReduction).toFixed(1)}%
                                             </span>
                                         </>
@@ -275,23 +275,23 @@ export default function StudentOverviewDashboard({ data, snapshot }: Props) {
                         )}
 
                         {snapshot.onTrackIncrease !== null && (
-                            <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                            <div className="flex items-center justify-between p-4 bg-success/10 rounded-lg">
                                 <div>
                                     <p className="text-sm font-medium text-green-900">On Track</p>
-                                    <p className="text-xs text-green-700">{snapshot.onTrackCount} students</p>
+                                    <p className="text-xs text-success">{snapshot.onTrackCount} students</p>
                                 </div>
                                 <div className="flex items-center">
                                     {snapshot.onTrackIncrease > 0 ? (
                                         <>
-                                            <TrendingUp className="h-5 w-5 text-green-600 mr-1" />
-                                            <span className="text-lg font-bold text-green-600">
+                                            <TrendingUp className="h-5 w-5 text-success mr-1" />
+                                            <span className="text-lg font-bold text-success">
                                                 {snapshot.onTrackIncrease.toFixed(1)}%
                                             </span>
                                         </>
                                     ) : (
                                         <>
-                                            <TrendingDown className="h-5 w-5 text-red-600 mr-1" />
-                                            <span className="text-lg font-bold text-red-600">
+                                            <TrendingDown className="h-5 w-5 text-destructive mr-1" />
+                                            <span className="text-lg font-bold text-destructive">
                                                 {Math.abs(snapshot.onTrackIncrease).toFixed(1)}%
                                             </span>
                                         </>
@@ -301,7 +301,7 @@ export default function StudentOverviewDashboard({ data, snapshot }: Props) {
                         )}
 
                         {snapshot.highSupportReduction === null && (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-muted-foreground">
                                 <p>No previous period data for comparison</p>
                             </div>
                         )}

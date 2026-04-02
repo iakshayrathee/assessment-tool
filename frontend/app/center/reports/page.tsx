@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EnhancedCard } from '@/components/ui/enhanced-card';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   FileText,
   Users,
@@ -30,6 +29,7 @@ import {
 import { useCompleteCenterReportData, useGenerateCenterSnapshot, useCenterSnapshots } from '@/hooks/useCenterReports';
 import ReactDOMServer from 'react-dom/server';
 import { useToast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 type PeriodType = 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
 
@@ -363,7 +363,7 @@ export default function CenterReportsPage() {
 
   if (!centerId) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="p-6">
         <Card>
           <CardContent className="p-6">
             <p className="text-center text-muted-foreground">Please log in to view reports.</p>
@@ -378,12 +378,11 @@ export default function CenterReportsPage() {
   const center = reportData?.center;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <PageHeader
-        title="Center Performance & Statistics Report"
-        description="Comprehensive analytics and performance metrics for your center"
-        icon={FileBarChart}
-      />
+    <PageWrapper
+      title="Center Performance & Statistics Report"
+      description="Comprehensive analytics and performance metrics for your center"
+      breadcrumbs={[{ label: 'Center' }, { label: 'Reports' }]}
+    >
 
       {/* Period Selector and Actions */}
       <Card>
@@ -466,7 +465,7 @@ export default function CenterReportsPage() {
       ) : (
         <div id="report-content" className="space-y-6">
           {/* Report Header */}
-          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+          <Card className="bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/20 dark:to-primary/30">
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
                 <div>
@@ -790,7 +789,7 @@ export default function CenterReportsPage() {
           </Tabs>
         </div>
       )}
-    </div>
+    </PageWrapper>
   );
 }
 
@@ -802,10 +801,10 @@ function StatCard({ title, value, icon: Icon, color }: {
   color: string;
 }) {
   const colorClasses = {
-    blue: 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
-    green: 'bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400',
-    purple: 'bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400',
-    orange: 'bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400',
+    blue: 'bg-primary/10 text-primary dark:bg-blue-950 dark:text-primary/80',
+    green: 'bg-success/10 text-success dark:bg-green-950 dark:text-green-400',
+    purple: 'bg-info/10 text-info dark:bg-purple-950 dark:text-purple-400',
+    orange: 'bg-warning/10 text-warning dark:bg-orange-950 dark:text-orange-400',
     cyan: 'bg-cyan-100 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-400',
     emerald: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400',
   };
@@ -834,17 +833,17 @@ function ProgressCard({ domain, improvement, icon: Icon }: {
   icon: any;
 }) {
   const getImprovementColor = (value: number | null) => {
-    if (value === null) return 'text-gray-500';
-    if (value > 10) return 'text-green-600';
-    if (value > 0) return 'text-blue-600';
-    return 'text-orange-600';
+    if (value === null) return 'text-muted-foreground';
+    if (value > 10) return 'text-success';
+    if (value > 0) return 'text-primary';
+    return 'text-warning';
   };
 
   const getImprovementBg = (value: number | null) => {
-    if (value === null) return 'bg-gray-100 dark:bg-gray-900';
-    if (value > 10) return 'bg-green-100 dark:bg-green-950';
-    if (value > 0) return 'bg-blue-100 dark:bg-blue-950';
-    return 'bg-orange-100 dark:bg-orange-950';
+    if (value === null) return 'bg-muted dark:bg-gray-900';
+    if (value > 10) return 'bg-success/10 dark:bg-green-950';
+    if (value > 0) return 'bg-primary/10 dark:bg-blue-950';
+    return 'bg-warning/10 dark:bg-orange-950';
   };
 
   return (
@@ -866,9 +865,9 @@ function ProgressCard({ domain, improvement, icon: Icon }: {
             <span className="text-sm text-muted-foreground">improvement</span>
           </div>
           {improvement !== null && (
-            <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2">
+            <div className="w-full bg-muted dark:bg-gray-800 rounded-full h-2">
               <div
-                className={`h-2 rounded-full ${improvement > 0 ? 'bg-green-500' : 'bg-orange-500'}`}
+                className={`h-2 rounded-full ${improvement > 0 ? 'bg-success' : 'bg-orange-500'}`}
                 style={{ width: `${Math.min(Math.abs(improvement), 100)}%` }}
               />
             </div>
@@ -885,19 +884,19 @@ function ComplianceCard({ title, percentage }: {
   percentage: number | null;
 }) {
   const getComplianceColor = (value: number | null) => {
-    if (value === null) return 'text-gray-500';
-    if (value >= 90) return 'text-green-600';
-    if (value >= 70) return 'text-blue-600';
-    if (value >= 50) return 'text-orange-600';
-    return 'text-red-600';
+    if (value === null) return 'text-muted-foreground';
+    if (value >= 90) return 'text-success';
+    if (value >= 70) return 'text-primary';
+    if (value >= 50) return 'text-warning';
+    return 'text-destructive';
   };
 
   const getComplianceBg = (value: number | null) => {
     if (value === null) return 'bg-gray-500';
-    if (value >= 90) return 'bg-green-500';
+    if (value >= 90) return 'bg-success';
     if (value >= 70) return 'bg-blue-500';
     if (value >= 50) return 'bg-orange-500';
-    return 'bg-red-500';
+    return 'bg-destructive';
   };
 
   return (
@@ -911,7 +910,7 @@ function ComplianceCard({ title, percentage }: {
             </span>
           </div>
           {percentage !== null && (
-            <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-3">
+            <div className="w-full bg-muted dark:bg-gray-800 rounded-full h-3">
               <div
                 className={`h-3 rounded-full ${getComplianceBg(percentage)}`}
                 style={{ width: `${Math.min(percentage, 100)}%` }}

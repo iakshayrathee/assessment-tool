@@ -41,8 +41,8 @@ export function MaxAssessmentsWarningDialog({
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-amber-100 rounded-full">
-                            <AlertTriangle className="h-6 w-6 text-amber-600" />
+                        <div className="p-2 bg-warning/10 rounded-full">
+                            <AlertTriangle className="h-6 w-6 text-warning" />
                         </div>
                         <DialogTitle className="text-xl">Maximum Assessments Reached</DialogTitle>
                     </div>
@@ -52,11 +52,11 @@ export function MaxAssessmentsWarningDialog({
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
                         <p className="text-sm font-medium text-red-900 mb-2">
                             The following assessment will be permanently deleted:
                         </p>
-                        <div className="space-y-1 text-sm text-red-800">
+                        <div className="space-y-1 text-sm text-foreground">
                             <p>
                                 <span className="font-medium">Type:</span>{' '}
                                 {oldestAssessment.assessmentType || assessmentTypeName}
@@ -71,8 +71,8 @@ export function MaxAssessmentsWarningDialog({
                         </div>
                     </div>
 
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <p className="text-sm text-gray-700">
+                    <div className="p-4 bg-muted/40 border border-border rounded-lg">
+                        <p className="text-sm text-foreground">
                             <span className="font-medium">Note:</span> This action cannot be undone. The oldest
                             assessment will be permanently removed from the system to make room for the new one.
                         </p>

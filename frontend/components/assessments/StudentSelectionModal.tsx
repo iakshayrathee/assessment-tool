@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -74,16 +74,16 @@ export function StudentSelectionModal({
         <DialogHeader>
           <DialogTitle>Select Student</DialogTitle>
           {pagination && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               {pagination.total} active student{pagination.total !== 1 ? 's' : ''} available
             </p>
           )}
         </DialogHeader>
 
         {/* Search and Filter Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 p-4 bg-gray-50 rounded-lg">
+        <div className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/40 rounded-lg">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search students by name..."
               value={searchTerm}
@@ -93,7 +93,7 @@ export function StudentSelectionModal({
           </div>
 
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-400" />
+            <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={gradeFilter} onValueChange={setGradeFilter}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="All Grades" />
@@ -121,13 +121,13 @@ export function StudentSelectionModal({
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
-                <p className="text-gray-600">Loading students...</p>
+                <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+                <p className="text-muted-foreground">Loading students...</p>
               </div>
             </div>
           ) : filteredStudents.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-600 mb-2">
+              <p className="text-muted-foreground mb-2">
                 {searchTerm || gradeFilter
                   ? 'No students match your search criteria.'
                   : 'No active students found.'
@@ -152,20 +152,20 @@ export function StudentSelectionModal({
                   <Card
                     key={studentId}
                     className={`cursor-pointer transition-all hover:shadow-md ${selectedStudentId === studentId
-                      ? 'border-2 border-blue-500 bg-blue-50'
-                      : 'border hover:border-gray-300'
+                      ? 'border-2 border-blue-500 bg-primary/10'
+                      : 'border hover:border-border'
                       }`}
                     onClick={() => handleStudentSelect(student)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-900 truncate">{fullName}</h3>
-                          <p className="text-sm text-gray-600">
+                          <h3 className="font-medium text-foreground truncate">{fullName}</h3>
+                          <p className="text-sm text-muted-foreground">
                             <GradeDisplay grade={grade} /> • Age {age}
                           </p>
                           {school && (
-                            <p className="text-xs text-gray-500 mt-1 truncate">{school}</p>
+                            <p className="text-xs text-muted-foreground mt-1 truncate">{school}</p>
                           )}
                         </div>
                         {selectedStudentId === studentId && (
@@ -182,8 +182,8 @@ export function StudentSelectionModal({
 
         {/* Pagination */}
         {pagination && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t bg-gray-50">
-            <div className="text-sm text-gray-600">
+          <div className="flex items-center justify-between p-4 border-t bg-muted/40">
+            <div className="text-sm text-muted-foreground">
               Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, pagination.total)} of{' '}
               {pagination.total} students
             </div>
@@ -196,7 +196,7 @@ export function StudentSelectionModal({
               >
                 Previous
               </Button>
-              <span className="text-sm text-gray-600 min-w-[100px] text-center">
+              <span className="text-sm text-muted-foreground min-w-[100px] text-center">
                 Page {currentPage} of {pagination.totalPages}
               </span>
               <Button

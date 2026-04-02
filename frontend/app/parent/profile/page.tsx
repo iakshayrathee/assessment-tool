@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
+import { toast } from '@/lib/toast';
 
 interface ParentProfile {
   id: string;
@@ -107,8 +108,8 @@ export default function ParentProfile() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading profile...</p>
         </div>
       </div>
     );
@@ -118,8 +119,8 @@ export default function ParentProfile() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-          <p className="text-gray-600">Failed to load profile</p>
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <p className="text-muted-foreground">Failed to load profile</p>
           <Button onClick={loadProfile} className="mt-4">
             Try Again
           </Button>
@@ -129,29 +130,12 @@ export default function ParentProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center space-x-4">
-              <Link href="/parent/dashboard">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-                <p className="text-gray-600">Manage your personal information</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <PageWrapper
+      title="My Profile"
+      description="Manage your personal information"
+      breadcrumbs={[{ label: 'Dashboard', href: '/parent/dashboard' }, { label: 'Profile' }]}
+    >
+      <div className="max-w-4xl grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Overview */}
           <div className="lg:col-span-1">
             <Card>
@@ -163,21 +147,21 @@ export default function ParentProfile() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
-                  <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <User className="h-10 w-10 text-blue-600" />
+                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <User className="h-10 w-10 text-primary" />
                   </div>
                   <h3 className="font-semibold text-lg">{profile.fullName}</h3>
-                  <p className="text-gray-600">{profile.relationship}</p>
-                  <p className="text-sm text-gray-500">{profile.user.email}</p>
+                  <p className="text-muted-foreground">{profile.relationship}</p>
+                  <p className="text-sm text-muted-foreground">{profile.user.email}</p>
                 </div>
                 
                 <div className="space-y-3 pt-4 border-t">
                   <div className="flex items-center text-sm">
-                    <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                    <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
                     <span>{profile.phone || 'Not provided'}</span>
                   </div>
                   <div className="flex items-start text-sm">
-                    <MapPin className="h-4 w-4 mr-2 text-gray-400 mt-0.5" />
+                    <MapPin className="h-4 w-4 mr-2 text-muted-foreground mt-0.5" />
                     <span>{profile.address || 'Not provided'}</span>
                   </div>
                 </div>
@@ -241,7 +225,7 @@ export default function ParentProfile() {
                       onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
                       placeholder="Emergency contact name and phone"
                     />
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       Provide name and phone number of emergency contact person
                     </p>
                   </div>
@@ -271,7 +255,6 @@ export default function ParentProfile() {
             </Card>
           </div>
         </div>
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

@@ -15,7 +15,7 @@ export default function SchoolImpactReport({ data, snapshot }: Props) {
         return (
             <Card>
                 <CardContent className="text-center py-12">
-                    <p className="text-gray-600">No data available</p>
+                    <p className="text-muted-foreground">No data available</p>
                 </CardContent>
             </Card>
         );
@@ -39,7 +39,7 @@ export default function SchoolImpactReport({ data, snapshot }: Props) {
                         <CardDescription>AI-generated insights on program effectiveness</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="prose max-w-none text-gray-700 whitespace-pre-wrap">
+                        <div className="prose max-w-none text-foreground whitespace-pre-wrap">
                             {data.narrative}
                         </div>
                     </CardContent>
@@ -103,48 +103,48 @@ export default function SchoolImpactReport({ data, snapshot }: Props) {
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
                             <div className="flex items-center justify-between mb-1">
-                                <p className="text-sm text-blue-900 font-medium">Manual Observation</p>
+                                <p className="text-sm text-foreground font-medium">Manual Observation</p>
                                 <CalculationInfo {...CALCULATION_METHODS.timeSavedObservation} />
                             </div>
-                            <p className="text-2xl font-bold text-blue-700">{data.timeSaved?.manualObservationTimeSaved || 0}h</p>
-                            <p className="text-xs text-blue-600 mt-1">Time saved</p>
+                            <p className="text-2xl font-bold text-primary">{data.timeSaved?.manualObservationTimeSaved || 0}h</p>
+                            <p className="text-xs text-primary mt-1">Time saved</p>
                         </div>
-                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                        <div className="p-4 bg-info/10 rounded-lg border border-info/20">
                             <div className="flex items-center justify-between mb-1">
-                                <p className="text-sm text-purple-900 font-medium">Lesson Planning</p>
+                                <p className="text-sm text-foreground font-medium">Lesson Planning</p>
                                 <CalculationInfo {...CALCULATION_METHODS.timeSavedPlanning} />
                             </div>
-                            <p className="text-2xl font-bold text-purple-700">{data.timeSaved?.lessonPlanningTimeSaved || 0}h</p>
-                            <p className="text-xs text-purple-600 mt-1">Time saved</p>
+                            <p className="text-2xl font-bold text-info">{data.timeSaved?.lessonPlanningTimeSaved || 0}h</p>
+                            <p className="text-xs text-info mt-1">Time saved</p>
                         </div>
-                        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div className="p-4 bg-success/10 rounded-lg border border-success/20">
                             <div className="flex items-center justify-between mb-1">
                                 <p className="text-sm text-green-900 font-medium">Tracking Workload</p>
                                 <CalculationInfo {...CALCULATION_METHODS.timeSavedTracking} />
                             </div>
-                            <p className="text-2xl font-bold text-green-700">{data.timeSaved?.trackingWorkloadTimeSaved || 0}h</p>
-                            <p className="text-xs text-green-600 mt-1">Time saved</p>
+                            <p className="text-2xl font-bold text-success">{data.timeSaved?.trackingWorkloadTimeSaved || 0}h</p>
+                            <p className="text-xs text-success mt-1">Time saved</p>
                         </div>
-                        <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                        <div className="p-4 bg-warning/10 rounded-lg border border-warning/20">
                             <div className="flex items-center justify-between mb-1">
                                 <p className="text-sm text-orange-900 font-medium">Differentiation Support</p>
                                 <CalculationInfo {...CALCULATION_METHODS.timeSavedDifferentiation} />
                             </div>
                             <p className="text-2xl font-bold text-orange-700">{data.timeSaved?.differentiationSupportTimeSaved || 0}h</p>
-                            <p className="text-xs text-orange-600 mt-1">Time saved</p>
+                            <p className="text-xs text-warning mt-1">Time saved</p>
                         </div>
                     </div>
-                    <div className="p-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border-2 border-indigo-200">
+                    <div className="p-6 bg-primary/5 rounded-lg border-2 border-primary/20">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-indigo-900 font-medium mb-1">Total Time Saved This Period</p>
-                                <p className="text-xs text-indigo-700">Cumulative across all categories</p>
+                                <p className="text-sm text-foreground font-medium mb-1">Total Time Saved This Period</p>
+                                <p className="text-xs text-muted-foreground">Cumulative across all categories</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-4xl font-bold text-indigo-700">{data.timeSaved?.totalTimeSaved || 0}</p>
-                                <p className="text-sm text-indigo-600">hours</p>
+                                <p className="text-4xl font-bold text-primary">{data.timeSaved?.totalTimeSaved || 0}</p>
+                                <p className="text-sm text-primary">hours</p>
                             </div>
                         </div>
                     </div>
@@ -171,14 +171,14 @@ export default function SchoolImpactReport({ data, snapshot }: Props) {
 
                     <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {improvementData.map((item) => (
-                            <div key={item.domain} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div key={item.domain} className="flex items-center justify-between p-4 bg-muted/40 rounded-lg">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-900">{item.domain}</p>
-                                    <p className="text-xs text-gray-600">Domain</p>
+                                    <p className="text-sm font-medium text-foreground">{item.domain}</p>
+                                    <p className="text-xs text-muted-foreground">Domain</p>
                                 </div>
                                 <div className="flex items-center">
-                                    <TrendingUp className="h-5 w-5 text-green-600 mr-1" />
-                                    <span className="text-lg font-bold text-green-600">{item.improvement}%</span>
+                                    <TrendingUp className="h-5 w-5 text-success mr-1" />
+                                    <span className="text-lg font-bold text-success">{item.improvement}%</span>
                                 </div>
                             </div>
                         ))}
@@ -198,9 +198,9 @@ export default function SchoolImpactReport({ data, snapshot }: Props) {
                             <div className="flex items-center justify-between p-4 border rounded-lg">
                                 <div>
                                     <p className="font-medium">High Support → Moderate Support</p>
-                                    <p className="text-sm text-gray-600">Students moving to lower risk</p>
+                                    <p className="text-sm text-muted-foreground">Students moving to lower risk</p>
                                 </div>
-                                <div className="text-2xl font-bold text-green-600">
+                                <div className="text-2xl font-bold text-success">
                                     {data.riskLevelReduction.highSupportReduction > 0 ? `${data.riskLevelReduction.highSupportReduction.toFixed(1)}%` : 'No change'}
                                 </div>
                             </div>
@@ -210,16 +210,16 @@ export default function SchoolImpactReport({ data, snapshot }: Props) {
                             <div className="flex items-center justify-between p-4 border rounded-lg">
                                 <div>
                                     <p className="font-medium">Moderate Support → On Track</p>
-                                    <p className="text-sm text-gray-600">Students achieving independence</p>
+                                    <p className="text-sm text-muted-foreground">Students achieving independence</p>
                                 </div>
-                                <div className="text-2xl font-bold text-green-600">
+                                <div className="text-2xl font-bold text-success">
                                     {data.riskLevelReduction.moderateSupportReduction > 0 ? `${data.riskLevelReduction.moderateSupportReduction.toFixed(1)}%` : 'No change'}
                                 </div>
                             </div>
                         )}
 
                         {data.riskLevelReduction?.highSupportReduction === null && (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-muted-foreground">
                                 <p>No previous period data for comparison</p>
                             </div>
                         )}
@@ -238,52 +238,52 @@ export default function SchoolImpactReport({ data, snapshot }: Props) {
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                        <div className="p-5 bg-primary/10 rounded-lg border border-primary/20">
                             <div className="flex items-center justify-between mb-2">
-                                <FileCheck className="h-6 w-6 text-blue-600" />
+                                <FileCheck className="h-6 w-6 text-primary" />
                                 <div className="flex items-center gap-1">
-                                    <span className="text-3xl font-bold text-blue-700">{data.interventionEvidence?.individualSupportPlansCreated || 0}</span>
+                                    <span className="text-3xl font-bold text-primary">{data.interventionEvidence?.individualSupportPlansCreated || 0}</span>
                                     <CalculationInfo {...CALCULATION_METHODS.supportPlans} />
                                 </div>
                             </div>
-                            <p className="text-sm font-medium text-blue-900">Individual Support Plans Created</p>
-                            <p className="text-xs text-blue-700 mt-1">IEP goals established</p>
+                            <p className="text-sm font-medium text-foreground">Individual Support Plans Created</p>
+                            <p className="text-xs text-primary mt-1">IEP goals established</p>
                         </div>
 
-                        <div className="p-5 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                        <div className="p-5 bg-info/10 rounded-lg border border-info/20">
                             <div className="flex items-center justify-between mb-2">
-                                <Users className="h-6 w-6 text-purple-600" />
+                                <Users className="h-6 w-6 text-info" />
                                 <div className="flex items-center gap-1">
-                                    <span className="text-3xl font-bold text-purple-700">{data.interventionEvidence?.smallGroupInterventions || 0}</span>
+                                    <span className="text-3xl font-bold text-info">{data.interventionEvidence?.smallGroupInterventions || 0}</span>
                                     <CalculationInfo {...CALCULATION_METHODS.groupInterventions} />
                                 </div>
                             </div>
-                            <p className="text-sm font-medium text-purple-900">Small-Group Interventions</p>
-                            <p className="text-xs text-purple-700 mt-1">Therapy sessions conducted</p>
+                            <p className="text-sm font-medium text-foreground">Small-Group Interventions</p>
+                            <p className="text-xs text-info mt-1">Therapy sessions conducted</p>
                         </div>
 
-                        <div className="p-5 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                        <div className="p-5 bg-success/10 rounded-lg border border-success/20">
                             <div className="flex items-center justify-between mb-2">
-                                <MessageSquare className="h-6 w-6 text-green-600" />
+                                <MessageSquare className="h-6 w-6 text-success" />
                                 <div className="flex items-center gap-1">
-                                    <span className="text-3xl font-bold text-green-700">{data.interventionEvidence?.classroomStrategyRecommendations || 0}</span>
+                                    <span className="text-3xl font-bold text-success">{data.interventionEvidence?.classroomStrategyRecommendations || 0}</span>
                                     <CalculationInfo {...CALCULATION_METHODS.strategyRecommendations} />
                                 </div>
                             </div>
-                            <p className="text-sm font-medium text-green-900">Classroom Strategy Recommendations</p>
-                            <p className="text-xs text-green-700 mt-1">AI comprehensive reports generated</p>
+                            <p className="text-sm font-medium text-foreground">Classroom Strategy Recommendations</p>
+                            <p className="text-xs text-success mt-1">AI comprehensive reports generated</p>
                         </div>
 
-                        <div className="p-5 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+                        <div className="p-5 bg-warning/10 rounded-lg border border-warning/20">
                             <div className="flex items-center justify-between mb-2">
-                                <BarChart3 className="h-6 w-6 text-orange-600" />
+                                <BarChart3 className="h-6 w-6 text-warning" />
                                 <div className="flex items-center gap-1">
-                                    <span className="text-3xl font-bold text-orange-700">{data.interventionEvidence?.reviewCyclesCompleted || 0}</span>
+                                    <span className="text-3xl font-bold text-warning">{data.interventionEvidence?.reviewCyclesCompleted || 0}</span>
                                     <CalculationInfo {...CALCULATION_METHODS.reviewCycles} />
                                 </div>
                             </div>
-                            <p className="text-sm font-medium text-orange-900">Review Cycles Completed</p>
-                            <p className="text-xs text-orange-700 mt-1">Goals with 2+ progress updates</p>
+                            <p className="text-sm font-medium text-foreground">Review Cycles Completed</p>
+                            <p className="text-xs text-warning mt-1">Goals with 2+ progress updates</p>
                         </div>
                     </div>
                 </CardContent>
@@ -297,7 +297,7 @@ export default function SchoolImpactReport({ data, snapshot }: Props) {
                         <CardDescription>AI-generated actionable recommendations</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="prose max-w-none text-gray-700 whitespace-pre-wrap">
+                        <div className="prose max-w-none text-foreground whitespace-pre-wrap">
                             {snapshot.recommendations}
                         </div>
                     </CardContent>

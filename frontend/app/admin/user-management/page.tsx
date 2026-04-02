@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,7 @@ import { CreateUserModal } from '@/components/modals/CreateUserModal';
 import { EditUserModal } from '@/components/modals/EditUserModal';
 import { RoleBasedAssignmentModal } from '@/components/modals/RoleBasedAssignmentModal';
 import { useUsers, useDeleteUser, useToggleUserStatus } from '@/hooks/useUserManagement';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface ExtendedUser extends UserType {
   createdAt: string;
@@ -94,7 +95,7 @@ const USER_ROLE_ICONS = {
 };
 
 // Animation variants
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -104,7 +105,7 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -116,7 +117,7 @@ const itemVariants = {
   }
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: {
     opacity: 1,
@@ -407,7 +408,7 @@ export default function UserManagementPage() {
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                   <IconComponent className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -723,73 +724,37 @@ export default function UserManagementPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      {/* Page Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white border-b border-gray-200 shadow-sm"
-      >
-        <div className="px-4 sm:px-6 py-6 sm:py-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <motion.div 
-              variants={itemVariants}
-              className="space-y-1"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Users className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">User Management</h1>
-                  <p className="text-gray-600 font-medium text-sm sm:text-base">
-                    Create, edit, assign, or remove users across all roles
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-            <motion.div 
-              variants={itemVariants}
-              className="flex items-center space-x-3 w-full sm:w-auto"
-            >
-              <Button 
-                variant="outline" 
-                onClick={loadUsers} 
-                className="shadow-sm transition-all duration-200 flex-1 sm:flex-none"
-                disabled={isRefreshing}
-              >
-                {isRefreshing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Refreshing...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Refresh
-                  </>
-                )}
-              </Button>
-              <Button 
-                onClick={handleCreateUser} 
-                className="shadow-sm transition-all duration-200 flex-1 sm:flex-none"
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Add User</span>
-                <span className="sm:hidden">Add</span>
-              </Button>
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
-
+    <PageWrapper
+      title="User Management"
+      description="Create, edit, assign, or remove users across all roles"
+      breadcrumbs={[{ label: 'Admin' }, { label: 'User Management' }]}
+      actions={
+        <>
+          <Button
+            variant="outline"
+            onClick={loadUsers}
+            className="transition-all duration-200"
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Refreshing...</>
+            ) : (
+              <><RefreshCw className="mr-2 h-4 w-4" />Refresh</>
+            )}
+          </Button>
+          <Button onClick={handleCreateUser} className="transition-all duration-200">
+            <UserPlus className="mr-2 h-4 w-4" />
+            Add User
+          </Button>
+        </>
+      }
+    >
       {/* Main Content */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-        className="px-4 sm:px-6 py-6 space-y-6"
+        transition={{ delay: 0.1, duration: 0.4 }}
+        className="space-y-6"
       >
         {/* Filters and Controls */}
         <motion.div variants={itemVariants}>
@@ -892,7 +857,7 @@ export default function UserManagementPage() {
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="flex items-center space-x-2">
-                    <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     <span className="text-muted-foreground">Loading users...</span>
                   </div>
                 </div>
@@ -978,6 +943,6 @@ export default function UserManagementPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </PageWrapper>
   );
 }

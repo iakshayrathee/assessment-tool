@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -92,7 +92,7 @@ export function StudentSelectionModal({
             <div className="flex-1">
               <Label htmlFor="search" className="sr-only">Search students</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="search"
                   placeholder="Search students by name..."
@@ -134,10 +134,10 @@ export function StudentSelectionModal({
           <div className="space-y-2">
             {isLoading ? (
               <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-primary border-t-transparent"></div>
               </div>
             ) : filteredStudents.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 {searchTerm || gradeFilter !== 'all' ? (
                   <p>No students match your search criteria.</p>
                 ) : (
@@ -150,17 +150,17 @@ export function StudentSelectionModal({
                   {paginatedStudents.map((student: any) => (
                     <Card
                       key={student.id}
-                      className={`cursor-pointer transition-colors hover:bg-gray-50 ${selectedStudentId === student.id ? 'border-primary bg-primary/5' : ''
+                      className={`cursor-pointer transition-colors hover:bg-muted/40 ${selectedStudentId === student.id ? 'border-primary bg-primary/5' : ''
                         }`}
                       onClick={() => handleStudentSelect(student.id)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h3 className="font-medium text-gray-900">
+                            <h3 className="font-medium text-foreground">
                               {student.fullName || student.name}
                             </h3>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                               <GradeDisplay grade={student.grade.toString()} /> • Age {student.age}
                               {student.school && ` • ${student.school}`}
                             </p>
@@ -185,7 +185,7 @@ export function StudentSelectionModal({
                     >
                       Previous
                     </Button>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-muted-foreground">
                       Page {currentPage} of {totalPages}
                     </span>
                     <Button

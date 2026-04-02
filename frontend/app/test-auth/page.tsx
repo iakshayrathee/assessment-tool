@@ -198,12 +198,12 @@ export default function TestAuthPage() {
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6">Auth Debug Page</h1>
 
-      <div className="mb-6 p-4 bg-gray-100 rounded-md">
+      <div className="mb-6 p-4 bg-muted rounded-md">
         <h2 className="text-lg font-semibold mb-2">Current Auth State:</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="font-medium">Is Authenticated:</p>
-            <p className={isAuthenticated ? "text-green-600" : "text-red-600"}>
+            <p className={isAuthenticated ? "text-success" : "text-destructive"}>
               {isAuthenticated ? "Yes" : "No"}
             </p>
           </div>
@@ -214,21 +214,21 @@ export default function TestAuthPage() {
         </div>
       </div>
 
-      <div className="mb-6 p-4 bg-gray-100 rounded-md">
+      <div className="mb-6 p-4 bg-muted rounded-md">
         <h2 className="text-lg font-semibold mb-2">Token from Zustand Store:</h2>
         {tokenFromStore ? (
           <div>
             <p className="mb-2">Token exists:</p>
-            <pre className="bg-gray-200 p-2 rounded overflow-auto max-w-full">
+            <pre className="bg-muted p-2 rounded overflow-auto max-w-full">
               {tokenFromStore.substring(0, 20)}...
             </pre>
           </div>
         ) : (
-          <p className="text-red-500">No token found in store</p>
+          <p className="text-destructive">No token found in store</p>
         )}
       </div>
 
-      <div className="mb-6 p-4 bg-blue-50 rounded-md">
+      <div className="mb-6 p-4 bg-primary/10 rounded-md">
         <h2 className="text-lg font-semibold mb-2">Login Test:</h2>
         <div className="space-y-4">
           <div>
@@ -254,19 +254,19 @@ export default function TestAuthPage() {
           <div className="flex space-x-2">
             <button
               onClick={handleLogin}
-              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              className="px-4 py-2 bg-success text-white rounded hover:bg-green-600"
             >
               Login
             </button>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              className="px-4 py-2 bg-destructive text-white rounded hover:bg-red-600"
             >
               Logout
             </button>
           </div>
           {loginStatus && (
-            <p className={loginStatus.includes('failed') ? "text-red-500" : "text-green-500"}>
+            <p className={loginStatus.includes('failed') ? "text-destructive" : "text-success"}>
               {loginStatus}
             </p>
           )}
@@ -276,32 +276,32 @@ export default function TestAuthPage() {
       <div className="mb-6">
         <button
           onClick={testApiCall}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-primary"
         >
           Test API Call (Admin Dashboard)
         </button>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-md">
+        <div className="mb-6 p-4 bg-destructive/10 text-destructive rounded-md">
           <h2 className="text-lg font-semibold mb-2">Error:</h2>
           <p>{error}</p>
         </div>
       )}
 
       {apiResponse && (
-        <div className="mb-6 p-4 bg-green-100 rounded-md">
+        <div className="mb-6 p-4 bg-success/10 rounded-md">
           <h2 className="text-lg font-semibold mb-2">API Response:</h2>
-          <pre className="bg-gray-200 p-2 rounded overflow-auto max-w-full">
+          <pre className="bg-muted p-2 rounded overflow-auto max-w-full">
             {JSON.stringify(apiResponse, null, 2)}
           </pre>
         </div>
       )}
 
-      <div className="mb-6 p-4 bg-gray-100 rounded-md">
+      <div className="mb-6 p-4 bg-muted rounded-md">
         <h2 className="text-lg font-semibold mb-2">Debug Info:</h2>
         {debugInfo ? (
-          <pre className="bg-gray-200 p-2 rounded overflow-auto max-w-full">
+          <pre className="bg-muted p-2 rounded overflow-auto max-w-full">
             {JSON.stringify(debugInfo, null, 2)}
           </pre>
         ) : (
@@ -309,7 +309,7 @@ export default function TestAuthPage() {
         )}
       </div>
 
-      <div className="mb-6 p-4 bg-yellow-100 rounded-md">
+      <div className="mb-6 p-4 bg-warning/10 rounded-md">
         <h2 className="text-lg font-semibold mb-2">Debug Actions:</h2>
         <div className="flex flex-wrap gap-2">
           <button
@@ -321,7 +321,7 @@ export default function TestAuthPage() {
               refreshLogs();
               setTokenValidity(null);
             }}
-            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+            className="px-4 py-2 bg-warning text-white rounded hover:bg-yellow-600"
           >
             Clear All Auth Data
           </button>
@@ -332,14 +332,14 @@ export default function TestAuthPage() {
               refreshLogs();
               handleCheckToken();
             }}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-primary"
           >
             Refresh All Info
           </button>
 
           <button
             onClick={handleCheckToken}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            className="px-4 py-2 bg-success text-white rounded hover:bg-green-600"
           >
             Check Token Validity
           </button>
@@ -356,19 +356,19 @@ export default function TestAuthPage() {
       </div>
 
       {/* Token Inspection */}
-      <div className="mb-6 p-4 bg-blue-50 rounded-md">
+      <div className="mb-6 p-4 bg-primary/10 rounded-md">
         <h2 className="text-lg font-semibold mb-2">Token Inspection:</h2>
         {tokenFromStore ? (
           <div className="space-y-4">
-            <div className="bg-white/80 p-3 rounded">
+            <div className="bg-background/80 p-3 rounded">
               <h3 className="font-medium mb-2">Raw Token:</h3>
-              <div className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-20">
+              <div className="bg-muted p-2 rounded text-xs overflow-auto max-h-20">
                 {tokenFromStore}
               </div>
             </div>
 
             {tokenDetails && (
-              <div className="bg-white/80 p-3 rounded">
+              <div className="bg-background/80 p-3 rounded">
                 <h3 className="font-medium mb-2">Token Analysis:</h3>
                 <div className="space-y-2">
                   <div>
@@ -380,7 +380,7 @@ export default function TestAuthPage() {
                   {tokenDetails.header && (
                     <div>
                       <h4 className="font-medium">Header:</h4>
-                      <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-20">
+                      <pre className="bg-muted p-2 rounded text-xs overflow-auto max-h-20">
                         {JSON.stringify(tokenDetails.header, null, 2)}
                       </pre>
                     </div>
@@ -389,7 +389,7 @@ export default function TestAuthPage() {
                   {tokenDetails.payload && (
                     <div>
                       <h4 className="font-medium">Payload:</h4>
-                      <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-40">
+                      <pre className="bg-muted p-2 rounded text-xs overflow-auto max-h-40">
                         {JSON.stringify(tokenDetails.payload, null, 2)}
                       </pre>
                     </div>
@@ -398,7 +398,7 @@ export default function TestAuthPage() {
                   {tokenDetails.expiry && tokenDetails.expiry.expiryDate && (
                     <div>
                       <h4 className="font-medium">Expiration:</h4>
-                      <p className={tokenDetails.expiry.isExpired ? 'text-red-600' : 'text-green-600'}>
+                      <p className={tokenDetails.expiry.isExpired ? 'text-destructive' : 'text-success'}>
                         <strong>Expires:</strong> {tokenDetails.expiry.expiryDate}
                       </p>
                       <p>
@@ -418,22 +418,22 @@ export default function TestAuthPage() {
             <div className="flex space-x-2">
               <button
                 onClick={() => analyzeToken(tokenFromStore)}
-                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-primary text-sm"
               >
                 Refresh Analysis
               </button>
             </div>
           </div>
         ) : (
-          <p className="text-gray-500">No token available to inspect</p>
+          <p className="text-muted-foreground">No token available to inspect</p>
         )}
       </div>
 
       {/* Token Validity */}
       {tokenValidity && (
-        <div className={`mb-6 p-4 rounded-md ${tokenValidity.valid ? 'bg-green-100' : 'bg-red-100'}`}>
+        <div className={`mb-6 p-4 rounded-md ${tokenValidity.valid ? 'bg-success/10' : 'bg-destructive/10'}`}>
           <h2 className="text-lg font-semibold mb-2">Token Validity Check:</h2>
-          <div className="bg-white/80 p-3 rounded">
+          <div className="bg-background/80 p-3 rounded">
             <p><strong>Status:</strong> {tokenValidity.valid ? 'Valid' : 'Invalid'}</p>
             <p><strong>Message:</strong> {tokenValidity.message}</p>
             {tokenValidity.expiry && (
@@ -447,19 +447,19 @@ export default function TestAuthPage() {
       )}
 
       {/* Persistent Logs */}
-      <div className="mb-6 p-4 bg-gray-100 rounded-md">
+      <div className="mb-6 p-4 bg-muted rounded-md">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-lg font-semibold">Persistent Logs:</h2>
           <div className="space-x-2">
             <button
               onClick={() => setShowLogs(!showLogs)}
-              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-primary text-sm"
             >
               {showLogs ? 'Hide Logs' : 'Show Logs'}
             </button>
             <button
               onClick={handleClearLogs}
-              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+              className="px-3 py-1 bg-destructive text-white rounded hover:bg-red-600 text-sm"
             >
               Clear Logs
             </button>
@@ -467,21 +467,21 @@ export default function TestAuthPage() {
         </div>
 
         {showLogs && logs.length > 0 ? (
-          <div className="bg-white/80 p-3 rounded max-h-96 overflow-auto">
+          <div className="bg-background/80 p-3 rounded max-h-96 overflow-auto">
             {logs.map((log, index) => (
               <div
                 key={index}
-                className={`mb-2 p-2 rounded ${log.level === 'error' ? 'bg-red-50' : log.level === 'warn' ? 'bg-yellow-50' : 'bg-blue-50'}`}
+                className={`mb-2 p-2 rounded ${log.level === 'error' ? 'bg-destructive/10' : log.level === 'warn' ? 'bg-warning/10' : 'bg-primary/10'}`}
               >
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1">
                   <span>{new Date(log.timestamp).toLocaleString()}</span>
-                  <span className={`font-medium ${log.level === 'error' ? 'text-red-600' : log.level === 'warn' ? 'text-yellow-600' : 'text-blue-600'}`}>
+                  <span className={`font-medium ${log.level === 'error' ? 'text-destructive' : log.level === 'warn' ? 'text-warning' : 'text-primary'}`}>
                     {log.level.toUpperCase()}
                   </span>
                 </div>
                 <p className="font-medium">{log.message}</p>
                 {log.data && (
-                  <pre className="text-xs mt-1 bg-gray-100 p-1 rounded overflow-auto">
+                  <pre className="text-xs mt-1 bg-muted p-1 rounded overflow-auto">
                     {JSON.stringify(log.data, null, 2)}
                   </pre>
                 )}
@@ -489,9 +489,9 @@ export default function TestAuthPage() {
             ))}
           </div>
         ) : showLogs ? (
-          <p className="text-gray-500">No logs available</p>
+          <p className="text-muted-foreground">No logs available</p>
         ) : (
-          <p className="text-gray-500">Click 'Show Logs' to view {logs.length} log entries</p>
+          <p className="text-muted-foreground">Click 'Show Logs' to view {logs.length} log entries</p>
         )}
       </div>
     </div>

@@ -70,7 +70,7 @@ import {
 } from 'lucide-react';
 import { format, addMonths, addWeeks } from 'date-fns';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 
 // Component imports
 import { HierarchyView } from '@/components/lesson-plans/HierarchyView';
@@ -81,6 +81,7 @@ import { WLPDialog } from '@/components/lesson-plans/WLPDialog';
 import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
 import { useAILessonPlan } from '@/hooks/useAI';
 import { AILessonPlanPanel } from '@/components/ai/AIInsightPanels';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 // Constants
 const DOMAINS = [
@@ -321,61 +322,56 @@ export default function LessonPlansPage() {
         switch (status) {
             case 'ACTIVE':
             case 'IN_PROGRESS':
-                return 'bg-blue-100 text-blue-800';
+                return 'bg-primary/10 text-primary';
             case 'COMPLETED':
-                return 'bg-green-100 text-green-800';
+                return 'bg-success/10 text-foreground';
             case 'DRAFT':
-                return 'bg-gray-100 text-gray-800';
+                return 'bg-muted text-foreground';
             case 'ON_HOLD':
-                return 'bg-yellow-100 text-yellow-800';
+                return 'bg-warning/10 text-foreground';
             case 'PLANNED':
-                return 'bg-purple-100 text-purple-800';
+                return 'bg-info/10 text-foreground';
             case 'CANCELLED':
-                return 'bg-red-100 text-red-800';
+                return 'bg-destructive/10 text-foreground';
             default:
-                return 'bg-gray-100 text-gray-800';
+                return 'bg-muted text-foreground';
         }
     };
 
     return (
-        <div className="container mx-auto p-6 space-y-6">
-            <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-6">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Lesson Plans</h1>
-                        <p className="text-gray-600">Manage three-tier lesson plans (Long Term Plan → Short Term Plan → Weekly Lesson Plan)</p>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        {selectedStudent ? (
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowStudentModal(true)}
-                                className="flex items-center gap-4 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200 min-w-[250px] hover:bg-blue-100"
-                            >
-                                <div className="flex-1 min-w-0 text-left">
-                                    <p className="font-medium text-blue-900 text-sm truncate">
-                                        {selectedStudent.fullName}
-                                    </p>
-                                    <p className="text-xs text-blue-700">
-                                        Grade {selectedStudent.grade || 'N/A'}
-                                    </p>
-                                </div>
-                                <Users className="h-4 w-4 flex-shrink-0" />
-                            </Button>
-                        ) : (
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowStudentModal(true)}
-                                className="flex items-center gap-2 px-4 py-2 min-w-[140px]"
-                            >
-                                <Users className="h-4 w-4" />
-                                Select Student
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            </div>
+        <PageWrapper
+            title="Lesson Plans"
+            description="Manage three-tier lesson plans (Long Term Plan → Short Term Plan → Weekly Lesson Plan)"
+            breadcrumbs={[{ label: 'Educator' }, { label: 'Lesson Plans' }]}
+            actions={
+                selectedStudent ? (
+                    <Button
+                        variant="outline"
+                        onClick={() => setShowStudentModal(true)}
+                        className="flex items-center gap-4 bg-primary/10 px-4 py-3 rounded-lg border border-primary/20 min-w-[250px] hover:bg-primary/10"
+                    >
+                        <div className="flex-1 min-w-0 text-left">
+                            <p className="font-medium text-sm truncate">
+                                {selectedStudent.fullName}
+                            </p>
+                            <p className="text-xs text-primary">
+                                Grade {selectedStudent.grade || 'N/A'}
+                            </p>
+                        </div>
+                        <Users className="h-4 w-4 flex-shrink-0" />
+                    </Button>
+                ) : (
+                    <Button
+                        variant="outline"
+                        onClick={() => setShowStudentModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 min-w-[140px]"
+                    >
+                        <Users className="h-4 w-4" />
+                        Select Student
+                    </Button>
+                )
+            }
+        >
 
             {selectedStudent && (
                 <>
@@ -421,7 +417,7 @@ export default function LessonPlansPage() {
                                 </div>
                             ) : ltps.length === 0 ? (
                                 <Card>
-                                    <CardContent className="py-12 text-center text-gray-500">
+                                    <CardContent className="py-12 text-center text-muted-foreground">
                                         No lesson plans yet. Create a Long-Term Plan to get started.
                                     </CardContent>
                                 </Card>
@@ -511,6 +507,6 @@ export default function LessonPlansPage() {
                 }}
                 selectedStudentId={selectedStudent?.id || ''}
             />
-        </div>
+        </PageWrapper>
     );
 }

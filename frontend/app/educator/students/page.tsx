@@ -1,508 +1,435 @@
 'use client';
 
-import { useState } from 'react';
+/**
+ * Students List Page — v2 (post-review fixes)
+ *
+ * Changes from v1:
+ * - Removed unused `useRouter` / dead `router` declaration
+ * - Removed misleading `avgProgress` stat that changed per pagination page
+ * - Fixed `statusFilter` sending `''` to API — now sends `undefined` (truly "all")
+ * - Added 300ms search debounce so each keystroke doesn't fire an API call
+ * - Extracted shared `StudentAvatar` component (was duplicated in list + table view)
+ * - Simplified `PaginationBar` — removed unnecessary `pageSize` prop
+ * - `Calendar` icon removed from imports (was only used for the removed stat card)
+ */
+
+import { useState, useEffect, useCallback } from 'react';
 import { useEducatorStudents } from '@/hooks/useEducator';
-import { useSpecialEducatorProfile } from '@/hooks/useSpecialEducator';
-import { useStudents } from '@/hooks/useStudents';
-// Use route-level UnifiedLayout; remove page-level EducatorLayout
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   Search,
   Plus,
   Users,
-  Filter,
   Eye,
-  TrendingUp
+  TrendingUp,
+  List,
+  LayoutGrid,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import { toast } from 'react-hot-toast';
-import { apiClient } from '@/lib/api';
-import { useQueryClient } from '@tanstack/react-query';
-import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
+import { PageWrapper } from '@/components/layout/PageWrapper';
+import { StatCard } from '@/components/ui/stat-card';
 
-// Student Registration Modal Component
-function StudentRegistrationModal({ onStudentRegistered }: { onStudentRegistered: (studentId: string) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const { profile: educatorProfile } = useSpecialEducatorProfile();
-  const queryClient = useQueryClient();
-  const [formData, setFormData] = useState({
-    fullName: '',
-    dateOfBirth: '',
-    gender: '',
-    grade: '',
-    motherTongue: '',
-    syllabus: '',
-    schoolName: ''
-  });
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+// ─── Constants ─────────────────────────────────────────────────────────────────
 
-  const [isCreating, setIsCreating] = useState(false);
+const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 300;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const STATUS_STYLES: Record<string, string> = {
+  ACTIVE:      'bg-success/10 text-foreground border-success/20',
+  INACTIVE:    'bg-muted text-foreground border-border',
+  GRADUATED:   'bg-primary/10 text-primary border-primary/20',
+  TRANSFERRED: 'bg-amber-50 text-amber-700 border-amber-200',
+};
 
-    // Clear previous errors
-    setFieldErrors({});
-    setIsCreating(true);
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 
-    try {
-      // Get centerId from educator's centerAssignments
-      const centerId = educatorProfile?.centerAssignments?.[0]?.centerId;
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
 
-      if (!centerId) {
-        toast.error('No center assignment found for educator. Please contact administrator.');
-        return;
-      }
+// ─── Shared Components ─────────────────────────────────────────────────────────
 
-      // Calculate age from date of birth
-      const birthDate = new Date(formData.dateOfBirth);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-
-      // Convert date to ISO-8601 DateTime format for Prisma
-      const dateOfBirthISO = new Date(formData.dateOfBirth + 'T00:00:00.000Z').toISOString();
-
-      // Prepare student data for API
-      const studentData = {
-        fullName: formData.fullName,
-        dateOfBirth: dateOfBirthISO,
-        age,
-        gender: formData.gender,
-        grade: formData.grade,
-        motherTongue: formData.motherTongue || '',
-        syllabus: formData.syllabus || '',
-        // Note: schoolName is just a text field, not a proper school ID
-        // We'll skip schoolId for now until proper school selection is implemented
-        schoolId: null,
-        centerId,
-      };
-
-      // Call the API to create student
-      const newStudent = await apiClient.createStudent(studentData);
-
-      // Invalidate all relevant caches to refresh the lists
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['specialEducator', 'students']
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['students']
-        })
-      ]);
-
-      // Show success message
-      toast.success('Student registered successfully!');
-
-      // Close modal
-      setIsOpen(false);
-
-      // Longer delay to ensure cache invalidation completes and data is available
-      setTimeout(() => {
-        onStudentRegistered(newStudent.id);
-      }, 500);
-
-    } catch (error: any) {
-      console.error('Failed to register student:', error);
-
-      // Handle validation errors
-      if (error.response?.status === 400 && error.response?.data?.error === 'Validation failed') {
-        // If there are field-specific errors, display them
-        if (error.response?.data?.details) {
-          const errors: Record<string, string> = {};
-          error.response.data.details.forEach((detail: any) => {
-            if (detail.field) {
-              errors[detail.field] = detail.message;
-            }
-          });
-          setFieldErrors(errors);
-        } else {
-          // Generic validation error
-          toast.error('Please check your input and try again');
-        }
-      } else {
-        // Other errors
-        toast.error(error.response?.data?.message || 'Failed to register student');
-      }
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear field error when user starts typing
-    if (fieldErrors[field]) {
-      setFieldErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
+/**
+ * Shared avatar used by both list rows and table rows.
+ * Extracted to avoid duplicating the initials + color logic in two places.
+ */
+function StudentAvatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
+  const initials = getInitials(name || '?');
+  const dim = size === 'sm' ? 'w-7 h-7' : 'w-10 h-10';
+  const textSize = size === 'sm' ? 'text-xs' : 'text-sm';
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Register New Student
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Register New Student</DialogTitle>
-          <DialogDescription>
-            Add a new student with essential information. The student will be automatically assigned to you and your center.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Student Information Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Student Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Full Name *</label>
-                <Input
-                  value={formData.fullName}
-                  onChange={(e) => handleInputChange('fullName', e.target.value)}
-                  placeholder="Enter student's full name"
-                  required
-                  className={fieldErrors.fullName ? 'border-red-500' : ''}
-                />
-                {fieldErrors.fullName && (
-                  <p className="text-sm text-red-500 mt-1">{fieldErrors.fullName}</p>
-                )}
-                {!fieldErrors.fullName && (
-                  <p className="text-xs text-gray-500 mt-1">Enter the student's complete first and last name (2-100 characters)</p>
-                )}
-              </div>
-              <div>
-                <ProfessionalDatePicker
-                  label="Date of Birth"
-                  value={formData.dateOfBirth ? new Date(formData.dateOfBirth) : null}
-                  onChange={(date) => handleInputChange('dateOfBirth', date ? date.toISOString().split('T')[0] : '')}
-                  required={true}
-                  placeholder="Select date of birth"
-                  error={fieldErrors.dateOfBirth}
-                  toYear={new Date().getFullYear()}
-                />
-                {!fieldErrors.dateOfBirth && (
-                  <p className="text-xs text-gray-500 mt-1">Select the student's birth date (used to calculate age automatically)</p>
-                )}
-              </div>
-              <div>
-                <label className="text-sm font-medium">Gender *</label>
-                <Select
-                  value={formData.gender}
-                  onValueChange={(value) => handleInputChange('gender', value)}
-                >
-                  <SelectTrigger className={fieldErrors.gender ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MALE">Male</SelectItem>
-                    <SelectItem value="FEMALE">Female</SelectItem>
-                    <SelectItem value="OTHER">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-                {fieldErrors.gender && (
-                  <p className="text-sm text-red-500 mt-1">{fieldErrors.gender}</p>
-                )}
-                {!fieldErrors.gender && (
-                  <p className="text-xs text-gray-500 mt-1">Choose from Male, Female, or Other</p>
-                )}
-              </div>
-              <div>
-                <label className="text-sm font-medium">Grade *</label>
-                <Input
-                  value={formData.grade}
-                  onChange={(e) => handleInputChange('grade', e.target.value)}
-                  placeholder="e.g., Grade 2"
-                  required
-                  className={fieldErrors.grade ? 'border-red-500' : ''}
-                />
-                {fieldErrors.grade && (
-                  <p className="text-sm text-red-500 mt-1">{fieldErrors.grade}</p>
-                )}
-                {!fieldErrors.grade && (
-                  <p className="text-xs text-gray-500 mt-1">Enter grade level (e.g., "Grade 1", "Kindergarten", "Pre-K")</p>
-                )}
-              </div>
-              <div>
-                <label className="text-sm font-medium">Mother Tongue</label>
-                <Input
-                  value={formData.motherTongue}
-                  onChange={(e) => handleInputChange('motherTongue', e.target.value)}
-                  placeholder="e.g., Hindi, English, Tamil"
-                  className={fieldErrors.motherTongue ? 'border-red-500' : ''}
-                />
-                {fieldErrors.motherTongue && (
-                  <p className="text-sm text-red-500 mt-1">{fieldErrors.motherTongue}</p>
-                )}
-              </div>
-              <div>
-                <label className="text-sm font-medium">Syllabus</label>
-                <Select value={formData.syllabus} onValueChange={(value) => handleInputChange('syllabus', value)}>
-                  <SelectTrigger className={fieldErrors.syllabus ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select syllabus" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CBSE">CBSE</SelectItem>
-                    <SelectItem value="ICSE">ICSE</SelectItem>
-                    <SelectItem value="STATE_BOARD">State Board</SelectItem>
-                    <SelectItem value="OTHERS">Others</SelectItem>
-                  </SelectContent>
-                </Select>
-                {fieldErrors.syllabus && (
-                  <p className="text-sm text-red-500 mt-1">{fieldErrors.syllabus}</p>
-                )}
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-sm font-medium">School Name (Optional)</label>
-                <Input
-                  value={formData.schoolName}
-                  onChange={(e) => handleInputChange('schoolName', e.target.value)}
-                  placeholder="Enter school name (optional)"
-                  className={fieldErrors.schoolName ? 'border-red-500' : ''}
-                />
-                {fieldErrors.schoolName && (
-                  <p className="text-sm text-red-500 mt-1">{fieldErrors.schoolName}</p>
-                )}
-                {!fieldErrors.schoolName && (
-                  <p className="text-xs text-gray-500 mt-1">Enter the school name if applicable</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Assignment Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Assignment Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Assigned Center</label>
-                <div className="p-3 bg-gray-50 rounded-md">
-                  <p className="font-medium">Current Center</p>
-                  <p className="text-sm text-gray-600">Auto-assigned based on your login</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Assigned Educator</label>
-                <div className="p-3 bg-gray-50 rounded-md">
-                  <p className="font-medium">You</p>
-                  <p className="text-sm text-gray-600">Auto-assigned to you</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isCreating} className="flex-1">
-              {isCreating ? 'Registering...' : 'Register Student'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <div className={`${dim} bg-primary rounded-full flex items-center justify-center flex-shrink-0`}>
+      <span className={`text-primary-foreground font-semibold ${textSize}`}>{initials}</span>
+    </div>
   );
 }
 
-export default function StudentsPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
-  const router = useRouter();
+// ─── Loading Skeletons ─────────────────────────────────────────────────────────
 
-  const { students, pagination, isLoading } = useEducatorStudents({
-    page: currentPage,
-    limit: pageSize,
-    search: searchTerm,
-    status: statusFilter
-  });
-
-  // Fetch total count (all statuses) for the Total Students card
-  const { pagination: totalPagination } = useEducatorStudents({
-    page: 1,
-    limit: 1 // We only need the pagination metadata, not the actual students
-    // Don't pass status parameter to get all students regardless of status
-  });
-
-  // Fetch active students count for the Active Students card
-  const { pagination: activePagination } = useEducatorStudents({
-    page: 1,
-    limit: 1, // We only need the pagination metadata
-    status: 'ACTIVE'
-  });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800 border-green-200';
-      case 'INACTIVE': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'GRADUATED': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'TRANSFERRED': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const handleStudentRegistered = (studentId: string) => {
-    // Redirect to student profile page for the newly registered student
-    router.push(`/educator/students/${studentId}`);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading students...</p>
-        </div>
+function ListRowSkeleton() {
+  return (
+    <div className="flex items-center gap-4 border rounded-lg p-4">
+      <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
+      <div className="flex-1 space-y-2">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-3 w-56" />
       </div>
-    );
-  }
+      <div className="hidden sm:block space-y-1.5 text-right">
+        <Skeleton className="h-3 w-16 ml-auto" />
+        <Skeleton className="h-2 w-24 ml-auto" />
+      </div>
+      <Skeleton className="h-8 w-20 rounded-md flex-shrink-0" />
+    </div>
+  );
+}
+
+function TableSkeleton() {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b">
+            {['Student', 'Grade', 'Status', 'Progress', 'Last Session', ''].map((h) => (
+              <th key={h} className="text-left py-3 px-4 font-medium text-muted-foreground text-xs">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <tr key={i} className="border-b last:border-0">
+              <td className="py-3 px-4">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-7 w-7 rounded-full" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+              </td>
+              <td className="py-3 px-4"><Skeleton className="h-4 w-16" /></td>
+              <td className="py-3 px-4"><Skeleton className="h-5 w-16 rounded-full" /></td>
+              <td className="py-3 px-4 w-40"><Skeleton className="h-2 w-full rounded-full" /></td>
+              <td className="py-3 px-4"><Skeleton className="h-4 w-20" /></td>
+              <td className="py-3 px-4"><Skeleton className="h-8 w-16 rounded-md" /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Row Components ─────────────────────────────────────────────────────────────
+
+/** Card-style list row — best for small rosters (< 15 students) */
+function StudentListRow({ student }: { student: any }) {
+  const progress = student.progressSummary?.averageProgress || 0;
+  const statusCls = STATUS_STYLES[student.status] || STATUS_STYLES.INACTIVE;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Students</h1>
-          <p className="text-gray-600">Manage and track progress of your assigned students</p>
+    <div className="flex items-center gap-4 border rounded-lg p-4 hover:bg-muted/30 transition-colors">
+      <StudentAvatar name={student.fullName || ''} size="md" />
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="font-semibold text-sm truncate">{student.fullName}</h3>
+          <Badge variant="outline" className={`text-xs ${statusCls}`}>
+            {student.status}
+          </Badge>
         </div>
-        <Link href="/educator/students/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Register New Student
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {student.age ? `${student.age} yrs` : '—'}
+          {student.grade ? ` · ${student.grade}` : ''}
+          {student.center?.centerName ? ` · ${student.center.centerName}` : ''}
+          {student.school?.name ? ` · ${student.school.name}` : ''}
+        </p>
+        {student.lastSession && (
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Last session: {new Date(student.lastSession).toLocaleDateString()}
+          </p>
+        )}
+      </div>
+
+      {student.progressSummary && (
+        <div className="hidden sm:block text-right min-w-[100px]">
+          <div className="flex items-center justify-between text-xs mb-1">
+            <span className="text-muted-foreground">Progress</span>
+            <span className="font-medium tabular-nums">{progress}%</span>
+          </div>
+          <Progress value={progress} className="h-1.5 w-24 ml-auto" />
+          <p className="text-xs text-muted-foreground mt-1">
+            {student.progressSummary.completedGoals}/{student.progressSummary.totalGoals} goals
+          </p>
+        </div>
+      )}
+
+      <Link href={`/educator/students/${student.id}`} className="flex-shrink-0">
+        <Button variant="outline" size="sm" className="gap-1.5">
+          <Eye className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">View</span>
+        </Button>
+      </Link>
+    </div>
+  );
+}
+
+/** Compact table row — better for scanning 15+ students */
+function StudentTableRow({ student }: { student: any }) {
+  const progress = student.progressSummary?.averageProgress || 0;
+  const statusCls = STATUS_STYLES[student.status] || STATUS_STYLES.INACTIVE;
+
+  return (
+    <tr className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+      <td className="py-3 px-4">
+        <div className="flex items-center gap-2">
+          {/* Reuses StudentAvatar — no duplication */}
+          <StudentAvatar name={student.fullName || ''} size="sm" />
+          <span className="font-medium text-sm">{student.fullName}</span>
+        </div>
+      </td>
+      <td className="py-3 px-4 text-sm text-muted-foreground">{student.grade || '—'}</td>
+      <td className="py-3 px-4">
+        <Badge variant="outline" className={`text-xs ${statusCls}`}>
+          {student.status}
+        </Badge>
+      </td>
+      <td className="py-3 px-4 w-44">
+        {student.progressSummary ? (
+          <div className="flex items-center gap-2">
+            <Progress value={progress} className="h-1.5 flex-1" />
+            <span className="text-xs tabular-nums text-muted-foreground w-8 text-right">
+              {progress}%
+            </span>
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">No data</span>
+        )}
+      </td>
+      <td className="py-3 px-4 text-xs text-muted-foreground">
+        {student.lastSession
+          ? new Date(student.lastSession).toLocaleDateString()
+          : '—'}
+      </td>
+      <td className="py-3 px-4">
+        <Link href={`/educator/students/${student.id}`}>
+          <Button variant="outline" size="sm" className="h-7 gap-1">
+            <Eye className="h-3 w-3" />
+            View
           </Button>
         </Link>
+      </td>
+    </tr>
+  );
+}
+
+/**
+ * Pagination bar.
+ * `pageSize` prop removed — it was always PAGE_SIZE and made the API surface
+ * unnecessarily wide for a purely local component.
+ */
+function PaginationBar({
+  currentPage,
+  totalPages,
+  total,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  total: number;
+  onPageChange: (p: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  const start = (currentPage - 1) * PAGE_SIZE + 1;
+  const end = Math.min(currentPage * PAGE_SIZE, total);
+
+  return (
+    <div className="flex items-center justify-between mt-4 pt-4 border-t">
+      <p className="text-sm text-muted-foreground">
+        Showing {start}–{end} of {total} students
+      </p>
+      <div className="flex items-center gap-1.5">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </Button>
+        <span className="text-sm text-muted-foreground px-2">
+          Page {currentPage} of {totalPages}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage >= totalPages}
+        >
+          Next
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export default function StudentsPage() {
+  // ── UI state ──
+  const [viewMode, setViewMode] = useState<'list' | 'table'>('list');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // ── Search with debounce ──
+  // `searchInput` drives the input value immediately for responsive feedback.
+  // `debouncedSearch` is what actually goes to the API — updates 300ms after typing stops.
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setCurrentPage(1); // Reset to page 1 when search changes
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // ── Status filter ──
+  // Raw filter value ('ACTIVE', 'INACTIVE', etc.) or '' for "all"
+  const [rawStatusFilter, setRawStatusFilter] = useState('');
+
+  const handleStatusChange = useCallback((value: string) => {
+    setRawStatusFilter(value === 'all' ? '' : value);
+    setCurrentPage(1);
+  }, []);
+
+  // Pass `undefined` (not `''`) when no filter is selected.
+  // Sending `status=''` to the API behaves differently from omitting it —
+  // Prisma will filter where status equals '' and return 0 results.
+  const apiStatusFilter = rawStatusFilter || undefined;
+
+  // ── Data ──
+  const { students, pagination, isLoading, error, refetch } = useEducatorStudents({
+    page: currentPage,
+    limit: PAGE_SIZE,
+    search: debouncedSearch,
+    status: apiStatusFilter,
+  });
+
+  // Two lightweight count calls (limit: 1) — we only care about the total metadata.
+  // The `avgProgress` stat that was computed from the current page was removed
+  // because it changed per page, making it a misleading KPI.
+  const { pagination: totalPagination } = useEducatorStudents({ page: 1, limit: 1 });
+  const { pagination: activePagination } = useEducatorStudents({
+    page: 1,
+    limit: 1,
+    status: 'ACTIVE',
+  });
+
+  const isFiltered = Boolean(searchInput || rawStatusFilter);
+
+  return (
+    <PageWrapper
+      title="My Students"
+      description="Manage and track progress of your assigned students"
+      breadcrumbs={[{ label: 'Educator' }, { label: 'Students' }]}
+      actions={
+        <Link href="/educator/students/new">
+          <Button size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Register Student
+          </Button>
+        </Link>
+      }
+    >
+      {/* ── Section 1: Summary Stats ──────────────────────────────────────────── */}
+      {/*
+        Two stats only. The third "Average Progress" card was removed — it was
+        computed only from the current page's students, so it changed every time
+        you navigated between pages, which felt like a bug rather than a feature.
+      */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <StatCard
+          title="Total Students"
+          value={totalPagination?.total ?? 0}
+          description="Assigned to you"
+          icon={Users}
+          variant="primary"
+        />
+        <StatCard
+          title="Active Students"
+          value={activePagination?.total ?? 0}
+          description="Currently enrolled"
+          icon={TrendingUp}
+          variant="success"
+        />
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {totalPagination?.total ?? 0}
-              </div>
-              <p className="text-xs text-muted-foreground">Assigned to you</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Students</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {activePagination?.total ?? 0}
-              </div>
-              <p className="text-xs text-muted-foreground">Currently enrolled</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Assessments</CardTitle>
-              <Users className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {students.filter((s: any) => !s.progressSummary || s.progressSummary.totalGoals === 0).length}
-              </div>
-              <p className="text-xs text-muted-foreground">Need assessment</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Progress</CardTitle>
-              <TrendingUp className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {students.length > 0
-                  ? Math.round(
-                    students.reduce((sum: number, s: any) =>
-                      sum + (s.progressSummary?.averageProgress || 0), 0
-                    ) / students.length
-                  )
-                  : 0}%
-              </div>
-              <p className="text-xs text-muted-foreground">Across all goals</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Filters and Search */}
+      {/* ── Section 2: Filter Toolbar + Student List ──────────────────────────── */}
       <Card>
-        <CardHeader>
-          <CardTitle>Student List</CardTitle>
-          <CardDescription>
-            View and manage all students assigned to you
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search students by name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">Student List</CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                View and manage all students assigned to you
+              </CardDescription>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by status" />
+
+            {/* View mode toggle */}
+            <div className="flex items-center gap-1 p-1 bg-muted rounded-lg self-start sm:self-auto">
+              <Button
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-7 w-7 p-0 rounded-md"
+                onClick={() => setViewMode('list')}
+                title="List view"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-7 w-7 p-0 rounded-md"
+                onClick={() => setViewMode('table')}
+                title="Table view"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Filter row */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search students by name..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-10 h-9"
+              />
+            </div>
+            <Select
+              value={rawStatusFilter || 'all'}
+              onValueChange={handleStatusChange}
+            >
+              <SelectTrigger className="w-full sm:w-44 h-9">
+                <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
@@ -513,130 +440,114 @@ export default function StudentsPage() {
               </SelectContent>
             </Select>
           </div>
+        </CardHeader>
 
-          {/* Students Grid */}
-          <div className="space-y-4">
-            {students.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
-                <p className="text-gray-500 mb-4">
-                  {searchTerm || statusFilter
-                    ? "Try adjusting your search or filter criteria"
-                    : "You don't have any students assigned yet"
-                  }
-                </p>
-                <StudentRegistrationModal onStudentRegistered={handleStudentRegistered} />
+        <CardContent>
+          {/* Loading */}
+          {isLoading && (
+            viewMode === 'list' ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => <ListRowSkeleton key={i} />)}
               </div>
             ) : (
-              students.map((student: any, index: number) => (
-                <motion.div
-                  key={student.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+              <TableSkeleton />
+            )
+          )}
+
+          {/* Error */}
+          {!isLoading && error && (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <AlertCircle className="h-10 w-10 text-muted-foreground" />
+              <p className="font-medium">Failed to load students</p>
+              <p className="text-sm text-muted-foreground">Something went wrong fetching student data.</p>
+              <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            </div>
+          )}
+
+          {/* Empty */}
+          {!isLoading && !error && students?.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-14 gap-3 text-center">
+              <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center">
+                <Users className="h-7 w-7 text-muted-foreground" />
+              </div>
+              <h3 className="font-semibold">
+                {isFiltered ? 'No students match your filters' : 'No students yet'}
+              </h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                {isFiltered
+                  ? 'Try clearing your search or adjusting the status filter.'
+                  : "You don't have any students assigned yet. Register your first student to get started."}
+              </p>
+              {isFiltered ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchInput('');
+                    handleStatusChange('all');
+                  }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-semibold text-sm">
-                          {getInitials(student.fullName)}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-1">
-                          <h3 className="font-semibold text-gray-900">{student.fullName}</h3>
-                          <Badge className={getStatusColor(student.status)}>
-                            {student.status}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span>{student.age} years old</span>
-                          <span>•</span>
-                          <span>{student.grade}</span>
-                          <span>•</span>
-                          <span>{student.center?.centerName}</span>
-                          {student.school && (
-                            <>
-                              <span>•</span>
-                              <span>{student.school.name}</span>
-                            </>
-                          )}
-                        </div>
-                        {student.lastSession && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            Last session: {new Date(student.lastSession).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                  Clear filters
+                </Button>
+              ) : (
+                <Link href="/educator/students/new">
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Register First Student
+                  </Button>
+                </Link>
+              )}
+            </div>
+          )}
 
-                    <div className="flex items-center space-x-4">
-                      {/* Progress Summary */}
-                      {student.progressSummary && (
-                        <div className="text-right min-w-32">
-                          <div className="flex items-center justify-between text-xs mb-1">
-                            <span className="text-gray-500">Progress</span>
-                            <span className="font-medium">{student.progressSummary.averageProgress}%</span>
-                          </div>
-                          <Progress
-                            value={student.progressSummary.averageProgress}
-                            className="h-2 w-24"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            {student.progressSummary.completedGoals}/{student.progressSummary.totalGoals} goals
-                          </p>
-                        </div>
-                      )}
+          {/* List view */}
+          {!isLoading && !error && students?.length > 0 && viewMode === 'list' && (
+            <div className="space-y-3">
+              {students.map((student: any) => (
+                <StudentListRow key={student.id} student={student} />
+              ))}
+            </div>
+          )}
 
-                      {/* Action Button - Only View Profile */}
-                      <div className="flex items-center gap-2">
-                        <Link href={`/educator/students/${student.id}`}>
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Profile
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
+          {/* Table view */}
+          {!isLoading && !error && students?.length > 0 && viewMode === 'table' && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    {['Student', 'Grade', 'Status', 'Progress', 'Last Session', ''].map((h) => (
+                      <th
+                        key={h}
+                        className="text-left py-3 px-4 font-medium text-muted-foreground text-xs"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((student: any) => (
+                    <StudentTableRow key={student.id} student={student} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6">
-              <p className="text-sm text-gray-700">
-                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, pagination?.total || 0)} of {pagination?.total || 0} students
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm text-gray-600">
-                  Page {currentPage} of {pagination.totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => prev + 1)}
-                  disabled={currentPage >= pagination.totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
+            <PaginationBar
+              currentPage={currentPage}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              onPageChange={setCurrentPage}
+            />
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageWrapper>
   );
 }

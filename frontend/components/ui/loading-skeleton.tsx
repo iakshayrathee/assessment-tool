@@ -1,5 +1,5 @@
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 interface LoadingSkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -11,7 +11,7 @@ interface LoadingSkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
 const LoadingSkeleton = React.forwardRef<HTMLDivElement, LoadingSkeletonProps>(
   ({ className, variant = 'custom', count = 1, animated = true, ...props }, ref) => {
     const skeletonClass = cn(
-      "bg-gray-200 rounded",
+      "bg-muted rounded",
       animated && "animate-pulse",
       className
     );
@@ -20,7 +20,7 @@ const LoadingSkeleton = React.forwardRef<HTMLDivElement, LoadingSkeletonProps>(
       switch (variant) {
         case 'card':
           return (
-            <div className="bg-white border rounded-lg p-6 space-y-4">
+            <div className="bg-background border rounded-lg p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div className={cn(skeletonClass, "h-4 w-24")}></div>
                 <div className={cn(skeletonClass, "h-8 w-8 rounded-lg")}></div>
@@ -32,7 +32,7 @@ const LoadingSkeleton = React.forwardRef<HTMLDivElement, LoadingSkeletonProps>(
         
         case 'table':
           return (
-            <div className="bg-white border rounded-lg overflow-hidden">
+            <div className="bg-background border rounded-lg overflow-hidden">
               <div className="p-4 border-b">
                 <div className={cn(skeletonClass, "h-5 w-32")}></div>
               </div>
@@ -59,7 +59,7 @@ const LoadingSkeleton = React.forwardRef<HTMLDivElement, LoadingSkeletonProps>(
           return (
             <div className="space-y-3">
               {Array.from({ length: count }).map((_, i) => (
-                <div key={i} className="flex items-center space-x-4 p-4 bg-white border rounded-lg">
+                <div key={i} className="flex items-center space-x-4 p-4 bg-background border rounded-lg">
                   <div className={cn(skeletonClass, "h-12 w-12 rounded-full")}></div>
                   <div className="flex-1 space-y-2">
                     <div className={cn(skeletonClass, "h-4 w-40")}></div>
@@ -75,7 +75,7 @@ const LoadingSkeleton = React.forwardRef<HTMLDivElement, LoadingSkeletonProps>(
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white border rounded-lg p-6">
+                <div key={i} className="bg-background border rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className={cn(skeletonClass, "h-4 w-24")}></div>
                     <div className={cn(skeletonClass, "h-8 w-8 rounded-lg")}></div>

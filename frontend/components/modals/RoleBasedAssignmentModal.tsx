@@ -70,12 +70,12 @@ export function RoleBasedAssignmentModal({
             const operatingHours = center.operatingHours;
 
             return (
-              <Card key={centerId} className="cursor-pointer hover:bg-gray-50" onClick={onToggle}>
+              <Card key={centerId} className="cursor-pointer hover:bg-muted/40" onClick={onToggle}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 flex-1">
                       <Checkbox checked={isSelected} onChange={onToggle} />
-                      <Building className="h-5 w-5 text-blue-500" />
+                      <Building className="h-5 w-5 text-primary" />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <h4 className="font-medium">{centerName}</h4>
@@ -83,20 +83,20 @@ export function RoleBasedAssignmentModal({
                             <Badge variant="secondary" className="text-xs">{centerType}</Badge>
                           )}
                         </div>
-                        {address && <p className="text-sm text-gray-500">{address}</p>}
+                        {address && <p className="text-sm text-muted-foreground">{address}</p>}
                         <div className="flex gap-3 mt-1 flex-wrap">
                           {contactPerson && (
-                            <p className="text-xs text-gray-400">Contact: {contactPerson}</p>
+                            <p className="text-xs text-muted-foreground">Contact: {contactPerson}</p>
                           )}
                           {phone && (
-                            <p className="text-xs text-gray-400">Phone: {phone}</p>
+                            <p className="text-xs text-muted-foreground">Phone: {phone}</p>
                           )}
                           {operatingHours && (
-                            <p className="text-xs text-gray-400">Hours: {operatingHours}</p>
+                            <p className="text-xs text-muted-foreground">Hours: {operatingHours}</p>
                           )}
                         </div>
                         {email && email !== centerName && (
-                          <p className="text-xs text-gray-400">{email}</p>
+                          <p className="text-xs text-muted-foreground">{email}</p>
                         )}
                       </div>
                     </div>
@@ -115,15 +115,15 @@ export function RoleBasedAssignmentModal({
           targetType: 'educators',
           data: educatorsData?.data || [],
           renderItem: (educator, isSelected, onToggle) => (
-            <Card key={educator.id} className="cursor-pointer hover:bg-gray-50" onClick={onToggle}>
+            <Card key={educator.id} className="cursor-pointer hover:bg-muted/40" onClick={onToggle}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Checkbox checked={isSelected} onChange={onToggle} />
-                    <User className="h-5 w-5 text-green-500" />
+                    <User className="h-5 w-5 text-success" />
                     <div>
                       <h4 className="font-medium">{educator.email}</h4>
-                      <p className="text-sm text-gray-500">{educator.role}</p>
+                      <p className="text-sm text-muted-foreground">{educator.role}</p>
                     </div>
                   </div>
                   <Badge variant="outline">{educator.role}</Badge>
@@ -140,7 +140,7 @@ export function RoleBasedAssignmentModal({
           targetType: 'students',
           data: [], // Feature not yet implemented in backend
           renderItem: (student, isSelected, onToggle) => (
-            <Card key={student.id} className="cursor-pointer hover:bg-gray-50" onClick={onToggle}>
+            <Card key={student.id} className="cursor-pointer hover:bg-muted/40" onClick={onToggle}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -148,7 +148,7 @@ export function RoleBasedAssignmentModal({
                     <GraduationCap className="h-5 w-5 text-purple-500" />
                     <div>
                       <h4 className="font-medium">{student.email}</h4>
-                      <p className="text-sm text-gray-500">Student</p>
+                      <p className="text-sm text-muted-foreground">Student</p>
                     </div>
                   </div>
                   <Badge variant="outline">Student</Badge>
@@ -177,12 +177,12 @@ export function RoleBasedAssignmentModal({
             const operatingHours = center.operatingHours;
 
             return (
-              <Card key={centerId} className="cursor-pointer hover:bg-gray-50" onClick={onToggle}>
+              <Card key={centerId} className="cursor-pointer hover:bg-muted/40" onClick={onToggle}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 flex-1">
                       <Checkbox checked={isSelected} onChange={onToggle} />
-                      <Building className="h-5 w-5 text-blue-500" />
+                      <Building className="h-5 w-5 text-primary" />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <h4 className="font-medium">{centerName}</h4>
@@ -190,20 +190,20 @@ export function RoleBasedAssignmentModal({
                             <Badge variant="secondary" className="text-xs">{centerType}</Badge>
                           )}
                         </div>
-                        {address && <p className="text-sm text-gray-500">{address}</p>}
+                        {address && <p className="text-sm text-muted-foreground">{address}</p>}
                         <div className="flex gap-3 mt-1 flex-wrap">
                           {contactPerson && (
-                            <p className="text-xs text-gray-400">Contact: {contactPerson}</p>
+                            <p className="text-xs text-muted-foreground">Contact: {contactPerson}</p>
                           )}
                           {phone && (
-                            <p className="text-xs text-gray-400">Phone: {phone}</p>
+                            <p className="text-xs text-muted-foreground">Phone: {phone}</p>
                           )}
                           {operatingHours && (
-                            <p className="text-xs text-gray-400">Hours: {operatingHours}</p>
+                            <p className="text-xs text-muted-foreground">Hours: {operatingHours}</p>
                           )}
                         </div>
                         {email && email !== centerName && (
-                          <p className="text-xs text-gray-400">{email}</p>
+                          <p className="text-xs text-muted-foreground">{email}</p>
                         )}
                       </div>
                     </div>
@@ -397,13 +397,13 @@ export function RoleBasedAssignmentModal({
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>{config.title}</DialogTitle>
-          <p className="text-sm text-gray-600">{config.description}</p>
+          <p className="text-sm text-muted-foreground">{config.description}</p>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder={`Search ${config.targetType}...`}
               value={searchTerm}
@@ -414,7 +414,7 @@ export function RoleBasedAssignmentModal({
 
           {/* Selected items count */}
           {selectedItems.length > 0 && (
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               {selectedItems.length} {config.targetType} selected
             </div>
           )}
@@ -422,7 +422,7 @@ export function RoleBasedAssignmentModal({
           {/* Items list */}
           <div className="max-h-96 overflow-y-auto space-y-2">
             {filteredData.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 No {config.targetType} found
               </div>
             ) : (

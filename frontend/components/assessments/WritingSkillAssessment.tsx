@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronRight, Download, Eye } from 'lucide-react';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface WritingSkillAssessmentProps {
@@ -406,7 +406,7 @@ export function WritingSkillAssessment({
       <Card>
         <CardHeader>
           <CardTitle>Writing Assessment Questions</CardTitle>
-          <p className="text-sm text-gray-600">Answer the following questions about the student's writing abilities</p>
+          <p className="text-sm text-muted-foreground">Answer the following questions about the student's writing abilities</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {WRITING_QUESTIONS.map((q) => (
@@ -464,7 +464,7 @@ export function WritingSkillAssessment({
           </div>
 
           {hasNearCopyingSkills === true && (
-            <div className="space-y-3 p-4 bg-green-50 rounded-lg">
+            <div className="space-y-3 p-4 bg-success/10 rounded-lg">
               <Label className="text-sm font-semibold">Copying Levels (Select all that apply)</Label>
               <div className="grid grid-cols-2 gap-3">
                 {['Letter', 'Word', 'Phrase', 'Sentence'].map((level) => (
@@ -501,7 +501,7 @@ export function WritingSkillAssessment({
           )}
 
           {hasNearCopyingSkills === false && (
-            <div className="space-y-3 p-4 bg-red-50 rounded-lg">
+            <div className="space-y-3 p-4 bg-destructive/10 rounded-lg">
               <Label htmlFor="nearCopyingNoObservation">Observation (Mandatory) *</Label>
               <Textarea
                 id="nearCopyingNoObservation"
@@ -550,7 +550,7 @@ export function WritingSkillAssessment({
           </div>
 
           {hasBoardCopyingSkills === true && (
-            <div className="space-y-4 p-4 bg-green-50 rounded-lg">
+            <div className="space-y-4 p-4 bg-success/10 rounded-lg">
               <div>
                 <Label className="text-sm font-semibold">Copying Levels (Select all that apply)</Label>
                 <div className="grid grid-cols-2 gap-3 mt-2">
@@ -625,7 +625,7 @@ export function WritingSkillAssessment({
           )}
 
           {hasBoardCopyingSkills === false && (
-            <div className="space-y-3 p-4 bg-red-50 rounded-lg">
+            <div className="space-y-3 p-4 bg-destructive/10 rounded-lg">
               <Label htmlFor="boardCopyingNoObservation">Observation (Mandatory) *</Label>
               <Textarea
                 id="boardCopyingNoObservation"
@@ -869,7 +869,7 @@ export function WritingSkillAssessment({
       <Card>
         <CardHeader>
           <CardTitle>Detailed Writing Symptoms</CardTitle>
-          <p className="text-sm text-gray-600">Select all symptoms that apply to the student</p>
+          <p className="text-sm text-muted-foreground">Select all symptoms that apply to the student</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {Object.entries(WRITING_SYMPTOMS).map(([category, symptoms]) => (
@@ -878,10 +878,10 @@ export function WritingSkillAssessment({
               open={openSections[category]}
               onOpenChange={() => toggleSection(category)}
             >
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-muted/40 rounded-lg hover:bg-muted transition-colors">
                 <span className="font-medium text-left">{category}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     {symptoms.filter(s => selectedSymptoms[s.key]).length} / {symptoms.length}
                   </span>
                   {openSections[category] ? (
@@ -901,7 +901,7 @@ export function WritingSkillAssessment({
                         checked={selectedSymptoms[symptom.key] || false}
                         onChange={() => toggleSymptom(symptom.key)}
                         disabled={isViewMode}
-                        className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-blue-500"
                       />
                       <Label
                         htmlFor={symptom.key}
@@ -959,20 +959,20 @@ export function WritingSkillAssessment({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Assessment Preview</DialogTitle>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Your writing assessment has been saved successfully. You can now download it as PDF.
             </p>
           </DialogHeader>
 
-          <div ref={reportRef} className="p-6 bg-white">
+          <div ref={reportRef} className="p-6 bg-background">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-green-800">Writing Skill Assessment</h2>
-              <p className="text-gray-600">Assessment Date: {new Date().toLocaleDateString()}</p>
+              <h2 className="text-2xl font-bold text-foreground">Writing Skill Assessment</h2>
+              <p className="text-muted-foreground">Assessment Date: {new Date().toLocaleDateString()}</p>
 
               {/* Student and Educator Details */}
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div className="bg-blue-50 p-3 rounded">
-                  <h4 className="font-semibold text-blue-800">Student Information</h4>
+                <div className="bg-primary/10 p-3 rounded">
+                  <h4 className="font-semibold text-primary">Student Information</h4>
                   {studentDetails ? (
                     <>
                       <p><span className="font-medium">Name:</span> {studentDetails.fullName || 'N/A'}</p>
@@ -980,12 +980,12 @@ export function WritingSkillAssessment({
                       {studentDetails.age && <p><span className="font-medium">Age:</span> {studentDetails.age}</p>}
                     </>
                   ) : (
-                    <p className="text-gray-500">Loading student information...</p>
+                    <p className="text-muted-foreground">Loading student information...</p>
                   )}
                 </div>
 
-                <div className="bg-green-50 p-3 rounded">
-                  <h4 className="font-semibold text-green-800">Special Educator Information</h4>
+                <div className="bg-success/10 p-3 rounded">
+                  <h4 className="font-semibold text-foreground">Special Educator Information</h4>
                   {educatorDetails ? (
                     <>
                       <p><span className="font-medium">Name:</span> {educatorDetails.fullName || 'N/A'}</p>
@@ -993,7 +993,7 @@ export function WritingSkillAssessment({
                       <p><span className="font-medium">Date & Time:</span> {new Date().toLocaleString()}</p>
                     </>
                   ) : (
-                    <p className="text-gray-500">Loading educator information...</p>
+                    <p className="text-muted-foreground">Loading educator information...</p>
                   )}
                 </div>
               </div>
@@ -1003,15 +1003,15 @@ export function WritingSkillAssessment({
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Assessment Summary</h3>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-green-50 p-3 rounded">
+                <div className="bg-success/10 p-3 rounded">
                   <p className="font-medium">Total Symptoms Selected:</p>
-                  <p className="text-2xl font-bold text-green-700">
+                  <p className="text-2xl font-bold text-success">
                     {Object.values(selectedSymptoms).filter(val => val).length}
                   </p>
                 </div>
-                <div className="bg-blue-50 p-3 rounded">
+                <div className="bg-primary/10 p-3 rounded">
                   <p className="font-medium">Questions Answered:</p>
-                  <p className="text-2xl font-bold text-blue-700">
+                  <p className="text-2xl font-bold text-primary">
                     {Object.values(questionAnswers).filter(val => val && val.trim()).length}
                   </p>
                 </div>
@@ -1022,7 +1022,7 @@ export function WritingSkillAssessment({
             {Object.values(selectedSymptoms).some(val => val) && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Selected Symptoms</h3>
-                <div className="bg-gray-50 p-4 rounded">
+                <div className="bg-muted/40 p-4 rounded">
                   <ul className="list-disc list-inside space-y-1">
                     {Object.entries(WRITING_SYMPTOMS).flatMap(([category, symptoms]) =>
                       symptoms
@@ -1042,12 +1042,12 @@ export function WritingSkillAssessment({
             {Object.values(questionAnswers).some(val => val && val.trim()) && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Question Responses</h3>
-                <div className="bg-gray-50 p-4 rounded">
+                <div className="bg-muted/40 p-4 rounded">
                   {WRITING_QUESTIONS.map(q =>
                     questionAnswers[q.id] && (
                       <div key={q.id} className="mb-2">
                         <p className="font-medium">{q.question}</p>
-                        <p className="text-green-700">{questionAnswers[q.id]}</p>
+                        <p className="text-success">{questionAnswers[q.id]}</p>
                       </div>
                     )
                   )}
@@ -1059,10 +1059,10 @@ export function WritingSkillAssessment({
             {hasNearCopyingSkills !== null && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Near Copying Skills</h3>
-                <div className="bg-gray-50 p-4 rounded space-y-3">
+                <div className="bg-muted/40 p-4 rounded space-y-3">
                   <div>
                     <p className="font-medium">Has Near Copying Skills?</p>
-                    <p className={hasNearCopyingSkills ? "text-green-700" : "text-orange-700"}>
+                    <p className={hasNearCopyingSkills ? "text-success" : "text-orange-700"}>
                       {hasNearCopyingSkills ? "Yes" : "No"}
                     </p>
                   </div>
@@ -1072,7 +1072,7 @@ export function WritingSkillAssessment({
                       <p className="font-medium mb-2">Copying Levels:</p>
                       <div className="flex flex-wrap gap-2">
                         {nearCopyingLevels.map((level) => (
-                          <span key={level} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                          <span key={level} className="bg-success/10 text-foreground px-3 py-1 rounded-full text-sm">
                             {level}
                           </span>
                         ))}
@@ -1094,10 +1094,10 @@ export function WritingSkillAssessment({
             {hasBoardCopyingSkills !== null && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Board Copying Skills</h3>
-                <div className="bg-gray-50 p-4 rounded space-y-3">
+                <div className="bg-muted/40 p-4 rounded space-y-3">
                   <div>
                     <p className="font-medium">Has Board Copying Skills?</p>
-                    <p className={hasBoardCopyingSkills ? "text-green-700" : "text-orange-700"}>
+                    <p className={hasBoardCopyingSkills ? "text-success" : "text-orange-700"}>
                       {hasBoardCopyingSkills ? "Yes" : "No"}
                     </p>
                   </div>
@@ -1107,7 +1107,7 @@ export function WritingSkillAssessment({
                       <p className="font-medium mb-2">Copying Levels:</p>
                       <div className="flex flex-wrap gap-2">
                         {boardCopyingLevels.map((level) => (
-                          <span key={level} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                          <span key={level} className="bg-success/10 text-foreground px-3 py-1 rounded-full text-sm">
                             {level}
                           </span>
                         ))}
@@ -1127,12 +1127,12 @@ export function WritingSkillAssessment({
                       <p className="font-medium mb-2">Flags:</p>
                       <div className="flex flex-wrap gap-2">
                         {visualTrackingDifficulty && (
-                          <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">
+                          <span className="bg-destructive/10 text-foreground px-3 py-1 rounded-full text-sm">
                             Visual Tracking Difficulty
                           </span>
                         )}
                         {omissionSkippingFlag && (
-                          <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">
+                          <span className="bg-destructive/10 text-foreground px-3 py-1 rounded-full text-sm">
                             Omission/Skipping Flag
                           </span>
                         )}
@@ -1154,33 +1154,33 @@ export function WritingSkillAssessment({
             {(Object.values(punctuationSkills).some(val => val) || punctuationOther || punctuationObservation) && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Punctuation Skills</h3>
-                <div className="bg-gray-50 p-4 rounded space-y-3">
+                <div className="bg-muted/40 p-4 rounded space-y-3">
                   {Object.values(punctuationSkills).some(val => val) && (
                     <div>
                       <p className="font-medium mb-2">Punctuation Marks Used:</p>
                       <div className="flex flex-wrap gap-2">
                         {punctuationSkills.usesCapitalLetters && (
-                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
                             Capital Letters
                           </span>
                         )}
                         {punctuationSkills.usesFullStop && (
-                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
                             Full Stop (.)
                           </span>
                         )}
                         {punctuationSkills.usesQuestionMark && (
-                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
                             Question Mark (?)
                           </span>
                         )}
                         {punctuationSkills.usesComma && (
-                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
                             Comma (,)
                           </span>
                         )}
                         {punctuationSkills.usesApostrophe && (
-                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
                             Apostrophe (')
                           </span>
                         )}
@@ -1209,7 +1209,7 @@ export function WritingSkillAssessment({
             {(spellingStrengthSummary || spellingErrorPatternObservation) && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Spelling Observations</h3>
-                <div className="bg-gray-50 p-4 rounded space-y-3">
+                <div className="bg-muted/40 p-4 rounded space-y-3">
                   {spellingStrengthSummary && (
                     <div>
                       <p className="font-medium">Spelling Strength Summary:</p>
@@ -1230,7 +1230,7 @@ export function WritingSkillAssessment({
             {creativeWritingSummary && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Creative Writing</h3>
-                <div className="bg-gray-50 p-4 rounded">
+                <div className="bg-muted/40 p-4 rounded">
                   <p className="whitespace-pre-wrap">{creativeWritingSummary}</p>
                 </div>
               </div>
@@ -1240,7 +1240,7 @@ export function WritingSkillAssessment({
             {additionalNotes.trim() && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Additional Notes</h3>
-                <div className="bg-gray-50 p-4 rounded">
+                <div className="bg-muted/40 p-4 rounded">
                   <p className="whitespace-pre-wrap">{additionalNotes}</p>
                 </div>
               </div>

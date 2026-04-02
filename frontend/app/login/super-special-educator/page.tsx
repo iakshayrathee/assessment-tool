@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Eye, EyeOff, Mail, Lock, GraduationCap, ArrowLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import Link from 'next/link';
 
 export default function SuperSpecialEducatorLoginPage() {
@@ -85,30 +85,30 @@ export default function SuperSpecialEducatorLoginPage() {
               </h1>
             </div>
 
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl font-bold text-foreground mb-6">
               Senior Education
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">
                 Leadership Portal
               </span>
             </h2>
 
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               Monitor and support Special Educators across multiple centers with
               advanced oversight tools, quality assurance, and cross-center analytics.
             </p>
 
             <div className="grid grid-cols-1 gap-4 text-sm">
-              <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Educator Oversight</h3>
-                <p className="text-gray-600">Monitor and support Special Educators across multiple centers</p>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">Educator Oversight</h3>
+                <p className="text-muted-foreground">Monitor and support Special Educators across multiple centers</p>
               </div>
-              <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Assessment Review</h3>
-                <p className="text-gray-600">Review and approve assessments and intervention plans</p>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">Assessment Review</h3>
+                <p className="text-muted-foreground">Review and approve assessments and intervention plans</p>
               </div>
-              <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Quality Assurance</h3>
-                <p className="text-gray-600">Ensure IEP quality and compliance across all centers</p>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">Quality Assurance</h3>
+                <p className="text-muted-foreground">Ensure IEP quality and compliance across all centers</p>
               </div>
             </div>
           </div>
@@ -121,11 +121,11 @@ export default function SuperSpecialEducatorLoginPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="w-full max-w-md mx-auto"
         >
-          <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
+          <div className="bg-background/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
             {/* Back Button */}
             <Link
               href="/"
-              className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+              className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6 transition-colors"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Login Selection
@@ -140,72 +140,72 @@ export default function SuperSpecialEducatorLoginPage() {
                   Super Educator
                 </h1>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Super Special Educator</h2>
-              <p className="text-gray-600">Access your leadership dashboard</p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Super Special Educator</h2>
+              <p className="text-muted-foreground">Access your leadership dashboard</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.email ? 'border-red-300' : 'border-gray-300'
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.email ? 'border-destructive/30' : 'border-border'
                       }`}
                     placeholder="Enter your email"
                   />
                 </div>
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  <p className="mt-1 text-sm text-destructive">{errors.email}</p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.password ? 'border-red-300' : 'border-gray-300'
+                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.password ? 'border-destructive/30' : 'border-border'
                       }`}
                     placeholder="Enter your password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                  <p className="mt-1 text-sm text-destructive">{errors.password}</p>
                 )}
               </div>
 
               <div className="flex items-center justify-between">
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-green-600 hover:text-green-700 transition-colors"
+                  className="text-sm text-success hover:text-success transition-colors"
                 >
                   Forgot Password?
                 </Link>
               </div>
 
               {errors.login && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-red-600">{errors.login}</p>
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-destructive">{errors.login}</p>
                 </div>
               )}
 
@@ -226,26 +226,26 @@ export default function SuperSpecialEducatorLoginPage() {
             </form>
 
             {/* Demo Credentials - Commented out */}
-            {/* <div className="mt-8 pt-6 border-t border-gray-200">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</h3>
+            {/* <div className="mt-8 pt-6 border-t border-border">
+              <h3 className="text-sm font-medium text-foreground mb-3">Demo Credentials:</h3>
               <button
                 onClick={fillDemoCredentials}
-                className="w-full text-left p-3 rounded bg-green-50 hover:bg-green-100 transition-colors border border-green-200"
+                className="w-full text-left p-3 rounded bg-success/10 hover:bg-success/10 transition-colors border border-success/20"
               >
                 <div className="font-medium text-green-900">Super Special Educator</div>
-                <div className="text-green-700 text-sm">super.educator@knowled.com</div>
+                <div className="text-success text-sm">super.educator@knowled.com</div>
               </button>
             </div> */}
           </div>
 
           {/* Footer with Terms and Privacy Policy */}
-          <div className="mt-8 text-center text-sm text-gray-500">
+          <div className="mt-8 text-center text-sm text-muted-foreground">
             <div className="flex items-center justify-center space-x-2">
-              <Link href="/terms" className="hover:text-gray-700 transition-colors">
+              <Link href="/terms" className="hover:text-foreground transition-colors">
                 Terms of Use
               </Link>
               <span>|</span>
-              <Link href="/privacy" className="hover:text-gray-700 transition-colors">
+              <Link href="/privacy" className="hover:text-foreground transition-colors">
                 Privacy Policy
               </Link>
             </div>

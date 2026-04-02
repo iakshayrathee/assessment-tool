@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { wsClient } from '@/lib/websocketClient';
 import { useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import toast from '@/lib/toast';
 
 interface NotificationContextType {
     isConnected: boolean;
@@ -59,16 +59,16 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
                             <span className="text-2xl">🔔</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-foreground">
                                 {notification.title}
                             </p>
-                            <p className="mt-1 text-sm text-gray-600">
+                            <p className="mt-1 text-sm text-muted-foreground">
                                 {notification.message}
                             </p>
                         </div>
                         <button
                             onClick={() => toast.dismiss(t.id)}
-                            className="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                            className="flex-shrink-0 text-muted-foreground hover:text-muted-foreground"
                         >
                             ✕
                         </button>

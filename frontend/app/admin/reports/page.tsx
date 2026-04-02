@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface ReportData {
   id: string;
@@ -188,21 +189,21 @@ export default function ReportsAnalyticsPage() {
 
   const getReportTypeColor = (type: string) => {
     switch (type) {
-      case 'STUDENT_PROGRESS': return 'bg-blue-100 text-blue-800';
-      case 'EDUCATOR_PERFORMANCE': return 'bg-purple-100 text-purple-800';
-      case 'CENTER_ANALYTICS': return 'bg-green-100 text-green-800';
-      case 'COMPLIANCE': return 'bg-orange-100 text-orange-800';
-      case 'CUSTOM': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'STUDENT_PROGRESS': return 'bg-primary/10 text-primary';
+      case 'EDUCATOR_PERFORMANCE': return 'bg-info/10 text-foreground';
+      case 'CENTER_ANALYTICS': return 'bg-success/10 text-foreground';
+      case 'COMPLIANCE': return 'bg-warning/10 text-foreground';
+      case 'CUSTOM': return 'bg-muted text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'READY': return 'bg-green-100 text-green-800';
-      case 'GENERATING': return 'bg-yellow-100 text-yellow-800';
-      case 'FAILED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'READY': return 'bg-success/10 text-foreground';
+      case 'GENERATING': return 'bg-warning/10 text-foreground';
+      case 'FAILED': return 'bg-destructive/10 text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -250,15 +251,11 @@ export default function ReportsAnalyticsPage() {
   }
 
   return (
-    <div className="space-y-8 p-6">
-      {/* Header */}
-      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reports & Analytics</h1>
-          <p className="text-muted-foreground">
-            Downloadable exports, dashboards, charts, KPIs, and compliance summaries
-          </p>
-        </div>
+    <PageWrapper
+      title="Reports & Analytics"
+      description="Downloadable exports, dashboards, charts, KPIs, and compliance summaries"
+      breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Reports' }]}
+      actions={
         <div className="flex items-center space-x-2">
           <Badge variant="secondary">
             {reports.length} Reports Available
@@ -272,7 +269,8 @@ export default function ReportsAnalyticsPage() {
             Generate Report
           </Button>
         </div>
-      </div>
+      }
+    >
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
@@ -299,9 +297,9 @@ export default function ReportsAnalyticsPage() {
             className="grid gap-6 md:grid-cols-4"
           >
             <Card>
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 pb-3">
+              <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/20 dark:to-primary/30 pb-3">
                 <div className="flex items-center justify-between">
-                  <Users className="h-8 w-8 text-blue-600" />
+                  <Users className="h-8 w-8 text-primary" />
                   <Badge variant="secondary">+12%</Badge>
                 </div>
               </CardHeader>
@@ -314,7 +312,7 @@ export default function ReportsAnalyticsPage() {
             <Card>
               <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 pb-3">
                 <div className="flex items-center justify-between">
-                  <GraduationCap className="h-8 w-8 text-purple-600" />
+                  <GraduationCap className="h-8 w-8 text-info" />
                   <Badge variant="secondary">+8%</Badge>
                 </div>
               </CardHeader>
@@ -327,7 +325,7 @@ export default function ReportsAnalyticsPage() {
             <Card>
               <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 pb-3">
                 <div className="flex items-center justify-between">
-                  <ClipboardList className="h-8 w-8 text-green-600" />
+                  <ClipboardList className="h-8 w-8 text-success" />
                   <Badge variant="secondary">+15%</Badge>
                 </div>
               </CardHeader>
@@ -340,7 +338,7 @@ export default function ReportsAnalyticsPage() {
             <Card>
               <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950 pb-3">
                 <div className="flex items-center justify-between">
-                  <Award className="h-8 w-8 text-orange-600" />
+                  <Award className="h-8 w-8 text-warning" />
                   <Badge variant={analytics && analytics.complianceScore > 90 ? "default" : "secondary"}>
                     {analytics?.complianceScore}%
                   </Badge>
@@ -363,7 +361,7 @@ export default function ReportsAnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                  <TrendingUp className="h-5 w-5 text-primary" />
                   Monthly Progress Trends
                 </CardTitle>
                 <CardDescription>Assessment and IEP completion trends</CardDescription>
@@ -384,7 +382,7 @@ export default function ReportsAnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <PieChart className="h-5 w-5 text-purple-600" />
+                  <PieChart className="h-5 w-5 text-info" />
                   Center Performance
                 </CardTitle>
                 <CardDescription>Performance metrics by center</CardDescription>
@@ -413,7 +411,7 @@ export default function ReportsAnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Building className="h-5 w-5 text-green-600" />
+                  <Building className="h-5 w-5 text-success" />
                   Top Performing Centers
                 </CardTitle>
               </CardHeader>
@@ -446,7 +444,7 @@ export default function ReportsAnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-purple-600" />
+                  <Target className="h-5 w-5 text-info" />
                   Educator Workload
                 </CardTitle>
               </CardHeader>
@@ -488,7 +486,7 @@ export default function ReportsAnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Filter className="h-5 w-5 text-blue-600" />
+                  <Filter className="h-5 w-5 text-primary" />
                   Filter Reports
                 </CardTitle>
               </CardHeader>
@@ -531,9 +529,9 @@ export default function ReportsAnalyticsPage() {
             transition={{ delay: 0.2 }}
           >
             <Card>
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+              <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/20 dark:to-primary/30">
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-blue-600" />
+                  <FileText className="h-5 w-5 text-primary" />
                   Available Reports ({filteredReports.length})
                 </CardTitle>
                 <CardDescription>
@@ -631,7 +629,7 @@ export default function ReportsAnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-purple-600" />
+                  <Activity className="h-5 w-5 text-info" />
                   Advanced Analytics
                 </CardTitle>
                 <CardDescription>
@@ -655,6 +653,6 @@ export default function ReportsAnalyticsPage() {
           </motion.div>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageWrapper>
   );
 }

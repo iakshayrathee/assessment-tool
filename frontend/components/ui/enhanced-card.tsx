@@ -1,5 +1,5 @@
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
@@ -34,7 +34,7 @@ const EnhancedCard = React.forwardRef<HTMLDivElement, EnhancedCardProps>(
     children,
     ...props 
   }, ref) => {
-    const cardVariants = {
+    const cardVariants: Variants = {
       initial: { opacity: 0, y: 20 },
       animate: { opacity: 1, y: 0 },
       hover: interactive ? { y: -4, transition: { duration: 0.2 } } : {}
@@ -42,9 +42,9 @@ const EnhancedCard = React.forwardRef<HTMLDivElement, EnhancedCardProps>(
 
     const getChangeColor = () => {
       switch (changeType) {
-        case 'positive': return 'text-green-600';
-        case 'negative': return 'text-red-600';
-        default: return 'text-gray-600';
+        case 'positive': return 'text-success';
+        case 'negative': return 'text-destructive';
+        default: return 'text-muted-foreground';
       }
     };
 
@@ -52,14 +52,14 @@ const EnhancedCard = React.forwardRef<HTMLDivElement, EnhancedCardProps>(
       return (
         <Card className={cn("relative overflow-hidden", className)} ref={ref} {...props}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+            <div className="h-4 bg-muted rounded animate-pulse w-24"></div>
             <div className={cn("p-2 rounded-lg animate-pulse", iconBgColor)}>
-              <div className="h-4 w-4 bg-gray-300 rounded"></div>
+              <div className="h-4 w-4 bg-muted rounded"></div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="h-8 bg-gray-200 rounded animate-pulse w-16 mb-2"></div>
-            <div className="h-3 bg-gray-200 rounded animate-pulse w-32"></div>
+            <div className="h-8 bg-muted rounded animate-pulse w-16 mb-2"></div>
+            <div className="h-3 bg-muted rounded animate-pulse w-32"></div>
           </CardContent>
         </Card>
       );

@@ -6,7 +6,8 @@ import { StudentSelectionModal } from '@/components/assessments/StudentSelection
 import { Users, User, Search, Play, RefreshCw, AlertCircle, Database, Bot, ClipboardList, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 /* ──────────────────────────────────────────────────────────────────────────────
    Agent metadata — determines what each tab shows and which inputs to request
@@ -163,28 +164,28 @@ const FIELD_LABELS: Record<string, string> = {
 ──────────────────────────────────────────────────────────────────────────────*/
 function HumanValue({ value, depth = 0 }: { value: any; depth?: number }) {
   if (value === null || value === undefined) {
-    return <span className="text-gray-400 italic">No data available</span>;
+    return <span className="text-muted-foreground italic">No data available</span>;
   }
 
   if (typeof value === 'boolean') {
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${value ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${value ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
         {value ? '✓ Yes' : '✗ No'}
       </span>
     );
   }
 
   if (typeof value === 'number') {
-    return <span className="font-semibold text-blue-700">{value.toLocaleString()}</span>;
+    return <span className="font-semibold text-primary">{value.toLocaleString()}</span>;
   }
 
   if (typeof value === 'string') {
-    if (value.length === 0) return <span className="text-gray-400 italic">Empty</span>;
+    if (value.length === 0) return <span className="text-muted-foreground italic">Empty</span>;
     // Long text: render as paragraph
     if (value.length > 120) {
-      return <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{value}</p>;
+      return <p className="text-foreground text-sm leading-relaxed whitespace-pre-wrap">{value}</p>;
     }
-    return <span className="text-gray-800">{value}</span>;
+    return <span className="text-foreground">{value}</span>;
   }
 
   // Array of strings
@@ -192,7 +193,7 @@ function HumanValue({ value, depth = 0 }: { value: any; depth?: number }) {
     return (
       <ul className="list-disc list-inside space-y-1">
         {value.map((item, i) => (
-          <li key={i} className="text-gray-700 text-sm">{item}</li>
+          <li key={i} className="text-foreground text-sm">{item}</li>
         ))}
       </ul>
     );
@@ -200,12 +201,12 @@ function HumanValue({ value, depth = 0 }: { value: any; depth?: number }) {
 
   // Array of objects → render as cards
   if (Array.isArray(value)) {
-    if (value.length === 0) return <span className="text-gray-400 italic">No records found</span>;
+    if (value.length === 0) return <span className="text-muted-foreground italic">No records found</span>;
     return (
       <div className="space-y-3">
         {value.map((item, i) => (
-          <div key={i} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <div className="text-xs font-semibold text-gray-500 mb-2">Record {i + 1} of {value.length}</div>
+          <div key={i} className="bg-muted/40 border border-border rounded-lg p-4">
+            <div className="text-xs font-semibold text-muted-foreground mb-2">Record {i + 1} of {value.length}</div>
             {typeof item === 'object' && item !== null ? (
               <DataTable data={item} depth={depth + 1} />
             ) : (
@@ -222,13 +223,13 @@ function HumanValue({ value, depth = 0 }: { value: any; depth?: number }) {
     return <DataTable data={value} depth={depth + 1} />;
   }
 
-  return <span className="text-gray-800">{String(value)}</span>;
+  return <span className="text-foreground">{String(value)}</span>;
 }
 
 /* Render an object as a labeled field table */
 function DataTable({ data, depth = 0 }: { data: Record<string, any>; depth?: number }) {
   const entries = Object.entries(data).filter(([, v]) => v !== undefined);
-  if (entries.length === 0) return <span className="text-gray-400 italic">No data</span>;
+  if (entries.length === 0) return <span className="text-muted-foreground italic">No data</span>;
 
   return (
     <div className={`${depth > 0 ? '' : ''}`}>
@@ -238,11 +239,11 @@ function DataTable({ data, depth = 0 }: { data: Record<string, any>; depth?: num
             const label = FIELD_LABELS[key] || key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
             const isComplex = typeof val === 'object' && val !== null;
             return (
-              <tr key={key} className="border-b border-gray-100 last:border-0">
-                <td className={`py-2 pr-4 font-medium text-gray-600 align-top whitespace-nowrap ${isComplex ? 'pt-3' : ''}`} style={{ minWidth: 160 }}>
+              <tr key={key} className="border-b border-border last:border-0">
+                <td className={`py-2 pr-4 font-medium text-muted-foreground align-top whitespace-nowrap ${isComplex ? 'pt-3' : ''}`} style={{ minWidth: 160 }}>
                   {label}
                 </td>
-                <td className={`py-2 text-gray-800 ${isComplex ? 'pt-3' : ''}`}>
+                <td className={`py-2 text-foreground ${isComplex ? 'pt-3' : ''}`}>
                   <HumanValue value={val} depth={depth} />
                 </td>
               </tr>
@@ -272,19 +273,19 @@ function CollapsibleSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const variantStyles = {
-    default: 'border-gray-200',
-    database: 'border-blue-200',
-    ai: 'border-green-200',
+    default: 'border-border',
+    database: 'border-primary/20',
+    ai: 'border-success/20',
   };
   const headerStyles = {
-    default: 'bg-gray-50 hover:bg-gray-100',
-    database: 'bg-blue-50 hover:bg-blue-100',
-    ai: 'bg-green-50 hover:bg-green-100',
+    default: 'bg-muted/40 hover:bg-muted',
+    database: 'bg-primary/10 hover:bg-primary/10',
+    ai: 'bg-success/10 hover:bg-success/10',
   };
   const badgeStyles = {
-    default: 'bg-gray-200 text-gray-600',
-    database: 'bg-blue-100 text-blue-700',
-    ai: 'bg-green-100 text-green-700',
+    default: 'bg-muted text-muted-foreground',
+    database: 'bg-primary/10 text-primary',
+    ai: 'bg-success/10 text-success',
   };
 
   return (
@@ -294,17 +295,17 @@ function CollapsibleSection({
         className={`w-full px-5 py-3.5 flex items-center justify-between text-left transition-colors ${headerStyles[variant]}`}
       >
         <div className="flex items-center gap-3">
-          <span className="font-semibold text-gray-800 text-sm">{title}</span>
+          <span className="font-semibold text-foreground text-sm">{title}</span>
           {badge && (
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badgeStyles[variant]}`}>
               {badge}
             </span>
           )}
         </div>
-        <svg className={`w-4 h-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        <svg className={`w-4 h-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
       </button>
       {open && (
-        <div className="px-5 py-4 border-t border-gray-100 bg-white">
+        <div className="px-5 py-4 border-t border-border bg-background">
           {children}
         </div>
       )}
@@ -405,23 +406,11 @@ export default function AITransparencyPage() {
   const agentState = result?.state || {};
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-5">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-              <span className="text-white text-lg">🔍</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">AI Transparency Dashboard</h1>
-              <p className="text-sm text-gray-500">Inspect what data each AI agent reads, and what it generates — full pipeline visibility for teacher review</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-6 font-sans">
+    <PageWrapper
+      title="AI Transparency Dashboard"
+      description="Inspect what data each AI agent reads and generates — full pipeline visibility for teacher review"
+      breadcrumbs={[{ label: 'Educator' }, { label: 'AI Transparency' }]}
+    >
         {/* Agent Tabs */}
         <div className="flex flex-wrap gap-2 mb-8">
           {AGENTS.map((agent) => (
@@ -430,8 +419,8 @@ export default function AITransparencyPage() {
               onClick={() => { setActiveTab(agent.key); setResult(null); setError(''); }}
               className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 activeTab === agent.key
-                  ? 'bg-blue-600 text-white shadow-lg scale-105'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-600'
+                  ? 'bg-primary text-white shadow-lg scale-105'
+                  : 'bg-background text-muted-foreground border border-border hover:border-primary/30 hover:bg-primary/10/50 hover:text-primary'
               }`}
             >
               <span>{agent.icon}</span>
@@ -441,34 +430,34 @@ export default function AITransparencyPage() {
         </div>
 
         {/* Agent Info + Inputs */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-8 mb-8 shadow-sm">
+        <div className="bg-background rounded-2xl border border-border p-8 mb-8 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
             <div className="flex items-start gap-5">
-              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl">
+              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-3xl">
                 {activeAgent.icon}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{activeAgent.label}</h2>
-                <p className="text-gray-500 mt-1 max-w-2xl">{activeAgent.description}</p>
+                <h2 className="text-xl font-bold text-foreground">{activeAgent.label}</h2>
+                <p className="text-muted-foreground mt-1 max-w-2xl">{activeAgent.description}</p>
               </div>
             </div>
             
-            <Badge variant="outline" className="px-3 py-1 bg-blue-50 text-blue-700 border-blue-200 self-start md:self-center">
+            <Badge variant="outline" className="px-3 py-1 bg-primary/10 text-primary border-primary/20 self-start md:self-center">
               Target: {activeAgent.key.toUpperCase()}
             </Badge>
           </div>
 
-          <div className="flex flex-wrap gap-6 items-end p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+          <div className="flex flex-wrap gap-6 items-end p-6 bg-muted/40/50 rounded-2xl border border-border">
             {(activeAgent.fields.includes('student_id') || activeAgent.fields.includes('target_id')) && (
               <div className="flex-1" style={{ minWidth: 280 }}>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
                   <Users className="w-3.5 h-3.5" /> Selected Student
                 </label>
                 <div className="flex gap-2">
-                  <div className={`flex-1 flex items-center gap-3 px-4 py-2.5 border rounded-xl bg-white text-sm ${selectedStudent ? 'border-blue-200' : 'border-gray-300 italic text-gray-400'}`}>
-                    <User className={`w-4 h-4 ${selectedStudent ? 'text-blue-500' : 'text-gray-300'}`} />
+                  <div className={`flex-1 flex items-center gap-3 px-4 py-2.5 border rounded-xl bg-background text-sm ${selectedStudent ? 'border-primary/20' : 'border-border italic text-muted-foreground'}`}>
+                    <User className={`w-4 h-4 ${selectedStudent ? 'text-primary' : 'text-muted-foreground'}`} />
                     {selectedStudent ? (
-                      <span className="font-medium text-gray-900">{selectedStudent.fullName || selectedStudent.name}</span>
+                      <span className="font-medium text-foreground">{selectedStudent.fullName || selectedStudent.name}</span>
                     ) : (
                       'No student selected'
                     )}
@@ -476,7 +465,7 @@ export default function AITransparencyPage() {
                   <Button 
                     variant="outline" 
                     onClick={() => setIsStudentModalOpen(true)}
-                    className="rounded-xl border-gray-300 hover:bg-white hover:border-blue-500 hover:text-blue-600 transition-all font-semibold"
+                    className="rounded-xl border-border hover:bg-background hover:border-blue-500 hover:text-primary transition-all font-semibold"
                   >
                     <Search className="w-4 h-4 mr-2" />
                     {selectedStudent ? 'Change' : 'Select'}
@@ -487,7 +476,7 @@ export default function AITransparencyPage() {
             
             {activeAgent.fields.includes('educator_id') && (
               <div style={{ minWidth: 200 }}>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
                   <User className="w-3.5 h-3.5" /> Educator Profile
                 </label>
                 {user?.role === 'ADMIN' ? (
@@ -495,10 +484,10 @@ export default function AITransparencyPage() {
                     type="text" value={educatorId}
                     onChange={(e) => setEducatorId(e.target.value)}
                     placeholder="Enter Educator ID..."
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white font-medium"
+                    className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-background font-medium"
                   />
                 ) : (
-                  <div className="px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-100 text-sm font-medium text-gray-700 truncate max-w-[200px]">
+                  <div className="px-4 py-2.5 border border-border rounded-xl bg-muted text-sm font-medium text-foreground truncate max-w-[200px]">
                     {user?.profile?.fullName || user?.specialEducatorProfile?.fullName || 'Current Educator'}
                   </div>
                 )}
@@ -507,24 +496,24 @@ export default function AITransparencyPage() {
 
             {activeAgent.fields.includes('week_number') && (
               <div style={{ width: 120 }}>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Week #</label>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Week #</label>
                 <input
                   type="number" value={weekNumber} min={1}
                   onChange={(e) => setWeekNumber(parseInt(e.target.value) || 1)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white font-medium"
+                  className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-background font-medium"
                 />
               </div>
             )}
 
             {activeAgent.fields.includes('report_type') && (
               <div style={{ width: 200 }}>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
                   <ClipboardList className="w-3.5 h-3.5" /> Report Type
                 </label>
                 <select
                   value={reportType}
                   onChange={(e) => setReportType(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white font-medium"
+                  className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-background font-medium"
                 >
                   {REPORT_TYPES.map((t) => (
                     <option key={t} value={t}>{t.replace('_', ' ')}</option>
@@ -535,11 +524,11 @@ export default function AITransparencyPage() {
 
             {activeAgent.fields.includes('scope') && (
               <div style={{ width: 160 }}>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Scope</label>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Scope</label>
                 <select
                   value={scope}
                   onChange={(e) => setScope(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white font-medium"
+                  className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-background font-medium"
                 >
                   <option value="STUDENT">STUDENT</option>
                   <option value="SCHOOL">SCHOOL</option>
@@ -551,7 +540,7 @@ export default function AITransparencyPage() {
               onClick={triggerAgent}
               disabled={loading}
               className={`h-[42px] px-8 rounded-xl font-bold text-white transition-all shadow-md hover:shadow-lg active:scale-95 ${
-                loading ? 'opacity-50' : 'bg-blue-600 hover:bg-blue-700'
+                loading ? 'opacity-50' : 'bg-primary hover:bg-primary'
               }`}
             >
               {loading ? (
@@ -565,22 +554,22 @@ export default function AITransparencyPage() {
 
         {/* Loading State */}
         {loading && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-16 text-center shadow-sm">
-            <div className="w-12 h-12 border-4 border-gray-100 border-t-blue-600 rounded-full animate-spin mx-auto mb-6" />
-            <h3 className="text-xl font-bold text-gray-900 leading-tight">Executing {activeAgent.label}...</h3>
-            <p className="text-gray-500 mt-2 max-w-md mx-auto">This process runs the full AI agent cycle including database queries, prompt construction, and LLM reasoning. This typically takes 30-90 seconds.</p>
+          <div className="bg-background rounded-2xl border border-border p-16 text-center shadow-sm">
+            <div className="w-12 h-12 border-4 border-border border-t-blue-600 rounded-full animate-spin mx-auto mb-6" />
+            <h3 className="text-xl font-bold text-foreground leading-tight">Executing {activeAgent.label}...</h3>
+            <p className="text-muted-foreground mt-2 max-w-md mx-auto">This process runs the full AI agent cycle including database queries, prompt construction, and LLM reasoning. This typically takes 30-90 seconds.</p>
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-8 flex items-start gap-4">
-            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <AlertCircle className="w-6 h-6 text-red-600" />
+          <div className="bg-destructive/10 border border-destructive/20 rounded-2xl p-6 mb-8 flex items-start gap-4">
+            <div className="w-10 h-10 bg-destructive/10 rounded-full flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="w-6 h-6 text-destructive" />
             </div>
             <div>
               <p className="text-red-900 font-bold">Execution Error</p>
-              <p className="text-red-700 text-sm mt-1">{error}</p>
+              <p className="text-destructive text-sm mt-1">{error}</p>
             </div>
           </div>
         )}
@@ -590,27 +579,27 @@ export default function AITransparencyPage() {
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Summary Bar */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+              <div className="bg-background rounded-2xl border border-border p-5 shadow-sm">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1.5 flex items-center gap-2">
                   <Bot className="w-3.5 h-3.5" /> Agent Identity
                 </p>
-                <p className="text-lg font-bold text-gray-900 truncate">{activeAgent.label}</p>
+                <p className="text-lg font-bold text-foreground truncate">{activeAgent.label}</p>
               </div>
-              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+              <div className="bg-background rounded-2xl border border-border p-5 shadow-sm">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1.5 flex items-center gap-2">
                   <RefreshCw className="w-3.5 h-3.5" /> Runtime
                 </p>
-                <p className="text-lg font-bold text-blue-600">{result.elapsed_seconds}s <span className="text-sm font-medium text-gray-400 ml-1">seconds</span></p>
+                <p className="text-lg font-bold text-primary">{result.elapsed_seconds}s <span className="text-sm font-medium text-muted-foreground ml-1">seconds</span></p>
               </div>
-              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Last Triggered</p>
-                <p className="text-lg font-bold text-gray-900">{new Date(result.timestamp).toLocaleTimeString()}</p>
+              <div className="bg-background rounded-2xl border border-border p-5 shadow-sm">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Last Triggered</p>
+                <p className="text-lg font-bold text-foreground">{new Date(result.timestamp).toLocaleTimeString()}</p>
               </div>
-              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+              <div className="bg-background rounded-2xl border border-border p-5 shadow-sm">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1.5 flex items-center gap-2">
                   <Database className="w-3.5 h-3.5" /> Logical Nodes
                 </p>
-                <p className="text-lg font-bold text-gray-900">{Object.keys(agentState).length} fields captured</p>
+                <p className="text-lg font-bold text-foreground">{Object.keys(agentState).length} fields captured</p>
               </div>
             </div>
 
@@ -649,16 +638,16 @@ export default function AITransparencyPage() {
                       <div key={field} className="mb-8 last:mb-0">
                         <div className="flex items-center gap-3 mb-4">
                           <div className="h-2 w-2 rounded-full bg-blue-500" />
-                          <h4 className="text-base font-bold text-gray-900">
+                          <h4 className="text-base font-bold text-foreground">
                             {label}
                           </h4>
                           {Array.isArray(val) && (
-                            <Badge variant="secondary" className="font-medium bg-blue-50 text-blue-700 border-none">
+                            <Badge variant="secondary" className="font-medium bg-primary/10 text-primary border-none">
                               {val.length} {val.length === 1 ? 'entry' : 'entries'}
                             </Badge>
                           )}
                         </div>
-                        <div className="pl-5 border-l-2 border-gray-100 ml-1">
+                        <div className="pl-5 border-l-2 border-border ml-1">
                           <HumanValue value={val} />
                         </div>
                       </div>
@@ -679,14 +668,14 @@ export default function AITransparencyPage() {
                   badge={`${extraFields.length} hidden fields`}
                   defaultOpen={false}
                 >
-                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 shadow-inner">
+                  <div className="bg-muted/40 rounded-xl p-6 border border-border shadow-inner">
                     {extraFields.map((field: string) => (
                       <div key={field} className="mb-6 last:mb-0">
-                        <h4 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
                           <Info className="w-3.5 h-3.5" />
                           {FIELD_LABELS[field] || field.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
                         </h4>
-                        <div className="pl-4 border-l-2 border-gray-200 ml-1">
+                        <div className="pl-4 border-l-2 border-border ml-1">
                           <HumanValue value={agentState[field]} />
                         </div>
                       </div>
@@ -700,19 +689,18 @@ export default function AITransparencyPage() {
 
         {/* Empty State */}
         {!result && !loading && !error && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-24 text-center shadow-sm">
-            <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-8">
-              <Bot className="w-12 h-12 text-blue-600" strokeWidth={1.5} />
+          <div className="bg-background rounded-2xl border border-border p-24 text-center shadow-sm">
+            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-8">
+              <Bot className="w-12 h-12 text-primary" strokeWidth={1.5} />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">Initialize Agent Inspection</h3>
-            <p className="text-gray-500 text-lg max-w-md mx-auto">
+            <h3 className="text-2xl font-bold text-foreground mb-3">Initialize Agent Inspection</h3>
+            <p className="text-muted-foreground text-lg max-w-md mx-auto">
               Please select a student and an agent tab above, then click 
-              <span className="font-bold text-blue-600 mx-1.5">Run Agent</span> 
+              <span className="font-bold text-primary mx-1.5">Run Agent</span> 
               to execute the system and view human-readable analysis.
             </p>
           </div>
         )}
-      </div>
 
       {/* Modals */}
       <StudentSelectionModal
@@ -721,6 +709,6 @@ export default function AITransparencyPage() {
         onSelect={handleStudentSelect}
         selectedStudentId={studentId}
       />
-    </div>
+    </PageWrapper>
   );
 }

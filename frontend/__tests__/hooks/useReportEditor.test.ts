@@ -8,7 +8,7 @@ jest.mock('@/lib/api', () => ({
   },
 }));
 
-jest.mock('react-hot-toast', () => ({
+jest.mock('@/lib/toast', () => ({
   __esModule: true,
   default: Object.assign(jest.fn(), {
     success: jest.fn(),
@@ -18,7 +18,7 @@ jest.mock('react-hot-toast', () => ({
 
 import { useReportEditor } from '@/hooks/useReportEditor';
 import { apiClient } from '@/lib/api';
-import toast from 'react-hot-toast';
+import toast from '@/lib/toast';
 
 const mockReport = {
   id: 'report-1',

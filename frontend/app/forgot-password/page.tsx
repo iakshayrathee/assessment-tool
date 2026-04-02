@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
 
@@ -57,16 +57,16 @@ export default function ForgotPasswordPage() {
           transition={{ duration: 0.5 }}
           className="max-w-md w-full"
         >
-          <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20 text-center">
+          <div className="bg-background/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20 text-center">
             <div className="flex justify-center mb-6">
-              <div className="bg-green-100 p-3 rounded-full">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="bg-success/10 p-3 rounded-full">
+                <CheckCircle className="h-8 w-8 text-success" />
               </div>
             </div>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-4">Check Your Email</h2>
 
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               We&apos;ve sent a password reset link to <strong>{email}</strong>.
               Please check your email and follow the instructions to reset your password.
             </p>
@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
                   setIsSubmitted(false);
                   setEmail('');
                 }}
-                className="w-full text-gray-600 hover:text-gray-900 py-2 transition-colors"
+                className="w-full text-muted-foreground hover:text-foreground py-2 transition-colors"
               >
                 Try a different email
               </button>
@@ -103,11 +103,11 @@ export default function ForgotPasswordPage() {
         transition={{ duration: 0.6 }}
         className="max-w-md w-full"
       >
-        <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
+        <div className="bg-background/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
           {/* Back Button */}
           <Link
             href="/"
-            className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+            className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Login
@@ -119,32 +119,32 @@ export default function ForgotPasswordPage() {
                 <Mail className="h-8 w-8 text-white" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Forgot Password?</h2>
-            <p className="text-gray-600">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Forgot Password?</h2>
+            <p className="text-muted-foreground">
               Enter your email address and we&apos;ll send you a link to reset your password.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${error ? 'border-red-300' : 'border-gray-300'
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${error ? 'border-destructive/30' : 'border-border'
                     }`}
                   placeholder="Enter your email address"
                   required
                 />
               </div>
               {error && (
-                <div className="mt-2 flex items-center text-sm text-red-600">
+                <div className="mt-2 flex items-center text-sm text-destructive">
                   <AlertCircle className="h-4 w-4 mr-1" />
                   {error}
                 </div>
@@ -168,9 +168,9 @@ export default function ForgotPasswordPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Remember your password?{' '}
-              <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
+              <Link href="/" className="text-primary hover:text-primary font-medium transition-colors">
                 Sign in
               </Link>
             </p>

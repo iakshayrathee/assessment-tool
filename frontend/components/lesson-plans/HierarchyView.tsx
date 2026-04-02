@@ -52,7 +52,7 @@ export function HierarchyView({
                                 <div className="flex items-center gap-3 flex-1">
                                     <button
                                         onClick={() => toggleLTPExpansion(ltp.id)}
-                                        className="hover:bg-gray-100 p-1 rounded"
+                                        className="hover:bg-muted p-1 rounded"
                                     >
                                         {isExpanded ? (
                                             <ChevronDown className="h-5 w-5" />
@@ -60,12 +60,12 @@ export function HierarchyView({
                                             <ChevronRight className="h-5 w-5" />
                                         )}
                                     </button>
-                                    <Target className="h-5 w-5 text-blue-600" />
+                                    <Target className="h-5 w-5 text-primary" />
                                     <div className="flex-1">
                                         <h3 className="font-semibold text-lg">
                                             LTP: {ltp.domains.join(', ')}
                                         </h3>
-                                        <p className="text-sm text-gray-600">
+                                        <p className="text-sm text-muted-foreground">
                                             {format(new Date(ltp.startDate), 'MMM dd, yyyy')} -{' '}
                                             {format(new Date(ltp.endDate), 'MMM dd, yyyy')} ({ltp.durationMonths} months)
                                         </p>
@@ -83,15 +83,15 @@ export function HierarchyView({
                         {isExpanded && (
                             <CardContent className="space-y-4">
                                 {/* LTP Goals */}
-                                <div className="bg-gray-50 p-4 rounded-lg">
+                                <div className="bg-muted/40 p-4 rounded-lg">
                                     <h4 className="font-medium mb-2">Goals ({ltp.goals?.length || 0})</h4>
                                     <div className="space-y-2">
                                         {ltp.goals?.map((goal: any, idx: number) => (
                                             <div key={idx} className="flex items-start gap-2 text-sm">
-                                                <span className="font-medium text-gray-500">{idx + 1}.</span>
+                                                <span className="font-medium text-muted-foreground">{idx + 1}.</span>
                                                 <div className="flex-1">
                                                     <p>{goal.goalStatement}</p>
-                                                    <p className="text-xs text-gray-500">
+                                                    <p className="text-xs text-muted-foreground">
                                                         {goal.domain} • Target: {goal.targetAccuracy}%
                                                     </p>
                                                 </div>
@@ -114,7 +114,7 @@ export function HierarchyView({
                                                             <div className="flex items-center gap-3 flex-1">
                                                                 <button
                                                                     onClick={() => toggleSTPExpansion(stp.id)}
-                                                                    className="hover:bg-gray-100 p-1 rounded"
+                                                                    className="hover:bg-muted p-1 rounded"
                                                                 >
                                                                     {isStpExpanded ? (
                                                                         <ChevronDown className="h-4 w-4" />
@@ -124,7 +124,7 @@ export function HierarchyView({
                                                                 </button>
                                                                 <div className="flex-1">
                                                                     <h4 className="font-medium">STP: {stp.stpGoal}</h4>
-                                                                    <p className="text-xs text-gray-600">
+                                                                    <p className="text-xs text-muted-foreground">
                                                                         {format(new Date(stp.startDate), 'MMM dd')} -{' '}
                                                                         {format(new Date(stp.endDate), 'MMM dd')} ({stp.durationWeeks} weeks)
                                                                     </p>
@@ -146,16 +146,16 @@ export function HierarchyView({
                                                     {isStpExpanded && (
                                                         <CardContent className="py-3 space-y-3">
                                                             {/* Sub-goals */}
-                                                            <div className="bg-gray-50 p-3 rounded">
+                                                            <div className="bg-muted/40 p-3 rounded">
                                                                 <h5 className="text-sm font-medium mb-2">Sub-Goals</h5>
                                                                 <div className="space-y-1">
                                                                     {stp.subGoals?.map((subGoal: any, idx: number) => (
                                                                         <div key={idx} className="flex items-center gap-2 text-sm">
                                                                             <CheckCircle2
-                                                                                className={`h-4 w-4 ${subGoal.isAchieved ? 'text-green-600' : 'text-gray-300'
+                                                                                className={`h-4 w-4 ${subGoal.isAchieved ? 'text-success' : 'text-muted-foreground'
                                                                                     }`}
                                                                             />
-                                                                            <span className={subGoal.isAchieved ? 'line-through text-gray-500' : ''}>
+                                                                            <span className={subGoal.isAchieved ? 'line-through text-muted-foreground' : ''}>
                                                                                 {subGoal.goalStatement}
                                                                             </span>
                                                                         </div>
@@ -169,14 +169,14 @@ export function HierarchyView({
                                                                     {stpWLPs.map((wlp) => (
                                                                         <div
                                                                             key={wlp.id}
-                                                                            className="flex items-center gap-3 p-2 bg-white border rounded hover:bg-gray-50"
+                                                                            className="flex items-center gap-3 p-2 bg-background border rounded hover:bg-muted/40"
                                                                         >
-                                                                            <Calendar className="h-4 w-4 text-purple-600" />
+                                                                            <Calendar className="h-4 w-4 text-info" />
                                                                             <div className="flex-1">
                                                                                 <p className="text-sm font-medium">
                                                                                     Week {wlp.weekNumber}: {wlp.topics}
                                                                                 </p>
-                                                                                <p className="text-xs text-gray-500">
+                                                                                <p className="text-xs text-muted-foreground">
                                                                                     {format(new Date(wlp.sessionDate), 'MMM dd, yyyy')}
                                                                                 </p>
                                                                             </div>
@@ -197,7 +197,7 @@ export function HierarchyView({
                                         })}
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-gray-500 ml-8">No short-term plans yet</p>
+                                    <p className="text-sm text-muted-foreground ml-8">No short-term plans yet</p>
                                 )}
                             </CardContent>
                         )}

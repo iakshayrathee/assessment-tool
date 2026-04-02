@@ -50,6 +50,7 @@ import {
 import { apiClient } from '@/lib/api';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { useToast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface FlaggedCase {
   id: string;
@@ -162,49 +163,49 @@ export default function FlaggedCasesPage() {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'CRITICAL':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-destructive/10 text-foreground border-destructive/20';
       case 'HIGH':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-warning/10 text-foreground border-warning/20';
       case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-warning/10 text-foreground border-warning/20';
       case 'LOW':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-success/10 text-foreground border-success/20';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-foreground border-border';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'OPEN':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-foreground';
       case 'IN_PROGRESS':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'RESOLVED':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-foreground';
       case 'ESCALATED':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-info/10 text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'ACADEMIC_CONCERN':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'BEHAVIORAL_ISSUE':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-warning/10 text-foreground';
       case 'SAFETY_CONCERN':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-foreground';
       case 'ATTENDANCE_ISSUE':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning/10 text-foreground';
       case 'HEALTH_CONCERN':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-info/10 text-foreground';
       case 'FAMILY_ISSUE':
         return 'bg-pink-100 text-pink-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -303,35 +304,22 @@ export default function FlaggedCasesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-primary border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Flagged Cases</h1>
-            <p className="text-gray-600">Monitor and manage critical student cases</p>
-          </div>
-        </div>
-      </div>
+    <PageWrapper
+      title="Flagged Cases"
+      description="Monitor and manage critical student cases"
+      breadcrumbs={[{ label: 'Super Special Educator', href: '/super-special-educator' }, { label: 'Flagged Cases' }]}
+    >
 
       {/* Filters and Search */}
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search cases..."
             value={searchTerm}
@@ -342,7 +330,7 @@ export default function FlaggedCasesPage() {
         
         <div className="flex gap-3 items-center flex-wrap">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
+            <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -405,10 +393,10 @@ export default function FlaggedCasesPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Cases</p>
+                <p className="text-sm text-muted-foreground">Total Cases</p>
                 <p className="text-2xl font-bold">{cases.length}</p>
               </div>
-              <Flag className="h-8 w-8 text-blue-600" />
+              <Flag className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -416,12 +404,12 @@ export default function FlaggedCasesPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Critical</p>
-                <p className="text-2xl font-bold text-red-600">
+                <p className="text-sm text-muted-foreground">Critical</p>
+                <p className="text-2xl font-bold text-destructive">
                   {cases.filter(c => c.severity === 'CRITICAL').length}
                 </p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+              <AlertTriangle className="h-8 w-8 text-destructive" />
             </div>
           </CardContent>
         </Card>
@@ -429,12 +417,12 @@ export default function FlaggedCasesPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Open</p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-sm text-muted-foreground">Open</p>
+                <p className="text-2xl font-bold text-warning">
                   {cases.filter(c => c.status === 'OPEN').length}
                 </p>
               </div>
-              <Clock className="h-8 w-8 text-orange-600" />
+              <Clock className="h-8 w-8 text-warning" />
             </div>
           </CardContent>
         </Card>
@@ -442,12 +430,12 @@ export default function FlaggedCasesPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Immediate Action</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-sm text-muted-foreground">Immediate Action</p>
+                <p className="text-2xl font-bold text-info">
                   {cases.filter(c => c.requiresImmediateAction).length}
                 </p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-purple-600" />
+              <AlertTriangle className="h-8 w-8 text-info" />
             </div>
           </CardContent>
         </Card>
@@ -455,12 +443,12 @@ export default function FlaggedCasesPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Overdue Follow-up</p>
-                <p className="text-2xl font-bold text-red-600">
+                <p className="text-sm text-muted-foreground">Overdue Follow-up</p>
+                <p className="text-2xl font-bold text-destructive">
                   {cases.filter(c => isFollowUpOverdue(c.nextFollowUpDate)).length}
                 </p>
               </div>
-              <Calendar className="h-8 w-8 text-red-600" />
+              <Calendar className="h-8 w-8 text-destructive" />
             </div>
           </CardContent>
         </Card>
@@ -470,14 +458,14 @@ export default function FlaggedCasesPage() {
       {filteredCases.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Flag className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <Flag className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               {searchTerm || typeFilter !== 'all' || severityFilter !== 'all' || statusFilter !== 'all' || centerFilter !== 'all'
                 ? 'No cases found' 
                 : 'No flagged cases'
               }
             </h3>
-            <p className="text-gray-600 text-center max-w-md">
+            <p className="text-muted-foreground text-center max-w-md">
               {searchTerm || typeFilter !== 'all' || severityFilter !== 'all' || statusFilter !== 'all' || centerFilter !== 'all'
                 ? 'Try adjusting your search terms or filters to find the cases you\'re looking for.'
                 : 'No cases have been flagged. This is good news!'
@@ -523,8 +511,8 @@ export default function FlaggedCasesPage() {
                   <TableRow 
                     key={caseItem.id} 
                     className={
-                      caseItem.requiresImmediateAction ? 'bg-red-50' : 
-                      caseItem.severity === 'CRITICAL' ? 'bg-orange-50' : ''
+                      caseItem.requiresImmediateAction ? 'bg-destructive/10' : 
+                      caseItem.severity === 'CRITICAL' ? 'bg-warning/10' : ''
                     }
                   >
                     <TableCell>
@@ -532,14 +520,14 @@ export default function FlaggedCasesPage() {
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{caseItem.title}</span>
                           {caseItem.requiresImmediateAction && (
-                            <AlertTriangle className="h-4 w-4 text-red-500" />
+                            <AlertTriangle className="h-4 w-4 text-destructive" />
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 max-w-xs truncate">
+                        <p className="text-sm text-muted-foreground max-w-xs truncate">
                           {caseItem.description}
                         </p>
                         {(caseItem.actionsTaken || []).length > 0 && (
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <CheckCircle className="h-3 w-3" />
                             {caseItem.actionsTaken.length} action(s) taken
                           </div>
@@ -548,13 +536,13 @@ export default function FlaggedCasesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <User className="h-4 w-4 mr-2 text-gray-400" />
+                        <User className="h-4 w-4 mr-2 text-muted-foreground" />
                         {caseItem.studentName}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <Building2 className="h-4 w-4 mr-2 text-gray-400" />
+                        <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
                         {caseItem.centerName}
                       </div>
                     </TableCell>
@@ -576,14 +564,14 @@ export default function FlaggedCasesPage() {
                     <TableCell>{caseItem.educatorName}</TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                        <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
                         {caseItem.daysOpen} days
                       </div>
                     </TableCell>
                     <TableCell>
                       {caseItem.nextFollowUpDate ? (
                         <div className={`text-sm ${
-                          isFollowUpOverdue(caseItem.nextFollowUpDate) ? 'text-red-600' : 'text-blue-600'
+                          isFollowUpOverdue(caseItem.nextFollowUpDate) ? 'text-destructive' : 'text-primary'
                         }`}>
                           {isFollowUpOverdue(caseItem.nextFollowUpDate) && (
                             <div className="flex items-center gap-1">
@@ -599,7 +587,7 @@ export default function FlaggedCasesPage() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400">Not set</span>
+                        <span className="text-sm text-muted-foreground">Not set</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -651,7 +639,7 @@ export default function FlaggedCasesPage() {
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Action Taken <span className="text-red-500">*</span></label>
+              <label className="text-sm font-medium">Action Taken <span className="text-destructive">*</span></label>
               <Input
                 placeholder="Brief description of action taken..."
                 value={caseUpdate.action}
@@ -660,7 +648,7 @@ export default function FlaggedCasesPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Detailed Notes <span className="text-red-500">*</span></label>
+              <label className="text-sm font-medium">Detailed Notes <span className="text-destructive">*</span></label>
               <Textarea
                 placeholder="Provide detailed notes about the action taken and any observations..."
                 value={caseUpdate.notes}
@@ -724,7 +712,7 @@ export default function FlaggedCasesPage() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Flag className="h-5 w-5 text-red-500" />
+              <Flag className="h-5 w-5 text-destructive" />
               Case Details: {selectedCaseForDetails?.title}
             </DialogTitle>
             <DialogDescription>
@@ -746,38 +734,38 @@ export default function FlaggedCasesPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Info className="h-4 w-4 text-blue-500" />
+                      <Info className="h-4 w-4 text-primary" />
                       <span className="font-medium">Case Information</span>
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Case ID:</span>
+                        <span className="text-muted-foreground">Case ID:</span>
                         <span className="font-medium">{selectedCaseForDetails.id}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Status:</span>
+                        <span className="text-muted-foreground">Status:</span>
                         <Badge variant={selectedCaseForDetails.status === 'RESOLVED' ? 'default' : 
                                       selectedCaseForDetails.status === 'ESCALATED' ? 'destructive' : 'secondary'}>
                           {selectedCaseForDetails.status}
                         </Badge>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Severity:</span>
+                        <span className="text-muted-foreground">Severity:</span>
                         <Badge variant={selectedCaseForDetails.severity === 'HIGH' ? 'destructive' : 
                                       selectedCaseForDetails.severity === 'MEDIUM' ? 'default' : 'secondary'}>
                           {selectedCaseForDetails.severity}
                         </Badge>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Flag Type:</span>
+                        <span className="text-muted-foreground">Flag Type:</span>
                         <span className="font-medium">{selectedCaseForDetails.flagType}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Flagged Date:</span>
+                        <span className="text-muted-foreground">Flagged Date:</span>
                         <span className="font-medium">{formatDate(selectedCaseForDetails.flaggedDate)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Last Updated:</span>
+                        <span className="text-muted-foreground">Last Updated:</span>
                         <span className="font-medium">{formatDate(selectedCaseForDetails.lastUpdated)}</span>
                       </div>
                     </div>
@@ -785,23 +773,23 @@ export default function FlaggedCasesPage() {
 
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-green-500" />
+                      <Building2 className="h-4 w-4 text-success" />
                       <span className="font-medium">Center Information</span>
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Center:</span>
+                        <span className="text-muted-foreground">Center:</span>
                         <span className="font-medium">{selectedCaseForDetails.centerName}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Related Incidents:</span>
+                        <span className="text-muted-foreground">Related Incidents:</span>
                         <span className="font-medium">{selectedCaseForDetails.relatedIncidents}</span>
                       </div>
                       {selectedCaseForDetails.nextFollowUpDate && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Next Follow-up:</span>
+                          <span className="text-muted-foreground">Next Follow-up:</span>
                           <span className={`font-medium ${
-                            isFollowUpOverdue(selectedCaseForDetails.nextFollowUpDate) ? 'text-red-600' : 'text-blue-600'
+                            isFollowUpOverdue(selectedCaseForDetails.nextFollowUpDate) ? 'text-destructive' : 'text-primary'
                           }`}>
                             {formatDate(selectedCaseForDetails.nextFollowUpDate)}
                           </span>
@@ -816,8 +804,8 @@ export default function FlaggedCasesPage() {
                     <MessageSquare className="h-4 w-4 text-purple-500" />
                     <span className="font-medium">Description</span>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-sm text-gray-700">{selectedCaseForDetails.description}</p>
+                  <div className="bg-muted/40 p-3 rounded-lg">
+                    <p className="text-sm text-foreground">{selectedCaseForDetails.description}</p>
                   </div>
                 </div>
               </TabsContent>
@@ -826,28 +814,28 @@ export default function FlaggedCasesPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-blue-500" />
+                      <User className="h-4 w-4 text-primary" />
                       <span className="font-medium">Student Profile</span>
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Name:</span>
+                        <span className="text-muted-foreground">Name:</span>
                         <span className="font-medium">{selectedCaseForDetails.studentName}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Student ID:</span>
+                        <span className="text-muted-foreground">Student ID:</span>
                         <span className="font-medium">STU-{selectedCaseForDetails.id.slice(-6)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Age:</span>
+                        <span className="text-muted-foreground">Age:</span>
                         <span className="font-medium">12 years</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Grade:</span>
+                        <span className="text-muted-foreground">Grade:</span>
                         <span className="font-medium">7th Grade</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Enrollment Date:</span>
+                        <span className="text-muted-foreground">Enrollment Date:</span>
                         <span className="font-medium">Sep 2023</span>
                       </div>
                     </div>
@@ -868,15 +856,15 @@ export default function FlaggedCasesPage() {
 
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-green-500" />
+                    <Target className="h-4 w-4 text-success" />
                     <span className="font-medium">Current IEP Goals</span>
                   </div>
                   <div className="space-y-2">
-                    <div className="bg-green-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-green-800">Social Communication</p>
-                      <p className="text-sm text-green-700">Improve peer interaction skills in structured activities</p>
+                    <div className="bg-success/10 p-3 rounded-lg">
+                      <p className="text-sm font-medium text-foreground">Social Communication</p>
+                      <p className="text-sm text-success">Improve peer interaction skills in structured activities</p>
                       <div className="mt-2">
-                        <div className="flex justify-between text-xs text-green-600">
+                        <div className="flex justify-between text-xs text-success">
                           <span>Progress: 65%</span>
                           <span>Target: Dec 2024</span>
                         </div>
@@ -885,16 +873,16 @@ export default function FlaggedCasesPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-blue-800">Academic Focus</p>
-                      <p className="text-sm text-blue-700">Maintain attention during 20-minute learning sessions</p>
+                    <div className="bg-primary/10 p-3 rounded-lg">
+                      <p className="text-sm font-medium text-primary">Academic Focus</p>
+                      <p className="text-sm text-primary">Maintain attention during 20-minute learning sessions</p>
                       <div className="mt-2">
-                        <div className="flex justify-between text-xs text-blue-600">
+                        <div className="flex justify-between text-xs text-primary">
                           <span>Progress: 45%</span>
                           <span>Target: Jan 2025</span>
                         </div>
                         <div className="w-full bg-blue-200 rounded-full h-2 mt-1">
-                          <div className="bg-blue-600 h-2 rounded-full" style={{ width: '45%' }}></div>
+                          <div className="bg-primary h-2 rounded-full" style={{ width: '45%' }}></div>
                         </div>
                       </div>
                     </div>
@@ -905,26 +893,26 @@ export default function FlaggedCasesPage() {
               <TabsContent value="actions" className="space-y-4">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-success" />
                     <span className="font-medium">Actions Taken</span>
                   </div>
                   {(selectedCaseForDetails.actionsTaken || []).length > 0 ? (
                     <div className="space-y-2">
                       {(selectedCaseForDetails.actionsTaken || []).map((action, index) => (
-                        <div key={index} className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
+                        <div key={index} className="bg-success/10 p-3 rounded-lg border-l-4 border-green-500">
                           <div className="flex items-start gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                            <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                             <div className="flex-1">
-                              <p className="text-sm text-green-800">{action}</p>
-                              <p className="text-xs text-green-600 mt-1">Completed on {formatDate(selectedCaseForDetails.lastUpdated)}</p>
+                              <p className="text-sm text-foreground">{action}</p>
+                              <p className="text-xs text-success mt-1">Completed on {formatDate(selectedCaseForDetails.lastUpdated)}</p>
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Shield className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Shield className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
                       <p>No actions have been taken yet</p>
                     </div>
                   )}
@@ -932,33 +920,33 @@ export default function FlaggedCasesPage() {
 
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-blue-500" />
+                    <Target className="h-4 w-4 text-primary" />
                     <span className="font-medium">Recommended Actions</span>
                   </div>
                   <div className="space-y-2">
-                    <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500">
+                    <div className="bg-primary/10 p-3 rounded-lg border-l-4 border-blue-500">
                       <div className="flex items-start gap-2">
-                        <Star className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <Star className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-blue-800">Immediate Assessment</p>
-                          <p className="text-sm text-blue-700">Conduct comprehensive behavioral assessment within 48 hours</p>
+                          <p className="text-sm font-medium text-primary">Immediate Assessment</p>
+                          <p className="text-sm text-primary">Conduct comprehensive behavioral assessment within 48 hours</p>
                         </div>
                       </div>
                     </div>
-                    <div className="bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-500">
+                    <div className="bg-warning/10 p-3 rounded-lg border-l-4 border-yellow-500">
                       <div className="flex items-start gap-2">
-                        <UserCheck className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                        <UserCheck className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-yellow-800">Parent Conference</p>
-                          <p className="text-sm text-yellow-700">Schedule meeting with parents to discuss intervention strategies</p>
+                          <p className="text-sm font-medium text-foreground">Parent Conference</p>
+                          <p className="text-sm text-warning">Schedule meeting with parents to discuss intervention strategies</p>
                         </div>
                       </div>
                     </div>
-                    <div className="bg-purple-50 p-3 rounded-lg border-l-4 border-purple-500">
+                    <div className="bg-info/10 p-3 rounded-lg border-l-4 border-purple-500">
                       <div className="flex items-start gap-2">
-                        <GraduationCap className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                        <GraduationCap className="h-4 w-4 text-info mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-purple-800">IEP Review</p>
+                          <p className="text-sm font-medium text-foreground">IEP Review</p>
                           <p className="text-sm text-purple-700">Review and update IEP goals based on current needs</p>
                         </div>
                       </div>
@@ -970,20 +958,20 @@ export default function FlaggedCasesPage() {
               <TabsContent value="history" className="space-y-4">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <History className="h-4 w-4 text-gray-500" />
+                    <History className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">Case Timeline</span>
                   </div>
                   <div className="space-y-3">
                     <div className="flex gap-3">
                       <div className="flex flex-col items-center">
-                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <div className="w-0.5 h-16 bg-gray-200"></div>
+                        <div className="w-3 h-3 bg-destructive rounded-full"></div>
+                        <div className="w-0.5 h-16 bg-border"></div>
                       </div>
                       <div className="flex-1 pb-4">
-                        <div className="bg-red-50 p-3 rounded-lg">
-                          <p className="text-sm font-medium text-red-800">Case Flagged</p>
-                          <p className="text-sm text-red-700">Initial incident reported and case created</p>
-                          <p className="text-xs text-red-600 mt-1">{formatDate(selectedCaseForDetails.flaggedDate)}</p>
+                        <div className="bg-destructive/10 p-3 rounded-lg">
+                          <p className="text-sm font-medium text-foreground">Case Flagged</p>
+                          <p className="text-sm text-destructive">Initial incident reported and case created</p>
+                          <p className="text-xs text-destructive mt-1">{formatDate(selectedCaseForDetails.flaggedDate)}</p>
                         </div>
                       </div>
                     </div>
@@ -991,27 +979,27 @@ export default function FlaggedCasesPage() {
                     <div className="flex gap-3">
                       <div className="flex flex-col items-center">
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <div className="w-0.5 h-16 bg-gray-200"></div>
+                        <div className="w-0.5 h-16 bg-border"></div>
                       </div>
                       <div className="flex-1 pb-4">
-                        <div className="bg-blue-50 p-3 rounded-lg">
-                          <p className="text-sm font-medium text-blue-800">Assessment Initiated</p>
-                          <p className="text-sm text-blue-700">Behavioral assessment team assigned</p>
-                          <p className="text-xs text-blue-600 mt-1">2 days ago</p>
+                        <div className="bg-primary/10 p-3 rounded-lg">
+                          <p className="text-sm font-medium text-primary">Assessment Initiated</p>
+                          <p className="text-sm text-primary">Behavioral assessment team assigned</p>
+                          <p className="text-xs text-primary mt-1">2 days ago</p>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex gap-3">
                       <div className="flex flex-col items-center">
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <div className="w-0.5 h-8 bg-gray-200"></div>
+                        <div className="w-3 h-3 bg-success rounded-full"></div>
+                        <div className="w-0.5 h-8 bg-border"></div>
                       </div>
                       <div className="flex-1">
-                        <div className="bg-green-50 p-3 rounded-lg">
-                          <p className="text-sm font-medium text-green-800">Progress Update</p>
-                          <p className="text-sm text-green-700">Intervention strategies showing positive results</p>
-                          <p className="text-xs text-green-600 mt-1">{formatDate(selectedCaseForDetails.lastUpdated)}</p>
+                        <div className="bg-success/10 p-3 rounded-lg">
+                          <p className="text-sm font-medium text-foreground">Progress Update</p>
+                          <p className="text-sm text-success">Intervention strategies showing positive results</p>
+                          <p className="text-xs text-success mt-1">{formatDate(selectedCaseForDetails.lastUpdated)}</p>
                         </div>
                       </div>
                     </div>
@@ -1023,32 +1011,32 @@ export default function FlaggedCasesPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-blue-500" />
+                      <BarChart3 className="h-4 w-4 text-primary" />
                       <span className="font-medium">Risk Assessment</span>
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Safety Risk</span>
+                        <span className="text-sm text-muted-foreground">Safety Risk</span>
                         <div className="flex items-center gap-2">
-                          <div className="w-20 bg-gray-200 rounded-full h-2">
-                            <div className="bg-yellow-500 h-2 rounded-full" style={{ width: '60%' }}></div>
+                          <div className="w-20 bg-muted rounded-full h-2">
+                            <div className="bg-warning h-2 rounded-full" style={{ width: '60%' }}></div>
                           </div>
                           <span className="text-sm font-medium">Medium</span>
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Academic Impact</span>
+                        <span className="text-sm text-muted-foreground">Academic Impact</span>
                         <div className="flex items-center gap-2">
-                          <div className="w-20 bg-gray-200 rounded-full h-2">
-                            <div className="bg-red-500 h-2 rounded-full" style={{ width: '80%' }}></div>
+                          <div className="w-20 bg-muted rounded-full h-2">
+                            <div className="bg-destructive h-2 rounded-full" style={{ width: '80%' }}></div>
                           </div>
                           <span className="text-sm font-medium">High</span>
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Social Impact</span>
+                        <span className="text-sm text-muted-foreground">Social Impact</span>
                         <div className="flex items-center gap-2">
-                          <div className="w-20 bg-gray-200 rounded-full h-2">
+                          <div className="w-20 bg-muted rounded-full h-2">
                             <div className="bg-orange-500 h-2 rounded-full" style={{ width: '70%' }}></div>
                           </div>
                           <span className="text-sm font-medium">High</span>
@@ -1059,21 +1047,21 @@ export default function FlaggedCasesPage() {
 
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-green-500" />
+                      <TrendingUp className="h-4 w-4 text-success" />
                       <span className="font-medium">Progress Indicators</span>
                     </div>
                     <div className="space-y-2">
-                      <div className="bg-green-50 p-2 rounded">
-                        <p className="text-sm font-medium text-green-800">Positive Trends</p>
-                        <p className="text-xs text-green-700">Decreased incident frequency (40% reduction)</p>
+                      <div className="bg-success/10 p-2 rounded">
+                        <p className="text-sm font-medium text-foreground">Positive Trends</p>
+                        <p className="text-xs text-success">Decreased incident frequency (40% reduction)</p>
                       </div>
-                      <div className="bg-blue-50 p-2 rounded">
-                        <p className="text-sm font-medium text-blue-800">Stable Areas</p>
-                        <p className="text-xs text-blue-700">Academic performance maintained</p>
+                      <div className="bg-primary/10 p-2 rounded">
+                        <p className="text-sm font-medium text-primary">Stable Areas</p>
+                        <p className="text-xs text-primary">Academic performance maintained</p>
                       </div>
-                      <div className="bg-yellow-50 p-2 rounded">
-                        <p className="text-sm font-medium text-yellow-800">Areas of Concern</p>
-                        <p className="text-xs text-yellow-700">Peer interaction challenges persist</p>
+                      <div className="bg-warning/10 p-2 rounded">
+                        <p className="text-sm font-medium text-foreground">Areas of Concern</p>
+                        <p className="text-xs text-warning">Peer interaction challenges persist</p>
                       </div>
                     </div>
                   </div>
@@ -1084,9 +1072,9 @@ export default function FlaggedCasesPage() {
                     <Brain className="h-4 w-4 text-purple-500" />
                     <span className="font-medium">AI Insights</span>
                   </div>
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                  <div className="bg-info/10 p-4 rounded-lg border border-purple-200">
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-purple-800">Pattern Analysis</p>
+                      <p className="text-sm font-medium text-foreground">Pattern Analysis</p>
                       <p className="text-sm text-purple-700">
                         Based on similar cases, implementing structured social skills training 
                         has shown 75% success rate in reducing behavioral incidents within 6 weeks.
@@ -1109,7 +1097,7 @@ export default function FlaggedCasesPage() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <History className="h-5 w-5 text-blue-500" />
+              <History className="h-5 w-5 text-primary" />
               Case Timeline: {selectedCaseForTimeline?.title}
             </DialogTitle>
             <DialogDescription>
@@ -1120,15 +1108,15 @@ export default function FlaggedCasesPage() {
           {selectedCaseForTimeline && (
             <div className="space-y-6">
               {/* Add New Entry */}
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
                 <div className="flex items-center gap-2 mb-3">
-                  <Plus className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium text-blue-800">Add Timeline Entry</span>
+                  <Plus className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-primary">Add Timeline Entry</span>
                 </div>
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-blue-700">Entry Type</label>
+                      <label className="text-sm font-medium text-primary">Entry Type</label>
                       <Select
                         value={newTimelineEntry.type}
                         onValueChange={(value) => setNewTimelineEntry(prev => ({ ...prev, type: value }))}
@@ -1146,7 +1134,7 @@ export default function FlaggedCasesPage() {
                       </Select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-blue-700">Action Summary</label>
+                      <label className="text-sm font-medium text-primary">Action Summary</label>
                       <Input
                         placeholder="Brief description of action..."
                         value={newTimelineEntry.action}
@@ -1155,7 +1143,7 @@ export default function FlaggedCasesPage() {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-blue-700">Detailed Notes</label>
+                    <label className="text-sm font-medium text-primary">Detailed Notes</label>
                     <Textarea
                       placeholder="Provide detailed notes about this timeline entry..."
                       value={newTimelineEntry.notes}
@@ -1186,7 +1174,7 @@ export default function FlaggedCasesPage() {
               {/* Timeline Display */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-gray-500" />
+                  <Activity className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Timeline History</span>
                 </div>
                 
@@ -1195,19 +1183,19 @@ export default function FlaggedCasesPage() {
                   <div className="flex gap-4">
                     <div className="flex flex-col items-center">
                       <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow"></div>
-                      <div className="w-0.5 h-20 bg-gray-200"></div>
+                      <div className="w-0.5 h-20 bg-border"></div>
                     </div>
                     <div className="flex-1 pb-6">
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-blue-800">Current Status</span>
+                          <span className="text-sm font-medium text-primary">Current Status</span>
                           <Badge variant={selectedCaseForTimeline.status === 'RESOLVED' ? 'default' : 
                                         selectedCaseForTimeline.status === 'ESCALATED' ? 'destructive' : 'secondary'}>
                             {selectedCaseForTimeline.status}
                           </Badge>
                         </div>
-                        <p className="text-sm text-blue-700">Case is currently being monitored and managed</p>
-                        <p className="text-xs text-blue-600 mt-2">Last updated: {formatDate(selectedCaseForTimeline.lastUpdated)}</p>
+                        <p className="text-sm text-primary">Case is currently being monitored and managed</p>
+                        <p className="text-xs text-primary mt-2">Last updated: {formatDate(selectedCaseForTimeline.lastUpdated)}</p>
                       </div>
                     </div>
                   </div>
@@ -1216,19 +1204,19 @@ export default function FlaggedCasesPage() {
                   {(selectedCaseForTimeline.actionsTaken || []).map((action, index) => (
                     <div key={index} className="flex gap-4">
                       <div className="flex flex-col items-center">
-                        <div className="w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow"></div>
+                        <div className="w-4 h-4 bg-success rounded-full border-2 border-white shadow"></div>
                         {index < (selectedCaseForTimeline.actionsTaken || []).length - 1 && (
-                          <div className="w-0.5 h-20 bg-gray-200"></div>
+                          <div className="w-0.5 h-20 bg-border"></div>
                         )}
                       </div>
                       <div className="flex-1 pb-6">
-                        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="bg-success/10 p-4 rounded-lg border border-success/20">
                           <div className="flex items-center gap-2 mb-2">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                            <span className="text-sm font-medium text-green-800">Action Completed</span>
+                            <CheckCircle className="h-4 w-4 text-success" />
+                            <span className="text-sm font-medium text-foreground">Action Completed</span>
                           </div>
-                          <p className="text-sm text-green-700">{action}</p>
-                          <p className="text-xs text-green-600 mt-2">Completed: {formatDate(selectedCaseForTimeline.lastUpdated)}</p>
+                          <p className="text-sm text-success">{action}</p>
+                          <p className="text-xs text-success mt-2">Completed: {formatDate(selectedCaseForTimeline.lastUpdated)}</p>
                         </div>
                       </div>
                     </div>
@@ -1237,17 +1225,17 @@ export default function FlaggedCasesPage() {
                   {/* Case Creation */}
                   <div className="flex gap-4">
                     <div className="flex flex-col items-center">
-                      <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow"></div>
+                      <div className="w-4 h-4 bg-destructive rounded-full border-2 border-white shadow"></div>
                     </div>
                     <div className="flex-1">
-                      <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                      <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20">
                         <div className="flex items-center gap-2 mb-2">
-                          <Flag className="h-4 w-4 text-red-600" />
-                          <span className="text-sm font-medium text-red-800">Case Created</span>
+                          <Flag className="h-4 w-4 text-destructive" />
+                          <span className="text-sm font-medium text-foreground">Case Created</span>
                         </div>
-                        <p className="text-sm text-red-700">Initial incident reported and flagged for review</p>
-                        <p className="text-sm text-red-700 mt-1">{selectedCaseForTimeline.description}</p>
-                        <p className="text-xs text-red-600 mt-2">Created: {formatDate(selectedCaseForTimeline.flaggedDate)}</p>
+                        <p className="text-sm text-destructive">Initial incident reported and flagged for review</p>
+                        <p className="text-sm text-destructive mt-1">{selectedCaseForTimeline.description}</p>
+                        <p className="text-xs text-destructive mt-2">Created: {formatDate(selectedCaseForTimeline.flaggedDate)}</p>
                       </div>
                     </div>
                   </div>
@@ -1257,6 +1245,6 @@ export default function FlaggedCasesPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </PageWrapper>
   );
 }

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Eye, EyeOff, Mail, Lock, School, ArrowLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import Link from 'next/link';
 
 export default function SchoolViewerLoginPage() {
@@ -81,30 +81,30 @@ export default function SchoolViewerLoginPage() {
               </h1>
             </div>
 
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl font-bold text-foreground mb-6">
               Student Progress
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-cyan-600">
                 Monitoring Portal
               </span>
             </h2>
 
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               Access comprehensive student progress reports and intervention data
               for informed educational decision-making at your school.
             </p>
 
             <div className="grid grid-cols-1 gap-4 text-sm">
-              <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Student Overview</h3>
-                <p className="text-gray-600">View progress summaries for all students receiving special education services</p>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">Student Overview</h3>
+                <p className="text-muted-foreground">View progress summaries for all students receiving special education services</p>
               </div>
-              <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Intervention Tracking</h3>
-                <p className="text-gray-600">Monitor the effectiveness of interventions and support strategies</p>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">Intervention Tracking</h3>
+                <p className="text-muted-foreground">Monitor the effectiveness of interventions and support strategies</p>
               </div>
-              <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Data Analytics</h3>
-                <p className="text-gray-600">Access detailed analytics and reports for data-driven decisions</p>
+              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-2">Data Analytics</h3>
+                <p className="text-muted-foreground">Access detailed analytics and reports for data-driven decisions</p>
               </div>
             </div>
           </div>
@@ -117,11 +117,11 @@ export default function SchoolViewerLoginPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="w-full max-w-md mx-auto"
         >
-          <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
+          <div className="bg-background/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
             {/* Back Button */}
             <Link
               href="/"
-              className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+              className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6 transition-colors"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Login Selection
@@ -136,57 +136,57 @@ export default function SchoolViewerLoginPage() {
                   School Viewer
                 </h1>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">School Viewer Portal</h2>
-              <p className="text-gray-600">Monitor student progress</p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">School Viewer Portal</h2>
+              <p className="text-muted-foreground">Monitor student progress</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors ${errors.email ? 'border-red-300' : 'border-gray-300'
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors ${errors.email ? 'border-destructive/30' : 'border-border'
                       }`}
                     placeholder="Enter your email"
                   />
                 </div>
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  <p className="mt-1 text-sm text-destructive">{errors.email}</p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors ${errors.password ? 'border-red-300' : 'border-gray-300'
+                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors ${errors.password ? 'border-destructive/30' : 'border-border'
                       }`}
                     placeholder="Enter your password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                  <p className="mt-1 text-sm text-destructive">{errors.password}</p>
                 )}
               </div>
 
@@ -216,8 +216,8 @@ export default function SchoolViewerLoginPage() {
             </form>
 
             {/* Demo Credentials - Commented out */}
-            {/* <div className="mt-8 pt-6 border-t border-gray-200">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</h3>
+            {/* <div className="mt-8 pt-6 border-t border-border">
+              <h3 className="text-sm font-medium text-foreground mb-3">Demo Credentials:</h3>
               <button
                 onClick={fillDemoCredentials}
                 className="w-full text-left p-3 rounded bg-teal-50 hover:bg-teal-100 transition-colors border border-teal-200"

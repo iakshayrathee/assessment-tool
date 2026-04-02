@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { ReactNode, useState, useEffect } from 'react';
 import { UnifiedSidebar } from './UnifiedSidebar';
@@ -28,7 +28,7 @@ export function UnifiedLayout({ children, className, userRole }: UnifiedLayoutPr
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-muted/40">
       {/* Sidebar */}
       <UnifiedSidebar 
         userRole={userRole} 

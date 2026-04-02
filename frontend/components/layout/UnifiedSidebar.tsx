@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import {
   Home,
@@ -17,34 +18,30 @@ import {
   Menu,
   X,
   User,
-  ChevronDown,
+  ChevronLeft,
   LayoutDashboard,
   GraduationCap,
   School,
-  Building,
   UserCheck,
   Calendar,
-  Award,
   Eye,
   Shield,
   Database,
   Activity,
-  Bell,
-  Search,
-  Plus,
   TrendingUp,
-  Zap,
-  Star,
   AlertTriangle,
   Building2,
   MessageSquare,
   ClipboardList,
-  Volume2
+  Volume2,
+  LogOut,
 } from 'lucide-react';
 
 interface SidebarProps {
   className?: string;
   userRole?: string;
+  userName?: string;
+  userEmail?: string;
   isOpen?: boolean;
   onClose?: () => void;
   isCollapsed?: boolean;
@@ -58,427 +55,372 @@ interface NavigationItem {
   description?: string;
 }
 
-// Role-based navigation configurations
-const roleNavigations: Record<string, NavigationItem[]> = {
+interface NavigationGroup {
+  label: string;
+  items: NavigationItem[];
+}
+
+// Role-based navigation configurations (grouped)
+const roleNavigations: Record<string, NavigationGroup[]> = {
   SPECIAL_EDUCATOR: [
     {
-      title: 'Dashboard',
-      href: '/educator/dashboard',
-      icon: Home,
-      description: 'Overview and quick stats'
+      label: 'Core',
+      items: [
+        { title: 'Dashboard', href: '/educator/dashboard', icon: Home },
+        { title: 'My Profile', href: '/educator/profile', icon: User },
+      ],
     },
     {
-      title: 'My Profile',
-      href: '/educator/profile',
-      icon: User,
-      description: 'Manage your profile information'
+      label: 'Students',
+      items: [
+        { title: 'My Students', href: '/educator/students', icon: Users },
+        { title: 'Intake Forms', href: '/educator/intake', icon: FileText },
+      ],
     },
     {
-      title: 'My Students',
-      href: '/educator/students',
-      icon: Users,
-      description: 'View and manage assigned students'
+      label: 'Learning',
+      items: [
+        { title: 'Assessments', href: '/educator/assessments', icon: Brain },
+        { title: 'Remediation', href: '/educator/lesson-plans-new', icon: Calendar },
+        { title: 'IEP Management', href: '/educator/iep-management', icon: BookOpen },
+        { title: 'Homework', href: '/educator/homework', icon: ClipboardList },
+      ],
     },
     {
-      title: 'Intake Forms',
-      href: '/educator/intake',
-      icon: FileText,
-      description: 'Student intake and background forms'
+      label: 'Resources',
+      items: [
+        { title: 'Data Bank', href: '/educator/data-bank', icon: Database },
+        { title: 'Text-to-Speech', href: '/educator/text-to-speech', icon: Volume2 },
+        { title: 'Reports', href: '/educator/reports', icon: BarChart3 },
+        { title: 'AI Transparency', href: '/educator/ai-transparency', icon: Eye },
+      ],
     },
-    {
-      title: 'Assessments',
-      href: '/educator/assessments',
-      icon: Brain,
-      description: 'Conduct and manage assessments'
-    },
-    {
-      title: 'Remediation',
-      href: '/educator/lesson-plans-new',
-      icon: Calendar,
-      description: 'Create and manage lesson plans'
-    },
-    {
-      title: 'IEP Management',
-      href: '/educator/iep-management',
-      icon: BookOpen,
-      description: 'Individual education programs and management'
-    },
-    {
-      title: 'Homework',
-      href: '/educator/homework',
-      icon: ClipboardList,
-      description: 'Assign and track student homework'
-    },
-    {
-      title: 'Data Bank',
-      href: '/educator/data-bank',
-      icon: Database,
-      description: 'Manage your documents and resources'
-    },
-    {
-      title: 'Text-to-Speech',
-      href: '/educator/text-to-speech',
-      icon: Volume2,
-      description: 'Document reader with voice narration'
-    },
-    {
-      title: 'Reports',
-      href: '/educator/reports',
-      icon: BarChart3,
-      description: 'Generate and view reports'
-    },
-    {
-      title: 'AI Transparency',
-      href: '/educator/ai-transparency',
-      icon: Eye,
-      description: 'Inspect AI agent data and responses'
-    }
   ],
   ADMIN: [
     {
-      title: 'Overview',
-      href: '/admin/overview',
-      icon: TrendingUp,
-      description: 'Platform performance metrics'
+      label: 'Overview',
+      items: [
+        { title: 'Overview', href: '/admin/overview', icon: TrendingUp },
+      ],
     },
     {
-      title: 'User Management',
-      href: '/admin/user-management',
-      icon: Users,
-      description: 'Manage all user accounts and roles'
+      label: 'Management',
+      items: [
+        { title: 'User Management', href: '/admin/user-management', icon: Users },
+        { title: 'Approvals', href: '/admin/approvals', icon: UserCheck },
+      ],
     },
     {
-      title: 'Approvals',
-      href: '/admin/approvals',
-      icon: UserCheck,
-      description: 'Pending approvals and reviews'
+      label: 'System',
+      items: [
+        { title: 'Reports', href: '/admin/reports', icon: FileText },
+        { title: 'Audit Logs', href: '/admin/audit-logs', icon: Activity },
+        { title: 'Settings', href: '/admin/settings', icon: Settings },
+      ],
     },
-    {
-      title: 'Reports',
-      href: '/admin/reports',
-      icon: FileText,
-      description: 'System and compliance reports'
-    },
-    {
-      title: 'Audit Logs',
-      href: '/admin/audit-logs',
-      icon: Activity,
-      description: 'System activity tracking'
-    },
-    {
-      title: 'Settings',
-      href: '/admin/settings',
-      icon: Settings,
-      description: 'System configuration'
-    }
   ],
   CENTER: [
     {
-      title: 'Dashboard',
-      href: '/center/dashboard',
-      icon: LayoutDashboard,
-      description: 'Center overview and metrics'
+      label: 'Overview',
+      items: [
+        { title: 'Dashboard', href: '/center/dashboard', icon: LayoutDashboard },
+      ],
     },
     {
-      title: 'Schools',
-      href: '/center/schools',
-      icon: School,
-      description: 'Manage affiliated schools'
+      label: 'People',
+      items: [
+        { title: 'Schools', href: '/center/schools', icon: School },
+        { title: 'Educators', href: '/center/educators', icon: GraduationCap },
+        { title: 'Students', href: '/center/students', icon: Users },
+      ],
     },
     {
-      title: 'Educators',
-      href: '/center/educators',
-      icon: GraduationCap,
-      description: 'Manage center educators'
+      label: 'Insights',
+      items: [
+        { title: 'Reports', href: '/center/reports', icon: FileText },
+        { title: 'Compliance', href: '/center/compliance', icon: Shield },
+      ],
     },
-    {
-      title: 'Students',
-      href: '/center/students',
-      icon: Users,
-      description: 'Student enrollment and management'
-    },
-    {
-      title: 'Reports',
-      href: '/center/reports',
-      icon: FileText,
-      description: 'Center performance reports'
-    },
-    {
-      title: 'Compliance',
-      href: '/center/compliance',
-      icon: Shield,
-      description: 'Regulatory compliance tracking'
-    }
   ],
   SUPER_SPECIAL_EDUCATOR: [
     {
-      title: 'Dashboard',
-      href: '/super-special-educator',
-      icon: LayoutDashboard,
-      description: 'System oversight dashboard'
+      label: 'Overview',
+      items: [
+        { title: 'Dashboard', href: '/super-special-educator', icon: LayoutDashboard },
+      ],
     },
     {
-      title: 'Centers',
-      href: '/super-special-educator/centers',
-      icon: Building2,
-      description: 'Manage education centers'
+      label: 'Management',
+      items: [
+        { title: 'Centers', href: '/super-special-educator/centers', icon: Building2 },
+        { title: 'Educators', href: '/super-special-educator/educators', icon: UserCheck },
+        { title: 'Students', href: '/super-special-educator/students', icon: Users },
+      ],
     },
     {
-      title: 'Educators',
-      href: '/super-special-educator/educators',
-      icon: UserCheck,
-      description: 'Educator quality management'
+      label: 'Quality',
+      items: [
+        { title: 'Reviews', href: '/super-special-educator/reviews', icon: FileText },
+        { title: 'Flagged Cases', href: '/super-special-educator/flagged-cases', icon: AlertTriangle },
+        { title: 'Analytics', href: '/super-special-educator/analytics', icon: TrendingUp },
+      ],
     },
-    {
-      title: 'Students',
-      href: '/super-special-educator/students',
-      icon: Users,
-      description: 'Student progress oversight'
-    },
-    {
-      title: 'Reviews',
-      href: '/super-special-educator/reviews',
-      icon: FileText,
-      description: 'Quality assurance reviews'
-    },
-    {
-      title: 'Flagged Cases',
-      href: '/super-special-educator/flagged-cases',
-      icon: AlertTriangle,
-      description: 'Cases requiring attention'
-    },
-    {
-      title: 'Analytics',
-      href: '/super-special-educator/analytics',
-      icon: TrendingUp,
-      description: 'System-wide analytics'
-    }
   ],
   PARENT: [
     {
-      title: 'Dashboard',
-      href: '/parent/dashboard',
-      icon: LayoutDashboard,
-      description: 'Your child\'s overview'
+      label: 'Overview',
+      items: [
+        { title: 'Dashboard', href: '/parent/dashboard', icon: LayoutDashboard },
+      ],
     },
     {
-      title: 'My Children',
-      href: '/parent/children',
-      icon: Users,
-      description: 'View your children\'s progress'
+      label: 'My Children',
+      items: [
+        { title: 'My Children', href: '/parent/children', icon: Users },
+        { title: 'Documents', href: '/parent/documents', icon: FileText },
+        { title: 'Homework', href: '/parent/homework', icon: ClipboardList },
+      ],
     },
     {
-      title: 'Documents',
-      href: '/parent/documents',
-      icon: FileText,
-      description: 'Important documents and forms'
+      label: 'Communication',
+      items: [
+        { title: 'Reports', href: '/parent/reports', icon: BarChart3 },
+        { title: 'Concerns', href: '/parent/concerns', icon: MessageSquare },
+        { title: 'Profile', href: '/parent/profile', icon: User },
+      ],
     },
-    {
-      title: 'Homework',
-      href: '/parent/homework',
-      icon: ClipboardList,
-      description: 'View and submit homework'
-    },
-    {
-      title: 'Reports',
-      href: '/parent/reports',
-      icon: BarChart3,
-      description: 'View your child\'s progress reports'
-    },
-    {
-      title: 'Concerns',
-      href: '/parent/concerns',
-      icon: MessageSquare,
-      description: 'Submit concerns or questions'
-    },
-    {
-      title: 'Profile',
-      href: '/parent/profile',
-      icon: User,
-      description: 'Manage your account'
-    }
   ],
   SCHOOL_VIEWER: [
     {
-      title: 'Dashboard',
-      href: '/school-viewer/dashboard',
-      icon: LayoutDashboard,
-      description: 'School overview'
+      label: 'Overview',
+      items: [
+        { title: 'Dashboard', href: '/school-viewer/dashboard', icon: LayoutDashboard },
+        { title: 'Students', href: '/school-viewer/students', icon: Users },
+        { title: 'School Reports', href: '/school-viewer/school-reports', icon: BarChart3 },
+      ],
     },
-    {
-      title: 'Students',
-      href: '/school-viewer/students',
-      icon: Users,
-      description: 'View student information'
-    },
-    {
-      title: 'School Reports',
-      href: '/school-viewer/school-reports',
-      icon: BarChart3,
-      description: 'Comprehensive school analytics'
-    }
-  ]
+  ],
 };
 
-// Helper function to get role display name
-const getRoleDisplayName = (role: string): string => {
-  const roleNames: Record<string, string> = {
-    SPECIAL_EDUCATOR: 'Special Educator',
-    ADMIN: 'Administrator',
-    CENTER: 'Center Manager',
-    SUPER_SPECIAL_EDUCATOR: 'Super Special Educator',
-    PARENT: 'Parent',
-    SCHOOL_VIEWER: 'School Viewer'
-  };
-  return roleNames[role] || role;
+const roleDisplayNames: Record<string, string> = {
+  SPECIAL_EDUCATOR: 'Special Educator',
+  ADMIN: 'Administrator',
+  CENTER: 'Center Manager',
+  SUPER_SPECIAL_EDUCATOR: 'Super Educator',
+  PARENT: 'Parent',
+  SCHOOL_VIEWER: 'School Viewer',
 };
+
+function NavItem({
+  item,
+  isActive,
+  isCollapsed,
+}: {
+  item: NavigationItem;
+  isActive: boolean;
+  isCollapsed: boolean;
+}) {
+  const Icon = item.icon;
+
+  const content = (
+    <Link
+      href={item.href}
+      className={cn(
+        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+        isActive
+          ? 'bg-primary/10 text-primary'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+        isCollapsed && 'justify-center px-2',
+      )}
+      aria-current={isActive ? 'page' : undefined}
+    >
+      <Icon
+        className={cn(
+          'h-4 w-4 shrink-0',
+          isActive ? 'text-primary' : 'text-muted-foreground',
+        )}
+      />
+      {!isCollapsed && <span className="truncate">{item.title}</span>}
+    </Link>
+  );
+
+  if (isCollapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{content}</TooltipTrigger>
+        <TooltipContent side="right" sideOffset={8}>
+          {item.title}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return content;
+}
 
 export function UnifiedSidebar({
   className,
   userRole = 'SPECIAL_EDUCATOR',
+  userName = 'User',
+  userEmail,
   isOpen = false,
   onClose,
   isCollapsed: controlledCollapsed,
-  onCollapsedChange
+  onCollapsedChange,
 }: SidebarProps) {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const pathname = usePathname();
 
-  // Use controlled state if provided, otherwise use internal state
   const isCollapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
 
   const handleToggleCollapse = () => {
-    const newCollapsed = !isCollapsed;
-    if (onCollapsedChange) {
-      onCollapsedChange(newCollapsed);
-    } else {
-      setInternalCollapsed(newCollapsed);
-    }
+    const next = !isCollapsed;
+    if (onCollapsedChange) onCollapsedChange(next);
+    else setInternalCollapsed(next);
   };
 
-  const navigationItems = roleNavigations[userRole] || roleNavigations.SPECIAL_EDUCATOR;
+  const groups = roleNavigations[userRole] ?? roleNavigations.SPECIAL_EDUCATOR;
+  const roleLabel = roleDisplayNames[userRole] ?? userRole;
+  const initials = userName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
-    <>
-      {/* Mobile Overlay */}
+    <TooltipProvider delayDuration={0}>
+      {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
-      {/* Sidebar */}
-      <div className={cn(
-        "flex flex-col h-screen bg-white border-r border-gray-200 transition-all duration-300",
-        // Desktop and tablet behavior (md and up)
-        "hidden md:flex",
-        isCollapsed ? "w-16" : "w-72",
-        // Mobile behavior (below md)
-        "md:relative fixed inset-y-0 left-0 z-50",
-        isOpen ? "flex" : "hidden md:flex",
-        // Responsive width: fixed on mobile, responsive on tablet/desktop
-        isOpen ? "w-72" : "", // Mobile width when open
-        className
-      )}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gradient-to-r from-primary/5 to-blue-50">
+      {/* Sidebar panel */}
+      <aside
+        className={cn(
+          'flex h-screen flex-col border-r bg-sidebar border-sidebar-border transition-[width] duration-200',
+          'fixed inset-y-0 left-0 z-50 md:relative',
+          isCollapsed ? 'w-16' : 'w-64',
+          isOpen ? 'flex' : 'hidden md:flex',
+          className,
+        )}
+      >
+        {/* Brand header */}
+        <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-3 shrink-0">
           {!isCollapsed && (
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">K</span>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm shadow">
+                K
               </div>
-              <div>
-                <h1 className="font-bold text-xl bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                  Knowled
-                </h1>
-                <p className="text-xs text-muted-foreground font-medium">
-                  Special Education Platform
-                </p>
-              </div>
+              <span className="font-display font-bold text-base text-foreground tracking-tight">
+                Knowled
+              </span>
             </div>
           )}
-
-          {/* Desktop/Tablet Collapse Button */}
-          <div className="hidden md:block">
+          {isCollapsed && (
+            <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm shadow">
+              K
+            </div>
+          )}
+          <div className={cn('hidden md:block', isCollapsed && 'hidden')}>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleToggleCollapse}
-              className="h-8 w-8 p-0"
-              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              className="h-7 w-7 p-0 text-muted-foreground"
+              aria-label="Collapse sidebar"
             >
-              {isCollapsed ? <Menu className="h-4 w-4" /> : <ChevronDown className="h-4 w-4 rotate-90" />}
+              <ChevronLeft className="h-4 w-4" />
             </Button>
           </div>
-
-          {/* Mobile Close Button */}
-          <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0"
-              title="Close sidebar"
+          {isCollapsed && (
+            <button
+              onClick={handleToggleCollapse}
+              className="absolute -right-3 top-4 hidden md:flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background shadow-sm text-muted-foreground hover:text-foreground"
+              aria-label="Expand sidebar"
             >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+              <Menu className="h-3 w-3" />
+            </button>
+          )}
+          <button
+            className="md:hidden h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
+            onClick={onClose}
+            aria-label="Close sidebar"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-
-
 
         {/* Navigation */}
-        <div className="flex-1 px-2 overflow-y-auto">
-          <nav className="space-y-1 py-3"> {/* Reduced padding from py-4 to py-3 */}
-            {navigationItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-              const Icon = item.icon;
+        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4" aria-label="Main navigation">
+          {groups.map((group) => (
+            <div key={group.label}>
+              {!isCollapsed && (
+                <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const isActive =
+                    pathname === item.href || pathname.startsWith(item.href + '/');
+                  return (
+                    <NavItem
+                      key={item.href}
+                      item={item}
+                      isActive={isActive}
+                      isCollapsed={isCollapsed}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
 
-              return (
-                <Link key={item.href} href={item.href}>
-                  <Button
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={cn(
-                      "w-full justify-start h-auto min-h-[2.5rem] px-3 py-2 rounded-lg", // Changed to h-auto with min-h and added py-2 for better content-based sizing
-                      isCollapsed && "justify-center px-2",
-                      isActive && "bg-blue-50 text-blue-700 border-blue-200",
-                      !isActive && "hover:bg-gray-50" // Better hover state
-                    )}
-                    title={isCollapsed ? item.title : undefined}
+        {/* User section */}
+        <div className="shrink-0 border-t border-sidebar-border p-3">
+          {isCollapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex h-8 w-8 mx-auto items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold cursor-default">
+                  {initials}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={8}>
+                <p className="font-medium">{userName}</p>
+                <p className="text-xs text-muted-foreground">{roleLabel}</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                {initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">{userName}</p>
+                <p className="truncate text-xs text-muted-foreground">{roleLabel}</p>
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="shrink-0 text-muted-foreground hover:text-foreground"
+                    aria-label="Sign out"
                   >
-                    <Icon className={cn(
-                      "h-4 w-4 shrink-0", // Added shrink-0
-                      !isCollapsed && "mr-3",
-                      isActive && "text-blue-600"
-                    )} />
-                    {!isCollapsed && (
-                      <div className="flex-1 text-left min-w-0"> {/* Added min-w-0 to prevent overflow */}
-                        <div className="text-sm font-medium leading-tight">{item.title}</div> {/* Added leading-tight */}
-                        {!isActive && item.description && (
-                          <div className="text-xs text-gray-500 mt-0.5 leading-tight"> {/* Added leading-tight */}
-                            {item.description}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </Button>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Footer */}
-        <div className="p-3 border-t border-gray-200"> {/* Reduced padding from p-4 to p-3 */}
-          {!isCollapsed && (
-            <div className="text-xs text-gray-500 text-center">
-              <p>Knowled AI Platform</p>
-              <p>Special Education Management</p>
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Sign out</TooltipContent>
+              </Tooltip>
             </div>
           )}
         </div>
-      </div>
-    </>
+      </aside>
+    </TooltipProvider>
   );
 }
+

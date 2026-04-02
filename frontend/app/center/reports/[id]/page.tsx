@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
-import { PageHeader } from '@/components/ui/page-header';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { useToast } from '@/hooks/use-toast';
 import { 
   FileText, 
@@ -159,21 +159,21 @@ export default function ReportDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'IN_PROGRESS': return 'bg-blue-100 text-blue-800';
-      case 'DRAFT': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'COMPLETED': return 'bg-success/10 text-foreground';
+      case 'PENDING': return 'bg-warning/10 text-foreground';
+      case 'IN_PROGRESS': return 'bg-primary/10 text-primary';
+      case 'DRAFT': return 'bg-muted text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'ASSESSMENT': return 'bg-blue-100 text-blue-800';
-      case 'IEP': return 'bg-purple-100 text-purple-800';
-      case 'PROGRESS': return 'bg-green-100 text-green-800';
-      case 'INTAKE': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ASSESSMENT': return 'bg-primary/10 text-primary';
+      case 'IEP': return 'bg-info/10 text-foreground';
+      case 'PROGRESS': return 'bg-success/10 text-foreground';
+      case 'INTAKE': return 'bg-warning/10 text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -203,7 +203,7 @@ export default function ReportDetailPage() {
                   <div key={index} className="flex items-center justify-between p-3 border rounded">
                     <span className="font-medium">{domain.name}</span>
                     <div className="flex items-center gap-3">
-                      <div className="w-32 bg-gray-200 rounded-full h-2">
+                      <div className="w-32 bg-muted rounded-full h-2">
                         <div 
                           className="bg-primary h-2 rounded-full transition-all duration-300"
                           style={{ width: `${domain.percentage}%` }}
@@ -229,7 +229,7 @@ export default function ReportDetailPage() {
               <ul className="space-y-2">
                 {report.assessmentData.recommendations.map((rec, index) => (
                   <li key={index} className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                     <span className="text-sm">{rec}</span>
                   </li>
                 ))}
@@ -268,9 +268,9 @@ export default function ReportDetailPage() {
                       <span>Progress</span>
                       <span className="font-medium">{goal.progressPercent}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-muted rounded-full h-2">
                       <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: `${goal.progressPercent}%` }}
                       />
                     </div>
@@ -293,7 +293,7 @@ export default function ReportDetailPage() {
               <ul className="space-y-2">
                 {report.iepData.accommodations.map((acc, index) => (
                   <li key={index} className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                     <span className="text-sm">{acc}</span>
                   </li>
                 ))}
@@ -309,7 +309,7 @@ export default function ReportDetailPage() {
               <ul className="space-y-2">
                 {report.iepData.modifications.map((mod, index) => (
                   <li key={index} className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-info mt-0.5 flex-shrink-0" />
                     <span className="text-sm">{mod}</span>
                   </li>
                 ))}
@@ -336,11 +336,11 @@ export default function ReportDetailPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="font-semibold text-green-600 mb-3">Achievements</h3>
+                <h3 className="font-semibold text-success mb-3">Achievements</h3>
                 <ul className="space-y-2">
                   {report.progressData.achievements.map((achievement, index) => (
                     <li key={index} className="flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                       <span className="text-sm">{achievement}</span>
                     </li>
                   ))}
@@ -348,11 +348,11 @@ export default function ReportDetailPage() {
               </div>
 
               <div>
-                <h3 className="font-semibold text-orange-600 mb-3">Challenges</h3>
+                <h3 className="font-semibold text-warning mb-3">Challenges</h3>
                 <ul className="space-y-2">
                   {report.progressData.challenges.map((challenge, index) => (
                     <li key={index} className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <AlertCircle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
                       <span className="text-sm">{challenge}</span>
                     </li>
                   ))}
@@ -370,7 +370,7 @@ export default function ReportDetailPage() {
             <ul className="space-y-2">
               {report.progressData.nextSteps.map((step, index) => (
                 <li key={index} className="flex items-start gap-2">
-                  <Target className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <Target className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                   <span className="text-sm">{step}</span>
                 </li>
               ))}
@@ -433,29 +433,21 @@ export default function ReportDetailPage() {
   }
 
   return (
-    <div className="">
-      <PageHeader
-        title={`${report.type.replace('_', ' ')} Report`}
-        description={`${report.student.fullName} • Grade ${report.student.grade} • Generated on ${new Date(report.createdAt).toLocaleDateString()}`}
-        badge={{
-          text: report.status,
-          variant: report.status === 'COMPLETED' ? 'default' : 'secondary'
-        }}
-        actions={[
-          {
-            label: 'Back to Reports',
-            href: '/center/reports',
-            icon: ArrowLeft,
-            variant: 'outline'
-          },
-          {
-            label: 'Download PDF',
-            onClick: handleDownloadReport,
-            icon: Download,
-            disabled: downloading || report.status !== 'COMPLETED'
-          }
-        ]}
-      />
+    <PageWrapper
+      title={`${report.type.replace('_', ' ')} Report`}
+      description={`${report.student.fullName} • Grade ${report.student.grade} • Generated on ${new Date(report.createdAt).toLocaleDateString()}`}
+      breadcrumbs={[{ label: 'Center', href: '/center' }, { label: 'Reports', href: '/center/reports' }, { label: 'Report Detail' }]}
+      actions={
+        <div className="flex gap-2">
+          {report.status === 'COMPLETED' && (
+            <Button variant="outline" onClick={handleDownloadReport} disabled={downloading}>
+              <Download className="h-4 w-4 mr-2" />
+              {downloading ? 'Downloading...' : 'Download PDF'}
+            </Button>
+          )}
+        </div>
+      }
+    >
 
       {/* Report Overview */}
       <motion.div
@@ -643,6 +635,6 @@ export default function ReportDetailPage() {
           </Button>
         )}
       </motion.div>
-    </div>
+    </PageWrapper>
   );
 }

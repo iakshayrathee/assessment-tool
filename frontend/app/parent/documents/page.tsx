@@ -18,9 +18,10 @@ import {
   Eye,
   Trash2
 } from 'lucide-react';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 
 interface Document {
   id: string;
@@ -125,27 +126,27 @@ export default function ParentDocuments() {
 
   const getFileIcon = (fileType: string) => {
     if (fileType.includes('pdf')) {
-      return <FileText className="h-5 w-5 text-red-600" />;
+      return <FileText className="h-5 w-5 text-destructive" />;
     } else if (fileType.includes('word') || fileType.includes('document')) {
-      return <FileText className="h-5 w-5 text-blue-600" />;
+      return <FileText className="h-5 w-5 text-primary" />;
     } else if (fileType.includes('image')) {
-      return <FileText className="h-5 w-5 text-green-600" />;
+      return <FileText className="h-5 w-5 text-success" />;
     }
-    return <FileText className="h-5 w-5 text-gray-600" />;
+    return <FileText className="h-5 w-5 text-muted-foreground" />;
   };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'Medical':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-foreground';
       case 'Academic':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'Therapy':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-info/10 text-foreground';
       case 'Legal':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning/10 text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -167,49 +168,34 @@ export default function ParentDocuments() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading documents...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading documents...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center space-x-4">
-              <Link href="/parent/dashboard">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">My Documents</h1>
-                <p className="text-gray-600">Manage and view your uploaded documents</p>
-              </div>
-            </div>
-            <Link href="/parent/documents/upload">
-              <Button>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Document
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <PageWrapper
+      title="My Documents"
+      description="Manage and view your uploaded documents"
+      breadcrumbs={[{ label: 'Dashboard', href: '/parent/dashboard' }, { label: 'Documents' }]}
+      actions={
+        <Link href="/parent/documents/upload">
+          <Button>
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Document
+          </Button>
+        </Link>
+      }
+    >
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     placeholder="Search documents..."
                     value={searchTerm}
@@ -243,9 +229,9 @@ export default function ParentDocuments() {
           {filteredDocuments.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No documents found</h3>
-                <p className="text-gray-600 mb-4">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No documents found</h3>
+                <p className="text-muted-foreground mb-4">
                   {searchTerm || categoryFilter
                     ? 'No documents match your current filters.'
                     : 'You haven\'t uploaded any documents yet.'}
@@ -272,7 +258,7 @@ export default function ParentDocuments() {
                           {document.fileName}
                         </h3>
                         {document.description && (
-                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                             {document.description}
                           </p>
                         )}
@@ -280,11 +266,11 @@ export default function ParentDocuments() {
                           <Badge className={getCategoryColor(document.category)}>
                             {document.category}
                           </Badge>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             {formatFileSize(document.fileSize)}
                           </span>
                         </div>
-                        <div className="flex items-center text-xs text-gray-500 mt-2">
+                        <div className="flex items-center text-xs text-muted-foreground mt-2">
                           <Calendar className="h-3 w-3 mr-1" />
                           {new Date(document.createdAt).toLocaleDateString()}
                         </div>
@@ -322,7 +308,7 @@ export default function ParentDocuments() {
               >
                 Previous
               </Button>
-              <span className="flex items-center px-4 py-2 text-sm text-gray-700">
+              <span className="flex items-center px-4 py-2 text-sm text-foreground">
                 Page {pagination.page} of {pagination.pages}
               </span>
               <Button
@@ -335,7 +321,6 @@ export default function ParentDocuments() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

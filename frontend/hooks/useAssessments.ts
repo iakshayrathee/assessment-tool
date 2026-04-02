@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { apiClient } from '@/lib/api';
 
 // Helper function to format user-friendly error messages
@@ -471,6 +471,7 @@ export function useReports(studentId?: string) {
     
     // Loading states
     isLoading: reportsQuery.isLoading,
+    isError: reportsQuery.isError,
     
     // Actions
     createReport: createReportMutation.mutate,

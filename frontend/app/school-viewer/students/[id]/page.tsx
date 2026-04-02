@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface StudentDetails {
   id: string;
@@ -120,8 +121,8 @@ export default function StudentDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-        <span className="ml-2 text-gray-600">Loading student details...</span>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Loading student details...</span>
       </div>
     );
   }
@@ -129,9 +130,9 @@ export default function StudentDetailPage() {
   if (error) {
     return (
       <div className="text-center py-12">
-        <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Student</h3>
-        <p className="text-gray-600 mb-4">Unable to load student details. Please try again.</p>
+        <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">Error Loading Student</h3>
+        <p className="text-muted-foreground mb-4">Unable to load student details. Please try again.</p>
         <Button onClick={() => refetch()}>
           Retry
         </Button>
@@ -142,9 +143,9 @@ export default function StudentDetailPage() {
   if (!student) {
     return (
       <div className="text-center py-12">
-        <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Student Not Found</h3>
-        <p className="text-gray-600">The requested student could not be found.</p>
+        <User className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">Student Not Found</h3>
+        <p className="text-muted-foreground">The requested student could not be found.</p>
       </div>
     );
   }
@@ -156,24 +157,24 @@ export default function StudentDetailPage() {
       case 'completed':
       case 'active':
       case 'achieved':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-foreground';
       case 'in_progress':
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning/10 text-foreground';
       case 'reviewed':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'inactive':
       case 'discontinued':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 75) return 'text-green-600';
-    if (progress >= 50) return 'text-yellow-600';
-    return 'text-red-600';
+    if (progress >= 75) return 'text-success';
+    if (progress >= 50) return 'text-warning';
+    return 'text-destructive';
   };
 
   const formatStatus = (status: string) => {
@@ -181,21 +182,11 @@ export default function StudentDetailPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Link href="/school-viewer/students">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Students
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{studentData.fullName}</h1>
-            <p className="text-gray-600">Grade {studentData.grade} • Age {studentData.age}</p>
-          </div>
-        </div>
+    <PageWrapper
+      title={studentData.fullName}
+      description={`Grade ${studentData.grade} • Age ${studentData.age}`}
+      breadcrumbs={[{ label: 'School Viewer', href: '/school-viewer' }, { label: 'Students', href: '/school-viewer/students' }, { label: studentData.fullName }]}
+      actions={
         <div className="flex items-center space-x-2">
           <Link href={`/school-viewer/reports?studentId=${studentData.id}`}>
             <Button variant="outline" size="sm">
@@ -207,7 +198,8 @@ export default function StudentDetailPage() {
             {formatStatus(studentData.status)}
           </Badge>
         </div>
-      </div>
+      }
+    >
 
       {/* Student Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -218,44 +210,44 @@ export default function StudentDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-3">
-              <Calendar className="h-4 w-4 text-gray-400" />
+              <Calendar className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Date of Birth</p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {format(new Date(studentData.dateOfBirth), 'MMMM dd, yyyy')}
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <User className="h-4 w-4 text-gray-400" />
+              <User className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Gender</p>
-                <p className="text-sm text-gray-600">{studentData.gender}</p>
+                <p className="text-sm text-muted-foreground">{studentData.gender}</p>
               </div>
             </div>
             {studentData.motherTongue && (
               <div className="flex items-center space-x-3">
-                <span className="text-gray-400">🗣️</span>
+                <span className="text-muted-foreground">🗣️</span>
                 <div>
                   <p className="text-sm font-medium">Mother Tongue</p>
-                  <p className="text-sm text-gray-600">{studentData.motherTongue}</p>
+                  <p className="text-sm text-muted-foreground">{studentData.motherTongue}</p>
                 </div>
               </div>
             )}
             {studentData.syllabus && (
               <div className="flex items-center space-x-3">
-                <BookOpen className="h-4 w-4 text-gray-400" />
+                <BookOpen className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Syllabus</p>
-                  <p className="text-sm text-gray-600">{studentData.syllabus}</p>
+                  <p className="text-sm text-muted-foreground">{studentData.syllabus}</p>
                 </div>
               </div>
             )}
             <div className="flex items-center space-x-3">
-              <Calendar className="h-4 w-4 text-gray-400" />
+              <Calendar className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Enrollment Date</p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {format(new Date(studentData.registrationDate), 'MMMM dd, yyyy')}
                 </p>
               </div>
@@ -271,34 +263,34 @@ export default function StudentDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-3">
-                <User className="h-4 w-4 text-gray-400" />
+                <User className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Name</p>
-                  <p className="text-sm text-gray-600">{studentData.parent.fullName}</p>
+                  <p className="text-sm text-muted-foreground">{studentData.parent.fullName}</p>
                 </div>
               </div>
               {studentData.parent.phone && (
                 <div className="flex items-center space-x-3">
-                  <Phone className="h-4 w-4 text-gray-400" />
+                  <Phone className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Phone</p>
-                    <p className="text-sm text-gray-600">{studentData.parent.phone}</p>
+                    <p className="text-sm text-muted-foreground">{studentData.parent.phone}</p>
                   </div>
                 </div>
               )}
               <div className="flex items-center space-x-3">
-                <Mail className="h-4 w-4 text-gray-400" />
+                <Mail className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Email</p>
-                  <p className="text-sm text-gray-600">{studentData.parent.user.email}</p>
+                  <p className="text-sm text-muted-foreground">{studentData.parent.user.email}</p>
                 </div>
               </div>
               {studentData.parent.address && (
                 <div className="flex items-center space-x-3">
-                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Address</p>
-                    <p className="text-sm text-gray-600">{studentData.parent.address}</p>
+                    <p className="text-sm text-muted-foreground">{studentData.parent.address}</p>
                   </div>
                 </div>
               )}
@@ -307,7 +299,7 @@ export default function StudentDetailPage() {
                   <Phone className="h-4 w-4 text-red-400" />
                   <div>
                     <p className="text-sm font-medium">Emergency Contact</p>
-                    <p className="text-sm text-gray-600">{studentData.parent.emergencyContact}</p>
+                    <p className="text-sm text-muted-foreground">{studentData.parent.emergencyContact}</p>
                   </div>
                 </div>
               )}
@@ -325,7 +317,7 @@ export default function StudentDetailPage() {
               {studentData.assignments.map((assignment, index) => (
                 <div key={index} className="p-4 bg-indigo-50 rounded-lg">
                   <div className="flex items-center space-x-3 mb-3">
-                    <Users className="h-4 w-4 text-indigo-600" />
+                    <Users className="h-4 w-4 text-primary" />
                     <div>
                       <p className="font-medium text-indigo-900">
                         {assignment.specialEducator.fullName}
@@ -336,13 +328,13 @@ export default function StudentDetailPage() {
                   {assignment.specialEducator.phone && (
                     <div className="flex items-center space-x-3 mb-2">
                       <Phone className="h-4 w-4 text-indigo-400" />
-                      <p className="text-sm text-indigo-600">{assignment.specialEducator.phone}</p>
+                      <p className="text-sm text-primary">{assignment.specialEducator.phone}</p>
                     </div>
                   )}
                   {assignment.specialEducator.specialEdQualification && (
                     <div className="flex items-center space-x-3 mb-2">
                       <BookOpen className="h-4 w-4 text-indigo-400" />
-                      <p className="text-sm text-indigo-600">
+                      <p className="text-sm text-primary">
                         {assignment.specialEducator.specialEdQualification}
                       </p>
                     </div>
@@ -350,7 +342,7 @@ export default function StudentDetailPage() {
                   {assignment.specialEducator.yearsOfExperience && (
                     <div className="flex items-center space-x-3">
                       <TrendingUp className="h-4 w-4 text-indigo-400" />
-                      <p className="text-sm text-indigo-600">
+                      <p className="text-sm text-primary">
                         {assignment.specialEducator.yearsOfExperience} years experience
                       </p>
                     </div>
@@ -379,19 +371,19 @@ export default function StudentDetailPage() {
             </CardHeader>
             <CardContent>
               {studentData.assessments.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No assessments available</p>
+                <p className="text-muted-foreground text-center py-8">No assessments available</p>
               ) : (
                 <div className="space-y-4">
                   {studentData.assessments.map((assessment) => (
                     <div key={assessment.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">
+                        <h4 className="font-medium text-foreground">
                           {assessment.assessmentType} Assessment
                         </h4>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                           Conducted by {assessment.specialEducator.fullName}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           Created: {format(new Date(assessment.createdAt), 'MMM dd, yyyy')}
                         </p>
                       </div>
@@ -400,7 +392,7 @@ export default function StudentDetailPage() {
                           {formatStatus(assessment.status)}
                         </Badge>
                         {assessment.completedAt && (
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             Completed: {format(new Date(assessment.completedAt), 'MMM dd, yyyy')}
                           </p>
                         )}
@@ -421,20 +413,20 @@ export default function StudentDetailPage() {
             </CardHeader>
             <CardContent>
               {studentData.reports.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No reports available</p>
+                <p className="text-muted-foreground text-center py-8">No reports available</p>
               ) : (
                 <div className="space-y-4">
                   {studentData.reports.map((report) => (
                     <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{report.title}</h4>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <h4 className="font-medium text-foreground">{report.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
                           {formatStatus(report.type)} Report
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           By {report.specialEducator.fullName}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           Created: {format(new Date(report.createdAt), 'MMM dd, yyyy')}
                         </p>
                       </div>
@@ -443,7 +435,7 @@ export default function StudentDetailPage() {
                           {formatStatus(report.status)}
                         </Badge>
                         {report.submittedAt && (
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             Submitted: {format(new Date(report.submittedAt), 'MMM dd, yyyy')}
                           </p>
                         )}
@@ -470,15 +462,15 @@ export default function StudentDetailPage() {
             </CardHeader>
             <CardContent>
               {studentData.iepGoals.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No IEP goals available</p>
+                <p className="text-muted-foreground text-center py-8">No IEP goals available</p>
               ) : (
                 <div className="space-y-6">
                   {studentData.iepGoals.map((goal) => (
                     <div key={goal.id} className="p-4 border rounded-lg">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{goal.domain}</h4>
-                          <p className="text-sm text-gray-600 mt-1">{goal.goalStatement}</p>
+                          <h4 className="font-medium text-foreground">{goal.domain}</h4>
+                          <p className="text-sm text-muted-foreground mt-1">{goal.goalStatement}</p>
                         </div>
                         <Badge className={getStatusColor(goal.status)}>
                           {formatStatus(goal.status)}
@@ -487,19 +479,19 @@ export default function StudentDetailPage() {
                       
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
-                          <p className="text-xs text-gray-500">Start Date</p>
+                          <p className="text-xs text-muted-foreground">Start Date</p>
                           <p className="text-sm font-medium">
                             {format(new Date(goal.startDate), 'MMM dd, yyyy')}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Target Date</p>
+                          <p className="text-xs text-muted-foreground">Target Date</p>
                           <p className="text-sm font-medium">
                             {format(new Date(goal.targetDate), 'MMM dd, yyyy')}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Progress</p>
+                          <p className="text-xs text-muted-foreground">Progress</p>
                           <p className={`text-sm font-medium ${getProgressColor(goal.progressPercent)}`}>
                             {goal.progressPercent}%
                           </p>
@@ -508,12 +500,12 @@ export default function StudentDetailPage() {
 
                       {goal.progressUpdates.length > 0 && (
                         <div>
-                          <h5 className="text-sm font-medium text-gray-900 mb-2">Recent Updates</h5>
+                          <h5 className="text-sm font-medium text-foreground mb-2">Recent Updates</h5>
                           <div className="space-y-2">
                             {goal.progressUpdates.slice(0, 3).map((update) => (
-                              <div key={update.id} className="p-3 bg-gray-50 rounded">
+                              <div key={update.id} className="p-3 bg-muted/40 rounded">
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="text-xs text-gray-500">
+                                  <span className="text-xs text-muted-foreground">
                                     {format(new Date(update.updateDate), 'MMM dd, yyyy')}
                                   </span>
                                   <span className={`text-sm font-medium ${getProgressColor(update.progress)}`}>
@@ -521,10 +513,10 @@ export default function StudentDetailPage() {
                                   </span>
                                 </div>
                                 {update.notes && (
-                                  <p className="text-sm text-gray-600">{update.notes}</p>
+                                  <p className="text-sm text-muted-foreground">{update.notes}</p>
                                 )}
                                 {update.rating && (
-                                  <p className="text-xs text-gray-500 mt-1">Rating: {update.rating}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">Rating: {update.rating}</p>
                                 )}
                               </div>
                             ))}
@@ -547,45 +539,45 @@ export default function StudentDetailPage() {
             </CardHeader>
             <CardContent>
               {studentData.sessionNotes.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No session notes available</p>
+                <p className="text-muted-foreground text-center py-8">No session notes available</p>
               ) : (
                 <div className="space-y-4">
                   {studentData.sessionNotes.map((session) => (
                     <div key={session.id} className="p-4 border rounded-lg">
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h4 className="font-medium text-gray-900">
+                          <h4 className="font-medium text-foreground">
                             Session on {format(new Date(session.sessionDate), 'MMMM dd, yyyy')}
                           </h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-muted-foreground">
                             Conducted by {session.specialEducator.fullName}
                           </p>
                           {session.duration && (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               Duration: {session.duration} minutes
                             </p>
                           )}
                         </div>
-                        <Clock className="h-5 w-5 text-gray-400" />
+                        <Clock className="h-5 w-5 text-muted-foreground" />
                       </div>
                       
                       <div className="space-y-3">
                         <div>
-                          <h5 className="text-sm font-medium text-gray-900">Activities</h5>
-                          <p className="text-sm text-gray-600">{session.activities}</p>
+                          <h5 className="text-sm font-medium text-foreground">Activities</h5>
+                          <p className="text-sm text-muted-foreground">{session.activities}</p>
                         </div>
                         
                         {session.observations && (
                           <div>
-                            <h5 className="text-sm font-medium text-gray-900">Observations</h5>
-                            <p className="text-sm text-gray-600">{session.observations}</p>
+                            <h5 className="text-sm font-medium text-foreground">Observations</h5>
+                            <p className="text-sm text-muted-foreground">{session.observations}</p>
                           </div>
                         )}
                         
                         {session.progress && (
                           <div>
-                            <h5 className="text-sm font-medium text-gray-900">Progress Notes</h5>
-                            <p className="text-sm text-gray-600">{session.progress}</p>
+                            <h5 className="text-sm font-medium text-foreground">Progress Notes</h5>
+                            <p className="text-sm text-muted-foreground">{session.progress}</p>
                           </div>
                         )}
                       </div>
@@ -597,6 +589,6 @@ export default function StudentDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageWrapper>
   );
 }

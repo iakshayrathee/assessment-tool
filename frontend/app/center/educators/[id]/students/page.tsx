@@ -1,620 +1,721 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { motion } from 'motion/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
-import { PageHeader } from '@/components/ui/page-header';
-import {
-  Users,
-  GraduationCap,
+import { PageWrapper } from '@/components/layout/PageWrapper';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from '@/hooks/use-toast';
+import { 
+  GraduationCap, 
+  UserCheck,
   Search,
-  Filter,
   ArrowLeft,
-  Eye,
-  Calendar,
-  BookOpen,
-  FileText,
-  TrendingUp,
+  Users,
+  Filter,
+  RefreshCw,
+  Star,
+  CheckCircle2,
   AlertCircle,
-  CheckCircle,
   School,
-  Target,
-  Clock
+  BookOpen,
+  Calendar
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
-import { GradeDisplay } from '@/components/ui/GradeDisplay';
 
-interface EducatorInfo {
-  fullName: string;
-  type: string;
-  yearsOfExperience: number;
-  assignedStudentCount: number;
-}
-
-interface StudentWithProgress {
+interface Educator {
   id: string;
   fullName: string;
-  grade: string;
-  status: string;
-  age: number;
-  registrationDate: string;
-  school?: {
-    id: string;
-    name: string;
-  };
-  reports: Array<{
-    id: string;
-    type: string;
-    status: string;
-    createdAt: string;
-  }>;
-  assessments: Array<{
-    id: string;
-    status: string;
-    createdAt: string;
-  }>;
-  iepGoals?: Array<{
-    id: string;
-    goal: string;
-    progressPercent: number;
-    status: string;
-  }>;
-  assignments: Array<{
-    id: string;
-    assignedDate: string;
-    isActive: boolean;
-  }>;
+  email: string;
+  phone?: string;
+  type: 'Special Educator' | 'Super Special Educator';
+  specializations: string[];
+  yearsOfExperience: number;
+  assignedStudentCount: number;
+  isActive: boolean;
 }
 
-export default function EducatorStudentsPage() {
-  const params = useParams();
-  const router = useRouter();
+interface Student {
+  id: string;
+  fullName: string;
+  age: number;
+  grade: string;
+  schoolName: string;
+  hasAssignment: boolean;
+  currentEducatorId?: string;
+  currentEducatorName?: string;
+  specialNeeds: string[];
+}
+
+export default function AssignEducatorPage() {
   const { user } = useAuth();
-
-  const [educator, setEducator] = useState<EducatorInfo | null>(null);
-  const [students, setStudents] = useState<StudentWithProgress[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<StudentWithProgress[]>([]);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [gradeFilter, setGradeFilter] = useState<string>('');
-  const [progressFilter, setProgressFilter] = useState<string>('');
-
-  const educatorId = params.id as string;
-
+  const [educators, setEducators] = useState<Educator[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [selectedEducator, setSelectedEducator] = useState<string | null>(null);
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [searchEducator, setSearchEducator] = useState('');
+  const [searchStudent, setSearchStudent] = useState('');
+  const [assignmentInProgress, setAssignmentInProgress] = useState(false);
+  const [activeTab, setActiveTab] = useState('educators');
+  
   useEffect(() => {
-    loadData();
-  }, [educatorId]);
+    loadEducators();
+    loadStudents();
+  }, []);
 
-  useEffect(() => {
-    filterStudents();
-  }, [students, searchTerm, statusFilter, gradeFilter, progressFilter]);
-
-  const loadData = async () => {
+  const loadEducators = async () => {
     try {
       setLoading(true);
-      setError(null);
-
       const centerId = user?.profile?.id;
       if (!centerId) {
-        setError('Center ID not found');
+        toast({
+          title: "Error",
+          description: "No center ID found. Please log in again.",
+          variant: "destructive",
+        });
         return;
       }
 
-      // Get educator details and all center students
-      const [educatorsResponse, allStudents] = await Promise.all([
-        apiClient.getCenterEducators(centerId),
-        apiClient.getCenterStudents(centerId, { limit: 1000 })
-      ]);
-
-      const educators = educatorsResponse.data || [];
-      const educatorDetail = educators.find(e => e.educatorId === educatorId);
-      if (!educatorDetail) {
-        setError('Educator not found or not assigned to this center');
-        return;
-      }
-
-      // Filter students assigned to this educator - handle different data structures
-      const educatorStudents = allStudents.data.filter((student: any) => {
-        // Check if student has assignments array
-        if (Array.isArray(student.assignments)) {
-          return student.assignments.some((assignment: any) => {
-            // Check for specialEducator object with id
-            if (assignment.specialEducator && assignment.specialEducator.id) {
-              return assignment.specialEducator.id === educatorId && assignment.isActive;
-            }
-            // Alternative structure: direct specialEducatorId property
-            return assignment.specialEducatorId === educatorId && assignment.isActive;
-          });
-        }
-        // Alternative structure: direct specialEducatorId property on student
-        return student.specialEducatorId === educatorId;
-      });
-
-      setEducator(educatorDetail);
-      setStudents(educatorStudents);
+      // Expected API response: { data: [{ educatorId, fullName, email, phone, type, specializationAreas, yearsOfExperience, assignedStudentCount, isActive }, ...] }
+      const response = await apiClient.getCenterEducators(centerId);
+      
+      const educatorsData = response.data || [];
+      
+      const transformedEducators: Educator[] = educatorsData
+        .filter((educator: any) => educator.type === 'Special Educator')
+        .map((educator: any) => ({
+          id: educator.educatorId,
+          fullName: educator.fullName,
+          email: educator.email,
+          phone: educator.phone,
+          type: educator.type,
+          specializations: educator.specializationAreas || [],
+          yearsOfExperience: educator.yearsOfExperience || 0,
+          assignedStudentCount: educator.assignedStudentCount || 0,
+          isActive: educator.isActive ?? true
+        }));
+      
+      setEducators(transformedEducators);
     } catch (error) {
-      console.error('Failed to load educator students:', error);
-      setError('Failed to load educator students. Please try again.');
+      console.error('Failed to load educators:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load educators. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const filterStudents = () => {
-    let filtered = [...students];
+  const loadStudents = async () => {
+    try {
+      setLoading(true);
+      const centerId = user?.profile?.id;
+      if (!centerId) {
+        toast({
+          title: "Error",
+          description: "No center ID found. Please log in again.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(student =>
-        student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.grade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.school?.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Status filter
-    if (statusFilter) {
-      filtered = filtered.filter(student => student.status === statusFilter);
-    }
-
-    // Grade filter
-    if (gradeFilter) {
-      filtered = filtered.filter(student => student.grade === gradeFilter);
-    }
-
-    // Progress filter
-    if (progressFilter) {
-      filtered = filtered.filter(student => {
-        const progress = calculateStudentProgress(student);
-        switch (progressFilter) {
-          case 'excellent': return progress >= 80;
-          case 'good': return progress >= 60 && progress < 80;
-          case 'needs_improvement': return progress < 60;
-          default: return true;
-        }
+      // Expected API response: { data: [{ id, fullName, firstName, lastName, age, dateOfBirth, grade, schoolName, specialEducatorId, specialEducatorName, specialNeeds }, ...] }
+      const response = await apiClient.getCenterStudents(centerId, {
+        limit: 100,
+        page: 1,
+        search: ''
       });
+      
+      const transformedStudents: Student[] = (response.data || []).map((student: any) => ({
+        id: student.id,
+        fullName: student.fullName || `${student.firstName || ''} ${student.lastName || ''}`.trim(),
+        age: student.age ?? calculateAge(student.dateOfBirth),
+        grade: student.grade || 'N/A',
+        schoolName: student.schoolName || 'Not assigned',
+        hasAssignment: !!student.specialEducatorId,
+        currentEducatorId: student.specialEducatorId,
+        currentEducatorName: student.specialEducatorName,
+        specialNeeds: student.specialNeeds || []
+      }));
+      
+      setStudents(transformedStudents);
+    } catch (error) {
+      console.error('Failed to load students:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load students. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateAge = (dateOfBirth: string): number => {
+    if (!dateOfBirth || isNaN(Date.parse(dateOfBirth))) return 0;
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const handleEducatorSelect = (educatorId: string) => {
+    setSelectedEducator(educatorId === selectedEducator ? null : educatorId);
+    setActiveTab('students');
+  };
+
+  const handleStudentToggle = (studentId: string) => {
+    setSelectedStudents(prev => 
+      prev.includes(studentId)
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+
+  const handleAssignStudents = async () => {
+    if (!selectedEducator || selectedStudents.length === 0) {
+      toast({
+        title: "Selection Required",
+        description: "Please select an educator and at least one student.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    setFilteredStudents(filtered);
-  };
-
-  const calculateStudentProgress = (student: StudentWithProgress) => {
-    if (!student.iepGoals || student.iepGoals.length === 0) return 0;
-    const totalProgress = student.iepGoals.reduce((sum, goal) => sum + goal.progressPercent, 0);
-    return Math.round(totalProgress / student.iepGoals.length);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'INACTIVE': return 'bg-gray-100 text-gray-800';
-      case 'COMPLETED': return 'bg-blue-100 text-blue-800';
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+    try {
+      setAssignmentInProgress(true);
+      
+      const results = {
+        success: 0,
+        alreadyAssigned: 0,
+        failed: 0
+      };
+      
+      for (const studentId of selectedStudents) {
+        try {
+          const student = students.find(s => s.id === studentId);
+          if (student?.currentEducatorId === selectedEducator) {
+            results.alreadyAssigned++;
+            continue;
+          }
+          
+          await apiClient.assignStudentToEducator(studentId, selectedEducator);
+          results.success++;
+        } catch (err: any) {
+          if (err.response?.data?.error?.includes('Unique constraint failed')) {
+            results.alreadyAssigned++;
+          } else {
+            console.error(`Error assigning student ${studentId}:`, err);
+            results.failed++;
+          }
+        }
+      }
+      
+      if (results.success > 0) {
+        toast({
+          title: "Assignment Successful",
+          description: `${results.success} student(s) have been assigned to the educator.${results.alreadyAssigned > 0 ? ` ${results.alreadyAssigned} student(s) were already assigned.` : ''}${results.failed > 0 ? ` ${results.failed} assignment(s) failed.` : ''}`,
+        });
+        
+        setSelectedStudents([]);
+        setSelectedEducator(null);
+        await Promise.all([loadStudents(), loadEducators()]);
+        router.push('/center/educators');
+      } else if (results.alreadyAssigned > 0 && results.failed === 0) {
+        toast({
+          title: "No Changes Made",
+          description: `${results.alreadyAssigned} student(s) were already assigned to this educator.`,
+        });
+      } else {
+        toast({
+          title: "Assignment Failed",
+          description: `Failed to assign students to the educator.${results.alreadyAssigned > 0 ? ` ${results.alreadyAssigned} student(s) were already assigned.` : ''}`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to assign students:', error);
+      toast({
+        title: "Assignment Failed",
+        description: "There was an error assigning students to the educator.",
+        variant: "destructive",
+      });
+    } finally {
+      setAssignmentInProgress(false);
     }
   };
 
-  const getProgressColor = (progress: number) => {
-    if (progress >= 80) return 'text-green-600 bg-green-50';
-    if (progress >= 60) return 'text-yellow-600 bg-yellow-50';
-    return 'text-red-600 bg-red-50';
-  };
+  const filteredEducators = educators.filter(educator => 
+    educator.fullName.toLowerCase().includes(searchEducator.toLowerCase()) ||
+    educator.email.toLowerCase().includes(searchEducator.toLowerCase()) ||
+    educator.specializations.some(spec => 
+      spec.toLowerCase().includes(searchEducator.toLowerCase())
+    )
+  );
 
-  const getProgressLabel = (progress: number) => {
-    if (progress >= 80) return 'Excellent';
-    if (progress >= 60) return 'Good';
-    return 'Needs Improvement';
-  };
-
-  const getUniqueGrades = () => {
-    // Create an array of grades, filter out duplicates
-    const gradesSet = new Set<string>();
-    students.forEach(s => gradesSet.add(s.grade));
-    return Array.from(gradesSet).sort();
-  };
-
-  const calculateOverallStats = () => {
-    const totalReports = students.reduce((sum, s) => sum + s.reports.length, 0);
-    const pendingReports = students.reduce((sum, s) => sum + s.reports.filter(r => r.status === 'PENDING').length, 0);
-    const totalAssessments = students.reduce((sum, s) => sum + s.assessments.length, 0);
-    const averageProgress = students.length > 0
-      ? Math.round(students.reduce((sum, s) => sum + calculateStudentProgress(s), 0) / students.length)
-      : 0;
-
-    return { totalReports, pendingReports, totalAssessments, averageProgress };
-  };
+  const filteredStudents = students.filter(student => 
+    student.fullName.toLowerCase().includes(searchStudent.toLowerCase()) ||
+    student.schoolName.toLowerCase().includes(searchStudent.toLowerCase()) ||
+    student.specialNeeds.some(need => 
+      need.toLowerCase().includes(searchStudent.toLowerCase())
+    )
+  );
 
   if (loading) {
     return (
-      <div className="space-y-8 p-6">
-        <LoadingSkeleton className="h-32" />
-        <LoadingSkeleton className="h-24" />
-        <LoadingSkeleton className="h-96" />
-      </div>
-    );
-  }
-
-  if (error || !educator) {
-    return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
-          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">{error || 'Educator not found'}</p>
-          <div className="flex gap-4 justify-center">
-            <Button variant="outline" onClick={() => router.back()}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Back
-            </Button>
-            <Button onClick={loadData}>
-              Try Again
-            </Button>
-          </div>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"
+          />
+          <p className="text-muted-foreground">Loading...</p>
         </motion.div>
       </div>
     );
   }
 
-  const stats = calculateOverallStats();
-
   return (
-    <div className="">
-      <PageHeader
-        title={`${educator.fullName}'s Students`}
-        description={`${filteredStudents.length} of ${students.length} students • ${educator.type} • ${educator.yearsOfExperience} years experience`}
-        badge={{
-          text: `${stats.averageProgress}% Avg Progress`,
-          variant: 'secondary'
-        }}
-        actions={[
-          {
-            label: 'Back to Educator',
-            href: `/center/educators/${educatorId}`,
-            icon: ArrowLeft,
-            variant: 'outline'
-          },
-          {
-            label: 'View All Students',
-            href: '/center/students',
-            icon: Users
-          }
-        ]}
-      />
-
-      {/* Quick Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-4 gap-4"
-      >
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-blue-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Students</p>
-                <p className="text-lg font-semibold">{students.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Avg Progress</p>
-                <p className="text-lg font-semibold">{stats.averageProgress}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-purple-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Reports</p>
-                <p className="text-lg font-semibold">{stats.totalReports}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-orange-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Pending Reports</p>
-                <p className="text-lg font-semibold">{stats.pendingReports}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filter Students
-            </CardTitle>
-            <CardDescription>
-              Filter and search students assigned to this educator
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Search</label>
-                <Input
-                  placeholder="Search by name, grade, or school..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Status</label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="INACTIVE">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Grade</label>
-                <Select value={gradeFilter} onValueChange={setGradeFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All grades" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All grades</SelectItem>
-                    {getUniqueGrades().map(grade => (
-                      <SelectItem key={grade} value={grade}>{grade}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Progress</label>
-                <Select value={progressFilter} onValueChange={setProgressFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All progress levels" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All progress levels</SelectItem>
-                    <SelectItem value="excellent">Excellent (80%+)</SelectItem>
-                    <SelectItem value="good">Good (60-79%)</SelectItem>
-                    <SelectItem value="needs_improvement">Needs Improvement (&lt;60%)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Students List */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Students ({filteredStudents.length})
-            </CardTitle>
-            <CardDescription>
-              Students assigned to {educator.fullName}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filteredStudents.length > 0 ? (
-              <div className="space-y-4">
-                {filteredStudents.map((student, index) => {
-                  const progress = calculateStudentProgress(student);
-                  const assignment = student.assignments.find(a => a.isActive);
-
-                  return (
-                    <motion.div
-                      key={student.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors group"
-                    >
-                      <div className="flex items-center space-x-4 flex-1">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 rounded-full flex items-center justify-center">
-                          <span className="text-blue-600 dark:text-blue-400 font-semibold">
-                            {student.fullName.split(' ').map((n: string) => n[0]).join('')}
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                            {student.fullName}
-                          </h3>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <GradeDisplay grade={student.grade} />
-                            <span>•</span>
-                            <span>Age {student.age}</span>
-                            <span>•</span>
-                            <Badge className={getStatusColor(student.status)}>
-                              {student.status}
-                            </Badge>
-                          </div>
-
-                          <div className="flex items-center gap-4 mt-2">
-                            {student.school && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <School className="h-3 w-3" />
-                                {student.school.name}
-                              </div>
-                            )}
-
-                            {assignment && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Calendar className="h-3 w-3" />
-                                Assigned: {new Date(assignment.assignedDate).toLocaleDateString()}
-                              </div>
-                            )}
-
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <FileText className="h-3 w-3" />
-                              {student.reports.length} reports
-                            </div>
-
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <BookOpen className="h-3 w-3" />
-                              {student.assessments.length} assessments
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                          <p className="text-sm font-medium">IEP Progress</p>
-                          <div className="flex items-center gap-2">
-                            <Badge className={getProgressColor(progress)}>
-                              <Target className="h-3 w-3 mr-1" />
-                              {progress}%
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {getProgressLabel(progress)}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Link href={`/center/students/${student.id}`}>
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-2">
-                  {students.length === 0
-                    ? 'No students assigned to this educator yet'
-                    : 'No students match your filters'
-                  }
-                </p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {students.length === 0
-                    ? 'Students will appear here once assigned'
-                    : 'Try adjusting your search criteria'
-                  }
-                </p>
-                {students.length === 0 && (
-                  <Link href="/center/students">
-                    <Button>
-                      <Users className="h-4 w-4 mr-2" />
-                      View All Students
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Progress Overview */}
-      {students.length > 0 && (
+    <PageWrapper
+      title="Assign Educators to Students"
+      description="Select a Special Educator and assign students to them"
+      breadcrumbs={[{ label: 'Center', href: '/center' }, { label: 'Educators', href: '/center/educators' }, { label: 'Assign' }]}
+      actions={
+        <Button variant="outline" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Educators
+        </Button>
+      }
+    >
+        {/* Assignment Process */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.1 }}
         >
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Progress Overview
-              </CardTitle>
-              <CardDescription>
-                IEP goal progress for all assigned students
-              </CardDescription>
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 dark:from-blue-900 dark:to-indigo-900">
+              <CardTitle>Assignment Process</CardTitle>
+              <CardDescription>Follow these steps to assign students to educators</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {students.map((student) => {
-                  const progress = calculateStudentProgress(student);
-
-                  return (
-                    <div key={student.id} className="flex items-center justify-between p-3 border rounded">
-                      <div className="flex items-center gap-3">
-                        <span className="font-medium">{student.fullName}</span>
-                        <Badge variant="outline" className="text-xs">
-                          <GradeDisplay grade={student.grade} />
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-300 ${progress >= 80 ? 'bg-green-500' :
-                                progress >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                              }`}
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium w-12 text-right">{progress}%</span>
-                        <Badge className={getProgressColor(progress)} variant="outline">
-                          {getProgressLabel(progress)}
-                        </Badge>
-                      </div>
-                    </div>
-                  );
-                })}
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row gap-4 items-start">
+                <div className="flex-1 flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">1</div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Select an Educator</h3>
+                    <p className="text-sm text-muted-foreground">Choose a Special Educator to assign students to</p>
+                  </div>
+                </div>
+                <div className="flex-1 flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-info/10 flex items-center justify-center text-purple-700 font-semibold">2</div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Select Students</h3>
+                    <p className="text-sm text-muted-foreground">Choose one or more students to assign to the educator</p>
+                  </div>
+                </div>
+                <div className="flex-1 flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center text-success font-semibold">3</div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Confirm Assignment</h3>
+                    <p className="text-sm text-muted-foreground">Review and confirm the student-educator assignments</p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
-      )}
-    </div>
+
+        {/* Selection Tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid grid-cols-2">
+              <TabsTrigger value="educators" className="flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                <span>Step 1: Select Educator</span>
+                {selectedEducator && <CheckCircle2 className="h-4 w-4 text-success" />}
+              </TabsTrigger>
+              <TabsTrigger value="students" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <span>Step 2: Select Students</span>
+                {selectedStudents.length > 0 && <Badge variant="secondary">{selectedStudents.length}</Badge>}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="educators">
+              <Card>
+                <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900 dark:to-blue-900">
+                  <CardTitle className="flex items-center gap-2">
+                    <GraduationCap className="h-5 w-5 text-info" />
+                    Special Educators ({filteredEducators.length})
+                  </CardTitle>
+                  <CardDescription>
+                    Select a Special Educator to assign students to
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {/* Search */}
+                  <div className="mb-6">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        placeholder="Search educators by name, email, or specialization..."
+                        value={searchEducator}
+                        onChange={(e) => setSearchEducator(e.target.value)}
+                        className="pl-10 bg-background"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Educators Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredEducators.map((educator) => (
+                      <motion.div
+                        key={educator.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ y: -4 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={() => handleEducatorSelect(educator.id)}
+                        className={`cursor-pointer border rounded-lg p-4 transition-all ${
+                          selectedEducator === educator.id 
+                            ? 'border-primary bg-primary/5 shadow-md' 
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900 dark:to-blue-900 rounded-full flex items-center justify-center shadow-md">
+                            <span className="text-info dark:text-purple-400 font-semibold text-lg">
+                              {educator.fullName.split(' ').map(n => n[0]).join('')}
+                            </span>
+                          </div>
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="font-semibold text-lg">{educator.fullName}</h3>
+                              {selectedEducator === educator.id && (
+                                <CheckCircle2 className="h-5 w-5 text-success" />
+                              )}
+                            </div>
+                            
+                            <div className="text-sm text-muted-foreground mb-3">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                <span>{educator.yearsOfExperience} years experience</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {educator.specializations.slice(0, 3).map((spec, i) => (
+                                <Badge key={i} variant="secondary" className="text-xs">
+                                  <Star className="h-3 w-3 mr-1" />
+                                  {spec}
+                                </Badge>
+                              ))}
+                              {educator.specializations.length > 3 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{educator.specializations.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <Badge 
+                                variant={educator.assignedStudentCount >= 12 ? "destructive" : "outline"}
+                                className={educator.assignedStudentCount >= 12 ? "" : "text-primary"}
+                              >
+                                <Users className="h-3 w-3 mr-1" />
+                                {educator.assignedStudentCount} students assigned
+                              </Badge>
+                              
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEducatorSelect(educator.id);
+                                }}
+                              >
+                                {selectedEducator === educator.id ? 'Selected' : 'Select'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {filteredEducators.length === 0 && (
+                    <div className="text-center py-12">
+                      <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No educators found</h3>
+                      <p className="text-muted-foreground mb-6">
+                        {searchEducator 
+                          ? "Try adjusting your search terms" 
+                          : "No Special Educators are available for assignment"
+                        }
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="students">
+              <Card>
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900 dark:to-green-900">
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    Students ({filteredStudents.length})
+                  </CardTitle>
+                  <CardDescription>
+                    Select students to assign to the educator
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {!selectedEducator ? (
+                    <div className="text-center py-12">
+                      <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No educator selected</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Please go back and select an educator first
+                      </p>
+                      <Button onClick={() => setActiveTab('educators')}>
+                        Select an Educator
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Search and Filters */}
+                      <div className="mb-6">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                          <Input
+                            placeholder="Search students by name, school, or special needs..."
+                            value={searchStudent}
+                            onChange={(e) => setSearchStudent(e.target.value)}
+                            className="pl-10 bg-background"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Selected Educator */}
+                      <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+                        <h3 className="font-semibold mb-2">Selected Educator</h3>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900 dark:to-blue-900 rounded-full flex items-center justify-center">
+                            <span className="text-info dark:text-purple-400 font-semibold">
+                              {educators.find(e => e.id === selectedEducator)?.fullName.split(' ').map(n => n[0]).join('')}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium">
+                              {educators.find(e => e.id === selectedEducator)?.fullName}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {educators.find(e => e.id === selectedEducator)?.assignedStudentCount} students currently assigned
+                            </p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="ml-auto"
+                            onClick={() => {
+                              setSelectedEducator(null);
+                              setActiveTab('educators');
+                            }}
+                          >
+                            Change
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Assignment Info */}
+                      <div className="mb-6 p-4 bg-primary/10 dark:bg-primary/20/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
+                          <div>
+                            <h4 className="font-medium text-primary dark:text-primary/60">Assignment Information</h4>
+                            <p className="text-sm text-primary dark:text-primary/80 mt-1">
+                              Students already assigned to other educators cannot be selected. You can only select students who are unassigned or already assigned to this educator.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Students List */}
+                      <div className="space-y-4">
+                        {filteredStudents.map((student) => (
+                          <motion.div
+                            key={student.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`border rounded-lg p-4 transition-all ${
+                              selectedStudents.includes(student.id)
+                                ? 'border-primary bg-primary/5 shadow-md'
+                                : 'border-border'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Checkbox
+                                id={`student-${student.id}`}
+                                checked={selectedStudents.includes(student.id)}
+                                onCheckedChange={() => handleStudentToggle(student.id)}
+                                disabled={student.hasAssignment && student.currentEducatorId !== selectedEducator}
+                              />
+                              
+                              <div className="flex-1">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                  <div>
+                                    <label 
+                                      htmlFor={`student-${student.id}`}
+                                      className="font-medium cursor-pointer"
+                                    >
+                                      {student.fullName}
+                                    </label>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      <span>Age: {student.age}</span>
+                                      <span>•</span>
+                                      <span>Grade: {student.grade}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <School className="h-4 w-4 text-primary" />
+                                    <span className="text-sm">{student.schoolName}</span>
+                                  </div>
+                                </div>
+                                
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {student.specialNeeds.slice(0, 3).map((need, i) => (
+                                    <Badge key={i} variant="outline" className="text-xs">
+                                      {need}
+                                    </Badge>
+                                  ))}
+                                  {student.specialNeeds.length > 3 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{student.specialNeeds.length - 3} more
+                                    </Badge>
+                                  )}
+                                </div>
+                                
+                                <div className="mt-2 text-sm">
+                                  {student.currentEducatorId === selectedEducator ? (
+                                    <Badge variant="outline" className="text-success border-success bg-success/10">
+                                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                                      Already assigned to this educator
+                                    </Badge>
+                                  ) : student.hasAssignment ? (
+                                    <Badge variant="outline" className="text-warning border-amber-600 bg-warning/10">
+                                      <AlertCircle className="h-3 w-3 mr-1" />
+                                      Currently assigned to {student.currentEducatorName}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-primary border-primary bg-primary/10">
+                                      <Users className="h-3 w-3 mr-1" />
+                                      Available for assignment
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+
+                        {filteredStudents.length === 0 && (
+                          <div className="text-center py-12">
+                            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">No students found</h3>
+                            <p className="text-muted-foreground mb-6">
+                              {searchStudent 
+                                ? "Try adjusting your search terms" 
+                                : "No students are available for assignment"
+                              }
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </motion.div>
+
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="flex justify-between"
+        >
+          <Button 
+            variant="outline" 
+            onClick={() => router.push('/center/educators')}
+          >
+            Cancel
+          </Button>
+          
+          <div className="flex gap-3">
+            {activeTab === 'students' && (
+              <Button 
+                variant="outline" 
+                onClick={() => setActiveTab('educators')}
+              >
+                Back to Educators
+              </Button>
+            )}
+            
+            <Button 
+              onClick={handleAssignStudents}
+              disabled={!selectedEducator || selectedStudents.length === 0 || assignmentInProgress}
+              className="min-w-[150px]"
+            >
+              {assignmentInProgress ? (
+                <>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    className="h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"
+                  />
+                  Assigning...
+                </>
+              ) : (
+                <>
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Assign Students ({selectedStudents.length})
+                </>
+              )}
+            </Button>
+          </div>
+        </motion.div>
+    </PageWrapper>
   );
 }

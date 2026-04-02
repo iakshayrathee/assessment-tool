@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface PendingReview {
   id: string;
@@ -137,32 +138,32 @@ export default function PendingReviewsPage() {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'URGENT':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-destructive/10 text-foreground border-destructive/20';
       case 'HIGH':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-warning/10 text-foreground border-warning/20';
       case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-warning/10 text-foreground border-warning/20';
       case 'LOW':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-success/10 text-foreground border-success/20';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-foreground border-border';
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'ASSESSMENT':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'PROGRESS':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-foreground';
       case 'INCIDENT':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-foreground';
       case 'IEP_UPDATE':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-info/10 text-foreground';
       case 'BEHAVIORAL':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-warning/10 text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -252,35 +253,22 @@ export default function PendingReviewsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-primary border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Pending Reviews</h1>
-            <p className="text-gray-600">Review and approve submitted reports</p>
-          </div>
-        </div>
-      </div>
+    <PageWrapper
+      title="Pending Reviews"
+      description="Review and approve submitted reports"
+      breadcrumbs={[{ label: 'Super Special Educator', href: '/super-special-educator' }, { label: 'Reviews' }]}
+    >
 
       {/* Filters and Search */}
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search reviews..."
             value={searchTerm}
@@ -291,7 +279,7 @@ export default function PendingReviewsPage() {
         
         <div className="flex gap-3 items-center flex-wrap">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
+            <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -340,10 +328,10 @@ export default function PendingReviewsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Pending</p>
+                <p className="text-sm text-muted-foreground">Total Pending</p>
                 <p className="text-2xl font-bold">{reviews.length}</p>
               </div>
-              <FileText className="h-8 w-8 text-blue-600" />
+              <FileText className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -351,12 +339,12 @@ export default function PendingReviewsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Urgent</p>
-                <p className="text-2xl font-bold text-red-600">
+                <p className="text-sm text-muted-foreground">Urgent</p>
+                <p className="text-2xl font-bold text-destructive">
                   {reviews.filter(r => r.priority === 'URGENT').length}
                 </p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+              <AlertTriangle className="h-8 w-8 text-destructive" />
             </div>
           </CardContent>
         </Card>
@@ -364,12 +352,12 @@ export default function PendingReviewsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Overdue</p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-sm text-muted-foreground">Overdue</p>
+                <p className="text-2xl font-bold text-warning">
                   {reviews.filter(r => r.daysOverdue > 0).length}
                 </p>
               </div>
-              <Clock className="h-8 w-8 text-orange-600" />
+              <Clock className="h-8 w-8 text-warning" />
             </div>
           </CardContent>
         </Card>
@@ -377,12 +365,12 @@ export default function PendingReviewsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Needs Attention</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-sm text-muted-foreground">Needs Attention</p>
+                <p className="text-2xl font-bold text-info">
                   {reviews.filter(r => r.requiresUrgentAttention).length}
                 </p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-purple-600" />
+              <AlertTriangle className="h-8 w-8 text-info" />
             </div>
           </CardContent>
         </Card>
@@ -392,14 +380,14 @@ export default function PendingReviewsPage() {
       {filteredReviews.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               {searchTerm || typeFilter !== 'all' || priorityFilter !== 'all' || centerFilter !== 'all'
                 ? 'No reviews found' 
                 : 'No pending reviews'
               }
             </h3>
-            <p className="text-gray-600 text-center max-w-md">
+            <p className="text-muted-foreground text-center max-w-md">
               {searchTerm || typeFilter !== 'all' || priorityFilter !== 'all' || centerFilter !== 'all'
                 ? 'Try adjusting your search terms or filters to find the reviews you\'re looking for.'
                 : 'All reports have been reviewed. Great job!'
@@ -442,21 +430,21 @@ export default function PendingReviewsPage() {
                 {filteredReviews.map((review) => (
                   <TableRow 
                     key={review.id} 
-                    className={review.requiresUrgentAttention ? 'bg-red-50' : ''}
+                    className={review.requiresUrgentAttention ? 'bg-destructive/10' : ''}
                   >
                     <TableCell>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{review.reportTitle}</span>
                           {review.requiresUrgentAttention && (
-                            <AlertTriangle className="h-4 w-4 text-red-500" />
+                            <AlertTriangle className="h-4 w-4 text-destructive" />
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 max-w-xs truncate">
+                        <p className="text-sm text-muted-foreground max-w-xs truncate">
                           {review.description}
                         </p>
                         {review.attachments && review.attachments.length > 0 && (
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <FileText className="h-3 w-3" />
                             {review.attachments.length} attachment(s)
                           </div>
@@ -465,13 +453,13 @@ export default function PendingReviewsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <User className="h-4 w-4 mr-2 text-gray-400" />
+                        <User className="h-4 w-4 mr-2 text-muted-foreground" />
                         {review.studentName}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <Building2 className="h-4 w-4 mr-2 text-gray-400" />
+                        <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
                         {review.centerName}
                       </div>
                     </TableCell>
@@ -488,18 +476,18 @@ export default function PendingReviewsPage() {
                     <TableCell>{review.educatorName}</TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
                         {formatDate(review.submittedDate)}
                       </div>
                     </TableCell>
                     <TableCell>
                       {review.daysOverdue > 0 ? (
-                        <div className="flex items-center gap-1 text-red-600">
+                        <div className="flex items-center gap-1 text-destructive">
                           <Clock className="h-4 w-4" />
                           <span className="text-sm">Overdue {review.daysOverdue}d</span>
                         </div>
                       ) : (
-                        <span className="text-sm text-green-600">On time</span>
+                        <span className="text-sm text-success">On time</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -515,7 +503,7 @@ export default function PendingReviewsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => openReviewDialog(review, 'APPROVE')}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          className="text-success hover:text-success hover:bg-success/10"
                         >
                           <CheckCircle className="h-4 w-4" />
                         </Button>
@@ -523,7 +511,7 @@ export default function PendingReviewsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => openReviewDialog(review, 'REQUEST_REVISION')}
-                          className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                          className="text-warning hover:text-warning hover:bg-warning/10"
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
@@ -531,7 +519,7 @@ export default function PendingReviewsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => openReviewDialog(review, 'REJECT')}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           <XCircle className="h-4 w-4" />
                         </Button>
@@ -567,7 +555,7 @@ export default function PendingReviewsPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                Comments {reviewAction.action !== 'APPROVE' && <span className="text-red-500">*</span>}
+                Comments {reviewAction.action !== 'APPROVE' && <span className="text-destructive">*</span>}
               </label>
               <Textarea
                 placeholder={
@@ -639,30 +627,30 @@ export default function PendingReviewsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <Info className="h-4 w-4 text-blue-500" />
+                        <Info className="h-4 w-4 text-primary" />
                         <span className="font-medium">Report Information</span>
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                           <span className="text-gray-600">Report Type:</span>
+                           <span className="text-muted-foreground">Report Type:</span>
                            <Badge variant={selectedReviewForDetails.reportType === 'ASSESSMENT' ? 'default' : 'secondary'}>
                              {selectedReviewForDetails.reportType}
                            </Badge>
                          </div>
                          <div className="flex justify-between">
-                           <span className="text-gray-600">Priority:</span>
+                           <span className="text-muted-foreground">Priority:</span>
                            <Badge variant={selectedReviewForDetails.priority === 'HIGH' ? 'destructive' : 
                                           selectedReviewForDetails.priority === 'MEDIUM' ? 'default' : 'secondary'}>
                              {selectedReviewForDetails.priority}
                            </Badge>
                          </div>
                          <div className="flex justify-between">
-                           <span className="text-gray-600">Submitted:</span>
+                           <span className="text-muted-foreground">Submitted:</span>
                            <span>{formatDate(selectedReviewForDetails.submittedDate)}</span>
                          </div>
                          <div className="flex justify-between">
-                           <span className="text-gray-600">Days Overdue:</span>
-                           <span className={selectedReviewForDetails.daysOverdue > 0 ? 'text-red-600 font-medium' : ''}>
+                           <span className="text-muted-foreground">Days Overdue:</span>
+                           <span className={selectedReviewForDetails.daysOverdue > 0 ? 'text-destructive font-medium' : ''}>
                              {selectedReviewForDetails.daysOverdue > 0 ? `${selectedReviewForDetails.daysOverdue} days` : 'On time'}
                            </span>
                          </div>
@@ -671,20 +659,20 @@ export default function PendingReviewsPage() {
 
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-green-500" />
+                        <User className="h-4 w-4 text-success" />
                         <span className="font-medium">Student & Center</span>
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Student:</span>
+                          <span className="text-muted-foreground">Student:</span>
                           <span className="font-medium">{selectedReviewForDetails.studentName}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Center:</span>
+                          <span className="text-muted-foreground">Center:</span>
                           <span>{selectedReviewForDetails.centerName}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Educator:</span>
+                          <span className="text-muted-foreground">Educator:</span>
                           <span>{selectedReviewForDetails.educatorName}</span>
                         </div>
                       </div>
@@ -692,12 +680,12 @@ export default function PendingReviewsPage() {
                   </div>
 
                   {selectedReviewForDetails.requiresUrgentAttention && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-red-700">
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-destructive">
                         <AlertTriangle className="h-4 w-4" />
                         <span className="font-medium">Requires Urgent Attention</span>
                       </div>
-                      <p className="text-sm text-red-600 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         This review requires immediate attention and priority handling.
                       </p>
                     </div>
@@ -708,7 +696,7 @@ export default function PendingReviewsPage() {
                       <MessageSquare className="h-4 w-4 text-purple-500" />
                       <span className="font-medium">Description</span>
                     </div>
-                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                    <p className="text-sm text-foreground bg-muted/40 p-3 rounded-lg">
                       {selectedReviewForDetails.description}
                     </p>
                   </div>
@@ -721,7 +709,7 @@ export default function PendingReviewsPage() {
                       </div>
                       <div className="space-y-2">
                         {selectedReviewForDetails.attachments.map((attachment, index) => (
-                          <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                          <div key={index} className="flex items-center justify-between bg-muted/40 p-2 rounded">
                             <span className="text-sm">{attachment}</span>
                             <Button variant="ghost" size="sm">
                               <Download className="h-4 w-4" />
@@ -736,27 +724,27 @@ export default function PendingReviewsPage() {
                 <TabsContent value="content" className="space-y-4">
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-blue-500" />
+                      <FileText className="h-4 w-4 text-primary" />
                       <span className="font-medium">Report Content Analysis</span>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Card className="p-4">
                         <div className="flex items-center gap-2 mb-3">
-                          <Target className="h-4 w-4 text-green-500" />
+                          <Target className="h-4 w-4 text-success" />
                           <span className="font-medium">Key Findings</span>
                         </div>
                         <ul className="space-y-2 text-sm">
                           <li className="flex items-start gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                            <CheckCircle className="h-4 w-4 text-success mt-0.5" />
                             <span>Student shows improvement in reading comprehension</span>
                           </li>
                           <li className="flex items-start gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                            <CheckCircle className="h-4 w-4 text-success mt-0.5" />
                             <span>Math skills progressing according to IEP goals</span>
                           </li>
                           <li className="flex items-start gap-2">
-                            <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5" />
+                            <AlertTriangle className="h-4 w-4 text-warning mt-0.5" />
                             <span>Social interaction needs continued support</span>
                           </li>
                         </ul>
@@ -769,27 +757,27 @@ export default function PendingReviewsPage() {
                         </div>
                         <ul className="space-y-2 text-sm">
                           <li className="flex items-start gap-2">
-                            <Star className="h-4 w-4 text-yellow-500 mt-0.5" />
+                            <Star className="h-4 w-4 text-warning mt-0.5" />
                             <span>Continue current reading intervention program</span>
                           </li>
                           <li className="flex items-start gap-2">
-                            <Star className="h-4 w-4 text-yellow-500 mt-0.5" />
+                            <Star className="h-4 w-4 text-warning mt-0.5" />
                             <span>Increase social skills group sessions</span>
                           </li>
                           <li className="flex items-start gap-2">
-                            <Star className="h-4 w-4 text-yellow-500 mt-0.5" />
+                            <Star className="h-4 w-4 text-warning mt-0.5" />
                             <span>Review IEP goals for next quarter</span>
                           </li>
                         </ul>
                       </Card>
                     </div>
 
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <BookOpen className="h-4 w-4 text-blue-600" />
-                        <span className="font-medium text-blue-800">Assessment Summary</span>
+                        <BookOpen className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-primary">Assessment Summary</span>
                       </div>
-                      <p className="text-sm text-blue-700">
+                      <p className="text-sm text-primary">
                         This comprehensive assessment covers academic performance, behavioral observations, 
                         and progress toward IEP goals. The student demonstrates consistent improvement in 
                         targeted areas with continued support recommendations.
@@ -801,7 +789,7 @@ export default function PendingReviewsPage() {
                 <TabsContent value="student" className="space-y-4">
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4 text-blue-500" />
+                      <GraduationCap className="h-4 w-4 text-primary" />
                       <span className="font-medium">Student Profile</span>
                     </div>
 
@@ -809,24 +797,24 @@ export default function PendingReviewsPage() {
                       <Card className="p-4">
                         <div className="space-y-3">
                           <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-green-500" />
+                            <User className="h-4 w-4 text-success" />
                             <span className="font-medium">Basic Information</span>
                           </div>
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Name:</span>
+                              <span className="text-muted-foreground">Name:</span>
                               <span className="font-medium">{selectedReviewForDetails.studentName}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Grade:</span>
+                              <span className="text-muted-foreground">Grade:</span>
                               <span>5th Grade</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Age:</span>
+                              <span className="text-muted-foreground">Age:</span>
                               <span>11 years</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Center:</span>
+                              <span className="text-muted-foreground">Center:</span>
                               <span>{selectedReviewForDetails.centerName}</span>
                             </div>
                           </div>
@@ -841,19 +829,19 @@ export default function PendingReviewsPage() {
                           </div>
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Primary Disability:</span>
+                              <span className="text-muted-foreground">Primary Disability:</span>
                               <span>Learning Disability</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Secondary:</span>
+                              <span className="text-muted-foreground">Secondary:</span>
                               <span>ADHD</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">IEP Status:</span>
+                              <span className="text-muted-foreground">IEP Status:</span>
                               <Badge variant="default">Active</Badge>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Last Review:</span>
+                              <span className="text-muted-foreground">Last Review:</span>
                               <span>2 months ago</span>
                             </div>
                           </div>
@@ -867,21 +855,21 @@ export default function PendingReviewsPage() {
                         <span className="font-medium">Current IEP Goals</span>
                       </div>
                       <div className="space-y-3">
-                        <div className="bg-green-50 border border-green-200 rounded p-3">
+                        <div className="bg-success/10 border border-success/20 rounded p-3">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-green-800">Reading Comprehension</span>
+                            <span className="font-medium text-foreground">Reading Comprehension</span>
                             <Badge variant="default">On Track</Badge>
                           </div>
-                          <p className="text-sm text-green-700">
+                          <p className="text-sm text-success">
                             Improve reading comprehension to grade level by end of academic year.
                           </p>
                         </div>
-                        <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                        <div className="bg-warning/10 border border-warning/20 rounded p-3">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-yellow-800">Social Skills</span>
+                            <span className="font-medium text-foreground">Social Skills</span>
                             <Badge variant="secondary">Needs Attention</Badge>
                           </div>
-                          <p className="text-sm text-yellow-700">
+                          <p className="text-sm text-warning">
                             Develop appropriate peer interaction skills in classroom settings.
                           </p>
                         </div>
@@ -893,55 +881,55 @@ export default function PendingReviewsPage() {
                 <TabsContent value="history" className="space-y-4">
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <History className="h-4 w-4 text-blue-500" />
+                      <History className="h-4 w-4 text-primary" />
                       <span className="font-medium">Review History</span>
                     </div>
 
                     <div className="space-y-3">
-                      <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="border border-border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <CheckCircle className="h-4 w-4 text-success" />
                             <span className="font-medium">Previous Review - Approved</span>
                           </div>
-                          <span className="text-sm text-gray-500">2 months ago</span>
+                          <span className="text-sm text-muted-foreground">2 months ago</span>
                         </div>
-                        <p className="text-sm text-gray-700 mb-2">
+                        <p className="text-sm text-foreground mb-2">
                           Quarterly assessment review completed successfully.
                         </p>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           Reviewed by: Dr. Sarah Johnson
                         </div>
                       </div>
 
-                      <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="border border-border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <Edit className="h-4 w-4 text-yellow-500" />
+                            <Edit className="h-4 w-4 text-warning" />
                             <span className="font-medium">Revision Requested</span>
                           </div>
-                          <span className="text-sm text-gray-500">3 months ago</span>
+                          <span className="text-sm text-muted-foreground">3 months ago</span>
                         </div>
-                        <p className="text-sm text-gray-700 mb-2">
+                        <p className="text-sm text-foreground mb-2">
                           Additional data requested for math assessment section.
                         </p>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           Reviewed by: Dr. Michael Chen
                         </div>
                       </div>
 
-                      <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="border border-border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <CheckCircle className="h-4 w-4 text-success" />
                             <span className="font-medium">Initial Review - Approved</span>
                           </div>
-                          <span className="text-sm text-gray-500">6 months ago</span>
+                          <span className="text-sm text-muted-foreground">6 months ago</span>
                         </div>
-                        <p className="text-sm text-gray-700 mb-2">
+                        <p className="text-sm text-foreground mb-2">
                           Initial IEP assessment and goal setting completed.
                         </p>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           Reviewed by: Dr. Sarah Johnson
                         </div>
                       </div>
@@ -985,28 +973,28 @@ export default function PendingReviewsPage() {
 
                     <div className="border-t pt-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <History className="h-4 w-4 text-gray-500" />
+                        <History className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">Previous Feedback</span>
                       </div>
                       
                       <div className="space-y-3">
-                        <div className="bg-gray-50 border border-gray-200 rounded p-3">
+                        <div className="bg-muted/40 border border-border rounded p-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="font-medium text-sm">Dr. Sarah Johnson</span>
-                            <span className="text-xs text-gray-500">2 weeks ago</span>
+                            <span className="text-xs text-muted-foreground">2 weeks ago</span>
                           </div>
-                          <p className="text-sm text-gray-700">
+                          <p className="text-sm text-foreground">
                             Excellent progress documentation. The assessment clearly shows improvement 
                             in reading comprehension. Consider adding more specific examples for math goals.
                           </p>
                         </div>
 
-                        <div className="bg-gray-50 border border-gray-200 rounded p-3">
+                        <div className="bg-muted/40 border border-border rounded p-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="font-medium text-sm">Dr. Michael Chen</span>
-                            <span className="text-xs text-gray-500">1 month ago</span>
+                            <span className="text-xs text-muted-foreground">1 month ago</span>
                           </div>
-                          <p className="text-sm text-gray-700">
+                          <p className="text-sm text-foreground">
                             Good overall assessment. Please include more behavioral observation data 
                             for the next review cycle.
                           </p>
@@ -1033,6 +1021,6 @@ export default function PendingReviewsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </PageWrapper>
     );
   }

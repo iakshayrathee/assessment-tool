@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PageHeader } from '@/components/ui/page-header';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -325,7 +325,7 @@ export default function StudentOnboarding() {
         return (
           <div className="flex flex-col gap-1 w-full text-left">
             <span className="font-medium">{selectedEducator.fullName}</span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground">
               {primarySpecialization}
               {additionalCount > 0 && ` +${additionalCount} more`}
               {selectedEducator.yearsOfExperience && ` • ${selectedEducator.yearsOfExperience} yrs exp`}
@@ -351,7 +351,7 @@ export default function StudentOnboarding() {
           <div className="flex flex-col gap-1 w-full text-left">
             <span className="font-medium">{selectedSchool.name}</span>
             {selectedSchool.address && (
-              <span className="text-sm text-gray-500">{selectedSchool.address}</span>
+              <span className="text-sm text-muted-foreground">{selectedSchool.address}</span>
             )}
           </div>
         );
@@ -363,21 +363,17 @@ export default function StudentOnboarding() {
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Student Onboarding"
-        description="Complete student registration and assignment process"
-        actions={[
-          {
-            label: 'Back to Students',
-            onClick: () => router.back(),
-            icon: ArrowLeft,
-            variant: 'outline'
-          }
-        ]}
-      />
-
-      <div className="p-6 space-y-6">
+    <PageWrapper
+      title="Student Onboarding"
+      description="Complete student registration and assignment process"
+      breadcrumbs={[{ label: 'Center', href: '/center' }, { label: 'Students', href: '/center/students' }, { label: 'Onboarding' }]}
+      actions={
+        <Button variant="outline" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Students
+        </Button>
+      }
+    >
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'student' | 'assignment')} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="student" className="flex items-center gap-2">
@@ -497,7 +493,7 @@ export default function StudentOnboarding() {
                         </DialogHeader>
                         <div className="space-y-4">
                           <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                               id="schoolSearch"
                               placeholder="Search schools by name or address..."
@@ -526,23 +522,23 @@ export default function StudentOnboarding() {
                                   </TableRow>
                                 ) : filteredSchools.length === 0 ? (
                                   <TableRow>
-                                    <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                                       {schoolSearchTerm ? 'No schools found matching your search' : 'No schools available'}
                                     </TableCell>
                                   </TableRow>
                                 ) : (
                                   filteredSchools.map((school) => (
-                                    <TableRow key={school.id} className="hover:bg-gray-50">
+                                    <TableRow key={school.id} className="hover:bg-muted/40">
                                       <TableCell>
                                         <div className="font-medium">{school.name}</div>
                                       </TableCell>
                                       <TableCell>
-                                        <div className="text-sm text-gray-600">
+                                        <div className="text-sm text-muted-foreground">
                                           {school.address || 'Not specified'}
                                         </div>
                                       </TableCell>
                                       <TableCell>
-                                        <div className="text-sm text-gray-600">
+                                        <div className="text-sm text-muted-foreground">
                                           {school.phone && <div>{school.phone}</div>}
                                           {school.email && <div>{school.email}</div>}
                                           {!school.phone && !school.email && 'No contact info'}
@@ -600,7 +596,7 @@ export default function StudentOnboarding() {
                       </DialogHeader>
                       <div className="space-y-4">
                         <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input
                             id="educatorSearch"
                             placeholder="Search educators by name, email, or specialization..."
@@ -630,24 +626,24 @@ export default function StudentOnboarding() {
                                 </TableRow>
                               ) : filteredEducators.length === 0 ? (
                                 <TableRow>
-                                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                                     {educatorSearchTerm ? 'No educators found matching your search' : 'No educators available'}
                                   </TableCell>
                                 </TableRow>
                               ) : (
                                 filteredEducators.map((educator) => (
-                                  <TableRow key={educator.educatorId} className="hover:bg-gray-50">
+                                  <TableRow key={educator.educatorId} className="hover:bg-muted/40">
                                     <TableCell>
                                       <div className="flex flex-col">
                                         <span className="font-medium">{educator.fullName}</span>
                                         {educator.email && (
-                                          <span className="text-sm text-gray-500">{educator.email}</span>
+                                          <span className="text-sm text-muted-foreground">{educator.email}</span>
                                         )}
                                       </div>
                                     </TableCell>
                                     <TableCell>
                                       <div className="flex items-center">
-                                        <Award className="h-4 w-4 mr-1 text-blue-500" />
+                                        <Award className="h-4 w-4 mr-1 text-primary" />
                                         <span>{educator.yearsOfExperience || 0} years</span>
                                       </div>
                                     </TableCell>
@@ -667,7 +663,7 @@ export default function StudentOnboarding() {
                                     </TableCell>
                                     <TableCell>
                                       <div className="flex items-center">
-                                        <Users className="h-4 w-4 mr-1 text-green-500" />
+                                        <Users className="h-4 w-4 mr-1 text-success" />
                                         <span>{educator.assignedStudentCount || 0}</span>
                                       </div>
                                     </TableCell>
@@ -692,12 +688,12 @@ export default function StudentOnboarding() {
                 </div>
 
                 {selectedEducatorId && (
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-green-700">
+                  <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
+                    <div className="flex items-center gap-2 text-success">
                       <CheckCircle className="h-4 w-4" />
                       <span className="font-medium">Educator Selected</span>
                     </div>
-                    <p className="text-sm text-green-600 mt-1">
+                    <p className="text-sm text-success mt-1">
                       {educators.find((educator) => educator.educatorId === selectedEducatorId)?.fullName || 'Educator'} will be assigned to this student upon completion.
                     </p>
                   </div>
@@ -738,7 +734,6 @@ export default function StudentOnboarding() {
             )}
           </div>
         </div>
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

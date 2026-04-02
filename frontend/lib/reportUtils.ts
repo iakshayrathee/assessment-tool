@@ -191,16 +191,20 @@ export function stripMarkdown(text: string): string {
 }
 
 /**
- * Section config for the assessment report (6 top-level sections).
- * Reading/Writing/Numeracy are sub-sections (A/B/C) within Assessment Findings.
+ * Section config for the assessment report (10 sections).
+ * Reading/Writing/Numeracy skills have their own top-level sections (4–6).
  */
 export const ASSESSMENT_SECTIONS = [
-    { key: '1', title: 'Reason for Referral',       color: 'rose',   bgClass: 'bg-rose-50',   borderClass: 'border-rose-200',   titleClass: 'text-rose-800' },
-    { key: '2', title: 'Assessment Findings',        color: 'violet', bgClass: 'bg-violet-50', borderClass: 'border-violet-200', titleClass: 'text-violet-800' },
-    { key: '3', title: 'Behaviour & Attention',      color: 'teal',   bgClass: 'bg-teal-50',   borderClass: 'border-teal-200',   titleClass: 'text-teal-800' },
-    { key: '4', title: 'Key Strengths',              color: 'green',  bgClass: 'bg-green-50',  borderClass: 'border-green-200',  titleClass: 'text-green-800' },
-    { key: '5', title: 'Recommended Interventions',  color: 'indigo', bgClass: 'bg-indigo-50', borderClass: 'border-indigo-200', titleClass: 'text-indigo-800' },
-    { key: '6', title: 'Closing Statement',          color: 'gray',   bgClass: 'bg-gray-50',   borderClass: 'border-gray-200',   titleClass: 'text-gray-800' },
+    { key: '1',  title: 'Reason for Referral',       color: 'rose',   bgClass: 'bg-rose-50',   borderClass: 'border-rose-200',   titleClass: 'text-rose-800' },
+    { key: '2',  title: 'Assessment Methods',         color: 'cyan',   bgClass: 'bg-cyan-50',   borderClass: 'border-cyan-200',   titleClass: 'text-cyan-800' },
+    { key: '3',  title: 'Assessment Findings',        color: 'violet', bgClass: 'bg-violet-50', borderClass: 'border-violet-200', titleClass: 'text-violet-800' },
+    { key: '4',  title: 'Reading Skills',             color: 'blue',   bgClass: 'bg-blue-50',   borderClass: 'border-blue-200',   titleClass: 'text-blue-800' },
+    { key: '5',  title: 'Writing Skills',             color: 'purple', bgClass: 'bg-purple-50', borderClass: 'border-purple-200', titleClass: 'text-purple-800' },
+    { key: '6',  title: 'Numeracy Skills',            color: 'amber',  bgClass: 'bg-amber-50',  borderClass: 'border-amber-200',  titleClass: 'text-amber-800' },
+    { key: '7',  title: 'Behaviour & Attention',      color: 'teal',   bgClass: 'bg-teal-50',   borderClass: 'border-teal-200',   titleClass: 'text-teal-800' },
+    { key: '8',  title: 'Key Strengths',              color: 'green',  bgClass: 'bg-green-50',  borderClass: 'border-green-200',  titleClass: 'text-green-800' },
+    { key: '9',  title: 'Recommended Interventions',  color: 'indigo', bgClass: 'bg-indigo-50', borderClass: 'border-indigo-200', titleClass: 'text-indigo-800' },
+    { key: '10', title: 'Closing Statement',          color: 'gray',   bgClass: 'bg-gray-50',   borderClass: 'border-gray-200',   titleClass: 'text-gray-800' },
 ];
 
 export const LESSON_PLAN_SECTIONS = [
@@ -242,14 +246,18 @@ export function parseReportSections(content: string): { heading: string; body: s
     return sections;
 }
 
-/** PDF section colors (6 top-level sections) */
+/** PDF section colors (10 sections — matches ASSESSMENT_SECTIONS order) */
 export const PDF_SECTION_COLORS: Record<string, { bg: string; border: string; title: string }> = {
     '0': { bg: '#fff1f2', border: '#fecdd3', title: '#9f1239' },  // rose   - Reason for Referral
-    '1': { bg: '#f5f3ff', border: '#ddd6fe', title: '#4c1d95' },  // violet - Assessment Findings
-    '2': { bg: '#f0fdfa', border: '#99f6e4', title: '#115e59' },  // teal   - Behaviour & Attention
-    '3': { bg: '#f0fdf4', border: '#bbf7d0', title: '#166534' },  // green  - Key Strengths
-    '4': { bg: '#eef2ff', border: '#c7d2fe', title: '#3730a3' },  // indigo - Recommended Interventions
-    '5': { bg: '#f9fafb', border: '#e5e7eb', title: '#374151' },  // gray   - Closing Statement
+    '1': { bg: '#ecfeff', border: '#a5f3fc', title: '#155e75' },  // cyan   - Assessment Methods
+    '2': { bg: '#f5f3ff', border: '#ddd6fe', title: '#4c1d95' },  // violet - Assessment Findings
+    '3': { bg: '#eff6ff', border: '#bfdbfe', title: '#1e40af' },  // blue   - Reading Skills
+    '4': { bg: '#faf5ff', border: '#e9d5ff', title: '#6b21a8' },  // purple - Writing Skills
+    '5': { bg: '#fffbeb', border: '#fde68a', title: '#92400e' },  // amber  - Numeracy Skills
+    '6': { bg: '#f0fdfa', border: '#99f6e4', title: '#115e59' },  // teal   - Behaviour & Attention
+    '7': { bg: '#f0fdf4', border: '#bbf7d0', title: '#166534' },  // green  - Key Strengths
+    '8': { bg: '#eef2ff', border: '#c7d2fe', title: '#3730a3' },  // indigo - Recommended Interventions
+    '9': { bg: '#f9fafb', border: '#e5e7eb', title: '#374151' },  // gray   - Closing Statement
 };
 
 /**
@@ -264,14 +272,46 @@ export function getReportStats(content: string): { wordCount: number; sectionCou
 }
 
 /**
+ * Filter options for the report status dropdown.
+ * Values match the AssessmentStatus enum in schema.prisma exactly.
+ */
+export const STATUS_FILTER_OPTIONS = [
+    { value: 'all',         label: 'All Status' },
+    { value: 'PENDING',     label: 'Pending' },
+    { value: 'IN_PROGRESS', label: 'In Progress' },
+    { value: 'COMPLETED',   label: 'Completed' },
+    { value: 'REVIEWED',    label: 'Reviewed' },
+] as const;
+
+/**
+ * Filter options for the report type dropdown — educator context only.
+ * Only ASSESSMENT and LESSON_PLAN are generated and managed by educators.
+ */
+export const REPORT_TYPE_OPTIONS = [
+    { value: 'all',         label: 'All Types' },
+    { value: 'ASSESSMENT',  label: 'Assessment' },
+    { value: 'LESSON_PLAN', label: 'Lesson Plan' },
+] as const;
+
+/**
  * Returns TailwindCSS classes for a report status badge.
+ * Handles both DB enum values (PENDING / IN_PROGRESS / COMPLETED / REVIEWED)
+ * and legacy UI-layer statuses for backward compatibility.
  */
 export function getStatusBadgeClasses(status: string): string {
     switch (status?.toUpperCase()) {
+        // DB enum values (AssessmentStatus in schema.prisma)
+        case 'PENDING':
+            return 'bg-amber-100 text-amber-800 border-amber-200';
+        case 'IN_PROGRESS':
+            return 'bg-blue-100 text-blue-800 border-blue-200';
+        case 'COMPLETED':
+            return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        case 'REVIEWED':
+            return 'bg-purple-100 text-purple-800 border-purple-200';
+        // Legacy UI-layer statuses (kept for any existing data)
         case 'SUBMITTED':
             return 'bg-green-100 text-green-800 border-green-200';
-        case 'COMPLETED':
-            return 'bg-blue-100 text-blue-800 border-blue-200';
         case 'APPROVED':
             return 'bg-emerald-100 text-emerald-800 border-emerald-200';
         case 'REJECTED':
@@ -285,27 +325,34 @@ export function getStatusBadgeClasses(status: string): string {
 
 export function getStatusLabel(status: string): string {
     switch (status?.toUpperCase()) {
+        // DB enum values
+        case 'PENDING':     return 'Pending';
+        case 'IN_PROGRESS': return 'In Progress';
+        case 'COMPLETED':   return 'Completed';
+        case 'REVIEWED':    return 'Reviewed';
+        // Legacy UI-layer statuses
         case 'AI_DRAFT':
-        case 'DRAFT':    return 'Draft';
+        case 'DRAFT':     return 'Draft';
         case 'SUBMITTED': return 'Submitted';
-        case 'COMPLETED': return 'Completed';
         case 'APPROVED':  return 'Approved';
         case 'REJECTED':  return 'Rejected';
-        default:          return status || 'Draft';
+        default:          return status || 'Unknown';
     }
 }
 
 /**
  * Returns an accent border class for the left-side of a report card.
+ * Covers all six ReportType enum values from schema.prisma.
  */
 export function getReportTypeBorderColor(type: string): string {
     switch (type?.toUpperCase()) {
-        case 'ASSESSMENT':
-            return 'border-l-blue-500';
-        case 'LESSON_PLAN':
-            return 'border-l-purple-500';
-        default:
-            return 'border-l-gray-400';
+        case 'ASSESSMENT':       return 'border-l-blue-500';
+        case 'LESSON_PLAN':      return 'border-l-purple-500';
+        case 'PROGRESS':         return 'border-l-green-500';
+        case 'IEP':              return 'border-l-amber-500';
+        case 'INTAKE':           return 'border-l-cyan-500';
+        case 'AI_COMPREHENSIVE': return 'border-l-indigo-500';
+        default:                 return 'border-l-gray-400';
     }
 }
 

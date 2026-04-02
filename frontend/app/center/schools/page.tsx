@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PageHeader } from '@/components/ui/page-header';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -374,9 +374,9 @@ export default function CenterSchools() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      ACTIVE: { label: 'Active', variant: 'default' as const, className: 'bg-green-100 text-green-800' },
-      INACTIVE: { label: 'Inactive', variant: 'secondary' as const, className: 'bg-gray-100 text-gray-800' },
-      PENDING: { label: 'Pending', variant: 'outline' as const, className: 'bg-yellow-100 text-yellow-800' },
+      ACTIVE: { label: 'Active', variant: 'default' as const, className: 'bg-success/10 text-foreground' },
+      INACTIVE: { label: 'Inactive', variant: 'secondary' as const, className: 'bg-muted text-foreground' },
+      PENDING: { label: 'Pending', variant: 'outline' as const, className: 'bg-warning/10 text-foreground' },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.INACTIVE;
@@ -401,38 +401,31 @@ export default function CenterSchools() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading schools...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading schools...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="">
-      <PageHeader
-        title="Schools Management"
-        description="Manage schools linked to your center"
-        badge={{
-          text: `${schools.length} Schools`,
-          variant: 'secondary'
-        }}
-        actions={[
-          {
-            label: 'Refresh',
-            onClick: loadSchools,
-            icon: RefreshCw,
-            variant: 'outline'
-          },
-          {
-            label: 'Link New School',
-            onClick: () => setShowLinkModal(true),
-            icon: Plus
-          }
-        ]}
-      />
-
-      <div className="p-6 space-y-6">
+    <PageWrapper
+      title="Schools Management"
+      description="Manage schools linked to your center"
+      breadcrumbs={[{ label: 'Center', href: '/center' }, { label: 'Schools' }]}
+      actions={
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={loadSchools}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button onClick={() => setShowLinkModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Link New School
+          </Button>
+        </div>
+      }
+    >
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -449,7 +442,7 @@ export default function CenterSchools() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-              <Users className="h-4 w-4 text-blue-600" />
+              <Users className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalStudents}</div>
@@ -460,7 +453,7 @@ export default function CenterSchools() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Students</CardTitle>
-              <Users className="h-4 w-4 text-green-600" />
+              <Users className="h-4 w-4 text-success" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalActiveStudents}</div>
@@ -471,7 +464,7 @@ export default function CenterSchools() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Avg Students/School</CardTitle>
-              <Building className="h-4 w-4 text-purple-600" />
+              <Building className="h-4 w-4 text-info" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -486,7 +479,7 @@ export default function CenterSchools() {
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="relative max-w-md">
-              <School className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <School className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search schools..."
                 value={searchTerm}
@@ -508,11 +501,11 @@ export default function CenterSchools() {
           <CardContent>
             {filteredSchools.length === 0 ? (
               <div className="text-center py-12">
-                <School className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <School className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">
                   {searchTerm ? 'No schools found' : 'No schools linked yet'}
                 </h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-muted-foreground mb-6">
                   {searchTerm
                     ? 'Try adjusting your search terms'
                     : 'Start by linking your first school to the center'
@@ -545,12 +538,12 @@ export default function CenterSchools() {
                       <TableRow key={school.id}>
                         <TableCell>
                           <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <School className="h-4 w-4 text-blue-600" />
+                            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <School className="h-4 w-4 text-primary" />
                             </div>
                             <div>
-                              <div className="font-medium text-gray-900">{school.name}</div>
-                              <div className="text-sm text-gray-500">
+                              <div className="font-medium text-foreground">{school.name}</div>
+                              <div className="text-sm text-muted-foreground">
                                 Linked {new Date(school.createdAt).toLocaleDateString()}
                               </div>
                             </div>
@@ -558,7 +551,7 @@ export default function CenterSchools() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            <User className="h-4 w-4 text-gray-400" />
+                            <User className="h-4 w-4 text-muted-foreground" />
                             <span>{school.principalName || 'Not specified'}</span>
                           </div>
                         </TableCell>
@@ -566,35 +559,35 @@ export default function CenterSchools() {
                           <div className="space-y-1">
                             {school.phone && (
                               <div className="flex items-center space-x-2 text-sm">
-                                <Phone className="h-3 w-3 text-gray-400" />
+                                <Phone className="h-3 w-3 text-muted-foreground" />
                                 <span>{school.phone}</span>
                               </div>
                             )}
                             {school.email && (
                               <div className="flex items-center space-x-2 text-sm">
-                                <Mail className="h-3 w-3 text-gray-400" />
+                                <Mail className="h-3 w-3 text-muted-foreground" />
                                 <span className="truncate max-w-[150px]">{school.email}</span>
                               </div>
                             )}
                             {!school.phone && !school.email && (
-                              <span className="text-gray-500 text-sm">No contact info</span>
+                              <span className="text-muted-foreground text-sm">No contact info</span>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-start space-x-2 max-w-[200px]">
-                            <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                             <span className="text-sm line-clamp-2">{school.address || 'Not specified'}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <div className="font-semibold text-blue-600">{school.studentCount}</div>
+                          <div className="font-semibold text-primary">{school.studentCount}</div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <div className="font-semibold text-green-600">{school.activeStudentCount}</div>
+                          <div className="font-semibold text-success">{school.activeStudentCount}</div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <div className="font-semibold text-purple-600">{school.viewerCount}</div>
+                          <div className="font-semibold text-info">{school.viewerCount}</div>
                         </TableCell>
                         <TableCell className="text-center">
                           <DropdownMenu>
@@ -659,14 +652,13 @@ export default function CenterSchools() {
             )}
           </CardContent>
         </Card>
-      </div>
 
       {/* Link School Modal */}
       <Dialog open={showLinkModal} onOpenChange={setShowLinkModal}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
-              <School className="h-5 w-5 text-blue-600" />
+              <School className="h-5 w-5 text-primary" />
               <span>Link Existing School</span>
             </DialogTitle>
             <DialogDescription>
@@ -687,7 +679,7 @@ export default function CenterSchools() {
                 value={unlinkedSearchTerm}
                 onChange={(e) => setUnlinkedSearchTerm(e.target.value)}
               />
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-muted-foreground">
                 Search for schools that are not currently linked to any center
               </p>
             </div>
@@ -700,10 +692,10 @@ export default function CenterSchools() {
 
               {searchingSchools ? (
                 <div className="flex justify-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 border-primary border-t-transparent"></div>
                 </div>
               ) : unlinkedSchools.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">
+                <div className="text-center py-4 text-muted-foreground">
                   {unlinkedSearchTerm ? 'No schools found matching your search' : 'No unlinked schools available'}
                 </div>
               ) : (
@@ -711,8 +703,8 @@ export default function CenterSchools() {
                   {unlinkedSchools.map((school) => (
                     <div
                       key={school.id}
-                      className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors border-l-4 ${selectedSchoolId === school.id
-                        ? 'bg-blue-50 border-l-blue-500 border-blue-200'
+                      className={`p-3 cursor-pointer hover:bg-muted/40 transition-colors border-l-4 ${selectedSchoolId === school.id
+                        ? 'bg-primary/10 border-l-blue-500 border-primary/20'
                         : 'border-l-transparent'
                         }`}
                       onClick={() => handleSchoolSelect(school)}
@@ -722,14 +714,14 @@ export default function CenterSchools() {
                           <div className="font-medium flex items-center gap-2">
                             {school.name}
                             {selectedSchoolId === school.id && (
-                              <Badge className="bg-blue-600 text-white text-xs">Selected</Badge>
+                              <Badge className="bg-primary text-white text-xs">Selected</Badge>
                             )}
                           </div>
                           {school.address && (
-                            <div className="text-sm text-gray-600 mt-1">{school.address}</div>
+                            <div className="text-sm text-muted-foreground mt-1">{school.address}</div>
                           )}
                           {(school.phone || school.email) && (
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="text-xs text-muted-foreground mt-1">
                               {school.phone && <span>Phone: {school.phone}</span>}
                               {school.phone && school.email && <span className="mx-1">•</span>}
                               {school.email && <span>Email: {school.email}</span>}
@@ -778,18 +770,18 @@ export default function CenterSchools() {
               )}
 
               {errors.name && (
-                <p className="text-sm text-red-600">{errors.name}</p>
+                <p className="text-sm text-destructive">{errors.name}</p>
               )}
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
-                  <School className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <School className="h-5 w-5 text-primary mt-0.5" />
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-blue-900 mb-1">How linking works</h4>
-                  <p className="text-xs text-blue-700">
+                  <p className="text-xs text-primary">
                     Centers can only link existing schools. If you need to add a new school to the system,
                     please contact your administrator or support team.
                   </p>
@@ -797,7 +789,7 @@ export default function CenterSchools() {
               </div>
             </div>
 
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               * Required field
             </div>
           </div>
@@ -838,7 +830,7 @@ export default function CenterSchools() {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
-              <School className="h-5 w-5 text-blue-600" />
+              <School className="h-5 w-5 text-primary" />
               <span>School Details</span>
             </DialogTitle>
             <DialogDescription>
@@ -856,38 +848,38 @@ export default function CenterSchools() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <Label className="text-sm font-medium text-gray-600">School Name</Label>
+                      <Label className="text-sm font-medium text-muted-foreground">School Name</Label>
                       <p className="text-lg font-semibold">{selectedSchool.name}</p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-gray-600">Principal</Label>
+                      <Label className="text-sm font-medium text-muted-foreground">Principal</Label>
                       <p className="text-lg">{selectedSchool.principalName || 'Not specified'}</p>
                     </div>
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium text-gray-600">Address</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">Address</Label>
                     <p className="text-base">{selectedSchool.address || 'Not specified'}</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <Label className="text-sm font-medium text-gray-600">Phone</Label>
+                      <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
                       <p className="text-base">{selectedSchool.phone || 'Not specified'}</p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-gray-600">Email</Label>
+                      <Label className="text-sm font-medium text-muted-foreground">Email</Label>
                       <p className="text-base">{selectedSchool.email || 'Not specified'}</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <Label className="text-sm font-medium text-gray-600">Linked Date</Label>
+                      <Label className="text-sm font-medium text-muted-foreground">Linked Date</Label>
                       <p className="text-base">{formatDate(selectedSchool.createdAt)}</p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-gray-600">Last Updated</Label>
+                      <Label className="text-sm font-medium text-muted-foreground">Last Updated</Label>
                       <p className="text-base">{formatDate(selectedSchool.updatedAt)}</p>
                     </div>
                   </div>
@@ -901,20 +893,20 @@ export default function CenterSchools() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-blue-600">{selectedSchool.studentCount}</div>
-                      <div className="text-sm text-gray-600">Total Students</div>
+                    <div className="text-center p-4 bg-primary/10 rounded-lg">
+                      <Users className="h-8 w-8 text-primary mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-primary">{selectedSchool.studentCount}</div>
+                      <div className="text-sm text-muted-foreground">Total Students</div>
                     </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <UserCheck className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-green-600">{selectedSchool.activeStudentCount}</div>
-                      <div className="text-sm text-gray-600">Active Students</div>
+                    <div className="text-center p-4 bg-success/10 rounded-lg">
+                      <UserCheck className="h-8 w-8 text-success mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-success">{selectedSchool.activeStudentCount}</div>
+                      <div className="text-sm text-muted-foreground">Active Students</div>
                     </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <Eye className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-purple-600">{selectedSchool.viewerCount}</div>
-                      <div className="text-sm text-gray-600">School Viewers</div>
+                    <div className="text-center p-4 bg-info/10 rounded-lg">
+                      <Eye className="h-8 w-8 text-info mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-info">{selectedSchool.viewerCount}</div>
+                      <div className="text-sm text-muted-foreground">School Viewers</div>
                     </div>
                   </div>
                 </CardContent>
@@ -932,14 +924,14 @@ export default function CenterSchools() {
                   <CardContent>
                     <div className="space-y-3">
                       {selectedSchool.students.slice(0, 5).map((student) => (
-                        <div key={student.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div key={student.id} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
                           <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <GraduationCap className="h-4 w-4 text-blue-600" />
+                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                              <GraduationCap className="h-4 w-4 text-primary" />
                             </div>
                             <div>
                               <p className="font-medium">{student.fullName}</p>
-                              <p className="text-sm text-gray-600"><GradeDisplay grade={student.grade} /></p>
+                              <p className="text-sm text-muted-foreground"><GradeDisplay grade={student.grade} /></p>
                             </div>
                           </div>
                           <div className="text-right">
@@ -990,7 +982,7 @@ export default function CenterSchools() {
         <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-blue-600" />
+              <Users className="h-5 w-5 text-primary" />
               <span>Students - {selectedSchool?.name}</span>
             </DialogTitle>
             <DialogDescription>
@@ -1005,10 +997,10 @@ export default function CenterSchools() {
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center space-x-2">
-                      <Users className="h-5 w-5 text-blue-600" />
+                      <Users className="h-5 w-5 text-primary" />
                       <div>
                         <p className="text-2xl font-bold">{selectedSchool.studentCount}</p>
-                        <p className="text-sm text-gray-600">Total Students</p>
+                        <p className="text-sm text-muted-foreground">Total Students</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1016,10 +1008,10 @@ export default function CenterSchools() {
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center space-x-2">
-                      <UserCheck className="h-5 w-5 text-green-600" />
+                      <UserCheck className="h-5 w-5 text-success" />
                       <div>
-                        <p className="text-2xl font-bold text-green-600">{selectedSchool.activeStudentCount}</p>
-                        <p className="text-sm text-gray-600">Active Students</p>
+                        <p className="text-2xl font-bold text-success">{selectedSchool.activeStudentCount}</p>
+                        <p className="text-sm text-muted-foreground">Active Students</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1027,12 +1019,12 @@ export default function CenterSchools() {
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center space-x-2">
-                      <Clock className="h-5 w-5 text-orange-600" />
+                      <Clock className="h-5 w-5 text-warning" />
                       <div>
-                        <p className="text-2xl font-bold text-orange-600">
+                        <p className="text-2xl font-bold text-warning">
                           {selectedSchool.studentCount - selectedSchool.activeStudentCount}
                         </p>
-                        <p className="text-sm text-gray-600">Inactive Students</p>
+                        <p className="text-sm text-muted-foreground">Inactive Students</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1062,8 +1054,8 @@ export default function CenterSchools() {
                             <TableRow key={student.id}>
                               <TableCell>
                                 <div className="flex items-center space-x-3">
-                                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <GraduationCap className="h-4 w-4 text-blue-600" />
+                                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                    <GraduationCap className="h-4 w-4 text-primary" />
                                   </div>
                                   <span className="font-medium">{student.fullName}</span>
                                 </div>
@@ -1076,18 +1068,18 @@ export default function CenterSchools() {
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center space-x-2">
-                                  <Calendar className="h-4 w-4 text-gray-400" />
+                                  <Calendar className="h-4 w-4 text-muted-foreground" />
                                   <span>{student.registrationDate ? formatDate(student.registrationDate) : 'N/A'}</span>
                                 </div>
                               </TableCell>
                               <TableCell>
                                 {student.hasAssignment ? (
-                                  <Badge className="bg-green-100 text-green-800">
+                                  <Badge className="bg-success/10 text-foreground">
                                     <UserCheck className="h-3 w-3 mr-1" />
                                     Assigned
                                   </Badge>
                                 ) : (
-                                  <Badge variant="outline" className="text-orange-600">
+                                  <Badge variant="outline" className="text-warning">
                                     <Clock className="h-3 w-3 mr-1" />
                                     Pending
                                   </Badge>
@@ -1103,9 +1095,9 @@ export default function CenterSchools() {
               ) : (
                 <Card>
                   <CardContent className="text-center py-12">
-                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Students Enrolled</h3>
-                    <p className="text-gray-600">This school doesn't have any students enrolled yet.</p>
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Students Enrolled</h3>
+                    <p className="text-muted-foreground">This school doesn't have any students enrolled yet.</p>
                   </CardContent>
                 </Card>
               )}
@@ -1128,6 +1120,6 @@ export default function CenterSchools() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageWrapper>
   );
 }

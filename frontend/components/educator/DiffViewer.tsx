@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useMemo } from 'react';
 import { DiffLine, getDiffStats } from '@/lib/reportUtils';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Plus, Minus, Equal, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 
@@ -13,8 +13,8 @@ function CollapsedBlock({ count, onExpand }: { count: number; onExpand: () => vo
   return (
     <button
       onClick={onExpand}
-      className="w-full flex items-center justify-center gap-2 py-2 px-4 text-xs text-gray-400 bg-gray-50/50 
-                hover:bg-gray-100/80 hover:text-gray-600 transition-colors border-y border-gray-100"
+      className="w-full flex items-center justify-center gap-2 py-2 px-4 text-xs text-muted-foreground bg-muted/40/50 
+                hover:bg-muted/80 hover:text-muted-foreground transition-colors border-y border-border"
     >
       <ChevronDown className="h-3 w-3" />
       <span>{count} unchanged line{count > 1 ? 's' : ''}</span>
@@ -29,26 +29,26 @@ function CollapsedBlock({ count, onExpand }: { count: number; onExpand: () => vo
 function DiffLineRow({ line }: { line: DiffLine }) {
   const config = {
     added: {
-      bg: 'bg-green-50',
+      bg: 'bg-success/10',
       border: 'border-l-green-500',
       text: 'text-green-900',
-      numBg: 'bg-green-100 text-green-700',
-      icon: <Plus className="h-3 w-3 text-green-600" />,
+      numBg: 'bg-success/10 text-success',
+      icon: <Plus className="h-3 w-3 text-success" />,
       prefix: '+',
     },
     removed: {
-      bg: 'bg-red-50',
+      bg: 'bg-destructive/10',
       border: 'border-l-red-500',
       text: 'text-red-900',
-      numBg: 'bg-red-100 text-red-700',
-      icon: <Minus className="h-3 w-3 text-red-600" />,
+      numBg: 'bg-destructive/10 text-destructive',
+      icon: <Minus className="h-3 w-3 text-destructive" />,
       prefix: '-',
     },
     unchanged: {
-      bg: 'bg-white',
+      bg: 'bg-background',
       border: 'border-l-transparent',
-      text: 'text-gray-600',
-      numBg: 'bg-gray-50 text-gray-400',
+      text: 'text-muted-foreground',
+      numBg: 'bg-muted/40 text-muted-foreground',
       icon: null,
       prefix: ' ',
     },
@@ -57,11 +57,11 @@ function DiffLineRow({ line }: { line: DiffLine }) {
   return (
     <div className={`flex items-stretch ${config.bg} border-l-4 ${config.border} group hover:brightness-[0.98] transition-all`}>
       {/* Old line number */}
-      <div className={`w-12 flex-shrink-0 text-right px-2 py-0.5 text-xs font-mono select-none ${config.numBg} border-r border-gray-200`}>
+      <div className={`w-12 flex-shrink-0 text-right px-2 py-0.5 text-xs font-mono select-none ${config.numBg} border-r border-border`}>
         {line.oldLineNumber ?? ''}
       </div>
       {/* New line number */}
-      <div className={`w-12 flex-shrink-0 text-right px-2 py-0.5 text-xs font-mono select-none ${config.numBg} border-r border-gray-200`}>
+      <div className={`w-12 flex-shrink-0 text-right px-2 py-0.5 text-xs font-mono select-none ${config.numBg} border-r border-border`}>
         {line.newLineNumber ?? ''}
       </div>
       {/* Prefix (+/-/space) */}
@@ -83,17 +83,17 @@ function DiffStatsHeader({ diffLines }: { diffLines: DiffLine[] }) {
   const stats = useMemo(() => getDiffStats(diffLines), [diffLines]);
 
   return (
-    <div className="flex items-center gap-4 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium">
-      <span className="text-gray-500">Changes:</span>
-      <span className="flex items-center gap-1 text-green-700">
+    <div className="flex items-center gap-4 px-4 py-2.5 bg-muted/40 border border-border rounded-lg text-xs font-medium">
+      <span className="text-muted-foreground">Changes:</span>
+      <span className="flex items-center gap-1 text-success">
         <Plus className="h-3.5 w-3.5" />
         {stats.added} added
       </span>
-      <span className="flex items-center gap-1 text-red-700">
+      <span className="flex items-center gap-1 text-destructive">
         <Minus className="h-3.5 w-3.5" />
         {stats.removed} removed
       </span>
-      <span className="flex items-center gap-1 text-gray-500">
+      <span className="flex items-center gap-1 text-muted-foreground">
         <Equal className="h-3.5 w-3.5" />
         {stats.unchanged} unchanged
       </span>
@@ -150,7 +150,7 @@ export function DiffViewer({ diffLines, maxCollapsedLines = 4 }: { diffLines: Di
 
   if (diffLines.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400 text-sm">
+      <div className="text-center py-8 text-muted-foreground text-sm">
         No differences to display
       </div>
     );
@@ -165,10 +165,10 @@ export function DiffViewer({ diffLines, maxCollapsedLines = 4 }: { diffLines: Di
       <DiffStatsHeader diffLines={diffLines} />
 
       {/* Diff table header */}
-      <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <div className="flex items-center bg-gray-100 border-b border-gray-200 text-xs text-gray-500 font-medium">
-          <div className="w-12 text-center px-2 py-1.5 border-r border-gray-200">Old</div>
-          <div className="w-12 text-center px-2 py-1.5 border-r border-gray-200">New</div>
+      <div className="border border-border rounded-xl overflow-hidden shadow-sm">
+        <div className="flex items-center bg-muted border-b border-border text-xs text-muted-foreground font-medium">
+          <div className="w-12 text-center px-2 py-1.5 border-r border-border">Old</div>
+          <div className="w-12 text-center px-2 py-1.5 border-r border-border">New</div>
           <div className="w-6" />
           <div className="flex-1 px-3 py-1.5">Content</div>
         </div>

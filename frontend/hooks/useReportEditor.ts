@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { apiClient } from '@/lib/api';
 import { computeLineDiff, getDiffStats, DiffLine } from '@/lib/reportUtils';
-import toast from 'react-hot-toast';
+import toast from '@/lib/toast';
 
 interface AIPromptEntry {
   prompt: string;

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
 import { Upload, X, FileText, Loader2 } from 'lucide-react';
@@ -124,7 +124,7 @@ export function FileUpload({
             <div
                 className={cn(
                     'border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors',
-                    dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400',
+                    dragActive ? 'border-blue-500 bg-primary/10' : 'border-border hover:border-gray-400',
                     disabled && 'opacity-50 cursor-not-allowed'
                 )}
                 onDragEnter={handleDrag}
@@ -143,18 +143,18 @@ export function FileUpload({
                     disabled={disabled}
                 />
 
-                <Upload className="h-10 w-10 mx-auto mb-4 text-gray-400" />
-                <p className="text-sm font-medium text-gray-700 mb-1">
+                <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-sm font-medium text-foreground mb-1">
                     Click to upload or drag and drop
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                     {acceptedTypes.join(', ').toUpperCase()} (max {maxSizeInMB}MB each, up to {maxFiles} files)
                 </p>
             </div>
 
             {/* Error Message */}
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded text-sm">
                     {error}
                 </div>
             )}
@@ -162,21 +162,21 @@ export function FileUpload({
             {/* Existing Files */}
             {existingFiles.length > 0 && (
                 <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-gray-700">Uploaded Files</h4>
+                    <h4 className="text-sm font-medium text-foreground">Uploaded Files</h4>
                     {existingFiles.map((file, index) => (
                         <div
                             key={index}
-                            className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"
+                            className="flex items-center justify-between p-3 bg-success/10 border border-success/20 rounded-lg"
                         >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <FileText className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                <FileText className="h-5 w-5 text-success flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                                    <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
                                     <a
                                         href={file.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-xs text-blue-600 hover:underline"
+                                        className="text-xs text-primary hover:underline"
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         Download
@@ -192,7 +192,7 @@ export function FileUpload({
                                         e.stopPropagation();
                                         onFileRemove(file.key);
                                     }}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                 >
                                     <X className="h-4 w-4" />
                                 </Button>
@@ -205,17 +205,17 @@ export function FileUpload({
             {/* Selected Files (not yet uploaded) */}
             {selectedFiles.length > 0 && (
                 <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-gray-700">Selected Files</h4>
+                    <h4 className="text-sm font-medium text-foreground">Selected Files</h4>
                     {selectedFiles.map((file, index) => (
                         <div
                             key={index}
-                            className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                            className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg"
                         >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                                <FileText className="h-5 w-5 text-primary flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                                    <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                                    <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+                                    <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                                 </div>
                             </div>
                             {!disabled && (
@@ -224,7 +224,7 @@ export function FileUpload({
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => removeSelectedFile(index)}
-                                    className="text-gray-600 hover:text-gray-700"
+                                    className="text-muted-foreground hover:text-foreground"
                                 >
                                     <X className="h-4 w-4" />
                                 </Button>

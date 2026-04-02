@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { apiClient } from '@/lib/api';
 
 export function useStudents(params?: {

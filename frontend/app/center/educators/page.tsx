@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCenterEducators } from '@/hooks/useCenter';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { DataTable, Column } from '@/components/ui/data-table';
-import { PageHeader } from '@/components/ui/page-header';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { 
   GraduationCap, 
   Plus,
@@ -328,8 +328,8 @@ export default function CenterEducators() {
       sortable: true,
       render: (value, row) => (
         <div className="flex flex-col">
-          <span className="font-medium text-gray-900">{value}</span>
-          <span className="text-sm text-gray-500">{row.email}</span>
+          <span className="font-medium text-foreground">{value}</span>
+          <span className="text-sm text-muted-foreground">{row.email}</span>
         </div>
       ),
       width: 'w-64'
@@ -341,12 +341,12 @@ export default function CenterEducators() {
       render: (value, row) => (
         <div className="flex flex-col space-y-1">
           {value && (
-            <div className="flex items-center text-sm text-gray-600">
+            <div className="flex items-center text-sm text-muted-foreground">
               <Phone className="h-3 w-3 mr-1" />
               {value}
             </div>
           )}
-          <div className="flex items-center text-sm text-gray-600">
+          <div className="flex items-center text-sm text-muted-foreground">
             <Mail className="h-3 w-3 mr-1" />
             {row.email}
           </div>
@@ -360,7 +360,7 @@ export default function CenterEducators() {
       sortable: true,
       render: (value) => (
         <div className="flex items-center">
-          <Award className="h-4 w-4 mr-1 text-blue-500" />
+          <Award className="h-4 w-4 mr-1 text-primary" />
           <span>{value || 0} years</span>
         </div>
       ),
@@ -381,7 +381,7 @@ export default function CenterEducators() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+              className="h-6 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
               onClick={() => {
                 setSelectedEducatorSpecializations({
                   name: row.fullName,
@@ -394,7 +394,7 @@ export default function CenterEducators() {
             </Button>
           )}
           {(value || []).length === 0 && (
-            <span className="text-gray-400 text-xs italic">No specializations</span>
+            <span className="text-muted-foreground text-xs italic">No specializations</span>
           )}
         </div>
       ),
@@ -406,7 +406,7 @@ export default function CenterEducators() {
       sortable: true,
       render: (value) => (
         <div className="flex items-center">
-          <Users className="h-4 w-4 mr-1 text-green-500" />
+          <Users className="h-4 w-4 mr-1 text-success" />
           <span>{value || 0}</span>
         </div>
       ),
@@ -417,7 +417,7 @@ export default function CenterEducators() {
       header: 'Assigned Date',
       sortable: true,
       render: (value) => (
-        <div className="flex items-center text-sm text-gray-600">
+        <div className="flex items-center text-sm text-muted-foreground">
           <Calendar className="h-3 w-3 mr-1" />
           {new Date(value).toLocaleDateString()}
         </div>
@@ -457,7 +457,7 @@ export default function CenterEducators() {
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => handleRemoveEducator(row.assignmentId)}
-              className="text-red-600"
+              className="text-destructive"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Remove Educator
@@ -485,34 +485,23 @@ export default function CenterEducators() {
   };
 
   return (
-    <div className="">
-      <PageHeader
-        title="Center Educators"
-        description="Manage special educators assigned to your center"
-        badge={{
-          text: `${educators.length} Educators`,
-          variant: 'secondary'
-        }}
-        actions={[
-          {
-            label: 'Refresh',
-            onClick: () => refetchEducators(),
-            icon: RefreshCw,
-            variant: 'outline',
-            disabled: loading
-          },
-          {
-            label: 'Link Educator',
-            onClick: () => {
-              loadAvailableEducators();
-              setShowLinkModal(true);
-            },
-            icon: UserCheck
-          }
-        ]}
-      />
-
-      <div className="p-6 space-y-6">
+    <PageWrapper
+      title="Center Educators"
+      description="Manage special educators assigned to your center"
+      breadcrumbs={[{ label: 'Center', href: '/center' }, { label: 'Educators' }]}
+      actions={
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => refetchEducators()} disabled={loading}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button onClick={() => { loadAvailableEducators(); setShowLinkModal(true); }}>
+            <UserCheck className="h-4 w-4 mr-2" />
+            Link Educator
+          </Button>
+        </div>
+      }
+    >
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -593,7 +582,7 @@ export default function CenterEducators() {
           
           <div className="space-y-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search educators by name, email, or specialization..."
                 value={availableSearchTerm}
@@ -604,17 +593,17 @@ export default function CenterEducators() {
 
             {loadingAvailable ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-primary border-t-transparent"></div>
                 <span className="ml-2">Loading available educators...</span>
               </div>
             ) : filteredAvailableEducators.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 No available educators found
               </div>
             ) : (
               <div className="grid gap-4 max-h-96 overflow-y-auto">
                 {filteredAvailableEducators.map((educator) => (
-                  <div key={educator.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                  <div key={educator.id} className="border rounded-lg p-4 hover:bg-muted/40">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
@@ -622,7 +611,7 @@ export default function CenterEducators() {
                           <Badge variant="outline">{educator.specialization || 'Special Educator'}</Badge>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
+                        <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-3">
                           <div className="flex items-center">
                             <Mail className="h-4 w-4 mr-2" />
                             {educator.email}
@@ -644,16 +633,16 @@ export default function CenterEducators() {
                         </div>
 
                         {/* Assignment Statistics */}
-                        <div className="grid grid-cols-3 gap-2 text-xs text-gray-500 mb-3">
-                          <div className="flex items-center justify-center p-2 bg-gray-50 rounded">
+                        <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground mb-3">
+                          <div className="flex items-center justify-center p-2 bg-muted/40 rounded">
                             <Building className="h-3 w-3 mr-1" />
                             {educator.centerCount || 0} Centers
                           </div>
-                          <div className="flex items-center justify-center p-2 bg-gray-50 rounded">
+                          <div className="flex items-center justify-center p-2 bg-muted/40 rounded">
                             <School className="h-3 w-3 mr-1" />
                             {educator.schoolCount || 0} Schools
                           </div>
-                          <div className="flex items-center justify-center p-2 bg-gray-50 rounded">
+                          <div className="flex items-center justify-center p-2 bg-muted/40 rounded">
                             <Users className="h-3 w-3 mr-1" />
                             {educator.studentCount || 0} Students
                           </div>
@@ -670,7 +659,7 @@ export default function CenterEducators() {
                         )}
 
                         {educator.bio && (
-                          <p className="text-sm text-gray-600 mt-2">{educator.bio}</p>
+                          <p className="text-sm text-muted-foreground mt-2">{educator.bio}</p>
                         )}
                       </div>
                       
@@ -699,7 +688,7 @@ export default function CenterEducators() {
           
           <div className="space-y-4">
             {selectedEducatorStudents.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 No students assigned to this educator
               </div>
             ) : (
@@ -741,7 +730,7 @@ export default function CenterEducators() {
           
           <div className="space-y-4">
             {selectedEducatorSchools.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 No schools associated with this educator
               </div>
             ) : (
@@ -751,9 +740,9 @@ export default function CenterEducators() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-semibold">{school.schoolName}</h3>
-                        <p className="text-sm text-gray-600">{school.studentCount} students</p>
+                        <p className="text-sm text-muted-foreground">{school.studentCount} students</p>
                       </div>
-                      <Building className="h-5 w-5 text-gray-400" />
+                      <Building className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
                 ))}
@@ -768,35 +757,35 @@ export default function CenterEducators() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-blue-600" />
+              <Award className="h-5 w-5 text-primary" />
               Specializations - {selectedEducatorSpecializations.name}
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
             {selectedEducatorSpecializations.specializations.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Award className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+              <div className="text-center py-8 text-muted-foreground">
+                <Award className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                 <p>No specializations listed for this educator</p>
               </div>
             ) : (
               <div className="space-y-3">
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   This educator specializes in the following areas:
                 </p>
                 <div className="grid gap-2">
                   {selectedEducatorSpecializations.specializations.map((specialization, index) => (
                     <div 
                       key={index} 
-                      className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                      className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/10 transition-colors"
                     >
-                      <BookOpen className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                      <BookOpen className="h-4 w-4 text-primary flex-shrink-0" />
                       <span className="text-sm font-medium text-blue-900">{specialization}</span>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-500 text-center">
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground text-center">
                     Total: {selectedEducatorSpecializations.specializations.length} specialization{selectedEducatorSpecializations.specializations.length !== 1 ? 's' : ''}
                   </p>
                 </div>
@@ -806,8 +795,6 @@ export default function CenterEducators() {
         </DialogContent>
       </Dialog>
       
-      </div> {/* Close container div */}
-    </div>
+    </PageWrapper>
   );
 }
-

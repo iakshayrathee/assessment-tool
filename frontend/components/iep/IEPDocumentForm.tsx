@@ -14,7 +14,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { useAIAssessment } from '@/hooks/useAI';
 import { Sparkles, X, Loader2 } from 'lucide-react';
 
@@ -148,7 +148,7 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
                   <Sparkles className="h-4 w-4" />
                   <span>Areas pre-filled from AI assessment analysis — all fields are editable</span>
                 </div>
-                <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-indigo-400 hover:text-indigo-600" onClick={() => setShowAiBanner(false)}>
+                <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-indigo-400 hover:text-primary" onClick={() => setShowAiBanner(false)}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -274,7 +274,7 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
                               field.onChange(currentValue.filter((d) => d !== domain));
                             }
                           }}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="h-4 w-4 rounded border-border text-primary focus:ring-blue-500"
                         />
                         <Label htmlFor={domain} className="text-sm font-normal cursor-pointer">
                           {domain}

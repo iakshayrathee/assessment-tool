@@ -24,7 +24,7 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
         return (
             <Card>
                 <CardContent className="text-center py-12">
-                    <p className="text-gray-600">No data available</p>
+                    <p className="text-muted-foreground">No data available</p>
                 </CardContent>
             </Card>
         );
@@ -43,9 +43,9 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
 
     const getRiskBadgeColor = (risk: string) => {
         switch (risk) {
-            case 'HIGH_SUPPORT': return 'bg-red-100 text-red-800';
-            case 'MODERATE_SUPPORT': return 'bg-orange-100 text-orange-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'HIGH_SUPPORT': return 'bg-destructive/10 text-foreground';
+            case 'MODERATE_SUPPORT': return 'bg-warning/10 text-foreground';
+            default: return 'bg-muted text-foreground';
         }
     };
 
@@ -59,7 +59,7 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
                         <CardDescription>AI-generated assessment coverage insights</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="prose max-w-none text-gray-700 whitespace-pre-wrap">
+                        <div className="prose max-w-none text-foreground whitespace-pre-wrap">
                             {data.narrative}
                         </div>
                     </CardContent>
@@ -77,8 +77,8 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b">
-                                    <th className="text-left py-3 px-4 font-medium text-gray-700">Metric</th>
-                                    <th className="text-right py-3 px-4 font-medium text-gray-700">Value</th>
+                                    <th className="text-left py-3 px-4 font-medium text-foreground">Metric</th>
+                                    <th className="text-right py-3 px-4 font-medium text-foreground">Value</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -115,9 +115,9 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b">
-                                    <th className="text-left py-3 px-4 font-medium text-gray-700">Risk Category</th>
-                                    <th className="text-center py-3 px-4 font-medium text-gray-700">Current Period</th>
-                                    <th className="text-center py-3 px-4 font-medium text-gray-700">Change</th>
+                                    <th className="text-left py-3 px-4 font-medium text-foreground">Risk Category</th>
+                                    <th className="text-center py-3 px-4 font-medium text-foreground">Current Period</th>
+                                    <th className="text-center py-3 px-4 font-medium text-foreground">Change</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -129,22 +129,22 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
                                             <div className="flex items-center justify-center">
                                                 {data.riskCategoryTrends.highSupportReduction > 0 ? (
                                                     <>
-                                                        <TrendingDown className="h-4 w-4 text-green-600 mr-1" />
-                                                        <span className="text-green-600 font-semibold">
+                                                        <TrendingDown className="h-4 w-4 text-success mr-1" />
+                                                        <span className="text-success font-semibold">
                                                             {data.riskCategoryTrends.highSupportReduction.toFixed(1)}%
                                                         </span>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <TrendingUp className="h-4 w-4 text-red-600 mr-1" />
-                                                        <span className="text-red-600 font-semibold">
+                                                        <TrendingUp className="h-4 w-4 text-destructive mr-1" />
+                                                        <span className="text-destructive font-semibold">
                                                             {Math.abs(data.riskCategoryTrends.highSupportReduction).toFixed(1)}%
                                                         </span>
                                                     </>
                                                 )}
                                             </div>
                                         ) : (
-                                            <span className="text-gray-500">N/A</span>
+                                            <span className="text-muted-foreground">N/A</span>
                                         )}
                                     </td>
                                 </tr>
@@ -156,22 +156,22 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
                                             <div className="flex items-center justify-center">
                                                 {data.riskCategoryTrends.moderateSupportReduction > 0 ? (
                                                     <>
-                                                        <TrendingDown className="h-4 w-4 text-green-600 mr-1" />
-                                                        <span className="text-green-600 font-semibold">
+                                                        <TrendingDown className="h-4 w-4 text-success mr-1" />
+                                                        <span className="text-success font-semibold">
                                                             {data.riskCategoryTrends.moderateSupportReduction.toFixed(1)}%
                                                         </span>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <TrendingUp className="h-4 w-4 text-orange-600 mr-1" />
-                                                        <span className="text-orange-600 font-semibold">
+                                                        <TrendingUp className="h-4 w-4 text-warning mr-1" />
+                                                        <span className="text-warning font-semibold">
                                                             {Math.abs(data.riskCategoryTrends.moderateSupportReduction).toFixed(1)}%
                                                         </span>
                                                     </>
                                                 )}
                                             </div>
                                         ) : (
-                                            <span className="text-gray-500">N/A</span>
+                                            <span className="text-muted-foreground">N/A</span>
                                         )}
                                     </td>
                                 </tr>
@@ -183,22 +183,22 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
                                             <div className="flex items-center justify-center">
                                                 {data.riskCategoryTrends.onTrackIncrease > 0 ? (
                                                     <>
-                                                        <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
-                                                        <span className="text-green-600 font-semibold">
+                                                        <TrendingUp className="h-4 w-4 text-success mr-1" />
+                                                        <span className="text-success font-semibold">
                                                             {data.riskCategoryTrends.onTrackIncrease.toFixed(1)}%
                                                         </span>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <TrendingDown className="h-4 w-4 text-red-600 mr-1" />
-                                                        <span className="text-red-600 font-semibold">
+                                                        <TrendingDown className="h-4 w-4 text-destructive mr-1" />
+                                                        <span className="text-destructive font-semibold">
                                                             {Math.abs(data.riskCategoryTrends.onTrackIncrease).toFixed(1)}%
                                                         </span>
                                                     </>
                                                 )}
                                             </div>
                                         ) : (
-                                            <span className="text-gray-500">N/A</span>
+                                            <span className="text-muted-foreground">N/A</span>
                                         )}
                                     </td>
                                 </tr>
@@ -230,8 +230,8 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b">
-                                    <th className="text-left py-3 px-4 font-medium text-gray-700">Skill Area</th>
-                                    <th className="text-right py-3 px-4 font-medium text-gray-700">% Students Needing Support</th>
+                                    <th className="text-left py-3 px-4 font-medium text-foreground">Skill Area</th>
+                                    <th className="text-right py-3 px-4 font-medium text-foreground">% Students Needing Support</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -260,8 +260,8 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
                 </CardHeader>
                 <CardContent>
                     {targetedStudents.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                            <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                        <div className="text-center py-8 text-muted-foreground">
+                            <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
                             <p>No targeted students found</p>
                         </div>
                     ) : (
@@ -271,15 +271,15 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
                                     <CardContent className="p-4">
                                         <div className="flex items-start justify-between mb-3">
                                             <div>
-                                                <h4 className="font-semibold text-gray-900">{student.name}</h4>
-                                                <p className="text-sm text-gray-600"><GradeDisplay grade={student.grade} /></p>
+                                                <h4 className="font-semibold text-foreground">{student.name}</h4>
+                                                <p className="text-sm text-muted-foreground"><GradeDisplay grade={student.grade} /></p>
                                             </div>
                                             <Badge className={getRiskBadgeColor(student.riskCategory)}>
                                                 {student.riskCategory === 'HIGH_SUPPORT' ? 'High' : 'Moderate'}
                                             </Badge>
                                         </div>
                                         {student.latestReportDate && (
-                                            <p className="text-xs text-gray-500 mb-3">
+                                            <p className="text-xs text-muted-foreground mb-3">
                                                 Last assessed: {new Date(student.latestReportDate).toLocaleDateString()}
                                             </p>
                                         )}
@@ -310,32 +310,32 @@ export default function AssessmentCoverageReport({ data, snapshot }: Props) {
                     </DialogHeader>
                     {loadingDeepAssessment ? (
                         <div className="flex items-center justify-center py-12">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                            <span className="ml-3 text-gray-600">Loading assessment...</span>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            <span className="ml-3 text-muted-foreground">Loading assessment...</span>
                         </div>
                     ) : deepAssessment?.data ? (
                         <div className="space-y-4">
-                            <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-                                <h3 className="font-semibold text-indigo-900 mb-2">Student Information</h3>
-                                <p className="text-sm text-indigo-800">
+                            <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
+                                <h3 className="font-semibold text-foreground mb-2">Student Information</h3>
+                                <p className="text-sm text-foreground">
                                     <strong>Name:</strong> {deepAssessment.data.student?.fullName}
                                 </p>
-                                <p className="text-sm text-indigo-800">
+                                <p className="text-sm text-foreground">
                                     <strong>Grade:</strong> {deepAssessment.data.student?.grade}
                                 </p>
-                                <p className="text-sm text-indigo-800">
+                                <p className="text-sm text-foreground">
                                     <strong>Assessed by:</strong> {deepAssessment.data.specialEducator?.fullName}
                                 </p>
                             </div>
                             <div className="prose max-w-none">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-2">{deepAssessment.data.title || 'Assessment Report'}</h3>
-                                <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                                <h3 className="text-lg font-semibold text-foreground mb-2">{deepAssessment.data.title || 'Assessment Report'}</h3>
+                                <div className="whitespace-pre-wrap text-foreground leading-relaxed">
                                     {deepAssessment.data.content || deepAssessment.data.summary || 'No content available'}
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center py-12 text-gray-500">
+                        <div className="text-center py-12 text-muted-foreground">
                             <p>No assessment data available</p>
                         </div>
                     )}

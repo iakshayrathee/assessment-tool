@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNotifications, useMarkAsRead, useMarkAllAsRead, useDeleteNotification } from '@/hooks/useNotifications';
 import { Bell, Check, CheckCheck, Trash2 } from 'lucide-react';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { formatDistanceToNow } from 'date-fns';
 
 interface NotificationPageProps {
@@ -32,34 +33,34 @@ function NotificationPage({
 
     const getNotificationColor = (type: string) => {
         const colorMap: Record<string, string> = {
-            HOMEWORK_ASSIGNED: 'bg-orange-100 text-orange-800',
-            HOMEWORK_SUBMITTED: 'bg-green-100 text-green-800',
-            ASSESSMENT_CREATED: 'bg-purple-100 text-purple-800',
-            ASSESSMENT_COMPLETED: 'bg-green-100 text-green-800',
+            HOMEWORK_ASSIGNED: 'bg-warning/10 text-foreground',
+            HOMEWORK_SUBMITTED: 'bg-success/10 text-foreground',
+            ASSESSMENT_CREATED: 'bg-info/10 text-foreground',
+            ASSESSMENT_COMPLETED: 'bg-success/10 text-foreground',
             IEP_GOAL_CREATED: 'bg-indigo-100 text-indigo-800',
-            IEP_GOAL_ACHIEVED: 'bg-yellow-100 text-yellow-800',
-            REPORT_SUBMITTED: 'bg-blue-100 text-blue-800',
-            REPORT_APPROVED: 'bg-green-100 text-green-800',
-            CONCERN_SUBMITTED: 'bg-red-100 text-red-800',
-            CONCERN_RESPONDED: 'bg-green-100 text-green-800',
+            IEP_GOAL_ACHIEVED: 'bg-warning/10 text-foreground',
+            REPORT_SUBMITTED: 'bg-primary/10 text-primary',
+            REPORT_APPROVED: 'bg-success/10 text-foreground',
+            CONCERN_SUBMITTED: 'bg-destructive/10 text-foreground',
+            CONCERN_RESPONDED: 'bg-success/10 text-foreground',
         };
-        return colorMap[type] || 'bg-gray-100 text-gray-800';
+        return colorMap[type] || 'bg-muted text-foreground';
     };
 
     return (
-        <div className="container mx-auto py-6 px-4 max-w-4xl">
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h1 className="text-3xl font-bold">{title}</h1>
-                    <p className="text-muted-foreground">{description}</p>
-                </div>
-                {notifications.some((n: any) => !n.isRead) && (
+        <PageWrapper
+            title={title}
+            description={description}
+            breadcrumbs={[{ label: 'Educator' }, { label: 'Notifications' }]}
+            actions={
+                notifications.some((n: any) => !n.isRead) ? (
                     <Button onClick={() => markAllAsRead.mutate()} variant="outline" size="sm">
                         <CheckCheck className="h-4 w-4 mr-2" />
                         Mark All as Read
                     </Button>
-                )}
-            </div>
+                ) : undefined
+            }
+        >
 
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'unread')} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
@@ -87,7 +88,7 @@ function NotificationPage({
                             {notifications.map((notification: any) => (
                                 <Card
                                     key={notification.id}
-                                    className={`transition-all hover:shadow-md ${!notification.isRead ? 'border-l-4 border-l-blue-500 bg-blue-50/50' : ''}`}
+                                    className={`transition-all hover:shadow-md ${!notification.isRead ? 'border-l-4 border-l-blue-500 bg-primary/10/50' : ''}`}
                                 >
                                     <CardContent className="p-4">
                                         <div className="flex items-start gap-4">
@@ -162,7 +163,7 @@ function NotificationPage({
                     )}
                 </TabsContent>
             </Tabs>
-        </div>
+        </PageWrapper>
     );
 }
 

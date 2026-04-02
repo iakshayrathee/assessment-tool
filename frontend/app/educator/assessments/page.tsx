@@ -16,11 +16,12 @@ import { MathSkillAssessment } from '@/components/assessments/MathSkillAssessmen
 import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
 import { MaxAssessmentsWarningDialog } from '@/components/assessments/MaxAssessmentsWarningDialog';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { format } from 'date-fns';
 import { GradeDisplay } from '@/components/ui/GradeDisplay';
 import { useAIAssessment } from '@/hooks/useAI';
 import { AIAssessmentPanel } from '@/components/ai/AIInsightPanels';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 const MAX_ASSESSMENTS = 3;
 
@@ -248,14 +249,14 @@ export default function AssessmentsPage() {
     if (loadingAssessments) {
       return (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       );
     }
 
     if (assessments.length === 0) {
       return (
-        <p className="text-center text-gray-500 py-8">No {type} assessments yet</p>
+        <p className="text-center text-muted-foreground py-8">No {type} assessments yet</p>
       );
     }
 
@@ -325,44 +326,39 @@ export default function AssessmentsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 pb-12">
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Comprehensive Assessments</h1>
-            <p className="text-gray-600">Formal referrals and detailed skill assessments</p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {selectedStudent ? (
-              <Button
-                variant="outline"
-                onClick={() => setShowStudentModal(true)}
-                className="flex items-center gap-4 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200 min-w-[250px] hover:bg-blue-100"
-              >
-                <div className="flex-1 min-w-0 text-left">
-                  <p className="font-medium text-blue-900 text-sm truncate">
-                    {selectedStudent.fullName || selectedStudent.name || 'Unknown'}
-                  </p>
-                  <p className="text-xs text-blue-700">
-                    <GradeDisplay grade={selectedStudent.grade || 'N/A'} />
-                  </p>
-                </div>
-                <Users className="h-4 w-4 flex-shrink-0" />
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                onClick={() => setShowStudentModal(true)}
-                className="flex items-center gap-2 px-4 py-2 min-w-[140px]"
-              >
-                <Users className="h-4 w-4" />
-                Select Student
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+    <PageWrapper
+      title="Comprehensive Assessments"
+      description="Formal referrals and detailed skill assessments"
+      breadcrumbs={[{ label: 'Educator' }, { label: 'Assessments' }]}
+      actions={
+        selectedStudent ? (
+          <Button
+            variant="outline"
+            onClick={() => setShowStudentModal(true)}
+            className="flex items-center gap-4 bg-primary/10 px-4 py-3 rounded-lg border border-primary/20 min-w-[250px] hover:bg-primary/10"
+          >
+            <div className="flex-1 min-w-0 text-left">
+              <p className="font-medium text-sm truncate">
+                {selectedStudent.fullName || selectedStudent.name || 'Unknown'}
+              </p>
+              <p className="text-xs text-primary">
+                <GradeDisplay grade={selectedStudent.grade || 'N/A'} />
+              </p>
+            </div>
+            <Users className="h-4 w-4 flex-shrink-0" />
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            onClick={() => setShowStudentModal(true)}
+            className="flex items-center gap-2 px-4 py-2 min-w-[140px]"
+          >
+            <Users className="h-4 w-4" />
+            Select Student
+          </Button>
+        )
+      }
+    >
 
       {/* AI Assessment Analysis */}
       {selectedStudent?.id && (
@@ -395,7 +391,7 @@ export default function AssessmentsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>Formal Assessment Referrals</CardTitle>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Create referrals for psychological, educational, or specialized assessments ({formalAssessments.length}/{MAX_ASSESSMENTS})
                       </p>
                     </div>
@@ -463,7 +459,7 @@ export default function AssessmentsPage() {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
-                          <BookOpen className="h-5 w-5 text-blue-600" />
+                          <BookOpen className="h-5 w-5 text-primary" />
                           Reading Assessments ({readingAssessments.length}/{MAX_ASSESSMENTS})
                         </CardTitle>
                         <Button onClick={() => handleCreateAssessment('reading')} size="sm">
@@ -481,7 +477,7 @@ export default function AssessmentsPage() {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
-                          <PenTool className="h-5 w-5 text-green-600" />
+                          <PenTool className="h-5 w-5 text-success" />
                           Writing Assessments ({writingAssessments.length}/{MAX_ASSESSMENTS})
                         </CardTitle>
                         <Button onClick={() => handleCreateAssessment('writing')} size="sm">
@@ -499,7 +495,7 @@ export default function AssessmentsPage() {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
-                          <Calculator className="h-5 w-5 text-purple-600" />
+                          <Calculator className="h-5 w-5 text-info" />
                           Math Assessments ({mathAssessments.length}/{MAX_ASSESSMENTS})
                         </CardTitle>
                         <Button onClick={() => handleCreateAssessment('math')} size="sm">
@@ -520,24 +516,24 @@ export default function AssessmentsPage() {
           <Card className="flex-1">
             <CardContent className="py-12">
               <div className="text-center max-w-2xl mx-auto">
-                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BookOpen className="h-10 w-10 text-blue-600" />
+                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BookOpen className="h-10 w-10 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                <h3 className="text-xl font-semibold text-foreground mb-3">
                   Comprehensive Assessments Not Required
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Formal comprehensive assessments are designed for students in Grade 3 and above.
                 </p>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 text-left">
                   <p className="text-sm text-blue-900 font-medium mb-2">
                     <strong>{selectedStudent.fullName}</strong> is currently in <strong><GradeDisplay grade={selectedStudent.grade} /></strong>
                   </p>
-                  <p className="text-sm text-blue-800">
+                  <p className="text-sm text-primary">
                     Students in Nursery, LKG, UKG, Kindergarten, Grade 1, and Grade 2 do not require these detailed assessments at this stage of their development.
                   </p>
                 </div>
-                <p className="text-sm text-gray-500 mt-4">
+                <p className="text-sm text-muted-foreground mt-4">
                   For early grade students, please use age-appropriate observation and developmental milestone tracking instead.
                 </p>
               </div>
@@ -548,11 +544,11 @@ export default function AssessmentsPage() {
         <Card className="flex-1">
           <CardContent className="py-12">
             <div className="text-center">
-              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Plus className="h-8 w-8 text-gray-400" />
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Plus className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Student Selected</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg font-medium text-foreground mb-2">No Student Selected</h3>
+              <p className="text-muted-foreground">
                 Please select a student from above to begin an assessment
               </p>
             </div>
@@ -569,7 +565,7 @@ export default function AssessmentsPage() {
 
       <Dialog open={showFormalForm} onOpenChange={setShowFormalForm}>
         <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0">
-          <div className="sticky top-0 bg-white z-10 px-6 pt-6 pb-4 border-b">
+          <div className="sticky top-0 bg-background z-10 px-6 pt-6 pb-4 border-b">
             <DialogHeader>
               <DialogTitle>
                 {editingAssessment?.mode === 'view'
@@ -608,6 +604,6 @@ export default function AssessmentsPage() {
         oldestAssessment={oldestAssessment}
         assessmentTypeName={pendingAssessmentType || ''}
       />
-    </div>
+    </PageWrapper>
   );
 }

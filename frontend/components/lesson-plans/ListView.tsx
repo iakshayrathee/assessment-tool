@@ -24,7 +24,7 @@ export function LTPListView({ ltps, loading, getStatusColor, onEdit }: any) {
     if (ltps.length === 0) {
         return (
             <Card>
-                <CardContent className="py-12 text-center text-gray-500">
+                <CardContent className="py-12 text-center text-muted-foreground">
                     No long-term plans yet.
                 </CardContent>
             </Card>
@@ -50,15 +50,15 @@ export function LTPListView({ ltps, loading, getStatusColor, onEdit }: any) {
                             <TableRow key={ltp.id}>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        <Target className="h-4 w-4 text-blue-600" />
+                                        <Target className="h-4 w-4 text-primary" />
                                         <span className="font-medium">{ltp.domains.join(', ')}</span>
                                     </div>
                                 </TableCell>
                                 <TableCell>
                                     <div className="text-sm">
                                         <div>{format(new Date(ltp.startDate), 'MMM dd, yyyy')}</div>
-                                        <div className="text-gray-500">to {format(new Date(ltp.endDate), 'MMM dd, yyyy')}</div>
-                                        <div className="text-xs text-gray-400">{ltp.durationMonths} months</div>
+                                        <div className="text-muted-foreground">to {format(new Date(ltp.endDate), 'MMM dd, yyyy')}</div>
+                                        <div className="text-xs text-muted-foreground">{ltp.durationMonths} months</div>
                                     </div>
                                 </TableCell>
                                 <TableCell>{ltp.goals?.length || 0} goals</TableCell>
@@ -92,7 +92,7 @@ export function STPListView({ stps, loading, getStatusColor, onEdit }: any) {
     if (stps.length === 0) {
         return (
             <Card>
-                <CardContent className="py-12 text-center text-gray-500">
+                <CardContent className="py-12 text-center text-muted-foreground">
                     No short-term plans yet.
                 </CardContent>
             </Card>
@@ -120,14 +120,14 @@ export function STPListView({ stps, loading, getStatusColor, onEdit }: any) {
                                 <TableCell>
                                     <div className="text-sm">
                                         <div>{format(new Date(stp.startDate), 'MMM dd')}</div>
-                                        <div className="text-gray-500">to {format(new Date(stp.endDate), 'MMM dd')}</div>
-                                        <div className="text-xs text-gray-400">{stp.durationWeeks} weeks</div>
+                                        <div className="text-muted-foreground">to {format(new Date(stp.endDate), 'MMM dd')}</div>
+                                        <div className="text-xs text-muted-foreground">{stp.durationWeeks} weeks</div>
                                     </div>
                                 </TableCell>
                                 <TableCell>{stp.subGoals?.length || 0}</TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-20 bg-gray-200 rounded-full h-2">
+                                        <div className="w-20 bg-muted rounded-full h-2">
                                             <div
                                                 className="bg-green-600 h-2 rounded-full"
                                                 style={{ width: `${stp.progressPercentage}%` }}
@@ -165,7 +165,7 @@ export function WLPListView({ wlps, loading, getStatusColor, onEdit }: any) {
     if (wlps.length === 0) {
         return (
             <Card>
-                <CardContent className="py-12 text-center text-gray-500">
+                <CardContent className="py-12 text-center text-muted-foreground">
                     No weekly lesson plans yet.
                 </CardContent>
             </Card>
@@ -193,7 +193,7 @@ export function WLPListView({ wlps, loading, getStatusColor, onEdit }: any) {
                                 <TableCell className="font-medium">Week {wlp.weekNumber}</TableCell>
                                 <TableCell>{format(new Date(wlp.sessionDate), 'MMM dd, yyyy')}</TableCell>
                                 <TableCell className="max-w-xs">{wlp.topics}</TableCell>
-                                <TableCell className="text-sm text-gray-600">
+                                <TableCell className="text-sm text-muted-foreground">
                                     {wlp.areasOfRemediation.slice(0, 2).join(', ')}
                                     {wlp.areasOfRemediation.length > 2 && ` +${wlp.areasOfRemediation.length - 2}`}
                                 </TableCell>

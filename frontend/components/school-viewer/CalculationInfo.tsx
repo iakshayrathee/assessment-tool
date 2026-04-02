@@ -20,21 +20,21 @@ export function CalculationInfo({ title, description, formula, example }: Calcul
         <Popover>
             <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-2">
-                    <Info className="h-4 w-4 text-gray-500 hover:text-indigo-600" />
+                    <Info className="h-4 w-4 text-muted-foreground hover:text-primary" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80" align="start">
                 <div className="space-y-2">
-                    <h4 className="font-semibold text-sm text-gray-900">{title}</h4>
-                    <p className="text-xs text-gray-700 leading-relaxed">{description}</p>
+                    <h4 className="font-semibold text-sm text-foreground">{title}</h4>
+                    <p className="text-xs text-foreground leading-relaxed">{description}</p>
                     {formula && (
-                        <div className="bg-gray-50 p-2 rounded border border-gray-200">
-                            <p className="text-xs font-mono text-gray-800">{formula}</p>
+                        <div className="bg-muted/40 p-2 rounded border border-border">
+                            <p className="text-xs font-mono text-foreground">{formula}</p>
                         </div>
                     )}
                     {example && (
-                        <div className="bg-blue-50 p-2 rounded border border-blue-200">
-                            <p className="text-xs text-blue-900">
+                        <div className="bg-primary/10 p-2 rounded border border-primary/20">
+                            <p className="text-xs text-foreground">
                                 <strong>Example:</strong> {example}
                             </p>
                         </div>

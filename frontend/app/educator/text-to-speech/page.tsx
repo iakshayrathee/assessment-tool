@@ -10,6 +10,7 @@ import { useDocumentParser } from '@/hooks/useDocumentParser';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import { useDocumentSearch } from '@/hooks/useDocumentSearch';
 import type { DocumentContent } from '@/types/text-to-speech';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 /**
  * Text-to-Speech Document Reader Page
@@ -132,41 +133,23 @@ export default function TextToSpeechPage() {
     }, [search.searchState.currentResultIndex]);
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white shadow-sm border-b">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between py-6">
-                        <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                                <BookOpen className="h-6 w-6 text-blue-600" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-bold text-gray-900">
-                                    Text-to-Speech Document Reader
-                                </h1>
-                                <p className="text-gray-600 mt-1">
-                                    Upload PDF or DOCX files and have them read aloud with Indian English voice
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+        <PageWrapper
+            title="Text-to-Speech Document Reader"
+            description="Upload PDF or DOCX files and have them read aloud with Indian English voice"
+            breadcrumbs={[{ label: 'Educator' }, { label: 'Text-to-Speech' }]}
+        >
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {!document ? (
                     // File Upload View
                     <div className="max-w-2xl mx-auto">
                         <div className="text-center mb-8">
-                            <div className="inline-flex p-4 bg-blue-100 rounded-full mb-4">
-                                <FileText className="h-12 w-12 text-blue-600" />
+                            <div className="inline-flex p-4 bg-primary/10 rounded-full mb-4">
+                                <FileText className="h-12 w-12 text-primary" />
                             </div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                            <h2 className="text-xl font-semibold text-foreground mb-2">
                                 Get Started
                             </h2>
-                            <p className="text-gray-600">
+                            <p className="text-muted-foreground">
                                 Upload a document to begin reading with text-to-speech
                             </p>
                         </div>
@@ -179,65 +162,65 @@ export default function TextToSpeechPage() {
                         />
 
                         {error && (
-                            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                                <p className="text-sm text-red-800">{error}</p>
+                            <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                                <p className="text-sm text-foreground">{error}</p>
                             </div>
                         )}
 
                         {/* Features List */}
                         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-white p-6 rounded-lg shadow-sm border">
+                            <div className="bg-background p-6 rounded-lg shadow-sm border">
                                 <div className="flex items-center space-x-3 mb-3">
-                                    <div className="p-2 bg-green-100 rounded-lg">
-                                        <FileText className="h-5 w-5 text-green-600" />
+                                    <div className="p-2 bg-success/10 rounded-lg">
+                                        <FileText className="h-5 w-5 text-success" />
                                     </div>
-                                    <h3 className="font-semibold text-gray-900">
+                                    <h3 className="font-semibold text-foreground">
                                         Multiple Formats
                                     </h3>
                                 </div>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-muted-foreground">
                                     Support for PDF and DOCX files with automatic text extraction and pagination
                                 </p>
                             </div>
 
-                            <div className="bg-white p-6 rounded-lg shadow-sm border">
+                            <div className="bg-background p-6 rounded-lg shadow-sm border">
                                 <div className="flex items-center space-x-3 mb-3">
-                                    <div className="p-2 bg-purple-100 rounded-lg">
-                                        <BookOpen className="h-5 w-5 text-purple-600" />
+                                    <div className="p-2 bg-info/10 rounded-lg">
+                                        <BookOpen className="h-5 w-5 text-info" />
                                     </div>
-                                    <h3 className="font-semibold text-gray-900">
+                                    <h3 className="font-semibold text-foreground">
                                         Indian English Voice
                                     </h3>
                                 </div>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-muted-foreground">
                                     Prioritizes Indian English voices for natural-sounding speech with automatic fallback
                                 </p>
                             </div>
 
-                            <div className="bg-white p-6 rounded-lg shadow-sm border">
+                            <div className="bg-background p-6 rounded-lg shadow-sm border">
                                 <div className="flex items-center space-x-3 mb-3">
-                                    <div className="p-2 bg-yellow-100 rounded-lg">
+                                    <div className="p-2 bg-warning/10 rounded-lg">
                                         <span className="text-2xl">✨</span>
                                     </div>
-                                    <h3 className="font-semibold text-gray-900">
+                                    <h3 className="font-semibold text-foreground">
                                         Visual Highlighting
                                     </h3>
                                 </div>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-muted-foreground">
                                     Follow along with synchronized text highlighting as each sentence is read
                                 </p>
                             </div>
 
-                            <div className="bg-white p-6 rounded-lg shadow-sm border">
+                            <div className="bg-background p-6 rounded-lg shadow-sm border">
                                 <div className="flex items-center space-x-3 mb-3">
-                                    <div className="p-2 bg-blue-100 rounded-lg">
+                                    <div className="p-2 bg-primary/10 rounded-lg">
                                         <span className="text-2xl">🔍</span>
                                     </div>
-                                    <h3 className="font-semibold text-gray-900">
+                                    <h3 className="font-semibold text-foreground">
                                         Search & Jump
                                     </h3>
                                 </div>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-muted-foreground">
                                     Search for words, click any sentence to jump, and start reading from anywhere
                                 </p>
                             </div>
@@ -284,32 +267,32 @@ export default function TextToSpeechPage() {
                             />
 
                             {/* File Info Card */}
-                            <div className="bg-white p-6 rounded-lg shadow-sm border">
-                                <h3 className="font-semibold text-gray-900 mb-4">
+                            <div className="bg-background p-6 rounded-lg shadow-sm border">
+                                <h3 className="font-semibold text-foreground mb-4">
                                     Document Info
                                 </h3>
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">File:</span>
-                                        <span className="font-medium text-gray-900 truncate ml-2">
+                                        <span className="text-muted-foreground">File:</span>
+                                        <span className="font-medium text-foreground truncate ml-2">
                                             {document.fileName}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Type:</span>
-                                        <span className="font-medium text-gray-900">
+                                        <span className="text-muted-foreground">Type:</span>
+                                        <span className="font-medium text-foreground">
                                             {document.type.toUpperCase()}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Pages:</span>
-                                        <span className="font-medium text-gray-900">
+                                        <span className="text-muted-foreground">Pages:</span>
+                                        <span className="font-medium text-foreground">
                                             {document.totalPages}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Current Page:</span>
-                                        <span className="font-medium text-gray-900">
+                                        <span className="text-muted-foreground">Current Page:</span>
+                                        <span className="font-medium text-foreground">
                                             {currentPage}
                                         </span>
                                     </div>
@@ -317,7 +300,7 @@ export default function TextToSpeechPage() {
 
                                 <button
                                     onClick={handleClearFile}
-                                    className="mt-4 w-full px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                                    className="mt-4 w-full px-4 py-2 text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/10 rounded-lg transition-colors"
                                 >
                                     Upload Different File
                                 </button>
@@ -325,7 +308,6 @@ export default function TextToSpeechPage() {
                         </div>
                     </div>
                 )}
-            </div>
-        </div>
+        </PageWrapper>
     );
 }

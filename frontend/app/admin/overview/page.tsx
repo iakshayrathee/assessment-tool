@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +29,7 @@ import {
   Download
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface OverviewStats {
   totalCenters: number;
@@ -160,16 +161,12 @@ export default function GlobalOverviewPage() {
   }
 
   return (
-    <div className="space-y-8 p-6">
-      {/* Header */}
-      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Global Overview</h1>
-          <p className="text-muted-foreground">
-            Comprehensive view of all centers, schools, educators, parents, and students
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
+    <PageWrapper
+      title="Global Overview"
+      description="Comprehensive view of all centers, schools, educators, parents, and students"
+      breadcrumbs={[{ label: 'Overview' }]}
+      actions={
+        <>
           <Button variant="outline" onClick={loadOverviewData}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -178,8 +175,9 @@ export default function GlobalOverviewPage() {
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* Quick Filters */}
       <motion.div
@@ -190,7 +188,7 @@ export default function GlobalOverviewPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-blue-600" />
+              <Filter className="h-5 w-5 text-primary" />
               Quick Filters
             </CardTitle>
             <CardDescription>
@@ -251,7 +249,7 @@ export default function GlobalOverviewPage() {
         <StatCard
           title="Total Centers"
           value={stats?.totalCenters || 0}
-          icon={<Building className="h-6 w-6 text-blue-600" />}
+          icon={<Building className="h-6 w-6 text-primary" />}
           trend="up"
           trendValue="+12%"
           description="Active learning centers"
@@ -261,7 +259,7 @@ export default function GlobalOverviewPage() {
         <StatCard
           title="Total Schools"
           value={stats?.totalSchools || 0}
-          icon={<School className="h-6 w-6 text-green-600" />}
+          icon={<School className="h-6 w-6 text-success" />}
           trend="up"
           trendValue="+8%"
           description="Partner schools"
@@ -271,7 +269,7 @@ export default function GlobalOverviewPage() {
         <StatCard
           title="Educators"
           value={stats?.totalEducators || 0}
-          icon={<GraduationCap className="h-6 w-6 text-purple-600" />}
+          icon={<GraduationCap className="h-6 w-6 text-info" />}
           trend="up"
           trendValue="+15%"
           description="Special & Super Special Educators"
@@ -281,7 +279,7 @@ export default function GlobalOverviewPage() {
         <StatCard
           title="Parents"
           value={stats?.totalParents || 0}
-          icon={<Users className="h-6 w-6 text-orange-600" />}
+          icon={<Users className="h-6 w-6 text-warning" />}
           trend="up"
           trendValue="+22%"
           description="Registered parent accounts"
@@ -291,7 +289,7 @@ export default function GlobalOverviewPage() {
         <StatCard
           title="Students"
           value={stats?.totalStudents || 0}
-          icon={<UserCheck className="h-6 w-6 text-indigo-600" />}
+          icon={<UserCheck className="h-6 w-6 text-primary" />}
           trend="up"
           trendValue="+18%"
           description="Active student profiles"
@@ -311,7 +309,7 @@ export default function GlobalOverviewPage() {
         <StatCard
           title="Pending Approvals"
           value={stats?.pendingApprovals || 0}
-          icon={<Clock className="h-6 w-6 text-yellow-600" />}
+          icon={<Clock className="h-6 w-6 text-warning" />}
           description="Awaiting admin review"
           color="yellow"
         />
@@ -319,7 +317,7 @@ export default function GlobalOverviewPage() {
         <StatCard
           title="Recent Activity"
           value={stats?.recentActivity || 0}
-          icon={<BarChart3 className="h-6 w-6 text-red-600" />}
+          icon={<BarChart3 className="h-6 w-6 text-destructive" />}
           description="Actions in last 24 hours"
           color="red"
         />
@@ -360,6 +358,6 @@ export default function GlobalOverviewPage() {
           </CardContent>
         </Card>
       </motion.div>
-    </div>
+    </PageWrapper>
   );
 }

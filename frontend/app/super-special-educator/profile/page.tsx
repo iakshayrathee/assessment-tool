@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { ProfessionalDatePicker } from '@/components/ui/professional-date-picker';
 
 interface SuperSpecialEducatorProfile {
@@ -130,7 +131,7 @@ export default function SuperSpecialEducatorProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-primary border-t-transparent"></div>
       </div>
     );
   }
@@ -140,10 +141,10 @@ export default function SuperSpecialEducatorProfilePage() {
       <div className="flex items-center justify-center min-h-screen">
         <Card className="w-96">
           <CardHeader>
-            <CardTitle className="text-red-600">Error</CardTitle>
+            <CardTitle className="text-destructive">Error</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-600 mb-4">Profile not found</p>
+            <p className="text-muted-foreground mb-4">Profile not found</p>
             <Button onClick={() => router.back()} className="w-full">
               Go Back
             </Button>
@@ -154,47 +155,31 @@ export default function SuperSpecialEducatorProfilePage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-            <p className="text-gray-600">Manage your professional information</p>
-          </div>
-        </div>
-        <div className="flex space-x-2">
-          {isEditing ? (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsEditing(false);
-                  fetchProfile(); // Reset changes
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={saving}>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </>
-          ) : (
-            <Button onClick={() => setIsEditing(true)}>
-              Edit Profile
+    <PageWrapper
+      title="Profile"
+      description="Manage your professional information"
+      breadcrumbs={[{ label: 'Super Special Educator', href: '/super-special-educator' }, { label: 'Profile' }]}
+      actions={
+        isEditing ? (
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => { setIsEditing(false); fetchProfile(); }}
+            >
+              Cancel
             </Button>
-          )}
-        </div>
-      </div>
+            <Button onClick={handleSave} disabled={saving}>
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        ) : (
+          <Button onClick={() => setIsEditing(true)}>
+            Edit Profile
+          </Button>
+        )
+      }
+    >
 
       <Tabs defaultValue="personal" className="space-y-4">
         <TabsList>
@@ -292,7 +277,7 @@ export default function SuperSpecialEducatorProfilePage() {
                         {isEditing && (
                           <button
                             onClick={() => removeFromArray('secondaryLanguages', lang)}
-                            className="ml-2 text-red-500"
+                            className="ml-2 text-destructive"
                           >
                             ×
                           </button>
@@ -414,7 +399,7 @@ export default function SuperSpecialEducatorProfilePage() {
                       {isEditing && (
                         <button
                           onClick={() => removeFromArray('specializationAreas', area)}
-                          className="ml-2 text-red-500"
+                          className="ml-2 text-destructive"
                         >
                           ×
                         </button>
@@ -482,7 +467,7 @@ export default function SuperSpecialEducatorProfilePage() {
                       {isEditing && (
                         <button
                           onClick={() => removeFromArray('experienceTypes', type)}
-                          className="ml-2 text-red-500"
+                          className="ml-2 text-destructive"
                         >
                           ×
                         </button>
@@ -512,7 +497,7 @@ export default function SuperSpecialEducatorProfilePage() {
                       {isEditing && (
                         <button
                           onClick={() => removeFromArray('currentWorkLocations', location)}
-                          className="ml-2 text-red-500"
+                          className="ml-2 text-destructive"
                         >
                           ×
                         </button>
@@ -542,7 +527,7 @@ export default function SuperSpecialEducatorProfilePage() {
                       {isEditing && (
                         <button
                           onClick={() => removeFromArray('ldTypesHandled', type)}
-                          className="ml-2 text-red-500"
+                          className="ml-2 text-destructive"
                         >
                           ×
                         </button>
@@ -572,7 +557,7 @@ export default function SuperSpecialEducatorProfilePage() {
                       {isEditing && (
                         <button
                           onClick={() => removeFromArray('gradeLevelsServed', grade)}
-                          className="ml-2 text-red-500"
+                          className="ml-2 text-destructive"
                         >
                           ×
                         </button>
@@ -613,7 +598,7 @@ export default function SuperSpecialEducatorProfilePage() {
                       {isEditing && (
                         <button
                           onClick={() => removeFromArray('assistiveTechProficiency', tech)}
-                          className="ml-2 text-red-500"
+                          className="ml-2 text-destructive"
                         >
                           ×
                         </button>
@@ -655,7 +640,7 @@ export default function SuperSpecialEducatorProfilePage() {
                       {isEditing && (
                         <button
                           onClick={() => removeFromArray('areasOfInterest', interest)}
-                          className="ml-2 text-red-500"
+                          className="ml-2 text-destructive"
                         >
                           ×
                         </button>
@@ -717,6 +702,6 @@ export default function SuperSpecialEducatorProfilePage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageWrapper>
   );
 }

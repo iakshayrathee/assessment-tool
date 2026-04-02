@@ -1,5 +1,5 @@
-import * as React from "react";
-import { motion } from "framer-motion";
+﻿import * as React from "react";
+import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +48,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className={cn(
-          "bg-white border-b border-gray-200 sticky top-0 z-30 ",
+          "bg-background border-b border-border sticky top-0 z-30 ",
           className
         )}
         ref={ref}
@@ -82,7 +82,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
                 className="flex-1 min-w-0"
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-2xl font-bold text-gray-900 truncate">
+                  <h1 className="text-2xl font-bold text-foreground truncate">
                     {title}
                   </h1>
                   {badge && (
@@ -92,7 +92,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
                   )}
                 </div>
                 {description && (
-                  <p className="text-gray-600 text-sm sm:text-base">
+                  <p className="text-muted-foreground text-sm sm:text-base">
                     {description}
                   </p>
                 )}

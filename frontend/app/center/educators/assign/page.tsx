@@ -4,13 +4,13 @@ import React from 'react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PageHeader } from '@/components/ui/page-header';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
@@ -298,21 +298,17 @@ export default function AssignEducatorPage() {
   }
 
   return (
-    <div className="container mx-auto">
-      <PageHeader
-        title="Assign Educators to Students"
-        description="Select a Special Educator and assign students to them"
-        actions={[
-          {
-            label: 'Back to Educators',
-            onClick: () => router.back(),
-            icon: ArrowLeft,
-            variant: 'outline'
-          }
-        ]}
-      />
-
-      <div className="p-6 space-y-6">
+    <PageWrapper
+      title="Assign Educators to Students"
+      description="Select a Special Educator and assign students to them"
+      breadcrumbs={[{ label: 'Center', href: '/center' }, { label: 'Educators', href: '/center/educators' }, { label: 'Assign' }]}
+      actions={
+        <Button variant="outline" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Educators
+        </Button>
+      }
+    >
         {/* Assignment Process */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -320,28 +316,28 @@ export default function AssignEducatorPage() {
           transition={{ delay: 0.1 }}
         >
           <Card>
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900 dark:to-indigo-900">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 dark:from-blue-900 dark:to-indigo-900">
               <CardTitle>Assignment Process</CardTitle>
               <CardDescription>Follow these steps to assign students to educators</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row gap-4 items-start">
                 <div className="flex-1 flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold">1</div>
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">1</div>
                   <div>
                     <h3 className="font-semibold mb-1">Select an Educator</h3>
                     <p className="text-sm text-muted-foreground">Choose a Special Educator to assign students to</p>
                   </div>
                 </div>
                 <div className="flex-1 flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
-                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-semibold">2</div>
+                  <div className="w-8 h-8 rounded-full bg-info/10 flex items-center justify-center text-purple-700 font-semibold">2</div>
                   <div>
                     <h3 className="font-semibold mb-1">Select Students</h3>
                     <p className="text-sm text-muted-foreground">Choose one or more students to assign to the educator</p>
                   </div>
                 </div>
                 <div className="flex-1 flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-semibold">3</div>
+                  <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center text-success font-semibold">3</div>
                   <div>
                     <h3 className="font-semibold mb-1">Confirm Assignment</h3>
                     <p className="text-sm text-muted-foreground">Review and confirm the student-educator assignments</p>
@@ -363,7 +359,7 @@ export default function AssignEducatorPage() {
               <TabsTrigger value="educators" className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4" />
                 <span>Step 1: Select Educator</span>
-                {selectedEducator && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                {selectedEducator && <CheckCircle2 className="h-4 w-4 text-success" />}
               </TabsTrigger>
               <TabsTrigger value="students" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -376,7 +372,7 @@ export default function AssignEducatorPage() {
               <Card>
                 <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900 dark:to-blue-900">
                   <CardTitle className="flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5 text-purple-600" />
+                    <GraduationCap className="h-5 w-5 text-info" />
                     Special Educators ({filteredEducators.length})
                   </CardTitle>
                   <CardDescription>
@@ -415,7 +411,7 @@ export default function AssignEducatorPage() {
                       >
                         <div className="flex items-start gap-4">
                           <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900 dark:to-blue-900 rounded-full flex items-center justify-center shadow-md">
-                            <span className="text-purple-600 dark:text-purple-400 font-semibold text-lg">
+                            <span className="text-info dark:text-purple-400 font-semibold text-lg">
                               {educator.fullName.split(' ').map(n => n[0]).join('')}
                             </span>
                           </div>
@@ -424,7 +420,7 @@ export default function AssignEducatorPage() {
                             <div className="flex items-center justify-between mb-2">
                               <h3 className="font-semibold text-lg">{educator.fullName}</h3>
                               {selectedEducator === educator.id && (
-                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                <CheckCircle2 className="h-5 w-5 text-success" />
                               )}
                             </div>
                             
@@ -452,7 +448,7 @@ export default function AssignEducatorPage() {
                             <div className="flex items-center justify-between">
                               <Badge 
                                 variant={educator.assignedStudentCount >= 12 ? "destructive" : "outline"}
-                                className={educator.assignedStudentCount >= 12 ? "" : "text-blue-600"}
+                                className={educator.assignedStudentCount >= 12 ? "" : "text-primary"}
                               >
                                 <Users className="h-3 w-3 mr-1" />
                                 {educator.assignedStudentCount} students assigned
@@ -495,7 +491,7 @@ export default function AssignEducatorPage() {
               <Card>
                 <CardHeader className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900 dark:to-green-900">
                   <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-blue-600" />
+                    <Users className="h-5 w-5 text-primary" />
                     Students ({filteredStudents.length})
                   </CardTitle>
                   <CardDescription>
@@ -534,7 +530,7 @@ export default function AssignEducatorPage() {
                         <h3 className="font-semibold mb-2">Selected Educator</h3>
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900 dark:to-blue-900 rounded-full flex items-center justify-center">
-                            <span className="text-purple-600 dark:text-purple-400 font-semibold">
+                            <span className="text-info dark:text-purple-400 font-semibold">
                               {educators.find(e => e.id === selectedEducator)?.fullName.split(' ').map(n => n[0]).join('')}
                             </span>
                           </div>
@@ -561,12 +557,12 @@ export default function AssignEducatorPage() {
                       </div>
                       
                       {/* Assignment Info */}
-                      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                      <div className="mb-6 p-4 bg-primary/10 dark:bg-primary/20/20 rounded-lg border border-blue-100 dark:border-blue-800">
                         <div className="flex items-start gap-3">
-                          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                          <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
                           <div>
-                            <h4 className="font-medium text-blue-800 dark:text-blue-300">Assignment Information</h4>
-                            <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
+                            <h4 className="font-medium text-primary dark:text-primary/60">Assignment Information</h4>
+                            <p className="text-sm text-primary dark:text-primary/80 mt-1">
                               Students already assigned to other educators cannot be selected. You can only select students who are unassigned or already assigned to this educator.
                             </p>
                           </div>
@@ -611,7 +607,7 @@ export default function AssignEducatorPage() {
                                   </div>
                                   
                                   <div className="flex items-center gap-2">
-                                    <School className="h-4 w-4 text-blue-500" />
+                                    <School className="h-4 w-4 text-primary" />
                                     <span className="text-sm">{student.schoolName}</span>
                                   </div>
                                 </div>
@@ -631,17 +627,17 @@ export default function AssignEducatorPage() {
                                 
                                 <div className="mt-2 text-sm">
                                   {student.currentEducatorId === selectedEducator ? (
-                                    <Badge variant="outline" className="text-green-600 border-green-600 bg-green-50">
+                                    <Badge variant="outline" className="text-success border-success bg-success/10">
                                       <CheckCircle2 className="h-3 w-3 mr-1" />
                                       Already assigned to this educator
                                     </Badge>
                                   ) : student.hasAssignment ? (
-                                    <Badge variant="outline" className="text-amber-600 border-amber-600 bg-amber-50">
+                                    <Badge variant="outline" className="text-warning border-amber-600 bg-warning/10">
                                       <AlertCircle className="h-3 w-3 mr-1" />
                                       Currently assigned to {student.currentEducatorName}
                                     </Badge>
                                   ) : (
-                                    <Badge variant="outline" className="text-blue-600 border-blue-600 bg-blue-50">
+                                    <Badge variant="outline" className="text-primary border-primary bg-primary/10">
                                       <Users className="h-3 w-3 mr-1" />
                                       Available for assignment
                                     </Badge>
@@ -720,7 +716,6 @@ export default function AssignEducatorPage() {
             </Button>
           </div>
         </motion.div>
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

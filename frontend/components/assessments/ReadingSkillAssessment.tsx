@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronRight, Download, Eye } from 'lucide-react';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { GradeLevelMappingComponent, type GradeLevelMapping } from './GradeLevelMapping';
 import { BatteryTestSection } from './BatteryTestSection';
@@ -341,11 +341,11 @@ export function ReadingSkillAssessment({
       <Card>
         <CardHeader>
           <CardTitle>Reading Level Assessment</CardTitle>
-          <p className="text-sm text-gray-600">Assess the student's reading performance at different levels</p>
+          <p className="text-sm text-muted-foreground">Assess the student's reading performance at different levels</p>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Independent Level */}
-          <div className="p-4 border rounded-lg bg-blue-50">
+          <div className="p-4 border rounded-lg bg-primary/10">
             <Label className="text-base font-semibold mb-3 block">1. Independent Level</Label>
             <div className="flex gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -372,7 +372,7 @@ export function ReadingSkillAssessment({
           </div>
 
           {/* Instructional Level */}
-          <div className="p-4 border rounded-lg bg-yellow-50">
+          <div className="p-4 border rounded-lg bg-warning/10">
             <Label className="text-base font-semibold mb-3 block">2. Instructional Level</Label>
             <div className="flex gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -399,7 +399,7 @@ export function ReadingSkillAssessment({
           </div>
 
           {/* Frustration Level */}
-          <div className="p-4 border rounded-lg bg-red-50">
+          <div className="p-4 border rounded-lg bg-destructive/10">
             <Label className="text-base font-semibold mb-3 block">3. Frustration Level</Label>
             <div className="flex gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -431,7 +431,7 @@ export function ReadingSkillAssessment({
       <Card>
         <CardHeader>
           <CardTitle>Reading Assessment Questions</CardTitle>
-          <p className="text-sm text-gray-600">Answer the following questions about the student's reading abilities</p>
+          <p className="text-sm text-muted-foreground">Answer the following questions about the student's reading abilities</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {READING_QUESTIONS.map((q) => (
@@ -495,7 +495,7 @@ export function ReadingSkillAssessment({
 
           {/* Conditional: If YES */}
           {isAtGradeLevel === true && (
-            <div className="space-y-4 p-4 bg-green-50 rounded-lg">
+            <div className="space-y-4 p-4 bg-success/10 rounded-lg">
               <div>
                 <Label htmlFor="functionalGradeLevel">Grade Level *</Label>
                 <Input
@@ -606,7 +606,7 @@ export function ReadingSkillAssessment({
 
           {/* Conditional: If YES - Comprehension Levels */}
           {atGradeLevelComprehension === true && (
-            <div className="p-4 bg-green-50 rounded-lg">
+            <div className="p-4 bg-success/10 rounded-lg">
               <Label className="text-sm font-semibold mb-2 block">
                 Comprehension Levels (Select all that apply)
               </Label>
@@ -624,7 +624,7 @@ export function ReadingSkillAssessment({
                         }
                       }}
                       disabled={isViewMode}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 rounded border-border text-primary focus:ring-blue-500"
                     />
                     <span className="text-sm">{level}</span>
                   </label>
@@ -639,7 +639,7 @@ export function ReadingSkillAssessment({
               <Label className="text-sm font-semibold">
                 At the Child's Current Reading Level, Comprehension is:
               </Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-yellow-50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-warning/10 rounded-lg">
                 {['Literal', 'Inferential', 'Application', 'Critical Evaluation'].map((level) => (
                   <label key={level} className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -653,7 +653,7 @@ export function ReadingSkillAssessment({
                         }
                       }}
                       disabled={isViewMode}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 rounded border-border text-primary focus:ring-blue-500"
                     />
                     <span className="text-sm">{level}</span>
                   </label>
@@ -680,7 +680,7 @@ export function ReadingSkillAssessment({
       <Card>
         <CardHeader>
           <CardTitle>Detailed Reading Symptoms</CardTitle>
-          <p className="text-sm text-gray-600">Select all symptoms that apply to the student</p>
+          <p className="text-sm text-muted-foreground">Select all symptoms that apply to the student</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {Object.entries(READING_SYMPTOMS).map(([category, symptoms]) => (
@@ -689,10 +689,10 @@ export function ReadingSkillAssessment({
               open={openSections[category]}
               onOpenChange={() => toggleSection(category)}
             >
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-muted/40 rounded-lg hover:bg-muted transition-colors">
                 <span className="font-medium text-left">{category}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     {symptoms.filter(s => selectedSymptoms[s.key]).length} / {symptoms.length}
                   </span>
                   {openSections[category] ? (
@@ -712,7 +712,7 @@ export function ReadingSkillAssessment({
                         checked={selectedSymptoms[symptom.key] || false}
                         onChange={() => toggleSymptom(symptom.key)}
                         disabled={isViewMode}
-                        className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-blue-500"
                       />
                       <Label
                         htmlFor={symptom.key}
@@ -770,20 +770,20 @@ export function ReadingSkillAssessment({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Assessment Preview</DialogTitle>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Your reading assessment has been saved successfully. You can now download it as PDF.
             </p>
           </DialogHeader>
 
-          <div ref={reportRef} className="p-6 bg-white">
+          <div ref={reportRef} className="p-6 bg-background">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-blue-800">Reading Skill Assessment</h2>
-              <p className="text-gray-600">Assessment Date: {new Date().toLocaleDateString()}</p>
+              <h2 className="text-2xl font-bold text-primary">Reading Skill Assessment</h2>
+              <p className="text-muted-foreground">Assessment Date: {new Date().toLocaleDateString()}</p>
 
               {/* Student and Educator Details */}
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div className="bg-blue-50 p-3 rounded">
-                  <h4 className="font-semibold text-blue-800">Student Information</h4>
+                <div className="bg-primary/10 p-3 rounded">
+                  <h4 className="font-semibold text-primary">Student Information</h4>
                   {studentDetails ? (
                     <>
                       <p><span className="font-medium">Name:</span> {studentDetails.fullName || 'N/A'}</p>
@@ -791,12 +791,12 @@ export function ReadingSkillAssessment({
                       {studentDetails.age && <p><span className="font-medium">Age:</span> {studentDetails.age}</p>}
                     </>
                   ) : (
-                    <p className="text-gray-500">Loading student information...</p>
+                    <p className="text-muted-foreground">Loading student information...</p>
                   )}
                 </div>
 
-                <div className="bg-green-50 p-3 rounded">
-                  <h4 className="font-semibold text-green-800">Special Educator Information</h4>
+                <div className="bg-success/10 p-3 rounded">
+                  <h4 className="font-semibold text-foreground">Special Educator Information</h4>
                   {educatorDetails ? (
                     <>
                       <p><span className="font-medium">Name:</span> {educatorDetails.fullName || 'N/A'}</p>
@@ -804,7 +804,7 @@ export function ReadingSkillAssessment({
                       <p><span className="font-medium">Date & Time:</span> {new Date().toLocaleString()}</p>
                     </>
                   ) : (
-                    <p className="text-gray-500">Loading educator information...</p>
+                    <p className="text-muted-foreground">Loading educator information...</p>
                   )}
                 </div>
               </div>
@@ -814,15 +814,15 @@ export function ReadingSkillAssessment({
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Assessment Summary</h3>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 p-3 rounded">
+                <div className="bg-primary/10 p-3 rounded">
                   <p className="font-medium">Total Symptoms Selected:</p>
-                  <p className="text-2xl font-bold text-blue-700">
+                  <p className="text-2xl font-bold text-primary">
                     {Object.values(selectedSymptoms).filter(val => val).length}
                   </p>
                 </div>
-                <div className="bg-green-50 p-3 rounded">
+                <div className="bg-success/10 p-3 rounded">
                   <p className="font-medium">Questions Answered:</p>
-                  <p className="text-2xl font-bold text-green-700">
+                  <p className="text-2xl font-bold text-success">
                     {Object.values(questionAnswers).filter(val => val && val.trim()).length}
                   </p>
                 </div>
@@ -833,7 +833,7 @@ export function ReadingSkillAssessment({
             {Object.values(selectedSymptoms).some(val => val) && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Selected Symptoms</h3>
-                <div className="bg-gray-50 p-4 rounded">
+                <div className="bg-muted/40 p-4 rounded">
                   <ul className="list-disc list-inside space-y-1">
                     {Object.entries(READING_SYMPTOMS).flatMap(([category, symptoms]) =>
                       symptoms
@@ -853,12 +853,12 @@ export function ReadingSkillAssessment({
             {Object.values(questionAnswers).some(val => val && val.trim()) && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Question Responses</h3>
-                <div className="bg-gray-50 p-4 rounded">
+                <div className="bg-muted/40 p-4 rounded">
                   {READING_QUESTIONS.map(q =>
                     questionAnswers[q.id] && (
                       <div key={q.id} className="mb-2">
                         <p className="font-medium">{q.question}</p>
-                        <p className="text-blue-700">{questionAnswers[q.id]}</p>
+                        <p className="text-primary">{questionAnswers[q.id]}</p>
                       </div>
                     )
                   )}
@@ -872,44 +872,44 @@ export function ReadingSkillAssessment({
               frustrationLevelKnownText || frustrationLevelUnknownText) && (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">Reading Level Assessment</h3>
-                  <div className="bg-gray-50 p-4 rounded space-y-3">
+                  <div className="bg-muted/40 p-4 rounded space-y-3">
                     {(independentLevelKnownText || independentLevelUnknownText) && (
-                      <div className="p-3 bg-blue-50 rounded">
+                      <div className="p-3 bg-primary/10 rounded">
                         <p className="font-medium mb-2">Independent Level</p>
                         <div className="flex gap-4 text-sm">
                           {independentLevelKnownText && (
-                            <span className="text-green-700">✓ Known Text</span>
+                            <span className="text-success">✓ Known Text</span>
                           )}
                           {independentLevelUnknownText && (
-                            <span className="text-green-700">✓ Unknown Text</span>
+                            <span className="text-success">✓ Unknown Text</span>
                           )}
                         </div>
                       </div>
                     )}
 
                     {(instructionalLevelKnownText || instructionalLevelUnknownText) && (
-                      <div className="p-3 bg-yellow-50 rounded">
+                      <div className="p-3 bg-warning/10 rounded">
                         <p className="font-medium mb-2">Instructional Level</p>
                         <div className="flex gap-4 text-sm">
                           {instructionalLevelKnownText && (
-                            <span className="text-green-700">✓ Known Text</span>
+                            <span className="text-success">✓ Known Text</span>
                           )}
                           {instructionalLevelUnknownText && (
-                            <span className="text-green-700">✓ Unknown Text</span>
+                            <span className="text-success">✓ Unknown Text</span>
                           )}
                         </div>
                       </div>
                     )}
 
                     {(frustrationLevelKnownText || frustrationLevelUnknownText) && (
-                      <div className="p-3 bg-red-50 rounded">
+                      <div className="p-3 bg-destructive/10 rounded">
                         <p className="font-medium mb-2">Frustration Level</p>
                         <div className="flex gap-4 text-sm">
                           {frustrationLevelKnownText && (
-                            <span className="text-green-700">✓ Known Text</span>
+                            <span className="text-success">✓ Known Text</span>
                           )}
                           {frustrationLevelUnknownText && (
-                            <span className="text-green-700">✓ Unknown Text</span>
+                            <span className="text-success">✓ Unknown Text</span>
                           )}
                         </div>
                       </div>
@@ -922,10 +922,10 @@ export function ReadingSkillAssessment({
             {isAtGradeLevel !== null && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Grade Level Identification</h3>
-                <div className="bg-gray-50 p-4 rounded space-y-3">
+                <div className="bg-muted/40 p-4 rounded space-y-3">
                   <div>
                     <p className="font-medium">Is Child at Grade Level?</p>
-                    <p className={isAtGradeLevel ? "text-green-700" : "text-orange-700"}>
+                    <p className={isAtGradeLevel ? "text-success" : "text-orange-700"}>
                       {isAtGradeLevel ? "Yes" : "No"}
                     </p>
                   </div>
@@ -950,7 +950,7 @@ export function ReadingSkillAssessment({
                       <p className="font-medium mb-2">Grade Level Mappings:</p>
                       <div className="space-y-2">
                         {gradeLevelMappings.map((mapping, idx) => (
-                          <div key={idx} className="bg-white p-3 rounded border">
+                          <div key={idx} className="bg-background p-3 rounded border">
                             <p className="font-medium text-sm">Grade: {mapping.gradeLevel}</p>
                             <div className="grid grid-cols-3 gap-2 mt-1 text-xs">
                               <div>
@@ -983,10 +983,10 @@ export function ReadingSkillAssessment({
             {batteryTestConducted && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Knowledcare Battery Test Results</h3>
-                <div className="bg-gray-50 p-4 rounded space-y-3">
+                <div className="bg-muted/40 p-4 rounded space-y-3">
                   <div>
                     <p className="font-medium">Test Conducted:</p>
-                    <p className="text-green-700">Yes</p>
+                    <p className="text-success">Yes</p>
                   </div>
                   {batteryTestSummary && (
                     <div>
@@ -997,7 +997,7 @@ export function ReadingSkillAssessment({
                   {batteryTestReportUrl && (
                     <div>
                       <p className="font-medium">Report URL:</p>
-                      <p className="text-blue-600 text-sm break-all">{batteryTestReportUrl}</p>
+                      <p className="text-primary text-sm break-all">{batteryTestReportUrl}</p>
                     </div>
                   )}
                 </div>
@@ -1008,10 +1008,10 @@ export function ReadingSkillAssessment({
             {atGradeLevelComprehension !== null && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Reading Comprehension Level</h3>
-                <div className="bg-gray-50 p-4 rounded space-y-3">
+                <div className="bg-muted/40 p-4 rounded space-y-3">
                   <div>
                     <p className="font-medium">At Grade Level Reading Comprehension?</p>
-                    <p className={atGradeLevelComprehension ? "text-green-700" : "text-orange-700"}>
+                    <p className={atGradeLevelComprehension ? "text-success" : "text-orange-700"}>
                       {atGradeLevelComprehension ? "Yes" : "No"}
                     </p>
                   </div>
@@ -1021,7 +1021,7 @@ export function ReadingSkillAssessment({
                       <p className="font-medium mb-2">Comprehension Levels:</p>
                       <div className="flex flex-wrap gap-2">
                         {comprehensionLevels.map((level) => (
-                          <span key={level} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                          <span key={level} className="bg-success/10 text-foreground px-3 py-1 rounded-full text-sm">
                             {level}
                           </span>
                         ))}
@@ -1034,7 +1034,7 @@ export function ReadingSkillAssessment({
                       <p className="font-medium mb-2">At Current Reading Level, Comprehension is:</p>
                       <div className="flex flex-wrap gap-2">
                         {currentLevelComprehension.map((level) => (
-                          <span key={level} className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
+                          <span key={level} className="bg-warning/10 text-foreground px-3 py-1 rounded-full text-sm">
                             {level}
                           </span>
                         ))}
@@ -1056,7 +1056,7 @@ export function ReadingSkillAssessment({
             {additionalNotes.trim() && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Additional Notes</h3>
-                <div className="bg-gray-50 p-4 rounded">
+                <div className="bg-muted/40 p-4 rounded">
                   <p className="whitespace-pre-wrap">{additionalNotes}</p>
                 </div>
               </div>

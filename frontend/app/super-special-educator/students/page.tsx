@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { GradeDisplay } from '@/components/ui/GradeDisplay';
 
 interface Student {
@@ -132,25 +133,25 @@ export default function StudentsPage() {
   const getProgressColor = (status: string) => {
     switch (status) {
       case 'EXCELLENT':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-foreground';
       case 'GOOD':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'SATISFACTORY':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning/10 text-foreground';
       case 'NEEDS_IMPROVEMENT':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-warning/10 text-foreground';
       case 'CRITICAL':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
   const getAttendanceColor = (percentage: number) => {
-    if (percentage >= 90) return 'text-green-600';
-    if (percentage >= 75) return 'text-blue-600';
-    if (percentage >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (percentage >= 90) return 'text-success';
+    if (percentage >= 75) return 'text-primary';
+    if (percentage >= 60) return 'text-warning';
+    return 'text-destructive';
   };
 
   const formatDate = (dateString: string) => {
@@ -227,35 +228,22 @@ export default function StudentsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-primary border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Students Under Supervision</h1>
-            <p className="text-gray-600">Monitor student progress and outcomes</p>
-          </div>
-        </div>
-      </div>
+    <PageWrapper
+      title="Students Under Supervision"
+      description="Monitor student progress and outcomes"
+      breadcrumbs={[{ label: 'Super Special Educator', href: '/super-special-educator' }, { label: 'Students' }]}
+    >
 
       {/* Filters and Search */}
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search students..."
             value={searchTerm}
@@ -266,7 +254,7 @@ export default function StudentsPage() {
 
         <div className="flex gap-3 items-center flex-wrap">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
+            <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={progressFilter} onValueChange={setProgressFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -314,10 +302,10 @@ export default function StudentsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Students</p>
+                <p className="text-sm text-muted-foreground">Total Students</p>
                 <p className="text-2xl font-bold">{students.length}</p>
               </div>
-              <Users className="h-8 w-8 text-blue-600" />
+              <Users className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -325,12 +313,12 @@ export default function StudentsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Excellent Progress</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-sm text-muted-foreground">Excellent Progress</p>
+                <p className="text-2xl font-bold text-success">
                   {students.filter(s => s.progressStatus === 'EXCELLENT').length}
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <TrendingUp className="h-8 w-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -338,12 +326,12 @@ export default function StudentsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Need Attention</p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-sm text-muted-foreground">Need Attention</p>
+                <p className="text-2xl font-bold text-warning">
                   {students.filter(s => s.progressStatus === 'NEEDS_IMPROVEMENT' || s.progressStatus === 'CRITICAL').length}
                 </p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-orange-600" />
+              <AlertTriangle className="h-8 w-8 text-warning" />
             </div>
           </CardContent>
         </Card>
@@ -351,12 +339,12 @@ export default function StudentsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Flagged Cases</p>
-                <p className="text-2xl font-bold text-red-600">
+                <p className="text-sm text-muted-foreground">Flagged Cases</p>
+                <p className="text-2xl font-bold text-destructive">
                   {students.filter(s => s.hasActiveFlags).length}
                 </p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+              <AlertTriangle className="h-8 w-8 text-destructive" />
             </div>
           </CardContent>
         </Card>
@@ -364,12 +352,12 @@ export default function StudentsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Assessments Due</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-sm text-muted-foreground">Assessments Due</p>
+                <p className="text-2xl font-bold text-info">
                   {students.filter(s => isAssessmentOverdue(s.nextAssessmentDue)).length}
                 </p>
               </div>
-              <Calendar className="h-8 w-8 text-purple-600" />
+              <Calendar className="h-8 w-8 text-info" />
             </div>
           </CardContent>
         </Card>
@@ -379,14 +367,14 @@ export default function StudentsPage() {
       {filteredStudents.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Users className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               {searchTerm || progressFilter !== 'all' || centerFilter !== 'all' || gradeFilter !== 'all'
                 ? 'No students found'
                 : 'No students under supervision'
               }
             </h3>
-            <p className="text-gray-600 text-center max-w-md">
+            <p className="text-muted-foreground text-center max-w-md">
               {searchTerm || progressFilter !== 'all' || centerFilter !== 'all' || gradeFilter !== 'all'
                 ? 'Try adjusting your search terms or filters to find the students you\'re looking for.'
                 : 'You don\'t have any students under supervision yet.'
@@ -413,50 +401,50 @@ export default function StudentsPage() {
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-muted/40 border-b">
                   <tr>
-                    <th className="text-left p-4 font-medium text-gray-900">Student</th>
-                    <th className="text-left p-4 font-medium text-gray-900">Grade & Age</th>
-                    <th className="text-left p-4 font-medium text-gray-900">Center & Educator</th>
-                    <th className="text-left p-4 font-medium text-gray-900">Progress Status</th>
-                    <th className="text-left p-4 font-medium text-gray-900">Attendance</th>
-                    <th className="text-left p-4 font-medium text-gray-900">IEP Progress</th>
-                    <th className="text-left p-4 font-medium text-gray-900">Learning Disabilities</th>
-                    <th className="text-left p-4 font-medium text-gray-900">Next Assessment</th>
-                    <th className="text-right p-4 font-medium text-gray-900">Actions</th>
+                    <th className="text-left p-4 font-medium text-foreground">Student</th>
+                    <th className="text-left p-4 font-medium text-foreground">Grade & Age</th>
+                    <th className="text-left p-4 font-medium text-foreground">Center & Educator</th>
+                    <th className="text-left p-4 font-medium text-foreground">Progress Status</th>
+                    <th className="text-left p-4 font-medium text-foreground">Attendance</th>
+                    <th className="text-left p-4 font-medium text-foreground">IEP Progress</th>
+                    <th className="text-left p-4 font-medium text-foreground">Learning Disabilities</th>
+                    <th className="text-left p-4 font-medium text-foreground">Next Assessment</th>
+                    <th className="text-right p-4 font-medium text-foreground">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredStudents.map((student) => (
-                    <tr key={student.id} className="hover:bg-gray-50">
+                    <tr key={student.id} className="hover:bg-muted/40">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <div className="flex-shrink-0">
-                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                              <Users className="h-5 w-5 text-blue-600" />
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                              <Users className="h-5 w-5 text-primary" />
                             </div>
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900 flex items-center">
+                            <div className="font-medium text-foreground flex items-center">
                               {student.fullName}
                               {student.hasActiveFlags && (
-                                <AlertTriangle className="h-4 w-4 ml-2 text-red-500" />
+                                <AlertTriangle className="h-4 w-4 ml-2 text-destructive" />
                               )}
                             </div>
-                            <div className="text-sm text-gray-500">ID: {student.id}</div>
+                            <div className="text-sm text-muted-foreground">ID: {student.id}</div>
                           </div>
                         </div>
                       </td>
                       <td className="p-4">
                         <div className="text-sm">
-                          <div className="font-medium text-gray-900"><GradeDisplay grade={student.grade} /></div>
-                          <div className="text-gray-500">{student.age} years old</div>
+                          <div className="font-medium text-foreground"><GradeDisplay grade={student.grade} /></div>
+                          <div className="text-muted-foreground">{student.age} years old</div>
                         </div>
                       </td>
                       <td className="p-4">
                         <div className="text-sm">
-                          <div className="font-medium text-gray-900">{student.centerName}</div>
-                          <div className="text-gray-500">{student.educatorName}</div>
+                          <div className="font-medium text-foreground">{student.centerName}</div>
+                          <div className="text-muted-foreground">{student.educatorName}</div>
                         </div>
                       </td>
                       <td className="p-4">
@@ -471,10 +459,10 @@ export default function StudentsPage() {
                       </td>
                       <td className="p-4">
                         <div className="text-sm">
-                          <div className="font-medium text-blue-600">
+                          <div className="font-medium text-primary">
                             {calculateIepProgress(student.iepGoalsAchieved, student.totalIepGoals)}%
                           </div>
-                          <div className="text-gray-500">
+                          <div className="text-muted-foreground">
                             {student.iepGoalsAchieved}/{student.totalIepGoals} goals
                           </div>
                         </div>
@@ -497,17 +485,17 @@ export default function StudentsPage() {
                         {student.nextAssessmentDue ? (
                           <div className="text-sm">
                             <div className={`font-medium ${isAssessmentOverdue(student.nextAssessmentDue)
-                              ? 'text-red-600'
-                              : 'text-gray-900'
+                              ? 'text-destructive'
+                              : 'text-foreground'
                               }`}>
                               {formatDate(student.nextAssessmentDue)}
                             </div>
                             {isAssessmentOverdue(student.nextAssessmentDue) && (
-                              <div className="text-red-500 text-xs">Overdue</div>
+                              <div className="text-destructive text-xs">Overdue</div>
                             )}
                           </div>
                         ) : (
-                          <span className="text-gray-400 text-sm">Not scheduled</span>
+                          <span className="text-muted-foreground text-sm">Not scheduled</span>
                         )}
                       </td>
                       <td className="p-4">
@@ -626,7 +614,7 @@ export default function StudentsPage() {
                         </Badge>
                       </div>
                       {selectedStudent.hasActiveFlags && (
-                        <div className="flex items-center gap-2 text-red-600">
+                        <div className="flex items-center gap-2 text-destructive">
                           <AlertTriangle className="h-4 w-4" />
                           <span className="font-medium">Has Active Flags</span>
                         </div>
@@ -647,7 +635,7 @@ export default function StudentsPage() {
                           <div className="text-sm text-muted-foreground">Attendance</div>
                         </div>
                         <div className="text-center p-3 border rounded-lg">
-                          <div className="text-2xl font-bold text-blue-600">
+                          <div className="text-2xl font-bold text-primary">
                             {calculateIepProgress(selectedStudent.iepGoalsAchieved, selectedStudent.totalIepGoals)}%
                           </div>
                           <div className="text-sm text-muted-foreground">IEP Progress</div>
@@ -677,8 +665,8 @@ export default function StudentsPage() {
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">Next Assessment:</span>
                           <span className={`font-medium text-sm ${isAssessmentOverdue(selectedStudent.nextAssessmentDue)
-                            ? 'text-red-600'
-                            : 'text-blue-600'
+                            ? 'text-destructive'
+                            : 'text-primary'
                             }`}>
                             {formatDate(selectedStudent.nextAssessmentDue)}
                             {isAssessmentOverdue(selectedStudent.nextAssessmentDue) && ' (Overdue)'}
@@ -706,18 +694,18 @@ export default function StudentsPage() {
                       <div className="space-y-4">
                         <div className="grid grid-cols-3 gap-4 text-center">
                           <div className="p-3 border rounded-lg">
-                            <BookOpen className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-                            <div className="text-lg font-bold text-blue-600">B+</div>
+                            <BookOpen className="h-6 w-6 text-primary mx-auto mb-2" />
+                            <div className="text-lg font-bold text-primary">B+</div>
                             <div className="text-xs text-muted-foreground">Reading</div>
                           </div>
                           <div className="p-3 border rounded-lg">
-                            <Brain className="h-6 w-6 text-green-500 mx-auto mb-2" />
-                            <div className="text-lg font-bold text-green-600">A-</div>
+                            <Brain className="h-6 w-6 text-success mx-auto mb-2" />
+                            <div className="text-lg font-bold text-success">A-</div>
                             <div className="text-xs text-muted-foreground">Math</div>
                           </div>
                           <div className="p-3 border rounded-lg">
                             <FileText className="h-6 w-6 text-purple-500 mx-auto mb-2" />
-                            <div className="text-lg font-bold text-purple-600">B</div>
+                            <div className="text-lg font-bold text-info">B</div>
                             <div className="text-xs text-muted-foreground">Writing</div>
                           </div>
                         </div>
@@ -732,19 +720,19 @@ export default function StudentsPage() {
                     <CardContent>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-success" />
                           <span className="text-sm">Visual Learning</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-success" />
                           <span className="text-sm">Problem Solving</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-success" />
                           <span className="text-sm">Creative Expression</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-success" />
                           <span className="text-sm">Collaborative Work</span>
                         </div>
                       </div>
@@ -762,15 +750,15 @@ export default function StudentsPage() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          <Target className="h-4 w-4 text-blue-500" />
+                          <Target className="h-4 w-4 text-primary" />
                           <div>
                             <p className="font-medium">Reading Comprehension</p>
                             <p className="text-sm text-muted-foreground">Improve reading level by 2 grades</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-20 bg-gray-200 rounded-full h-2">
-                            <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                          <div className="w-20 bg-muted rounded-full h-2">
+                            <div className="bg-primary h-2 rounded-full" style={{ width: '75%' }}></div>
                           </div>
                           <span className="text-sm font-medium">75%</span>
                         </div>
@@ -778,14 +766,14 @@ export default function StudentsPage() {
 
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          <Target className="h-4 w-4 text-green-500" />
+                          <Target className="h-4 w-4 text-success" />
                           <div>
                             <p className="font-medium">Math Problem Solving</p>
                             <p className="text-sm text-muted-foreground">Solve multi-step word problems</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-20 bg-gray-200 rounded-full h-2">
+                          <div className="w-20 bg-muted rounded-full h-2">
                             <div className="bg-green-600 h-2 rounded-full" style={{ width: '90%' }}></div>
                           </div>
                           <span className="text-sm font-medium">90%</span>
@@ -794,14 +782,14 @@ export default function StudentsPage() {
 
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          <Target className="h-4 w-4 text-yellow-500" />
+                          <Target className="h-4 w-4 text-warning" />
                           <div>
                             <p className="font-medium">Social Communication</p>
                             <p className="text-sm text-muted-foreground">Improve peer interaction skills</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-20 bg-gray-200 rounded-full h-2">
+                          <div className="w-20 bg-muted rounded-full h-2">
                             <div className="bg-yellow-600 h-2 rounded-full" style={{ width: '60%' }}></div>
                           </div>
                           <span className="text-sm font-medium">60%</span>
@@ -821,7 +809,7 @@ export default function StudentsPage() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          <FileText className="h-4 w-4 text-blue-500" />
+                          <FileText className="h-4 w-4 text-primary" />
                           <div>
                             <p className="font-medium">Quarterly Academic Assessment</p>
                             <p className="text-sm text-muted-foreground">December 2024</p>
@@ -832,7 +820,7 @@ export default function StudentsPage() {
 
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          <Brain className="h-4 w-4 text-green-500" />
+                          <Brain className="h-4 w-4 text-success" />
                           <div>
                             <p className="font-medium">Cognitive Skills Evaluation</p>
                             <p className="text-sm text-muted-foreground">November 2024</p>
@@ -843,7 +831,7 @@ export default function StudentsPage() {
 
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          <Heart className="h-4 w-4 text-red-500" />
+                          <Heart className="h-4 w-4 text-destructive" />
                           <div>
                             <p className="font-medium">Social-Emotional Assessment</p>
                             <p className="text-sm text-muted-foreground">January 2025 (Upcoming)</p>
@@ -865,7 +853,7 @@ export default function StudentsPage() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          <BarChart3 className="h-4 w-4 text-blue-500" />
+                          <BarChart3 className="h-4 w-4 text-primary" />
                           <div>
                             <p className="font-medium">Monthly Progress Report</p>
                             <p className="text-sm text-muted-foreground">December 2024</p>
@@ -879,7 +867,7 @@ export default function StudentsPage() {
 
                       <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          <PieChart className="h-4 w-4 text-green-500" />
+                          <PieChart className="h-4 w-4 text-success" />
                           <div>
                             <p className="font-medium">IEP Progress Summary</p>
                             <p className="text-sm text-muted-foreground">November 2024</p>
@@ -982,6 +970,6 @@ export default function StudentsPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageWrapper>
   );
 }

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useCallback, useEffect } from 'react';
 import { Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -78,7 +78,7 @@ export function DocumentSearch({
                         {searchInput && (
                             <button
                                 onClick={handleClear}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                             >
                                 <X className="h-4 w-4" />
                             </button>
@@ -99,7 +99,7 @@ export function DocumentSearch({
                         {hasResults ? (
                             <>
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">
+                                    <span className="text-muted-foreground">
                                         {currentResult} of {totalResults} results
                                     </span>
                                     <div className="flex space-x-1">
@@ -123,12 +123,12 @@ export function DocumentSearch({
                                         </Button>
                                     </div>
                                 </div>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-muted-foreground">
                                     Click on highlighted text to jump to that location
                                 </p>
                             </>
                         ) : (
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                                 No results found for "{searchState.query}"
                             </p>
                         )}
@@ -137,7 +137,7 @@ export function DocumentSearch({
 
                 {/* Instructions */}
                 {!searchState.isSearching && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                         Search across all pages to find specific words or phrases
                     </p>
                 )}

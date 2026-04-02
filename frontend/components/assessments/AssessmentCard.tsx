@@ -42,15 +42,15 @@ const getAssessmentIcon = (type: string) => {
 const getAssessmentColor = (type: string) => {
     switch (type) {
         case 'formal':
-            return 'bg-purple-100 text-purple-700 border-purple-200';
+            return 'bg-info/10 text-purple-700 border-purple-200';
         case 'reading':
-            return 'bg-blue-100 text-blue-700 border-blue-200';
+            return 'bg-primary/10 text-primary border-primary/20';
         case 'writing':
-            return 'bg-green-100 text-green-700 border-green-200';
+            return 'bg-success/10 text-success border-success/20';
         case 'math':
-            return 'bg-orange-100 text-orange-700 border-orange-200';
+            return 'bg-warning/10 text-orange-700 border-warning/20';
         default:
-            return 'bg-gray-100 text-gray-700 border-gray-200';
+            return 'bg-muted text-foreground border-border';
     }
 };
 
@@ -85,7 +85,7 @@ export function AssessmentCard({ assessment, onView, onEdit }: AssessmentCardPro
                                 {assessment.type === 'writing' && 'Writing Assessment'}
                                 {assessment.type === 'math' && 'Math Assessment'}
                             </CardTitle>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-sm text-muted-foreground mt-1">
                                 {format(displayDate, 'MMM dd, yyyy')}
                                 {updatedDate && ' (Updated)'}
                             </p>
@@ -102,14 +102,14 @@ export function AssessmentCard({ assessment, onView, onEdit }: AssessmentCardPro
                     <div className="space-y-2">
                         {assessment.diagnosis && (
                             <div>
-                                <p className="text-xs font-medium text-gray-500">Diagnosis</p>
-                                <p className="text-sm text-gray-900">{assessment.diagnosis}</p>
+                                <p className="text-xs font-medium text-muted-foreground">Diagnosis</p>
+                                <p className="text-sm text-foreground">{assessment.diagnosis}</p>
                             </div>
                         )}
                         {assessment.keyFindings && (
                             <div>
-                                <p className="text-xs font-medium text-gray-500">Key Findings</p>
-                                <p className="text-sm text-gray-700 line-clamp-2">{assessment.keyFindings}</p>
+                                <p className="text-xs font-medium text-muted-foreground">Key Findings</p>
+                                <p className="text-sm text-foreground line-clamp-2">{assessment.keyFindings}</p>
                             </div>
                         )}
                     </div>
@@ -120,8 +120,8 @@ export function AssessmentCard({ assessment, onView, onEdit }: AssessmentCardPro
                     <div>
                         {assessment.additionalNotes && (
                             <div>
-                                <p className="text-xs font-medium text-gray-500">Notes</p>
-                                <p className="text-sm text-gray-700 line-clamp-2">{assessment.additionalNotes}</p>
+                                <p className="text-xs font-medium text-muted-foreground">Notes</p>
+                                <p className="text-sm text-foreground line-clamp-2">{assessment.additionalNotes}</p>
                             </div>
                         )}
                     </div>

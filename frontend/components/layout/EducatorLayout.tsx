@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { ReactNode } from 'react';
 import { EducatorSidebar } from './EducatorSidebar';
@@ -11,7 +11,7 @@ interface EducatorLayoutProps {
 
 export function EducatorLayout({ children, className }: EducatorLayoutProps) {
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-muted/40">
       {/* Sidebar */}
       <EducatorSidebar />
       

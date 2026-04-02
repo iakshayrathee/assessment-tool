@@ -37,11 +37,11 @@ import {
 // ── Risk Badge ────────────────────────────────────────────────────────────────
 
 const RISK_CONFIG: Record<string, { label: string; className: string; Icon: React.ElementType }> = {
-  HIGH_SUPPORT:      { label: 'High Support',    className: 'bg-red-100 text-red-800 border-red-200',     Icon: AlertTriangle },
-  AT_RISK:           { label: 'At Risk',          className: 'bg-red-100 text-red-800 border-red-200',     Icon: AlertTriangle },
-  MODERATE_SUPPORT:  { label: 'Moderate',         className: 'bg-amber-100 text-amber-800 border-amber-200', Icon: AlertCircle },
-  NEEDS_ATTENTION:   { label: 'Needs Attention',  className: 'bg-amber-100 text-amber-800 border-amber-200', Icon: AlertCircle },
-  ON_TRACK:          { label: 'On Track',         className: 'bg-green-100 text-green-800 border-green-200', Icon: ShieldCheck },
+  HIGH_SUPPORT:      { label: 'High Support',    className: 'bg-destructive/10 text-foreground border-destructive/20',     Icon: AlertTriangle },
+  AT_RISK:           { label: 'At Risk',          className: 'bg-destructive/10 text-foreground border-destructive/20',     Icon: AlertTriangle },
+  MODERATE_SUPPORT:  { label: 'Moderate',         className: 'bg-warning/10 text-amber-800 border-warning/20', Icon: AlertCircle },
+  NEEDS_ATTENTION:   { label: 'Needs Attention',  className: 'bg-warning/10 text-amber-800 border-warning/20', Icon: AlertCircle },
+  ON_TRACK:          { label: 'On Track',         className: 'bg-success/10 text-foreground border-success/20', Icon: ShieldCheck },
 };
 
 export function AIRiskBadge({ riskLevel, size = 'sm' }: { riskLevel: string; size?: 'sm' | 'md' }) {
@@ -75,7 +75,7 @@ export function AILoadingSkeleton({ lines = 3 }: { lines?: number }) {
 
 export function AIUnavailable({ message }: { message?: string }) {
   return (
-    <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-2">
+    <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2 mt-2">
       <WifiOff className="h-4 w-4 flex-shrink-0" />
       <span>{message || 'AI insights are currently unavailable. Existing data is still shown above.'}</span>
     </div>
@@ -104,12 +104,12 @@ function AISection({ children }: { children: React.ReactNode }) {
 function DomainTag({ domain }: { domain: string }) {
   const d = domain?.toUpperCase();
   const cls =
-    d === 'READING'   ? 'bg-blue-100 text-blue-700' :
-    d === 'WRITING'   ? 'bg-green-100 text-green-700' :
-    d === 'MATH'      ? 'bg-amber-100 text-amber-700' :
-    d === 'COGNITIVE' ? 'bg-purple-100 text-purple-700' :
+    d === 'READING'   ? 'bg-primary/10 text-primary' :
+    d === 'WRITING'   ? 'bg-success/10 text-success' :
+    d === 'MATH'      ? 'bg-warning/10 text-warning' :
+    d === 'COGNITIVE' ? 'bg-info/10 text-purple-700' :
     (d === 'BEHAVIOURAL' || d === 'ATTENTION_BEHAVIOR') ? 'bg-pink-100 text-pink-700' :
-    'bg-gray-100 text-gray-600';
+    'bg-muted text-muted-foreground';
   return (
     <span className={`inline-block text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${cls}`}>
       {domain}
@@ -118,9 +118,9 @@ function DomainTag({ domain }: { domain: string }) {
 }
 
 function getSeverityTextClass(score: number): string {
-  if (score >= 60) return 'text-red-600';
-  if (score >= 30) return 'text-amber-600';
-  return 'text-green-600';
+  if (score >= 60) return 'text-destructive';
+  if (score >= 30) return 'text-warning';
+  return 'text-success';
 }
 
 // ── AI Assessment Analysis Panel ──────────────────────────────────────────────
@@ -152,8 +152,8 @@ export function AIAssessmentPanel({
       <button onClick={handleToggle} className="flex items-center justify-between w-full text-left">
         <AISectionHeader title="AI Assessment Analysis" />
         {isOpen
-          ? <ChevronUp className="h-4 w-4 text-gray-400" />
-          : <ChevronDown className="h-4 w-4 text-gray-400" />
+          ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          : <ChevronDown className="h-4 w-4 text-muted-foreground" />
         }
       </button>
 
@@ -167,7 +167,7 @@ export function AIAssessmentPanel({
               {data.risk_classification && (
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Risk Classification</p>
+                    <p className="text-xs text-muted-foreground mb-1">Risk Classification</p>
                     <AIRiskBadge riskLevel={data.risk_classification} size="md" />
                   </div>
                   {onSaveRisk && (
@@ -194,7 +194,7 @@ export function AIAssessmentPanel({
               {/* Severity Scores */}
               {data.severity_scores && (
                 <div>
-                  <p className="text-xs text-gray-500 mb-2">Severity Scores</p>
+                  <p className="text-xs text-muted-foreground mb-2">Severity Scores</p>
                   <div className="flex gap-3 flex-wrap mb-2">
                     {(['reading', 'writing', 'math'] as const).map((domain) => {
                       const score = data.severity_scores[domain];
@@ -215,13 +215,13 @@ export function AIAssessmentPanel({
                       const count = data.severity_scores[key];
                       if (count === undefined) return null;
                       return (
-                        <span key={key} className="text-xs text-gray-500 bg-gray-100 rounded px-2 py-0.5">
+                        <span key={key} className="text-xs text-muted-foreground bg-muted rounded px-2 py-0.5">
                           {domain}: {count} symptoms
                         </span>
                       );
                     })}
                     {data.severity_scores.total_symptom_count !== undefined && (
-                      <span className="text-xs font-semibold text-gray-700 bg-indigo-50 border border-indigo-100 rounded px-2 py-0.5">
+                      <span className="text-xs font-semibold text-foreground bg-indigo-50 border border-indigo-100 rounded px-2 py-0.5">
                         Total: {data.severity_scores.total_symptom_count} symptoms
                       </span>
                     )}
@@ -232,7 +232,7 @@ export function AIAssessmentPanel({
               {/* Domain Profile */}
               {data.domain_profile && typeof data.domain_profile === 'object' && (
                 <div>
-                  <p className="text-xs text-gray-500 mb-2">Domain Profile</p>
+                  <p className="text-xs text-muted-foreground mb-2">Domain Profile</p>
                   <div className="space-y-2">
                     {Object.entries(data.domain_profile).map(([domain, profile]: [string, any]) => {
                       if (domain === 'overall_summary') {
@@ -240,7 +240,7 @@ export function AIAssessmentPanel({
                           <Card key={domain} className="border-l-4 border-l-indigo-400">
                             <CardContent className="pt-3 pb-3">
                               <p className="text-xs font-semibold mb-1">Overall Summary</p>
-                              <p className="text-sm text-gray-600">{profile}</p>
+                              <p className="text-sm text-muted-foreground">{profile}</p>
                             </CardContent>
                           </Card>
                         );
@@ -252,20 +252,20 @@ export function AIAssessmentPanel({
                             <DomainTag domain={domain} />
                             {profile.strengths?.length > 0 && (
                               <p className="text-xs">
-                                <span className="font-semibold text-green-700">Strengths: </span>
-                                <span className="text-gray-600">{profile.strengths.join(' • ')}</span>
+                                <span className="font-semibold text-success">Strengths: </span>
+                                <span className="text-muted-foreground">{profile.strengths.join(' • ')}</span>
                               </p>
                             )}
                             {profile.weaknesses?.length > 0 && (
                               <p className="text-xs">
-                                <span className="font-semibold text-red-600">Weaknesses: </span>
-                                <span className="text-gray-600">{profile.weaknesses.join(' • ')}</span>
+                                <span className="font-semibold text-destructive">Weaknesses: </span>
+                                <span className="text-muted-foreground">{profile.weaknesses.join(' • ')}</span>
                               </p>
                             )}
                             {profile.functional_level && (
                               <p className="text-xs">
-                                <span className="font-semibold text-indigo-600">Level: </span>
-                                <span className="text-gray-600">{profile.functional_level}</span>
+                                <span className="font-semibold text-primary">Level: </span>
+                                <span className="text-muted-foreground">{profile.functional_level}</span>
                               </p>
                             )}
                           </CardContent>
@@ -279,7 +279,7 @@ export function AIAssessmentPanel({
               {/* Differential Indicators */}
               {data.differential_indicators?.length > 0 && (
                 <div>
-                  <p className="text-xs text-gray-500 mb-2">Differential Indicators</p>
+                  <p className="text-xs text-muted-foreground mb-2">Differential Indicators</p>
                   <div className="space-y-2">
                     {data.differential_indicators.map((indicator: any, i: number) => {
                       const isHigh = indicator.confidence === 'HIGH';
@@ -291,13 +291,13 @@ export function AIAssessmentPanel({
                               <span className="text-sm font-semibold">{indicator.condition}</span>
                               <Badge
                                 variant="outline"
-                                className={isHigh ? 'text-red-700 border-red-200 bg-red-50' : isMod ? 'text-amber-700 border-amber-200 bg-amber-50' : 'text-gray-600 border-gray-200 bg-gray-50'}
+                                className={isHigh ? 'text-destructive border-destructive/20 bg-destructive/10' : isMod ? 'text-warning border-warning/20 bg-warning/10' : 'text-muted-foreground border-border bg-muted/40'}
                               >
                                 {indicator.confidence}
                               </Badge>
                             </div>
                             {indicator.supporting_evidence?.length > 0 && (
-                              <p className="text-xs text-gray-500">Evidence: {indicator.supporting_evidence.join(', ')}</p>
+                              <p className="text-xs text-muted-foreground">Evidence: {indicator.supporting_evidence.join(', ')}</p>
                             )}
                           </CardContent>
                         </Card>
@@ -310,12 +310,12 @@ export function AIAssessmentPanel({
               {/* Recommended Next Steps */}
               {data.recommended_next_steps?.length > 0 && (
                 <div>
-                  <p className="text-xs text-gray-500 mb-2">Recommended Next Steps</p>
+                  <p className="text-xs text-muted-foreground mb-2">Recommended Next Steps</p>
                   <div className="space-y-2">
                     {data.recommended_next_steps.map((step: any, i: number) => (
-                      <div key={i} className="flex gap-2 bg-white border border-gray-100 rounded-lg p-3">
+                      <div key={i} className="flex gap-2 bg-background border border-border rounded-lg p-3">
                         <Target className="h-4 w-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-foreground">
                           {typeof step === 'string' ? step : JSON.stringify(step)}
                         </span>
                       </div>
@@ -365,8 +365,8 @@ export function AIIEPSuggestionsPanel({
       <button onClick={handleToggle} className="flex items-center justify-between w-full text-left">
         <AISectionHeader title="AI-Suggested IEP Goals" />
         {isOpen
-          ? <ChevronUp className="h-4 w-4 text-gray-400" />
-          : <ChevronDown className="h-4 w-4 text-gray-400" />
+          ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          : <ChevronDown className="h-4 w-4 text-muted-foreground" />
         }
       </button>
 
@@ -382,9 +382,9 @@ export function AIIEPSuggestionsPanel({
                   <CardContent className="pt-3 pb-3">
                     <p className="text-xs font-semibold mb-1">Gap Analysis</p>
                     {gapAnalysis.uncovered_domains?.length > 0 ? (
-                      <p className="text-sm text-gray-600">Uncovered areas: {gapAnalysis.uncovered_domains.join(', ')}</p>
+                      <p className="text-sm text-muted-foreground">Uncovered areas: {gapAnalysis.uncovered_domains.join(', ')}</p>
                     ) : (
-                      <p className="text-sm text-green-700">All domains are covered by existing goals</p>
+                      <p className="text-sm text-success">All domains are covered by existing goals</p>
                     )}
                   </CardContent>
                 </Card>
@@ -397,15 +397,15 @@ export function AIIEPSuggestionsPanel({
                     <div className="flex items-center justify-between">
                       <DomainTag domain={goal.domain} />
                       {goal.priority && (
-                        <span className="text-xs text-gray-500">Priority {goal.priority}</span>
+                        <span className="text-xs text-muted-foreground">Priority {goal.priority}</span>
                       )}
                     </div>
-                    <p className="text-sm font-medium text-gray-900">{goal.goal_statement}</p>
+                    <p className="text-sm font-medium text-foreground">{goal.goal_statement}</p>
                     {goal.strategy && (
-                      <p className="text-xs text-gray-500">Strategy: {goal.strategy}</p>
+                      <p className="text-xs text-muted-foreground">Strategy: {goal.strategy}</p>
                     )}
                     {goal.rationale && (
-                      <p className="text-xs text-gray-500">Rationale: {goal.rationale}</p>
+                      <p className="text-xs text-muted-foreground">Rationale: {goal.rationale}</p>
                     )}
                     {onAddGoal && (
                       <Button
@@ -426,10 +426,10 @@ export function AIIEPSuggestionsPanel({
                 <Card className="border-l-4 border-l-purple-400">
                   <CardContent className="pt-3 pb-3">
                     <p className="text-xs font-semibold mb-1">Suggested Long-Term Plan</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       Duration: {data.generated_ltp.duration_months || 6} months •{' '}
                       Domains: {(data.generated_ltp.domains || []).join(', ')} •{' '}
-                      <span className="text-amber-600 font-semibold">AI Draft</span>
+                      <span className="text-warning font-semibold">AI Draft</span>
                     </p>
                   </CardContent>
                 </Card>
@@ -437,9 +437,9 @@ export function AIIEPSuggestionsPanel({
 
               {/* Save Plan */}
               {onSave && data?.generated_ltp && (
-                <div className="pt-2 border-t border-gray-100">
+                <div className="pt-2 border-t border-border">
                   <Button
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                    className="w-full bg-primary hover:bg-indigo-700 text-white"
                     disabled={isSaving}
                     onClick={async () => {
                       setIsSaving(true);
@@ -452,7 +452,7 @@ export function AIIEPSuggestionsPanel({
                       : <><Save className="h-4 w-4 mr-2" />Save to Lesson Plans (as Draft)</>
                     }
                   </Button>
-                  <p className="text-xs text-gray-500 text-center mt-1">Creates LTP + STPs + WLPs as editable DRAFT records</p>
+                  <p className="text-xs text-muted-foreground text-center mt-1">Creates LTP + STPs + WLPs as editable DRAFT records</p>
                 </div>
               )}
             </>
@@ -494,8 +494,8 @@ export function AILessonPlanPanel({
       <button onClick={handleToggle} className="flex items-center justify-between w-full text-left">
         <AISectionHeader title="AI Lesson Plan Suggestion" />
         {isOpen
-          ? <ChevronUp className="h-4 w-4 text-gray-400" />
-          : <ChevronDown className="h-4 w-4 text-gray-400" />
+          ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          : <ChevronDown className="h-4 w-4 text-muted-foreground" />
         }
       </button>
 
@@ -510,7 +510,7 @@ export function AILessonPlanPanel({
                 <Card className="border-l-4 border-l-indigo-400">
                   <CardContent className="pt-3 pb-3">
                     <p className="text-xs font-semibold mb-1">Progress Analysis</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       {typeof data.progress_analysis === 'string' ? data.progress_analysis : JSON.stringify(data.progress_analysis)}
                     </p>
                   </CardContent>
@@ -520,17 +520,17 @@ export function AILessonPlanPanel({
               {/* Suggested Activities */}
               {data?.suggested_activities?.length > 0 && (
                 <div>
-                  <p className="text-xs text-gray-500 mb-2">Suggested Activities</p>
+                  <p className="text-xs text-muted-foreground mb-2">Suggested Activities</p>
                   <div className="space-y-2">
                     {data.suggested_activities.map((activity: any, i: number) => (
                       <Card key={i}>
                         <CardContent className="pt-3 pb-3">
-                          <p className="text-sm font-medium text-gray-900">{activity.name || activity}</p>
+                          <p className="text-sm font-medium text-foreground">{activity.name || activity}</p>
                           {activity.description && (
-                            <p className="text-xs text-gray-500 mt-1">{activity.description}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
                           )}
                           {activity.duration_minutes && (
-                            <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
+                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
                               <span>{activity.duration_minutes} min</span>
                             </div>
@@ -547,9 +547,9 @@ export function AILessonPlanPanel({
                 {data?.suggested_resources?.length > 0 && (
                   <Card>
                     <CardContent className="pt-3 pb-3">
-                      <p className="text-xs font-semibold text-gray-500 mb-2">Resources</p>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">Resources</p>
                       {data.suggested_resources.map((r: string, i: number) => (
-                        <div key={i} className="flex items-center gap-1 text-xs text-gray-600 mb-1">
+                        <div key={i} className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                           <BookOpen className="h-3 w-3 text-indigo-400 flex-shrink-0" />
                           <span>{r}</span>
                         </div>
@@ -560,8 +560,8 @@ export function AILessonPlanPanel({
                 {data?.motivation_strategy && (
                   <Card>
                     <CardContent className="pt-3 pb-3">
-                      <p className="text-xs font-semibold text-gray-500 mb-2">Motivation Strategy</p>
-                      <div className="flex items-start gap-1 text-xs text-gray-600">
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">Motivation Strategy</p>
+                      <div className="flex items-start gap-1 text-xs text-muted-foreground">
                         <Target className="h-3 w-3 text-indigo-400 flex-shrink-0 mt-0.5" />
                         <span>{data.motivation_strategy}</span>
                       </div>
@@ -572,9 +572,9 @@ export function AILessonPlanPanel({
 
               {/* Save Plan */}
               {onSave && plan && (
-                <div className="pt-2 border-t border-gray-100">
+                <div className="pt-2 border-t border-border">
                   <Button
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                    className="w-full bg-primary hover:bg-indigo-700 text-white"
                     disabled={isSaving}
                     onClick={async () => {
                       setIsSaving(true);
@@ -635,9 +635,9 @@ export function AIEducatorInsightsCard({
             {data.performance_summary && (
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Total Students', value: data.performance_summary.total_students,  Icon: Users,          color: 'text-gray-700' },
-                  { label: 'Improving',       value: data.performance_summary.students_improving, Icon: TrendingUp,  color: 'text-green-700' },
-                  { label: 'At Risk',         value: data.performance_summary.students_at_risk,   Icon: AlertTriangle, color: 'text-red-600' },
+                  { label: 'Total Students', value: data.performance_summary.total_students,  Icon: Users,          color: 'text-foreground' },
+                  { label: 'Improving',       value: data.performance_summary.students_improving, Icon: TrendingUp,  color: 'text-success' },
+                  { label: 'At Risk',         value: data.performance_summary.students_at_risk,   Icon: AlertTriangle, color: 'text-destructive' },
                 ].map((stat, i) => {
                   const { Icon } = stat;
                   return (
@@ -645,7 +645,7 @@ export function AIEducatorInsightsCard({
                       <CardContent className="pt-3 pb-3">
                         <Icon className={`h-5 w-5 mx-auto mb-1 ${stat.color}`} />
                         <p className={`text-xl font-bold ${stat.color}`}>{stat.value ?? '—'}</p>
-                        <p className="text-xs text-gray-500">{stat.label}</p>
+                        <p className="text-xs text-muted-foreground">{stat.label}</p>
                       </CardContent>
                     </Card>
                   );
@@ -656,16 +656,16 @@ export function AIEducatorInsightsCard({
             {/* Priority Students */}
             {data.student_priority_list?.length > 0 && (
               <div>
-                <div className="flex items-center gap-1 text-xs font-semibold text-gray-700 mb-2">
+                <div className="flex items-center gap-1 text-xs font-semibold text-foreground mb-2">
                   <Target className="h-3.5 w-3.5" />
                   Priority Students
                 </div>
                 <div className="space-y-2">
                   {data.student_priority_list.slice(0, isExpanded ? undefined : 3).map((s: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between bg-white border border-gray-100 rounded-lg px-3 py-2">
+                    <div key={i} className="flex items-center justify-between bg-background border border-border rounded-lg px-3 py-2">
                       <div>
                         <p className="text-sm font-medium">{s.student_name || s.student_id}</p>
-                        <p className="text-xs text-gray-500">{s.total_symptoms} symptoms • {s.avg_iep_progress}% progress</p>
+                        <p className="text-xs text-muted-foreground">{s.total_symptoms} symptoms • {s.avg_iep_progress}% progress</p>
                       </div>
                       <AIRiskBadge riskLevel={s.status || 'AT_RISK'} size="sm" />
                     </div>
@@ -682,13 +682,13 @@ export function AIEducatorInsightsCard({
             {/* Training Recommendations */}
             {data.training_recommendations?.length > 0 && (
               <div>
-                <div className="flex items-center gap-1 text-xs font-semibold text-gray-700 mb-2">
+                <div className="flex items-center gap-1 text-xs font-semibold text-foreground mb-2">
                   <BookOpen className="h-3.5 w-3.5" />
                   Recommended Training
                 </div>
                 <div className="space-y-1">
                   {data.training_recommendations.slice(0, 3).map((t: any, i: number) => (
-                    <p key={i} className="text-xs text-gray-600 pl-2 border-l-2 border-indigo-200">
+                    <p key={i} className="text-xs text-muted-foreground pl-2 border-l-2 border-indigo-200">
                       {typeof t === 'string' ? t : t.topic || JSON.stringify(t)}
                     </p>
                   ))}

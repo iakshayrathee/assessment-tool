@@ -23,7 +23,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface Child {
     id: string;
@@ -105,18 +106,18 @@ export default function ParentChildrenPage() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'ACTIVE': return 'bg-green-100 text-green-800';
-            case 'INACTIVE': return 'bg-gray-100 text-gray-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'ACTIVE': return 'bg-success/10 text-foreground';
+            case 'INACTIVE': return 'bg-muted text-foreground';
+            default: return 'bg-muted text-foreground';
         }
     };
 
     const getReportTypeColor = (type: string) => {
         switch (type) {
-            case 'ASSESSMENT': return 'bg-blue-100 text-blue-800';
-            case 'IEP': return 'bg-purple-100 text-purple-800';
-            case 'PROGRESS': return 'bg-green-100 text-green-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'ASSESSMENT': return 'bg-primary/10 text-primary';
+            case 'IEP': return 'bg-info/10 text-foreground';
+            case 'PROGRESS': return 'bg-success/10 text-foreground';
+            default: return 'bg-muted text-foreground';
         }
     };
 
@@ -129,49 +130,38 @@ export default function ParentChildrenPage() {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading children...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-primary border-t-transparent mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading children...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white shadow-sm border-b">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-6 gap-4">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">My Children</h1>
-                            <p className="text-gray-600">
-                                {totalChildren} {totalChildren === 1 ? 'child' : 'children'} enrolled in the program
-                            </p>
-                        </div>
-
-                        {/* Search Bar */}
-                        <div className="relative w-full sm:w-96">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <Input
-                                type="text"
-                                placeholder="Search by name..."
-                                value={searchQuery}
-                                onChange={(e) => handleSearch(e.target.value)}
-                                className="pl-10"
-                            />
-                        </div>
-                    </div>
+        <PageWrapper
+            title="My Children"
+            description={`${totalChildren} ${totalChildren === 1 ? 'child' : 'children'} enrolled in the program`}
+            breadcrumbs={[{ label: 'Dashboard', href: '/parent/dashboard' }, { label: 'My Children' }]}
+            actions={
+                <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="text"
+                        placeholder="Search by name..."
+                        value={searchQuery}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="pl-10"
+                    />
                 </div>
-            </div>
-
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            }
+        >
                 {children.length === 0 ? (
                     <Card>
                         <CardContent className="pt-6">
                             <div className="text-center py-12">
-                                <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                <h3 className="text-lg font-medium text-gray-900 mb-2">No children found</h3>
-                                <p className="text-gray-600">
+                                <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                <h3 className="text-lg font-medium text-foreground mb-2">No children found</h3>
+                                <p className="text-muted-foreground">
                                     {searchQuery
                                         ? 'Try adjusting your search query'
                                         : 'No children are currently enrolled in the program'}
@@ -188,8 +178,8 @@ export default function ParentChildrenPage() {
                                     <CardHeader>
                                         <div className="flex justify-between items-start">
                                             <div className="flex items-start space-x-4">
-                                                <div className="bg-blue-100 p-3 rounded-full">
-                                                    <User className="h-6 w-6 text-blue-600" />
+                                                <div className="bg-primary/10 p-3 rounded-full">
+                                                    <User className="h-6 w-6 text-primary" />
                                                 </div>
                                                 <div>
                                                     <CardTitle className="text-xl">{child.fullName}</CardTitle>
@@ -219,20 +209,20 @@ export default function ParentChildrenPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {/* Educator Info */}
                                             {child.assignedEducator && (
-                                                <div className="bg-blue-50 p-4 rounded-lg">
+                                                <div className="bg-primary/10 p-4 rounded-lg">
                                                     <div className="flex items-center mb-2">
-                                                        <Users className="h-4 w-4 text-blue-600 mr-2" />
+                                                        <Users className="h-4 w-4 text-primary mr-2" />
                                                         <h4 className="font-semibold text-blue-900">Assigned Educator</h4>
                                                     </div>
-                                                    <p className="text-blue-800 font-medium">{child.assignedEducator}</p>
+                                                    <p className="text-primary font-medium">{child.assignedEducator}</p>
                                                     {child.educatorPhone && (
-                                                        <p className="text-sm text-blue-600 flex items-center mt-1">
+                                                        <p className="text-sm text-primary flex items-center mt-1">
                                                             <Phone className="h-3 w-3 mr-1" />
                                                             {child.educatorPhone}
                                                         </p>
                                                     )}
                                                     {child.center && (
-                                                        <p className="text-sm text-blue-600 mt-1">{child.center}</p>
+                                                        <p className="text-sm text-primary mt-1">{child.center}</p>
                                                     )}
                                                 </div>
                                             )}
@@ -241,7 +231,7 @@ export default function ParentChildrenPage() {
                                             <div className="bg-gradient-to-br from-purple-50 to-blue-50 p-4 rounded-lg">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <div className="flex items-center">
-                                                        <TrendingUp className="h-4 w-4 text-purple-600 mr-2" />
+                                                        <TrendingUp className="h-4 w-4 text-info mr-2" />
                                                         <h4 className="font-semibold text-purple-900">Overall Progress</h4>
                                                     </div>
                                                     <span className="text-lg font-bold text-purple-900">
@@ -252,24 +242,24 @@ export default function ParentChildrenPage() {
                                                 <div className="grid grid-cols-3 gap-2 text-sm">
                                                     <div className="text-center">
                                                         <div className="flex items-center justify-center mb-1">
-                                                            <Target className="h-3 w-3 text-blue-600 mr-1" />
+                                                            <Target className="h-3 w-3 text-primary mr-1" />
                                                         </div>
-                                                        <p className="font-bold text-gray-900">{child.progressSummary.totalGoals}</p>
-                                                        <p className="text-xs text-gray-600">Total Goals</p>
+                                                        <p className="font-bold text-foreground">{child.progressSummary.totalGoals}</p>
+                                                        <p className="text-xs text-muted-foreground">Total Goals</p>
                                                     </div>
                                                     <div className="text-center">
                                                         <div className="flex items-center justify-center mb-1">
-                                                            <AlertCircle className="h-3 w-3 text-orange-600 mr-1" />
+                                                            <AlertCircle className="h-3 w-3 text-warning mr-1" />
                                                         </div>
-                                                        <p className="font-bold text-gray-900">{child.progressSummary.inProgress}</p>
-                                                        <p className="text-xs text-gray-600">In Progress</p>
+                                                        <p className="font-bold text-foreground">{child.progressSummary.inProgress}</p>
+                                                        <p className="text-xs text-muted-foreground">In Progress</p>
                                                     </div>
                                                     <div className="text-center">
                                                         <div className="flex items-center justify-center mb-1">
-                                                            <CheckCircle className="h-3 w-3 text-green-600 mr-1" />
+                                                            <CheckCircle className="h-3 w-3 text-success mr-1" />
                                                         </div>
-                                                        <p className="font-bold text-gray-900">{child.progressSummary.achieved}</p>
-                                                        <p className="text-xs text-gray-600">Achieved</p>
+                                                        <p className="font-bold text-foreground">{child.progressSummary.achieved}</p>
+                                                        <p className="text-xs text-muted-foreground">Achieved</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -279,31 +269,31 @@ export default function ParentChildrenPage() {
                                         {child.activeGoals && child.activeGoals.length > 0 && (
                                             <div>
                                                 <h4 className="font-semibold mb-3 flex items-center">
-                                                    <Target className="h-4 w-4 mr-2 text-blue-600" />
+                                                    <Target className="h-4 w-4 mr-2 text-primary" />
                                                     Active Goals ({child.activeGoals.length})
                                                 </h4>
                                                 <div className="space-y-3">
                                                     {child.activeGoals.slice(0, 3).map((goal) => (
-                                                        <div key={goal.id} className="border rounded-lg p-3 bg-white">
+                                                        <div key={goal.id} className="border rounded-lg p-3 bg-background">
                                                             <div className="flex justify-between items-start mb-2">
                                                                 <div className="flex-1">
                                                                     <Badge variant="outline" className="mb-1 text-xs">
                                                                         {goal.domain}
                                                                     </Badge>
-                                                                    <p className="text-sm font-medium text-gray-900">{goal.goalStatement}</p>
+                                                                    <p className="text-sm font-medium text-foreground">{goal.goalStatement}</p>
                                                                 </div>
-                                                                <span className="text-sm font-semibold text-blue-600 ml-2">
+                                                                <span className="text-sm font-semibold text-primary ml-2">
                                                                     {goal.progressPercent}%
                                                                 </span>
                                                             </div>
                                                             <Progress value={goal.progressPercent} className="mb-1 h-2" />
-                                                            <p className="text-xs text-gray-500">
+                                                            <p className="text-xs text-muted-foreground">
                                                                 Target: {new Date(goal.targetDate).toLocaleDateString()}
                                                             </p>
                                                         </div>
                                                     ))}
                                                     {child.activeGoals.length > 3 && (
-                                                        <p className="text-sm text-gray-600 text-center">
+                                                        <p className="text-sm text-muted-foreground text-center">
                                                             +{child.activeGoals.length - 3} more goals
                                                         </p>
                                                     )}
@@ -315,17 +305,17 @@ export default function ParentChildrenPage() {
                                         {child.recentReports && child.recentReports.length > 0 && (
                                             <div>
                                                 <h4 className="font-semibold mb-3 flex items-center">
-                                                    <FileText className="h-4 w-4 mr-2 text-purple-600" />
+                                                    <FileText className="h-4 w-4 mr-2 text-info" />
                                                     Recent Reports
                                                 </h4>
                                                 <div className="space-y-2">
                                                     {child.recentReports.slice(0, 3).map((report) => (
-                                                        <div key={report.id} className="flex items-center justify-between p-3 border rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                                                        <div key={report.id} className="flex items-center justify-between p-3 border rounded-lg bg-background hover:bg-muted/40 transition-colors">
                                                             <div className="flex items-center space-x-3 flex-1">
-                                                                <FileText className="h-4 w-4 text-gray-600" />
+                                                                <FileText className="h-4 w-4 text-muted-foreground" />
                                                                 <div className="flex-1">
                                                                     <p className="font-medium text-sm">{report.title}</p>
-                                                                    <p className="text-xs text-gray-600">
+                                                                    <p className="text-xs text-muted-foreground">
                                                                         {new Date(report.createdAt).toLocaleDateString()}
                                                                     </p>
                                                                 </div>
@@ -372,7 +362,7 @@ export default function ParentChildrenPage() {
                                 >
                                     Previous
                                 </Button>
-                                <span className="text-sm text-gray-600">
+                                <span className="text-sm text-muted-foreground">
                                     Page {page} of {totalPages}
                                 </span>
                                 <Button
@@ -386,7 +376,6 @@ export default function ParentChildrenPage() {
                         )}
                     </>
                 )}
-            </div>
-        </div>
+        </PageWrapper>
     );
 }

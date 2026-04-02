@@ -22,7 +22,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 interface Child {
   id: string;
@@ -130,18 +131,18 @@ export default function ParentDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'INACTIVE': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ACTIVE': return 'bg-success/10 text-foreground';
+      case 'INACTIVE': return 'bg-muted text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
   const getReportTypeColor = (type: string) => {
     switch (type) {
-      case 'ASSESSMENT': return 'bg-blue-100 text-blue-800';
-      case 'IEP': return 'bg-purple-100 text-purple-800';
-      case 'PROGRESS': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ASSESSMENT': return 'bg-primary/10 text-primary';
+      case 'IEP': return 'bg-info/10 text-foreground';
+      case 'PROGRESS': return 'bg-success/10 text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -149,8 +150,8 @@ export default function ParentDashboard() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -160,8 +161,8 @@ export default function ParentDashboard() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-          <p className="text-gray-600">{error || 'Failed to load dashboard data'}</p>
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <p className="text-muted-foreground">{error || 'Failed to load dashboard data'}</p>
           <Button onClick={loadDashboardData} className="mt-4">
             Try Again
           </Button>
@@ -171,36 +172,27 @@ export default function ParentDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Welcome, {user?.profile?.fullName || 'Parent'}
-              </h1>
-              <p className="text-gray-600">Track your children's progress and stay connected</p>
-            </div>
-            <div className="flex gap-3">
-              <Link href="/parent/concerns/new">
-                <Button variant="outline">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Submit Concern
-                </Button>
-              </Link>
-              <Link href="/parent/documents/upload">
-                <Button>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Document
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <PageWrapper
+      title={`Welcome, ${user?.profile?.fullName || 'Parent'}`}
+      description="Track your children's progress and stay connected"
+      breadcrumbs={[{ label: 'Dashboard' }]}
+      actions={
+        <>
+          <Link href="/parent/concerns/new">
+            <Button variant="outline">
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Submit Concern
+            </Button>
+          </Link>
+          <Link href="/parent/documents/upload">
+            <Button>
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Document
+            </Button>
+          </Link>
+        </>
+      }
+    >
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
           <Card>
@@ -217,7 +209,7 @@ export default function ParentDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Goals</CardTitle>
-              <Target className="h-4 w-4 text-blue-600" />
+              <Target className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData.overview.activeGoals}</div>
@@ -228,7 +220,7 @@ export default function ParentDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Achieved Goals</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CheckCircle className="h-4 w-4 text-success" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData.overview.achievedGoals}</div>
@@ -239,7 +231,7 @@ export default function ParentDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Reports</CardTitle>
-              <FileText className="h-4 w-4 text-purple-600" />
+              <FileText className="h-4 w-4 text-info" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData.overview.totalReports}</div>
@@ -250,7 +242,7 @@ export default function ParentDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Open Concerns</CardTitle>
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertCircle className="h-4 w-4 text-warning" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData.overview.openConcerns}</div>
@@ -262,7 +254,7 @@ export default function ParentDashboard() {
             <Card className="cursor-pointer hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Homework</CardTitle>
-                <ClipboardList className="h-4 w-4 text-orange-600" />
+                <ClipboardList className="h-4 w-4 text-warning" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{homeworkStats.pending}</div>
@@ -298,23 +290,23 @@ export default function ParentDashboard() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Educator Info */}
-                  <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="bg-primary/10 p-4 rounded-lg">
                     <h4 className="font-semibold text-blue-900 mb-2">Assigned Educator</h4>
-                    <p className="text-blue-800">{child.assignedEducator}</p>
-                    <p className="text-sm text-blue-600">{child.educatorPhone}</p>
-                    <p className="text-sm text-blue-600">{child.center}</p>
+                    <p className="text-primary">{child.assignedEducator}</p>
+                    <p className="text-sm text-primary">{child.educatorPhone}</p>
+                    <p className="text-sm text-primary">{child.center}</p>
                   </div>
 
                   {/* Progress Summary */}
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <h4 className="font-semibold">Overall Progress</h4>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-muted-foreground">
                         {child.progressSummary.averageProgress}%
                       </span>
                     </div>
                     <Progress value={child.progressSummary.averageProgress} className="mb-2" />
-                    <div className="flex justify-between text-sm text-gray-600">
+                    <div className="flex justify-between text-sm text-muted-foreground">
                       <span>{child.progressSummary.achieved} goals achieved</span>
                       <span>{child.progressSummary.inProgress} in progress</span>
                     </div>
@@ -333,12 +325,12 @@ export default function ParentDashboard() {
                               </Badge>
                               <p className="text-sm font-medium">{goal.goalStatement}</p>
                             </div>
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-muted-foreground">
                               {goal.progressPercent}%
                             </span>
                           </div>
                           <Progress value={goal.progressPercent} className="mb-2" />
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             Target: {new Date(goal.targetDate).toLocaleDateString()}
                           </p>
                         </div>
@@ -353,10 +345,10 @@ export default function ParentDashboard() {
                       {child.recentReports.map((report) => (
                         <div key={report.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div className="flex items-center space-x-3">
-                            <FileText className="h-4 w-4 text-gray-600" />
+                            <FileText className="h-4 w-4 text-muted-foreground" />
                             <div>
                               <p className="font-medium">{report.title}</p>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-muted-foreground">
                                 {new Date(report.createdAt).toLocaleDateString()}
                               </p>
                             </div>
@@ -407,7 +399,7 @@ export default function ParentDashboard() {
                     <div key={concern.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
                         <h4 className="font-medium">{concern.title}</h4>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           Submitted: {new Date(concern.createdAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -439,10 +431,10 @@ export default function ParentDashboard() {
                   {dashboardData.recentDocuments.map((doc) => (
                     <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center space-x-3">
-                        <FileText className="h-5 w-5 text-gray-600" />
+                        <FileText className="h-5 w-5 text-muted-foreground" />
                         <div>
                           <h4 className="font-medium">{doc.fileName}</h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-muted-foreground">
                             {doc.category} • {new Date(doc.createdAt).toLocaleDateString()}
                           </p>
                         </div>
@@ -460,7 +452,6 @@ export default function ParentDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

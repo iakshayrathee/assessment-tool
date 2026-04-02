@@ -152,10 +152,10 @@ export default function AssignEducatorModal({
   };
 
   const getExperienceColor = (years: number) => {
-    if (years >= 10) return 'bg-green-100 text-green-800';
-    if (years >= 5) return 'bg-blue-100 text-blue-800';
-    if (years >= 2) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-gray-100 text-gray-800';
+    if (years >= 10) return 'bg-success/10 text-foreground';
+    if (years >= 5) return 'bg-primary/10 text-primary';
+    if (years >= 2) return 'bg-warning/10 text-foreground';
+    return 'bg-muted text-foreground';
   };
 
   return (
@@ -174,7 +174,7 @@ export default function AssignEducatorModal({
         <div className="flex-1 flex flex-col gap-4 overflow-hidden">
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder="Search educators by name, email, or specialization..."
               value={searchTerm}
@@ -188,15 +188,15 @@ export default function AssignEducatorModal({
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  <p className="text-gray-500">Loading educators...</p>
+                  <div className="animate-spin rounded-full h-8 w-8 border-primary border-t-transparent mx-auto mb-2"></div>
+                  <p className="text-muted-foreground">Loading educators...</p>
                 </div>
               </div>
             ) : filteredEducators.length === 0 ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">
                     {searchTerm ? 'No educators found matching your search.' : 'No educators available.'}
                   </p>
                 </div>
@@ -216,30 +216,30 @@ export default function AssignEducatorModal({
                 </TableHeader>
                 <TableBody>
                   {filteredEducators.map((educator) => (
-                    <TableRow key={educator.educatorId} className="hover:bg-gray-50">
+                    <TableRow key={educator.educatorId} className="hover:bg-muted/40">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="flex-shrink-0">
-                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                              <UserCheck className="h-5 w-5 text-blue-600" />
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                              <UserCheck className="h-5 w-5 text-primary" />
                             </div>
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900">{educator.fullName}</div>
-                            <div className="text-sm text-gray-500">{educator.type}</div>
+                            <div className="font-medium text-foreground">{educator.fullName}</div>
+                            <div className="text-sm text-muted-foreground">{educator.type}</div>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="flex items-center gap-1 text-sm">
-                            <Mail className="h-3 w-3 text-gray-400" />
-                            <span className="text-gray-600">{educator.email}</span>
+                            <Mail className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">{educator.email}</span>
                           </div>
                           {educator.phone && (
                             <div className="flex items-center gap-1 text-sm">
-                              <Phone className="h-3 w-3 text-gray-400" />
-                              <span className="text-gray-600">{educator.phone}</span>
+                              <Phone className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-muted-foreground">{educator.phone}</span>
                             </div>
                           )}
                         </div>
@@ -266,17 +266,17 @@ export default function AssignEducatorModal({
                       <TableCell>
                         <div className="text-sm">
                           <div className="flex items-center gap-1">
-                            <Users className="h-3 w-3 text-gray-400" />
+                            <Users className="h-3 w-3 text-muted-foreground" />
                             <span>{educator.assignedStudentCount} students</span>
                           </div>
-                          <div className="flex items-center gap-1 text-gray-500">
-                            <Building2 className="h-3 w-3 text-gray-400" />
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Building2 className="h-3 w-3 text-muted-foreground" />
                             <span>{educator.assignedSchools.length} schools</span>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-muted-foreground">
                           {formatDate(educator.lastLogin)}
                         </div>
                       </TableCell>

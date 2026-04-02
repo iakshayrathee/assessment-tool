@@ -1,14 +1,14 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EnhancedCard } from '@/components/ui/enhanced-card';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
-import { PageHeader } from '@/components/ui/page-header';
+import { PageWrapper } from '@/components/layout/PageWrapper';
 import { 
   Users, 
   School, 
@@ -77,9 +77,9 @@ export default function CenterDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'INACTIVE': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ACTIVE': return 'bg-success/10 text-foreground';
+      case 'INACTIVE': return 'bg-muted text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -123,28 +123,27 @@ export default function CenterDashboard() {
   }
 
   return (
-    <div className="">
-      <PageHeader
-        title={`${user?.profile?.centerName || 'Center'} Dashboard`}
-        description="Manage your center operations and track progress"
-        badge={{
-          text: `${dashboardData?.overview?.totalStudents || 0} Students`,
-          variant: 'secondary'
-        }}
-        actions={[
-          {
-            label: 'Link School',
-            href: '/center/schools',
-            icon: Building,
-            variant: 'outline'
-          },
-          {
-            label: 'Add Student',
-            href: '/center/students',
-            icon: Plus
-          }
-        ]}
-      />
+    <PageWrapper
+      title={`${user?.profile?.centerName || 'Center'} Dashboard`}
+      description="Manage your center operations and track progress"
+      breadcrumbs={[{ label: 'Center', href: '/center' }, { label: 'Dashboard' }]}
+      actions={
+        <div className="flex gap-2">
+          <Link href="/center/schools">
+            <Button variant="outline">
+              <Building className="h-4 w-4 mr-2" />
+              Link School
+            </Button>
+          </Link>
+          <Link href="/center/students">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Student
+            </Button>
+          </Link>
+        </div>
+      }
+    >
 
       {/* Stats Overview */}
       <motion.div
@@ -159,8 +158,8 @@ export default function CenterDashboard() {
             value: dashboardData.overview.totalStudents,
             description: "Enrolled in center",
             icon: Users,
-            color: "text-blue-600",
-            bgColor: "bg-blue-50",
+            color: "text-primary",
+            bgColor: "bg-primary/10",
             change: "+12%",
             changeType: "positive" as const
           },
@@ -169,8 +168,8 @@ export default function CenterDashboard() {
             value: dashboardData.overview.activeStudents,
             description: "Currently receiving services",
             icon: CheckCircle,
-            color: "text-green-600",
-            bgColor: "bg-green-50",
+            color: "text-success",
+            bgColor: "bg-success/10",
             change: "+8%",
             changeType: "positive" as const
           },
@@ -179,8 +178,8 @@ export default function CenterDashboard() {
             value: dashboardData.overview.totalSchools,
             description: "Partner schools",
             icon: School,
-            color: "text-purple-600", 
-            bgColor: "bg-purple-50",
+            color: "text-info", 
+            bgColor: "bg-info/10",
             change: "+2",
             changeType: "positive" as const
           },
@@ -189,8 +188,8 @@ export default function CenterDashboard() {
             value: dashboardData.overview.assignedEducators,
             description: "Assigned to center",
             icon: UserCheck,
-            color: "text-orange-600",
-            bgColor: "bg-orange-50",
+            color: "text-warning",
+            bgColor: "bg-warning/10",
             change: "+3",
             changeType: "positive" as const
           },
@@ -199,7 +198,7 @@ export default function CenterDashboard() {
             value: dashboardData.overview.assignedSuperEducators,
             description: "Supervising quality",
             icon: GraduationCap,
-            color: "text-indigo-600",
+            color: "text-primary",
             bgColor: "bg-indigo-50",
             change: "+1",
             changeType: "positive" as const
@@ -241,9 +240,9 @@ export default function CenterDashboard() {
               transition={{ duration: 0.3 }}
             >
               <Card className="overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+                <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/20 dark:to-primary/30">
                   <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-blue-600" />
+                    <Users className="h-5 w-5 text-primary" />
                     Recently Added Students
                   </CardTitle>
                   <CardDescription>
@@ -265,7 +264,7 @@ export default function CenterDashboard() {
                             whileHover={{ scale: 1.1 }}
                             className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 rounded-full flex items-center justify-center"
                           >
-                            <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                            <span className="text-primary dark:text-primary/80 font-semibold">
                               {student.fullName.split(' ').map((n: string) => n[0]).join('')}
                             </span>
                           </motion.div>
@@ -314,7 +313,7 @@ export default function CenterDashboard() {
               <Card className="overflow-hidden">
                 <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950">
                   <CardTitle className="flex items-center gap-2">
-                    <School className="h-5 w-5 text-purple-600" />
+                    <School className="h-5 w-5 text-info" />
                     Linked Schools
                   </CardTitle>
                   <CardDescription>
@@ -337,12 +336,12 @@ export default function CenterDashboard() {
                             <div className="flex items-center space-x-3 mb-4">
                               <motion.div
                                 whileHover={{ rotate: 5, scale: 1.1 }}
-                                className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg"
+                                className="p-2 bg-info/10 dark:bg-purple-900 rounded-lg"
                               >
-                                <School className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                                <School className="h-6 w-6 text-info dark:text-purple-400" />
                               </motion.div>
                               <div className="flex-1">
-                                <h3 className="font-semibold text-foreground group-hover:text-purple-600 transition-colors">
+                                <h3 className="font-semibold text-foreground group-hover:text-info transition-colors">
                                   {school.name}
                                 </h3>
                                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -399,7 +398,7 @@ export default function CenterDashboard() {
               <Card className="overflow-hidden">
                 <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950">
                   <CardTitle className="flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5 text-orange-600" />
+                    <GraduationCap className="h-5 w-5 text-warning" />
                     Assigned Educators
                   </CardTitle>
                   <CardDescription>
@@ -421,7 +420,7 @@ export default function CenterDashboard() {
                             whileHover={{ scale: 1.1, rotate: 5 }}
                             className="w-12 h-12 bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900 dark:to-red-900 rounded-full flex items-center justify-center"
                           >
-                            <span className="text-orange-600 dark:text-orange-400 font-semibold">
+                            <span className="text-warning dark:text-orange-400 font-semibold">
                               {educator.name.split(' ').map((n: string) => n[0]).join('')}
                             </span>
                           </motion.div>
@@ -478,6 +477,6 @@ export default function CenterDashboard() {
           </TabsContent>
         </Tabs>
       </motion.div>
-    </div>
+    </PageWrapper>
   );
 }

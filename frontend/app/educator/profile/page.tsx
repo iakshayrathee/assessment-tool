@@ -19,6 +19,7 @@ import { MultiSelectWithTags } from "@/components/ui/multi-select-with-tags";
 import { ProfessionalDatePicker } from "@/components/ui/professional-date-picker";
 import { format, parse, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
+import { PageWrapper } from '@/components/layout/PageWrapper';
 
 // Constants for dropdown options
 const GENDER_OPTIONS = [
@@ -537,11 +538,14 @@ export default function EducatorProfile() {
   }
 
   return (
-    <>
-      <div className="container mx-auto p-6 max-w-4xl">
+    <PageWrapper
+      title="My Profile"
+      description="Manage your professional information and preferences"
+      breadcrumbs={[{ label: 'Educator' }, { label: 'Profile' }]}
+    >
         {/* Alert Component */}
         {showAlert && (
-          <div className="fixed top-4 right-4 z-50 bg-red-500 text-white p-4 rounded-lg shadow-lg max-w-md">
+          <div className="fixed top-4 right-4 z-50 bg-destructive text-white p-4 rounded-lg shadow-lg max-w-md">
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <p className="font-semibold">Validation Error</p>
@@ -557,13 +561,8 @@ export default function EducatorProfile() {
           </div>
         )}
 
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-8 border border-blue-100">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile 👤</h1>
-              <p className="text-gray-600">Manage your professional information and preferences</p>
-            </div>
-            <div className="flex gap-3">
+        <div className="flex justify-end mb-6">
+          <div className="flex gap-3">
               {isEditing ? (
                 <>
                   <Button
@@ -613,7 +612,7 @@ export default function EducatorProfile() {
                   >
                     ❌ Cancel
                   </Button>
-                  <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 px-6 py-2 shadow-md">
+                  <Button onClick={handleSubmit} className="bg-primary hover:bg-primary px-6 py-2 shadow-md">
                     💾 Save Changes
                   </Button>
                 </>
@@ -624,25 +623,24 @@ export default function EducatorProfile() {
               )}
             </div>
           </div>
-        </div>
 
         <form onSubmit={handleSubmit}>
           <fieldset disabled={!isEditing} className={cn(!isEditing && "opacity-75")}>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-              <TabsList className="grid w-full grid-cols-5 bg-gray-100 p-1 rounded-lg">
-                <TabsTrigger value="personal" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsList className="grid w-full grid-cols-5 bg-muted p-1 rounded-lg">
+                <TabsTrigger value="personal" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                   👤 Personal
                 </TabsTrigger>
-                <TabsTrigger value="education" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <TabsTrigger value="education" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                   🎓 Education
                 </TabsTrigger>
-                <TabsTrigger value="experience" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <TabsTrigger value="experience" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                   💼 Experience
                 </TabsTrigger>
-                <TabsTrigger value="expertise" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <TabsTrigger value="expertise" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                   🎯 Expertise
                 </TabsTrigger>
-                <TabsTrigger value="preferences" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <TabsTrigger value="preferences" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                   ⚙️ Preferences
                 </TabsTrigger>
               </TabsList>
@@ -664,7 +662,7 @@ export default function EducatorProfile() {
                           onChange={(e) => handleInputChange('fullName', e.target.value)}
                           className={errors.fullName ? "border-red-500" : ""}
                         />
-                        {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+                        {errors.fullName && <p className="text-destructive text-sm mt-1">{errors.fullName}</p>}
                       </div>
 
                       <ProfessionalDatePicker
@@ -689,7 +687,7 @@ export default function EducatorProfile() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
+                        {errors.gender && <p className="text-destructive text-sm mt-1">{errors.gender}</p>}
                       </div>
 
                       <div>
@@ -701,7 +699,7 @@ export default function EducatorProfile() {
                           placeholder="10-digit phone number"
                           className={errors.phone ? "border-red-500" : ""}
                         />
-                        {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+                        {errors.phone && <p className="text-destructive text-sm mt-1">{errors.phone}</p>}
                       </div>
                     </div>
 
@@ -765,7 +763,7 @@ export default function EducatorProfile() {
                             </SelectContent>
                           </Select>
                         )}
-                        {errors.primaryLanguage && <p className="text-red-500 text-sm mt-1">{errors.primaryLanguage}</p>}
+                        {errors.primaryLanguage && <p className="text-destructive text-sm mt-1">{errors.primaryLanguage}</p>}
                       </div>
 
                       <div>
@@ -826,7 +824,7 @@ export default function EducatorProfile() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {errors.highestQualification && <p className="text-red-500 text-sm mt-1">{errors.highestQualification}</p>}
+                        {errors.highestQualification && <p className="text-destructive text-sm mt-1">{errors.highestQualification}</p>}
                       </div>
 
                       <div>
@@ -886,7 +884,7 @@ export default function EducatorProfile() {
                             </Button>
                           </div>
                         )}
-                        {errors.fieldOfStudy && <p className="text-red-500 text-sm mt-1">{errors.fieldOfStudy}</p>}
+                        {errors.fieldOfStudy && <p className="text-destructive text-sm mt-1">{errors.fieldOfStudy}</p>}
                       </div>
 
                       <div>
@@ -897,7 +895,7 @@ export default function EducatorProfile() {
                           onChange={(e) => handleInputChange('institutionName', e.target.value)}
                           className={errors.institutionName ? "border-red-500" : ""}
                         />
-                        {errors.institutionName && <p className="text-red-500 text-sm mt-1">{errors.institutionName}</p>}
+                        {errors.institutionName && <p className="text-destructive text-sm mt-1">{errors.institutionName}</p>}
                       </div>
 
                       <div>
@@ -914,7 +912,7 @@ export default function EducatorProfile() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {errors.yearOfGraduation && <p className="text-red-500 text-sm mt-1">{errors.yearOfGraduation}</p>}
+                        {errors.yearOfGraduation && <p className="text-destructive text-sm mt-1">{errors.yearOfGraduation}</p>}
                       </div>
                     </div>
                   </CardContent>
@@ -968,7 +966,7 @@ export default function EducatorProfile() {
                           ))}
                         </SelectContent>
                       </Select>
-                      {errors.specialEdQualification && <p className="text-red-500 text-sm mt-1">{errors.specialEdQualification}</p>}
+                      {errors.specialEdQualification && <p className="text-destructive text-sm mt-1">{errors.specialEdQualification}</p>}
                     </div>
 
                     <div>
@@ -999,7 +997,7 @@ export default function EducatorProfile() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {errors.specializationAreas && <p className="text-red-500 text-sm mt-1">{errors.specializationAreas}</p>}
+                        {errors.specializationAreas && <p className="text-destructive text-sm mt-1">{errors.specializationAreas}</p>}
                       </div>
                     </div>
 
@@ -1074,7 +1072,7 @@ export default function EducatorProfile() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {errors.yearsOfExperience && <p className="text-red-500 text-sm mt-1">{errors.yearsOfExperience}</p>}
+                        {errors.yearsOfExperience && <p className="text-destructive text-sm mt-1">{errors.yearsOfExperience}</p>}
                       </div>
 
                       <div>
@@ -1091,7 +1089,7 @@ export default function EducatorProfile() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {errors.totalYearsOfExperience && <p className="text-red-500 text-sm mt-1">{errors.totalYearsOfExperience}</p>}
+                        {errors.totalYearsOfExperience && <p className="text-destructive text-sm mt-1">{errors.totalYearsOfExperience}</p>}
                       </div>
 
                       <div>
@@ -1139,7 +1137,7 @@ export default function EducatorProfile() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {errors.experienceTypes && <p className="text-red-500 text-sm mt-1">{errors.experienceTypes}</p>}
+                        {errors.experienceTypes && <p className="text-destructive text-sm mt-1">{errors.experienceTypes}</p>}
                       </div>
                     </div>
 
@@ -1216,7 +1214,7 @@ export default function EducatorProfile() {
                             </Badge>
                           ))}
                         </div>
-                        {errors.currentWorkLocations && <p className="text-red-500 text-sm mt-1">{errors.currentWorkLocations}</p>}
+                        {errors.currentWorkLocations && <p className="text-destructive text-sm mt-1">{errors.currentWorkLocations}</p>}
                       </div>
                     </div>
 
@@ -1232,7 +1230,7 @@ export default function EducatorProfile() {
                     {formData.workingInMultipleCenters && (
                       <div>
                         <Label>Center Count: {formData.centerCount}</Label>
-                        <p className="text-sm text-gray-600">Auto-calculated based on work locations</p>
+                        <p className="text-sm text-muted-foreground">Auto-calculated based on work locations</p>
                       </div>
                     )}
                   </CardContent>
@@ -1328,12 +1326,12 @@ export default function EducatorProfile() {
                           <Label htmlFor="consentToShare" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                             Consent to Share Information *
                           </Label>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-muted-foreground">
                             I consent to sharing my profile information with relevant centers and administrators for assignment purposes.
                           </p>
                         </div>
                       </div>
-                      {errors.consentToShare && <p className="text-red-500 text-sm">{errors.consentToShare}</p>}
+                      {errors.consentToShare && <p className="text-destructive text-sm">{errors.consentToShare}</p>}
 
                       <div className="flex items-start space-x-2">
                         <Checkbox
@@ -1346,12 +1344,12 @@ export default function EducatorProfile() {
                           <Label htmlFor="agreementToPolicies" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                             Agreement to Policies *
                           </Label>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-muted-foreground">
                             I agree to abide by the organization's policies, code of conduct, and professional standards.
                           </p>
                         </div>
                       </div>
-                      {errors.agreementToPolicies && <p className="text-red-500 text-sm">{errors.agreementToPolicies}</p>}
+                      {errors.agreementToPolicies && <p className="text-destructive text-sm">{errors.agreementToPolicies}</p>}
                     </div>
                   </CardContent>
                 </Card>
@@ -1359,7 +1357,6 @@ export default function EducatorProfile() {
             </Tabs>
           </fieldset>
         </form>
-      </div>
-    </>
+    </PageWrapper>
   );
 }
