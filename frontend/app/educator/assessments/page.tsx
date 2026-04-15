@@ -31,12 +31,6 @@ const getVersionLabel = (version?: number, isFirst?: boolean) => {
   return `Reassessment V${version}`;
 };
 
-// Helper function to check if student's grade is eligible for comprehensive assessments
-// Students in Nursery, LKG, UKG, Kindergarten, Grade 1, and Grade 2 are not eligible
-const isGradeEligibleForAssessments = (grade: string): boolean => {
-  const earlyGrades = ['Nursery', 'LKG', 'UKG', 'Kindergarten', 'Grade 1', 'Grade 2'];
-  return !earlyGrades.includes(grade);
-};
 
 export default function AssessmentsPage() {
   const { user } = useAuth();
@@ -372,8 +366,7 @@ export default function AssessmentsPage() {
       )}
 
       {selectedStudent?.id ? (
-        isGradeEligibleForAssessments(selectedStudent.grade) ? (
-          <Tabs value={assessmentTab} onValueChange={setAssessmentTab}>
+        <Tabs value={assessmentTab} onValueChange={setAssessmentTab}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="formal">
                 <FileText className="h-4 w-4 mr-2" />
@@ -512,34 +505,6 @@ export default function AssessmentsPage() {
               )}
             </TabsContent>
           </Tabs>
-        ) : (
-          <Card className="flex-1">
-            <CardContent className="py-12">
-              <div className="text-center max-w-2xl mx-auto">
-                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BookOpen className="h-10 w-10 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold text-foreground mb-3">
-                  Comprehensive Assessments Not Required
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  Formal comprehensive assessments are designed for students in Grade 3 and above.
-                </p>
-                <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 text-left">
-                  <p className="text-sm text-blue-900 font-medium mb-2">
-                    <strong>{selectedStudent.fullName}</strong> is currently in <strong><GradeDisplay grade={selectedStudent.grade} /></strong>
-                  </p>
-                  <p className="text-sm text-primary">
-                    Students in Nursery, LKG, UKG, Kindergarten, Grade 1, and Grade 2 do not require these detailed assessments at this stage of their development.
-                  </p>
-                </div>
-                <p className="text-sm text-muted-foreground mt-4">
-                  For early grade students, please use age-appropriate observation and developmental milestone tracking instead.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )
       ) : (
         <Card className="flex-1">
           <CardContent className="py-12">
