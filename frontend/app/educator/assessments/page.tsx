@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, PenTool, Calculator, FileText, Plus, Users, Loader2, Eye, Pencil } from 'lucide-react';
 import { FormalAssessmentForm } from '@/components/assessments/FormalAssessmentForm';
-import { ReadingSkillAssessment } from '@/components/assessments/ReadingSkillAssessment';
+import { ReadingAssessmentWizard } from '@/components/assessments/ReadingAssessmentWizard';
 import { WritingSkillAssessment } from '@/components/assessments/WritingSkillAssessment';
 import { MathSkillAssessment } from '@/components/assessments/MathSkillAssessment';
 import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
@@ -404,7 +404,7 @@ export default function AssessmentsPage() {
               {showSkillAssessment ? (
                 <div>
                   {showSkillAssessment === 'reading' && (
-                    <ReadingSkillAssessment
+                    <ReadingAssessmentWizard
                       studentId={selectedStudent?.id || ''}
                       studentGrade={selectedStudent?.grade || ''}
                       assessmentId={editingAssessment?.type === 'reading' ? editingAssessment?.id : undefined}

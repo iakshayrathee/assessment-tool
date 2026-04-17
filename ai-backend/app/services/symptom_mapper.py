@@ -345,3 +345,259 @@ def calculate_severity_score(symptom_count: int, total_possible: int) -> float:
     if total_possible == 0:
         return 0.0
     return round((symptom_count / total_possible) * 100, 1)
+
+
+# ── New structured reading assessment helpers ─────────────────────────────────
+
+def is_new_reading_format(assessment: dict) -> bool:
+    """Detect if assessment uses the new 14-section structured format."""
+    return assessment.get("overallReadingScore") is not None or \
+           assessment.get("wordsPerMinute") is not None or \
+           assessment.get("comprehension") is not None
+
+
+def extract_reading_structured_analysis(assessment: dict) -> dict[str, list[str]]:
+    """Extract categorised observations from the new structured reading assessment.
+
+    Returns a dict keyed by category, each value a list of human-readable findings.
+    Used by the assessment agent in place of boolean symptom extraction.
+    """
+    cats: dict[str, list[str]] = {}
+
+    # ── Behavior observations ────────────────────────────────────────────────
+    behavior: list[str] = []
+    for field, label in [
+        ("interestInReading", "Interest in reading"),
+        ("readingStamina", "Reading stamina"),
+        ("frustrationTolerance", "Frustration tolerance"),
+        ("confidenceLevel", "Confidence level"),
+    ]:
+        val = assessment.get(field)
+        if val is not None:
+            level = "low" if val <= 2 else ("moderate" if val <= 3 else "adequate")
+            behavior.append(f"{label}: {val}/5 ({level})")
+    if assessment.get("attentionSpanMinutes"):
+        behavior.append(f"Attention span: {assessment['attentionSpanMinutes']} minutes")
+    for field, label in [
+        ("emotionalResponse", "Emotional response"),
+        ("motivation", "Motivation"),
+        ("selfCorrectionAbility", "Self-correction"),
+        ("promptDependency", "Prompt dependency"),
+    ]:
+        if assessment.get(field):
+            behavior.append(f"{label}: {assessment[field]}")
+    if assessment.get("taskAvoidance"):
+        behavior.append("Task avoidance: Yes")
+    if behavior:
+        cats["Reading Behavior & Affect"] = behavior
+
+    # ── Decoding & Phonological Awareness ────────────────────────────────────
+    decoding: list[str] = []
+    core_skills = assessment.get("coreSkills") or {}
+    phono = core_skills.get("phonologicalAwareness") or {}
+    for field, label in [
+        ("blending", "Blending"), ("segmenting", "Segmenting"),
+        ("soundIdentification", "Sound identification"),
+    ]:
+        val = phono.get(field)
+        if val is not None:
+            decoding.append(f"Phonological — {label}: {val}/5")
+    if phono.get("rhyming") is not None:
+        decoding.append(f"Rhyming: {'Yes' if phono['rhyming'] else 'No'}")
+    dec = core_skills.get("decoding") or {}
+    for field, label in [
+        ("letterSoundKnowledge", "Letter-sound knowledge"),
+        ("cvcWords", "CVC words"),
+        ("blendsDigraphs", "Blends/digraphs"),
+        ("multisyllabicDecoding", "Multisyllabic decoding"),
+    ]:
+        val = dec.get(field)
+        if val is not None:
+            decoding.append(f"Decoding — {label}: {val}/5")
+    if decoding:
+        cats["Decoding & Phonological Awareness"] = decoding
+
+    # ── Fluency ──────────────────────────────────────────────────────────────
+    fluency: list[str] = []
+    if assessment.get("wordsPerMinute") is not None:
+        fluency.append(f"WPM: {assessment['wordsPerMinute']}")
+    if assessment.get("fluencyAccuracy") is not None:
+        fluency.append(f"Accuracy: {assessment['fluencyAccuracy']}%")
+    fluency_data = core_skills.get("fluency") or {}
+    if fluency_data.get("errorRate") is not None:
+        fluency.append(f"Error rate: {fluency_data['errorRate']}")
+    if fluency_data.get("hesitations") is not None:
+        fluency.append(f"Hesitations: {fluency_data['hesitations']}")
+    if assessment.get("sightWordsPercent") is not None:
+        fluency.append(f"Sight words: {assessment['sightWordsPercent']}%")
+    if assessment.get("readingExpression"):
+        fluency.append(f"Expression: {assessment['readingExpression']}")
+    if assessment.get("pausingCorrectness"):
+        fluency.append(f"Pausing: {assessment['pausingCorrectness']}")
+    if fluency:
+        cats["Fluency & Oral Reading"] = fluency
+
+    # ── Visual Tracking ──────────────────────────────────────────────────────
+    tracking: list[str] = []
+    vt = core_skills.get("visualTracking") or {}
+    for field, label in [
+        ("skipsLines", "Skips lines"), ("usesFinger", "Uses finger"),
+        ("losesPlace", "Loses place"),
+    ]:
+        if vt.get(field):
+            tracking.append(label)
+    if tracking:
+        cats["Visual Tracking Issues"] = tracking
+
+    # ── Comprehension ────────────────────────────────────────────────────────
+    comp: list[str] = []
+    comprehension = assessment.get("comprehension") or {}
+    for section, items in [
+        ("literal", [("recallFacts", "Recall facts"), ("identifyCharacters", "Identify characters/events")]),
+        ("inferential", [("prediction", "Prediction ability"), ("meaningInference", "Meaning inference")]),
+        ("critical", [("opinionFormation", "Opinion formation"), ("realLifeConnection", "Real-life connection")]),
+    ]:
+        sub = comprehension.get(section) or {}
+        for field, label in items:
+            val = sub.get(field)
+            if val is not None:
+                comp.append(f"{label}: {val}/5")
+    retelling = comprehension.get("retelling") or {}
+    if retelling.get("sequencing"):
+        comp.append(f"Sequencing: {retelling['sequencing']}")
+    if retelling.get("completeness") is not None:
+        comp.append(f"Retelling completeness: {retelling['completeness']}/5")
+    if comp:
+        cats["Comprehension"] = comp
+
+    # ── Error Patterns ───────────────────────────────────────────────────────
+    errors: list[str] = []
+    error_data = assessment.get("errorAnalysis") or {}
+    error_types = error_data.get("types") or {}
+    for etype, info in error_types.items():
+        if isinstance(info, dict) and info.get("present"):
+            freq = info.get("frequency", "")
+            errors.append(f"{etype}" + (f" ({freq}%)" if freq else ""))
+        elif info is True:
+            errors.append(etype)
+    if error_data.get("dominantErrorType"):
+        errors.append(f"Dominant error: {error_data['dominantErrorType']}")
+    if error_data.get("errorFrequencyPercent") is not None:
+        errors.append(f"Overall error frequency: {error_data['errorFrequencyPercent']}%")
+    if errors:
+        cats["Error Patterns"] = errors
+
+    # ── Red Flags ────────────────────────────────────────────────────────────
+    flags: list[str] = []
+    red = assessment.get("redFlags") or {}
+    if red.get("attentionIssues"):
+        flags.append("Attention issues")
+    if red.get("languageProcessingIssues"):
+        flags.append("Language processing issues")
+    if red.get("avoidanceBehavior"):
+        flags.append("Avoidance behavior")
+    for custom in (red.get("custom") or []):
+        flags.append(custom)
+    if flags:
+        cats["Red Flags"] = flags
+
+    # ── Computed Scores (backend-generated) ──────────────────────────────────
+    scores: list[str] = []
+    for field, label in [
+        ("decodingScore", "Decoding composite"),
+        ("fluencyScore", "Fluency composite"),
+        ("comprehensionScore", "Comprehension composite"),
+        ("behaviorScore", "Behavior composite"),
+        ("overallReadingScore", "Overall reading score"),
+    ]:
+        val = assessment.get(field)
+        if val is not None:
+            scores.append(f"{label}: {val}/100")
+    if assessment.get("readingLevel"):
+        scores.append(f"Reading level: {assessment['readingLevel']}")
+    if assessment.get("tier"):
+        scores.append(f"Tier: {assessment['tier']}")
+    if assessment.get("ldRiskFlag"):
+        scores.append(f"LD risk: {assessment.get('ldRiskDetails', 'Yes')}")
+    if scores:
+        cats["Computed Scores & Classification"] = scores
+
+    # ── Strengths ────────────────────────────────────────────────────────────
+    strengths: list[str] = []
+    s_data = assessment.get("strengths") or {}
+    for s in (s_data.get("selected") or []):
+        strengths.append(s)
+    if s_data.get("educatorNotes"):
+        strengths.append(f"Educator notes: {s_data['educatorNotes']}")
+    if strengths:
+        cats["Identified Strengths"] = strengths
+
+    # ── Challenges ───────────────────────────────────────────────────────────
+    challenges: list[str] = []
+    if assessment.get("primaryChallenge"):
+        challenges.append(f"Primary: {assessment['primaryChallenge']}")
+    if assessment.get("secondaryChallenge"):
+        challenges.append(f"Secondary: {assessment['secondaryChallenge']}")
+    if assessment.get("challengeSeverity"):
+        challenges.append(f"Severity: {assessment['challengeSeverity']}")
+    if challenges:
+        cats["Identified Challenges"] = challenges
+
+    return cats
+
+
+def format_reading_structured_summary(assessment: dict) -> str:
+    """Format new structured reading assessment into a concise text summary for LLM prompts."""
+    lines: list[str] = []
+
+    # Context
+    if assessment.get("mediumOfInstruction"):
+        lines.append(f"Medium: {assessment['mediumOfInstruction']}")
+    if assessment.get("firstLanguage"):
+        lines.append(f"First language: {assessment['firstLanguage']}")
+    if assessment.get("readingExposureAtHome"):
+        lines.append(f"Home reading exposure: {assessment['readingExposureAtHome']}")
+    if assessment.get("languageMismatch"):
+        lines.append("Language mismatch between home and school: Yes")
+    if assessment.get("parentConcern"):
+        lines.append(f"Parent concern: {assessment['parentConcern']}")
+
+    # Resources / accuracy
+    resources = assessment.get("readingResources") or {}
+    known = resources.get("knownText") or {}
+    unknown = resources.get("unknownText") or {}
+    if known.get("accuracyPercent") is not None:
+        lines.append(f"Known text accuracy: {known['accuracyPercent']}%")
+    if unknown.get("accuracyPercent") is not None:
+        lines.append(f"Unknown text accuracy: {unknown['accuracyPercent']}%")
+
+    # Key metrics
+    if assessment.get("wordsPerMinute") is not None:
+        lines.append(f"WPM: {assessment['wordsPerMinute']}")
+    if assessment.get("fluencyAccuracy") is not None:
+        lines.append(f"Fluency accuracy: {assessment['fluencyAccuracy']}%")
+    if assessment.get("sightWordsPercent") is not None:
+        lines.append(f"Sight words: {assessment['sightWordsPercent']}%")
+
+    # Computed scores
+    for field, label in [
+        ("decodingScore", "Decoding"), ("fluencyScore", "Fluency"),
+        ("comprehensionScore", "Comprehension"), ("behaviorScore", "Behavior"),
+        ("overallReadingScore", "Overall"),
+    ]:
+        val = assessment.get(field)
+        if val is not None:
+            lines.append(f"{label} score: {val}/100")
+
+    if assessment.get("readingLevel"):
+        lines.append(f"Reading level: {assessment['readingLevel']}")
+    if assessment.get("tier"):
+        lines.append(f"Tier: {assessment['tier']}")
+    if assessment.get("ldRiskFlag"):
+        lines.append(f"LD risk detected: {assessment.get('ldRiskDetails', 'Yes')}")
+
+    # Grade gap
+    if assessment.get("gradeGap") is not None:
+        lines.append(f"Grade gap: {assessment['gradeGap']} years")
+
+    return "\n".join(lines) if lines else "No structured data available"

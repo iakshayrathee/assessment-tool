@@ -1,14 +1,17 @@
 import { PrismaClient, FormalAssessment, ReadingSkillAssessment, WritingSkillAssessment, MathSkillAssessment, AssessmentStatus } from '@prisma/client';
 import { FormalAssessmentRepository, FormalAssessmentData } from '../repositories/FormalAssessmentRepository';
 import { SkillAssessmentRepository, ReadingSkillAssessmentData, WritingSkillAssessmentData, MathSkillAssessmentData } from '../repositories/SkillAssessmentRepository';
+import { ReadingScoreService } from './ReadingScoreService';
 
 export class NewAssessmentService {
   private formalAssessmentRepository: FormalAssessmentRepository;
   private skillAssessmentRepository: SkillAssessmentRepository;
+  private readingScoreService: ReadingScoreService;
 
   constructor(prisma: PrismaClient) {
     this.formalAssessmentRepository = new FormalAssessmentRepository(prisma);
     this.skillAssessmentRepository = new SkillAssessmentRepository(prisma);
+    this.readingScoreService = new ReadingScoreService();
   }
 
   // Formal Assessment Services
@@ -85,7 +88,45 @@ export class NewAssessmentService {
       throw new Error('Student ID is required');
     }
 
-    return await this.skillAssessmentRepository.createReadingAssessment(specialEducatorId, data);
+    // Normalize assessmentDate: Prisma requires full ISO-8601 DateTime, not just a date string
+    const normalizedData = { ...data };
+    if (normalizedData.assessmentDate && typeof normalizedData.assessmentDate === 'string') {
+      const d = normalizedData.assessmentDate as string;
+      // If it's just "YYYY-MM-DD" without time, append midnight UTC
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        normalizedData.assessmentDate = new Date(`${d}T00:00:00.000Z`);
+      } else {
+        normalizedData.assessmentDate = new Date(d);
+      }
+    }
+
+    // Compute scores from input data
+    const scores = this.readingScoreService.computeScores(normalizedData);
+    const enrichedData: ReadingSkillAssessmentData = {
+      ...normalizedData,
+      decodingScore: scores.decodingScore ?? undefined,
+      fluencyScore: scores.fluencyScore ?? undefined,
+      comprehensionScore: scores.comprehensionScore ?? undefined,
+      behaviorScore: scores.behaviorScore ?? undefined,
+      overallReadingScore: scores.overallReadingScore ?? undefined,
+      knownTextLevel: scores.knownTextLevel ?? undefined,
+      unknownTextLevel: scores.unknownTextLevel ?? undefined,
+      finalReadingLevel: scores.finalReadingLevel ?? undefined,
+      tier: scores.tier ?? undefined,
+      ldRiskFlag: scores.ldRiskFlag,
+      ldRiskDetails: scores.ldRiskDetails ?? undefined,
+    };
+
+    // Enrich error analysis with computed fields
+    if (enrichedData.errorAnalysis && scores.errorAnalysisComputed) {
+      enrichedData.errorAnalysis = {
+        ...enrichedData.errorAnalysis,
+        errorFrequencyPercent: scores.errorAnalysisComputed.errorFrequencyPercent,
+        dominantErrorType: scores.errorAnalysisComputed.dominantErrorType,
+      };
+    }
+
+    return await this.skillAssessmentRepository.createReadingAssessment(specialEducatorId, enrichedData);
   }
 
   async getReadingAssessmentById(id: string): Promise<ReadingSkillAssessment> {
@@ -110,7 +151,44 @@ export class NewAssessmentService {
       throw new Error('Cannot update completed assessment');
     }
 
-    return await this.skillAssessmentRepository.updateReadingAssessment(id, data);
+    // Normalize assessmentDate to full ISO-8601 DateTime
+    const normalizedData = { ...data };
+    if (normalizedData.assessmentDate && typeof normalizedData.assessmentDate === 'string') {
+      const d = normalizedData.assessmentDate as string;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        normalizedData.assessmentDate = new Date(`${d}T00:00:00.000Z`);
+      } else {
+        normalizedData.assessmentDate = new Date(d);
+      }
+    }
+
+    // Merge existing data with updates for score computation
+    const merged = { ...existingAssessment, ...normalizedData };
+    const scores = this.readingScoreService.computeScores(merged);
+    const enrichedData: Partial<ReadingSkillAssessmentData> = {
+      ...normalizedData,
+      decodingScore: scores.decodingScore ?? undefined,
+      fluencyScore: scores.fluencyScore ?? undefined,
+      comprehensionScore: scores.comprehensionScore ?? undefined,
+      behaviorScore: scores.behaviorScore ?? undefined,
+      overallReadingScore: scores.overallReadingScore ?? undefined,
+      knownTextLevel: scores.knownTextLevel ?? undefined,
+      unknownTextLevel: scores.unknownTextLevel ?? undefined,
+      finalReadingLevel: scores.finalReadingLevel ?? undefined,
+      tier: scores.tier ?? undefined,
+      ldRiskFlag: scores.ldRiskFlag,
+      ldRiskDetails: scores.ldRiskDetails ?? undefined,
+    };
+
+    if (enrichedData.errorAnalysis && scores.errorAnalysisComputed) {
+      enrichedData.errorAnalysis = {
+        ...enrichedData.errorAnalysis,
+        errorFrequencyPercent: scores.errorAnalysisComputed.errorFrequencyPercent,
+        dominantErrorType: scores.errorAnalysisComputed.dominantErrorType,
+      };
+    }
+
+    return await this.skillAssessmentRepository.updateReadingAssessment(id, enrichedData);
   }
 
   async completeReadingAssessment(id: string): Promise<ReadingSkillAssessment> {
@@ -122,6 +200,23 @@ export class NewAssessmentService {
     if (existingAssessment.status === AssessmentStatus.COMPLETED) {
       throw new Error('Assessment is already completed');
     }
+
+    // Final score computation before completing
+    const scores = this.readingScoreService.computeScores(existingAssessment);
+    await this.skillAssessmentRepository.updateReadingAssessment(id, {
+      studentId: existingAssessment.studentId,
+      decodingScore: scores.decodingScore ?? undefined,
+      fluencyScore: scores.fluencyScore ?? undefined,
+      comprehensionScore: scores.comprehensionScore ?? undefined,
+      behaviorScore: scores.behaviorScore ?? undefined,
+      overallReadingScore: scores.overallReadingScore ?? undefined,
+      knownTextLevel: scores.knownTextLevel ?? undefined,
+      unknownTextLevel: scores.unknownTextLevel ?? undefined,
+      finalReadingLevel: scores.finalReadingLevel ?? undefined,
+      tier: scores.tier ?? undefined,
+      ldRiskFlag: scores.ldRiskFlag,
+      ldRiskDetails: scores.ldRiskDetails ?? undefined,
+    });
 
     return await this.skillAssessmentRepository.completeReadingAssessment(id);
   }

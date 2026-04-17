@@ -23,6 +23,9 @@ async def get_engine():
             max_overflow=20,
             pool_pre_ping=True,
             echo=False,
+            # Neon uses PgBouncer which causes stale prepared-statement errors.
+            # Disabling the cache prevents "columns described (N) != actual (M)" errors.
+            connect_args={"statement_cache_size": 0},
         )
     return _engine
 

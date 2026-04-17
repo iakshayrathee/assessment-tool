@@ -2,11 +2,103 @@ import { PrismaClient, ReadingSkillAssessment, WritingSkillAssessment, MathSkill
 
 export interface ReadingSkillAssessmentData {
   studentId: string;
-  // Assessment Questions
-  readingQ1?: string; // Is the child reading at grade level?
-  readingQ2?: string; // Can the child decode unfamiliar words?
-  readingQ3?: string; // Can the child answer comprehension questions?
-  // Decoding & Word Reading Errors
+
+  // Section 1: Basic Info
+  assessmentDate?: string | Date;
+  mediumOfInstruction?: string;
+  firstLanguage?: string;
+  parentConcern?: string;
+
+  // Section 2: Reading Context
+  readingExposureAtHome?: string;
+  readingSupportAtHome?: boolean;
+  readingSupportDetails?: string;
+  typeOfSchooling?: string;
+  languageMismatch?: boolean;
+  previousIntervention?: boolean;
+  previousInterventionType?: string;
+
+  // Section 3: Reading Resources (JSON)
+  readingResources?: any;
+
+  // Section 4: Reading Behavior
+  interestInReading?: number;
+  attentionSpanMinutes?: number;
+  readingStamina?: number;
+  frustrationTolerance?: number;
+  emotionalResponse?: string;
+  taskAvoidance?: boolean;
+  motivation?: string;
+  confidenceLevel?: number;
+  selfCorrectionAbility?: string;
+  promptDependency?: string;
+  behaviorObservations?: string;
+
+  // Section 5: Core Reading Skills
+  phonologicalAwareness?: any;
+  decodingSkills?: any;
+  wordsPerMinute?: number;
+  fluencyAccuracy?: number;
+  fluencyErrorRate?: number;
+  hesitationCount?: number;
+  sightWordsPercent?: number;
+  punctuationAwareness?: boolean;
+  readingExpression?: string;
+  pausingCorrectness?: string;
+  skipsLinesVisual?: boolean;
+  usesFinger?: boolean;
+  losesPlace?: boolean;
+
+  // Section 6: Comprehension (JSON)
+  comprehension?: any;
+
+  // Section 7: Error Analysis (JSON)
+  errorAnalysis?: any;
+
+  // Section 8: Strengths (JSON)
+  strengths?: any;
+
+  // Section 9: Challenges
+  primaryChallenge?: string;
+  secondaryChallenge?: string;
+  challengeSeverity?: string;
+
+  // Section 10: Red Flags (JSON)
+  redFlags?: any;
+
+  // Section 11: Level Classification
+  knownTextAccuracy?: number;
+  unknownTextAccuracy?: number;
+  knownTextLevel?: string;
+  unknownTextLevel?: string;
+  finalReadingLevel?: string;
+
+  // Section 12: Grade Level Mapping
+  currentGrade?: string;
+  readingGradeLevel?: string;
+  gradeGap?: string;
+
+  // Section 13: AI Insights (JSON)
+  aiInsights?: any;
+  aiInsightsStatus?: string;
+
+  // Section 14: Progress Tracking (JSON)
+  progressTracking?: any;
+
+  // Computed scores (set by backend)
+  decodingScore?: number;
+  fluencyScore?: number;
+  comprehensionScore?: number;
+  behaviorScore?: number;
+  overallReadingScore?: number;
+  tier?: string;
+  ldRiskFlag?: boolean;
+  ldRiskDetails?: string;
+
+  // Legacy fields (backward compat)
+  readingQ1?: string;
+  readingQ2?: string;
+  readingQ3?: string;
   missesLetters?: boolean;
   missesWords?: boolean;
   missesSentences?: boolean;
@@ -24,7 +116,6 @@ export interface ReadingSkillAssessmentData {
   troubleLearningLetterSound?: boolean;
   shortLongVowelConfusion?: boolean;
   poorSyllabication?: boolean;
-  // Fluency & Reading Flow
   poorFlowWhileReading?: boolean;
   choppyReading?: boolean;
   lotsOfGaps?: boolean;
@@ -35,7 +126,6 @@ export interface ReadingSkillAssessmentData {
   poorIntonations?: boolean;
   poorPhrasing?: boolean;
   slowEffortfulReading?: boolean;
-  // Tracking, Eye Movement, Visual Skills
   movesHeadWhileReading?: boolean;
   losesPlaceWhileReading?: boolean;
   skipsLines?: boolean;
@@ -44,11 +134,9 @@ export interface ReadingSkillAssessmentData {
   holdsBookTooClose?: boolean;
   difficultyLeftRightEyeMovement?: boolean;
   difficultyRecognizingSimilarLetters?: boolean;
-  // Comprehension Indicators
   readsWithoutUnderstanding?: boolean;
   forgetsWhatWasRead?: boolean;
   difficultyAnsweringQuestions?: boolean;
-  // Attention & Reading Behavior
   notInterestedInReading?: boolean;
   avoidsReadingAloud?: boolean;
   avoidsReadingActivities?: boolean;
@@ -56,11 +144,31 @@ export interface ReadingSkillAssessmentData {
   easilyFrustrated?: boolean;
   lowConfidence?: boolean;
   poorReadingStamina?: boolean;
-  // Mechanics & Punctuation
   punctuationErrors?: boolean;
   doesNotPauseAtFullStop?: boolean;
   extraPausesAtCommas?: boolean;
   incorrectToneForQuestionExclamation?: boolean;
+  independentLevelKnownText?: boolean;
+  independentLevelUnknownText?: boolean;
+  instructionalLevelKnownText?: boolean;
+  instructionalLevelUnknownText?: boolean;
+  frustrationLevelKnownText?: boolean;
+  frustrationLevelUnknownText?: boolean;
+  isAtGradeLevel?: boolean;
+  functionalGradeLevel?: string;
+  performanceSummary?: string;
+  gradeLevelMappings?: any;
+  gradeLevelObservation?: string;
+  batteryTestConducted?: boolean;
+  batteryTestSummary?: string;
+  batteryTestReportUrl?: string;
+  atGradeLevelComprehension?: boolean;
+  comprehensionLevels?: string[];
+  currentLevelComprehension?: string[];
+  comprehensionObservation?: string;
+
+  // Meta
+  currentStep?: number;
   additionalNotes?: string;
 }
 

@@ -27,6 +27,7 @@ from app.api.reports import router as report_router
 from app.api.risk import router as risk_router
 from app.api.educator import router as educator_router
 from app.api.transparency import router as transparency_router
+from app.api.reading_insights import router as reading_insights_router
 
 
 @asynccontextmanager
@@ -85,6 +86,7 @@ app.include_router(report_router)
 app.include_router(risk_router)
 app.include_router(educator_router)
 app.include_router(transparency_router)
+app.include_router(reading_insights_router)
 
 
 @app.get("/health")

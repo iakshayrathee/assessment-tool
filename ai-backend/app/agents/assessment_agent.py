@@ -22,6 +22,9 @@ from app.services.symptom_mapper import (
     get_categorized_symptoms,
     count_symptoms,
     calculate_severity_score,
+    is_new_reading_format,
+    extract_reading_structured_analysis,
+    format_reading_structured_summary,
     READING_SYMPTOM_MAP, WRITING_SYMPTOM_MAP, MATH_SYMPTOM_MAP,
     READING_CATEGORIES, WRITING_CATEGORIES, MATH_CATEGORIES,
 )
@@ -83,13 +86,20 @@ async def gather_student_context(state: AssessmentState) -> dict:
 
 
 async def analyze_symptoms(state: AssessmentState) -> dict:
-    """Categorize symptoms from assessment data."""
+    """Categorize symptoms from assessment data.
+    
+    Supports both legacy boolean-field assessments and the new
+    14-section structured reading format.
+    """
     if state.get("error"):
         return {"symptom_analysis": {"reading": {}, "writing": {}, "math": {}}}
     analysis: dict = {"reading": {}, "writing": {}, "math": {}}
 
     for ra in state.get("reading_assessments", []):
-        cats = get_categorized_symptoms(ra, READING_SYMPTOM_MAP, READING_CATEGORIES)
+        if is_new_reading_format(ra):
+            cats = extract_reading_structured_analysis(ra)
+        else:
+            cats = get_categorized_symptoms(ra, READING_SYMPTOM_MAP, READING_CATEGORIES)
         if cats:
             analysis["reading"] = cats
             break  # use most recent
@@ -110,14 +120,30 @@ async def analyze_symptoms(state: AssessmentState) -> dict:
 
 
 async def score_severity(state: AssessmentState) -> dict:
-    """Calculate severity scores per domain."""
+    """Calculate severity scores per domain.
+    
+    For new-format reading assessments, uses the backend-computed
+    overallReadingScore directly (inverted: 100 = no issues → severity 0).
+    Falls back to legacy boolean counting for old assessments.
+    """
     if state.get("error"):
         return {"severity_scores": {"reading": 0, "writing": 0, "math": 0,
                                     "reading_symptom_count": 0, "writing_symptom_count": 0,
                                     "math_symptom_count": 0, "total_symptom_count": 0}}
-    reading_count = count_symptoms(
-        state.get("reading_assessments", [{}])[0] if state.get("reading_assessments") else None
+
+    reading_assess = (
+        state.get("reading_assessments", [{}])[0]
+        if state.get("reading_assessments") else None
     )
+
+    if reading_assess and is_new_reading_format(reading_assess):
+        overall = reading_assess.get("overallReadingScore")
+        reading_severity = round(100 - overall, 1) if overall is not None else 0
+        reading_count = int(reading_severity / 2)  # approximate for rule-based thresholds
+    else:
+        reading_count = count_symptoms(reading_assess)
+        reading_severity = calculate_severity_score(reading_count, len(READING_SYMPTOM_MAP))
+
     writing_count = count_symptoms(
         state.get("writing_assessments", [{}])[0] if state.get("writing_assessments") else None
     )
@@ -126,7 +152,7 @@ async def score_severity(state: AssessmentState) -> dict:
     )
 
     scores = {
-        "reading": calculate_severity_score(reading_count, len(READING_SYMPTOM_MAP)),
+        "reading": reading_severity,
         "writing": calculate_severity_score(writing_count, len(WRITING_SYMPTOM_MAP)),
         "math": calculate_severity_score(math_count, len(MATH_SYMPTOM_MAP)),
         "reading_symptom_count": reading_count,
@@ -134,6 +160,11 @@ async def score_severity(state: AssessmentState) -> dict:
         "math_symptom_count": math_count,
         "total_symptom_count": reading_count + writing_count + math_count,
     }
+
+    # Attach structured summary for the LLM prompt (new format only)
+    if reading_assess and is_new_reading_format(reading_assess):
+        scores["reading_structured_summary"] = format_reading_structured_summary(reading_assess)
+
     return {"severity_scores": scores}
 
 
@@ -156,9 +187,15 @@ async def build_profile_and_differential(state: AssessmentState) -> dict:
     intake = state.get("intake_data", {})
     intake_summary = _format_intake(intake) if intake else "No intake data"
 
+    # Include structured reading summary when available (new 14-section format)
+    structured_summary = state.get("severity_scores", {}).get("reading_structured_summary", "")
+    extra_context = ""
+    if structured_summary:
+        extra_context = f"\n\nSTRUCTURED READING ASSESSMENT DATA:\n{structured_summary}"
+
     prompt = build_profile_and_differential_prompt(
         student_info=student_info,
-        intake_summary=intake_summary,
+        intake_summary=intake_summary + extra_context,
         symptom_analysis=json.dumps(state.get("symptom_analysis", {}), indent=1),
         severity_scores=json.dumps(state.get("severity_scores", {}), indent=1),
     )

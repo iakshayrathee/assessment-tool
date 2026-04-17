@@ -503,16 +503,127 @@ model FormalAssessment {
   @@map("formal_assessments")
 }
 
-// Reading Skill Assessment
+// Reading Skill Assessment (Redesigned — 14-section structured assessment)
 model ReadingSkillAssessment {
-  id                                  String  @id @default(cuid())
-  studentId                           String
-  specialEducatorId                   String
-  // Assessment Questions
-  readingQ1                           String? // Is the child reading at grade level?
-  readingQ2                           String? // Can the child decode unfamiliar words?
-  readingQ3                           String? // Can the child answer comprehension questions?
-  // Decoding & Word Reading Errors
+  id                String @id @default(cuid())
+  studentId         String
+  specialEducatorId String
+
+  // ── SECTION 1: BASIC INFO ──────────────────────────────────────────────────
+  assessmentDate          DateTime? // Date of assessment
+  mediumOfInstruction     String?   // English / Hindi / Regional
+  firstLanguage           String?   // Dropdown
+  parentConcern           String?   // Textarea
+
+  // ── SECTION 2: READING CONTEXT ─────────────────────────────────────────────
+  readingExposureAtHome   String?   // Daily / Weekly / Rare / None
+  readingSupportAtHome    Boolean?
+  readingSupportDetails   String?
+  typeOfSchooling         String?   // CBSE / ICSE / State / IB / Other
+  languageMismatch        Boolean?  // Home vs School language
+  previousIntervention    Boolean?
+  previousInterventionType String?
+
+  // ── SECTION 3: READING RESOURCES (JSON) ────────────────────────────────────
+  // { schoolText: { gradeLevelUsed, difficulty }, knownText: { passageId, accuracyPercent, errorsCount },
+  //   unknownText: { passageId, accuracyPercent, errorsCount }, externalResources: { usesStorybooks, usesApps, materialType } }
+  readingResources Json?
+
+  // ── SECTION 4: READING BEHAVIOR (1-5 rating scales) ────────────────────────
+  interestInReading       Int? // 1-5
+  attentionSpanMinutes    Int? // minutes
+  readingStamina          Int? // 1-5
+  frustrationTolerance    Int? // 1-5
+  emotionalResponse       String? // Calm / Avoidant / Anxious
+  taskAvoidance           Boolean?
+  motivation              String? // Intrinsic / Prompted / Resistant
+  confidenceLevel         Int? // 1-5
+  selfCorrectionAbility   String? // Independent / Prompted / None
+  promptDependency        String? // Independent / Needs cues / Fully assisted
+  behaviorObservations    String? // Textarea
+
+  // ── SECTION 5: CORE READING SKILLS (JSON sub-sections) ─────────────────────
+  // A. Phonological Awareness: { rhyming, blending, segmenting, soundIdentification }
+  phonologicalAwareness Json?
+  // B. Decoding: { letterSoundKnowledge, cvcWords, blendsDigraphs, multisyllabicDecoding }
+  decodingSkills Json?
+  // C. Fluency
+  wordsPerMinute    Int?   // WPM
+  fluencyAccuracy   Float? // % accuracy
+  fluencyErrorRate  Float? // errors per 100 words
+  hesitationCount   Int?   // count
+  // D. Sight Words
+  sightWordsPercent Float? // % correct from grade list
+  // E. Mechanics
+  punctuationAwareness Boolean?
+  readingExpression    String? // Flat / Moderate / Good
+  pausingCorrectness   String? // Correct / Incorrect
+  // F. Visual Tracking
+  skipsLinesVisual     Boolean?  // Visual tracking: skips lines
+  usesFinger           Boolean?
+  losesPlace           Boolean?
+
+  // ── SECTION 6: COMPREHENSION (JSON) ────────────────────────────────────────
+  // { literal: { recallFacts, identifyCharacters }, inferential: { prediction, meaningInference },
+  //   critical: { opinionFormation, realLifeConnection }, retelling: { sequencing, completeness } }
+  comprehension Json?
+
+  // ── SECTION 7: ERROR ANALYSIS (JSON) ───────────────────────────────────────
+  // { substitution, omission, insertion, reversal, guessing, slowDecoding, repetition,
+  //   skippingLines } — each: { present: bool, frequency: number }
+  // + errorFrequencyPercent, dominantErrorType (auto-tagged)
+  errorAnalysis Json?
+
+  // ── SECTION 8: STRENGTHS ───────────────────────────────────────────────────
+  // { selected: ["strongPhonics","goodMemory",...], educatorNotes: "..." }
+  strengths Json?
+
+  // ── SECTION 9: CHALLENGES ──────────────────────────────────────────────────
+  primaryChallenge   String?
+  secondaryChallenge String?
+  challengeSeverity  String? // Mild / Moderate / Severe
+
+  // ── SECTION 10: RED FLAGS ──────────────────────────────────────────────────
+  // { attentionIssues, languageProcessingIssues, avoidanceBehavior, custom: [] }
+  redFlags Json?
+
+  // ── SECTION 11: LEVEL CLASSIFICATION (auto-computed) ───────────────────────
+  knownTextAccuracy   Float? // % accuracy for known text
+  unknownTextAccuracy Float? // % accuracy for unknown text
+  knownTextLevel      String? // Independent / Instructional / Frustration
+  unknownTextLevel    String? // Independent / Instructional / Frustration
+  finalReadingLevel   String? // Auto: Independent / Instructional / Frustration
+
+  // ── SECTION 12: GRADE LEVEL MAPPING ────────────────────────────────────────
+  currentGrade        String?
+  readingGradeLevel   String? // AI predicted
+  gradeGap            String? // e.g., "-2 years"
+
+  // ── SECTION 13: AI INSIGHTS & PLAN (JSON, editable) ────────────────────────
+  // { diagnosisSummary, recommendations, instructionalStrategies, interventions: { programType, frequency },
+  //   supportPlan: { classroom, home }, learningPath: { fourWeekGoals, threeMonthGoals } }
+  aiInsights       Json?
+  aiInsightsStatus String? // AI_DRAFT / EDUCATOR_REVIEWED / FINAL
+
+  // ── SECTION 14: PROGRESS TRACKING (JSON) ───────────────────────────────────
+  // { baselineScore, currentScore, improvementPercent, sessionsCompleted, reassessmentDate, graphData }
+  progressTracking Json?
+
+  // ── COMPUTED SCORES (backend-calculated) ───────────────────────────────────
+  decodingScore        Float? // 0-100
+  fluencyScore         Float? // 0-100
+  comprehensionScore   Float? // 0-100
+  behaviorScore        Float? // 0-100
+  overallReadingScore  Float? // 0-100 weighted composite
+  tier                 String? // Tier 1 / Tier 2 / Tier 3
+  ldRiskFlag           Boolean @default(false)
+  ldRiskDetails        String? // e.g., "Dyslexia pattern detected"
+
+  // ── LEGACY COMPATIBILITY ───────────────────────────────────────────────────
+  // Old boolean symptom fields preserved for backward compat with existing data
+  readingQ1                           String?
+  readingQ2                           String?
+  readingQ3                           String?
   missesLetters                       Boolean @default(false)
   missesWords                         Boolean @default(false)
   missesSentences                     Boolean @default(false)
@@ -530,7 +641,6 @@ model ReadingSkillAssessment {
   troubleLearningLetterSound          Boolean @default(false)
   shortLongVowelConfusion             Boolean @default(false)
   poorSyllabication                   Boolean @default(false)
-  // Fluency & Reading Flow
   poorFlowWhileReading                Boolean @default(false)
   choppyReading                       Boolean @default(false)
   lotsOfGaps                          Boolean @default(false)
@@ -541,7 +651,6 @@ model ReadingSkillAssessment {
   poorIntonations                     Boolean @default(false)
   poorPhrasing                        Boolean @default(false)
   slowEffortfulReading                Boolean @default(false)
-  // Tracking, Eye Movement, Visual Skills
   movesHeadWhileReading               Boolean @default(false)
   losesPlaceWhileReading              Boolean @default(false)
   skipsLines                          Boolean @default(false)
@@ -550,11 +659,9 @@ model ReadingSkillAssessment {
   holdsBookTooClose                   Boolean @default(false)
   difficultyLeftRightEyeMovement      Boolean @default(false)
   difficultyRecognizingSimilarLetters Boolean @default(false)
-  // Comprehension Indicators
   readsWithoutUnderstanding           Boolean @default(false)
   forgetsWhatWasRead                  Boolean @default(false)
   difficultyAnsweringQuestions        Boolean @default(false)
-  // Attention & Reading Behavior
   notInterestedInReading              Boolean @default(false)
   avoidsReadingAloud                  Boolean @default(false)
   avoidsReadingActivities             Boolean @default(false)
@@ -562,40 +669,33 @@ model ReadingSkillAssessment {
   easilyFrustrated                    Boolean @default(false)
   lowConfidence                       Boolean @default(false)
   poorReadingStamina                  Boolean @default(false)
-  // Mechanics & Punctuation
   punctuationErrors                   Boolean @default(false)
   doesNotPauseAtFullStop              Boolean @default(false)
   extraPausesAtCommas                 Boolean @default(false)
   incorrectToneForQuestionExclamation Boolean @default(false)
-
-  // NEW: Initial Reading Level Assessment
   independentLevelKnownText     Boolean @default(false)
   independentLevelUnknownText   Boolean @default(false)
   instructionalLevelKnownText   Boolean @default(false)
   instructionalLevelUnknownText Boolean @default(false)
   frustrationLevelKnownText     Boolean @default(false)
   frustrationLevelUnknownText   Boolean @default(false)
-
-  // NEW: Reading Grade Level Mapping
   isAtGradeLevel        Boolean?
-  functionalGradeLevel  String? // Editable grade level if at grade level
-  performanceSummary    String? // Free text for performance summary
-  gradeLevelMappings    Json? // Array of {gradeLevel, independent, instructional, frustration}
-  gradeLevelObservation String? // Observation for grade mappings
-
-  // NEW: Knowledcare Battery Test Results
+  functionalGradeLevel  String?
+  performanceSummary    String?
+  gradeLevelMappings    Json?
+  gradeLevelObservation String?
   batteryTestConducted Boolean @default(false)
   batteryTestSummary   String?
-  batteryTestReportUrl String? // PDF/Report upload path
-
-  // NEW: Reading Comprehension Level
+  batteryTestReportUrl String?
   atGradeLevelComprehension Boolean?
-  comprehensionLevels       String[] @default([]) // Literal, Inferential, Application, Critical
-  currentLevelComprehension String[] @default([]) // If not at grade level
+  comprehensionLevels       String[] @default([])
+  currentLevelComprehension String[] @default([])
   comprehensionObservation  String?
 
+  // ── META ───────────────────────────────────────────────────────────────────
+  currentStep     Int?             @default(1) // Wizard step tracking
   additionalNotes String?
-  status          AssessmentStatus       @default(PENDING)
+  status          AssessmentStatus @default(PENDING)
   completedAt     DateTime?
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
