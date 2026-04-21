@@ -11,12 +11,25 @@ export interface ReadingSkillAssessmentData {
 
   // Section 2: Reading Context
   readingExposureAtHome?: string;
-  readingSupportAtHome?: boolean;
+  readingSupportAtHome?: string;
   readingSupportDetails?: string;
+  exposureDetails?: string;
+  supportDetails?: string;
   typeOfSchooling?: string;
-  languageMismatch?: boolean;
-  previousIntervention?: boolean;
+  languageMismatch?: string;
+  previousIntervention?: string;
   previousInterventionType?: string;
+  interventionDetails?: string;
+  readingMaterialAccess?: string;
+
+  // Enhanced Scoring Fields for Learning Context
+  exposureScore?: number;
+  supportScore?: number;
+  interventionScore?: number;
+  languageRiskScore?: number;
+  materialAccessScore?: number;
+  environmentScore?: number;
+  environmentBuffer?: number;
 
   // Section 3: Reading Resources (JSON)
   readingResources?: any;
@@ -94,6 +107,46 @@ export interface ReadingSkillAssessmentData {
   tier?: string;
   ldRiskFlag?: boolean;
   ldRiskDetails?: string;
+
+// Enhanced Scoring System - Resources Section
+  schoolTextScore?: number;
+  knownTextScore?: number;
+  unknownTextScore?: number;
+  finalReadingScore?: number;
+
+// Enhanced Scoring System - Final Risk Assessment
+  resourceContextScore?: number;
+  finalRiskScore?: number;
+
+// Detailed Resource Assessment Fields - School Text
+  schoolTextGradeLevel?: string;
+  schoolTextDifficulty?: string;
+  schoolTextQuality?: string;
+  schoolTextFluency?: string;
+  schoolTextErrors?: string;
+  schoolTextObservation?: string;
+
+// Detailed Resource Assessment Fields - Known Text
+  knownTextType?: string;
+  knownTextFamiliarity?: string;
+  knownTextDifficulty?: string;
+  knownTextQuality?: string;
+  knownTextFluency?: string;
+  knownTextErrors?: string;
+  knownTextObservation?: string;
+
+// Detailed Resource Assessment Fields - Unknown Text
+  unknownTextSource?: string;
+  unknownTextDifficulty?: string;
+  unknownTextQuality?: string;
+  unknownTextFluency?: string;
+  unknownTextErrors?: string;
+  unknownTextObservation?: string;
+
+// Resource Context Assessment
+  materialTypes?: string[];
+  materialLevels?: string[];
+  readingIndependence?: string;
 
   // Legacy fields (backward compat)
   readingQ1?: string;
@@ -193,12 +246,47 @@ export class SkillAssessmentRepository {
     this.prisma = prisma;
   }
 
+  // Transform internal data to Prisma format
+  private mapToPrismaFormat(data: ReadingSkillAssessmentData): any {
+    const prismaData: any = { ...data };
+    
+    // Handle date conversion
+    if (prismaData.assessmentDate && typeof prismaData.assessmentDate === 'string') {
+      prismaData.assessmentDate = new Date(prismaData.assessmentDate);
+    }
+    
+    // Remove undefined values that might cause issues
+    Object.keys(prismaData).forEach(key => {
+      if (prismaData[key] === undefined) {
+        delete prismaData[key];
+      }
+    });
+    
+    return prismaData;
+  }
+
+  private mapSupportToBoolean(support?: string): boolean | null | undefined {
+    if (!support) return undefined;
+    return support === 'Regular support (daily/weekly)' || support === 'Occasional support';
+  }
+
+  private mapLanguageMismatchToBoolean(mismatch?: string): boolean | null | undefined {
+    if (!mismatch) return undefined;
+    return mismatch.includes('Yes');
+  }
+
+  private mapInterventionToBoolean(intervention?: string): boolean | null | undefined {
+    if (!intervention) return undefined;
+    return intervention !== 'None' && intervention !== 'Not sure';
+  }
+
   // Reading Skill Assessment Methods
   async createReadingAssessment(specialEducatorId: string, data: ReadingSkillAssessmentData): Promise<ReadingSkillAssessment> {
+    const prismaData = this.mapToPrismaFormat(data);
     return this.prisma.readingSkillAssessment.create({
       data: {
         specialEducatorId,
-        ...data,
+        ...prismaData,
       },
       include: {
         student: {
@@ -265,9 +353,13 @@ export class SkillAssessmentRepository {
   }
 
   async updateReadingAssessment(id: string, data: Partial<ReadingSkillAssessmentData>): Promise<ReadingSkillAssessment> {
+    // Remove studentId from data since it shouldn't be updated
+    const { studentId, ...updateData } = data;
+    const prismaData = this.mapToPrismaFormat(updateData as ReadingSkillAssessmentData);
+    
     return this.prisma.readingSkillAssessment.update({
       where: { id },
-      data,
+      data: prismaData,
       include: {
         student: {
           select: {

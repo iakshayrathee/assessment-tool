@@ -89,7 +89,18 @@ export class NewAssessmentController {
       await this.assessmentService.deleteFormalAssessment(id);
       return ResponseHelper.success(res, null, 'Formal assessment deleted successfully');
     } catch (error: any) {
+      console.log('DEBUG: Delete error:', error.message);
       return ResponseHelper.error(res, error.message, 400);
+    }
+  };
+
+  // Debug endpoint to list all formal assessments
+  debugListFormalAssessments = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+    try {
+      const assessments = await this.assessmentService.debugListFormalAssessments();
+      return ResponseHelper.success(res, assessments, 'Debug: List of all formal assessments');
+    } catch (error: any) {
+      return ResponseHelper.error(res, error.message, 500);
     }
   };
 

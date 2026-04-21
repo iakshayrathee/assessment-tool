@@ -4,11 +4,13 @@ import { SkillAssessmentRepository, ReadingSkillAssessmentData, WritingSkillAsse
 import { ReadingScoreService } from './ReadingScoreService';
 
 export class NewAssessmentService {
+  private prisma: PrismaClient;
   private formalAssessmentRepository: FormalAssessmentRepository;
   private skillAssessmentRepository: SkillAssessmentRepository;
   private readingScoreService: ReadingScoreService;
 
   constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
     this.formalAssessmentRepository = new FormalAssessmentRepository(prisma);
     this.skillAssessmentRepository = new SkillAssessmentRepository(prisma);
     this.readingScoreService = new ReadingScoreService();
@@ -80,6 +82,33 @@ export class NewAssessmentService {
     }
 
     await this.formalAssessmentRepository.delete(id);
+  }
+
+  // Debug method to list all formal assessments
+  async debugListFormalAssessments(): Promise<any[]> {
+    const assessments = await this.prisma.formalAssessment.findMany({
+      select: {
+        id: true,
+        studentId: true,
+        specialEducatorId: true,
+        assessmentType: true,
+        createdAt: true,
+        status: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    
+    console.log('DEBUG: Total formal assessments found:', assessments.length);
+    assessments.forEach((assessment: any, index: number) => {
+      console.log(`DEBUG: Assessment ${index + 1}:`, {
+        id: assessment.id,
+        studentId: assessment.studentId,
+        assessmentType: assessment.assessmentType,
+        createdAt: assessment.createdAt,
+      });
+    });
+    
+    return assessments;
   }
 
   // Reading Skill Assessment Services

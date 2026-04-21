@@ -51,12 +51,25 @@ export interface ReadingAssessmentFormData {
 
   // Section 2: Reading Context
   readingExposureAtHome?: string;
-  readingSupportAtHome?: boolean;
+  readingSupportAtHome?: string;
   readingSupportDetails?: string;
+  exposureDetails?: string;
+  supportDetails?: string;
   typeOfSchooling?: string;
-  languageMismatch?: boolean;
-  previousIntervention?: boolean;
+  languageMismatch?: string;
+  previousIntervention?: string;
   previousInterventionType?: string;
+  interventionDetails?: string;
+  readingMaterialAccess?: string;
+
+// Enhanced Scoring Fields for Learning Context
+  exposureScore?: number;
+  supportScore?: number;
+  interventionScore?: number;
+  languageRiskScore?: number;
+  materialAccessScore?: number;
+  environmentScore?: number;
+  environmentBuffer?: number;
 
   // Section 3: Reading Resources
   readingResources?: any;
@@ -122,6 +135,46 @@ export interface ReadingAssessmentFormData {
   // Section 14: Progress Tracking
   progressTracking?: any;
 
+  // Enhanced Scoring System - Resources Section
+  schoolTextScore?: number;
+  knownTextScore?: number;
+  unknownTextScore?: number;
+  finalReadingScore?: number;
+
+  // Enhanced Scoring System - Final Risk Assessment
+  resourceContextScore?: number;
+  finalRiskScore?: number;
+
+  // Detailed Resource Assessment Fields - School Text
+  schoolTextGradeLevel?: string;
+  schoolTextDifficulty?: string;
+  schoolTextQuality?: string;
+  schoolTextFluency?: string;
+  schoolTextErrors?: string;
+  schoolTextObservation?: string;
+
+  // Detailed Resource Assessment Fields - Known Text
+  knownTextType?: string;
+  knownTextFamiliarity?: string;
+  knownTextDifficulty?: string;
+  knownTextQuality?: string;
+  knownTextFluency?: string;
+  knownTextErrors?: string;
+  knownTextObservation?: string;
+
+  // Detailed Resource Assessment Fields - Unknown Text
+  unknownTextSource?: string;
+  unknownTextDifficulty?: string;
+  unknownTextQuality?: string;
+  unknownTextFluency?: string;
+  unknownTextErrors?: string;
+  unknownTextObservation?: string;
+
+  // Resource Context Assessment
+  materialTypes?: string[];
+  materialLevels?: string[];
+  readingIndependence?: string;
+
   // Legacy compat
   [key: string]: any;
 }
@@ -163,6 +216,24 @@ export function ReadingAssessmentWizard({
     setFormData(prev => ({ ...prev, ...updates }));
   }, []);
 
+  // Utility function to clean data for API calls
+  const cleanDataForApi = (data: ReadingAssessmentFormData): ReadingAssessmentFormData => {
+    const cleanedData = { ...data };
+    
+    // Convert boolean values to strings if they exist
+    if (typeof cleanedData.readingSupportAtHome === 'boolean') {
+      cleanedData.readingSupportAtHome = cleanedData.readingSupportAtHome ? 'Regular support (daily/weekly)' : 'No support';
+    }
+    if (typeof cleanedData.languageMismatch === 'boolean') {
+      cleanedData.languageMismatch = cleanedData.languageMismatch ? 'Yes - minor difference' : 'No';
+    }
+    if (typeof cleanedData.previousIntervention === 'boolean') {
+      cleanedData.previousIntervention = cleanedData.previousIntervention ? 'School-based support' : 'None';
+    }
+    
+    return cleanedData;
+  };
+
   // Auto-save draft on step change (debounced)
   useEffect(() => {
     if (isViewMode || !savedAssessment?.id) return;
@@ -178,8 +249,10 @@ export function ReadingAssessmentWizard({
   const handleAutoSave = async () => {
     if (isViewMode || !savedAssessment?.id) return;
     try {
+      const cleanedData = cleanDataForApi(formData);
+      
       await apiClient.updateReadingSkillAssessment(savedAssessment.id, {
-        ...formData,
+        ...cleanedData,
         studentId,
         currentStep,
       });
@@ -191,7 +264,19 @@ export function ReadingAssessmentWizard({
   const handleSave = async () => {
     try {
       setIsSubmitting(true);
-      const payload = { studentId, ...formData, currentStep };
+      
+      const cleanedData = cleanDataForApi(formData);
+      const payload = { studentId, ...cleanedData, currentStep };
+      
+      // Debug logging
+      console.log('DEBUG: Payload being sent:', {
+        readingSupportAtHome: payload.readingSupportAtHome,
+        readingSupportAtHomeType: typeof payload.readingSupportAtHome,
+        languageMismatch: payload.languageMismatch,
+        languageMismatchType: typeof payload.languageMismatch,
+        previousIntervention: payload.previousIntervention,
+        previousInterventionType: typeof payload.previousIntervention,
+      });
 
       let response;
       if (mode === 'edit' && assessmentId) {
@@ -223,8 +308,11 @@ export function ReadingAssessmentWizard({
 
     try {
       setIsSubmitting(true);
+      
+      const cleanedData = cleanDataForApi(formData);
+      
       // Save latest data first
-      await apiClient.updateReadingSkillAssessment(id, { studentId, ...formData, currentStep: 14 });
+      await apiClient.updateReadingSkillAssessment(id, { studentId, ...cleanedData, currentStep: 14 });
       // Then mark complete
       const response = await apiClient.completeReadingSkillAssessment(id);
       setSavedAssessment(response.data || response);
@@ -421,10 +509,24 @@ function mapInitialData(data: any): ReadingAssessmentFormData {
     readingExposureAtHome: data.readingExposureAtHome,
     readingSupportAtHome: data.readingSupportAtHome,
     readingSupportDetails: data.readingSupportDetails,
+    exposureDetails: data.exposureDetails,
+    supportDetails: data.supportDetails,
     typeOfSchooling: data.typeOfSchooling,
     languageMismatch: data.languageMismatch,
     previousIntervention: data.previousIntervention,
     previousInterventionType: data.previousInterventionType,
+    interventionDetails: data.interventionDetails,
+    readingMaterialAccess: data.readingMaterialAccess,
+    
+    // Enhanced Scoring Fields
+    exposureScore: data.exposureScore,
+    supportScore: data.supportScore,
+    interventionScore: data.interventionScore,
+    languageRiskScore: data.languageRiskScore,
+    materialAccessScore: data.materialAccessScore,
+    environmentScore: data.environmentScore,
+    environmentBuffer: data.environmentBuffer,
+    
     readingResources: data.readingResources,
     interestInReading: data.interestInReading,
     attentionSpanMinutes: data.attentionSpanMinutes,
@@ -465,5 +567,45 @@ function mapInitialData(data: any): ReadingAssessmentFormData {
     aiInsights: data.aiInsights,
     aiInsightsStatus: data.aiInsightsStatus,
     progressTracking: data.progressTracking,
+    
+    // Enhanced Scoring System - Resources Section
+    schoolTextScore: data.schoolTextScore,
+    knownTextScore: data.knownTextScore,
+    unknownTextScore: data.unknownTextScore,
+    finalReadingScore: data.finalReadingScore,
+    
+    // Enhanced Scoring System - Final Risk Assessment
+    resourceContextScore: data.resourceContextScore,
+    finalRiskScore: data.finalRiskScore,
+    
+    // Detailed Resource Assessment Fields - School Text
+    schoolTextGradeLevel: data.schoolTextGradeLevel,
+    schoolTextDifficulty: data.schoolTextDifficulty,
+    schoolTextQuality: data.schoolTextQuality,
+    schoolTextFluency: data.schoolTextFluency,
+    schoolTextErrors: data.schoolTextErrors,
+    schoolTextObservation: data.schoolTextObservation,
+    
+    // Detailed Resource Assessment Fields - Known Text
+    knownTextType: data.knownTextType,
+    knownTextFamiliarity: data.knownTextFamiliarity,
+    knownTextDifficulty: data.knownTextDifficulty,
+    knownTextQuality: data.knownTextQuality,
+    knownTextFluency: data.knownTextFluency,
+    knownTextErrors: data.knownTextErrors,
+    knownTextObservation: data.knownTextObservation,
+    
+    // Detailed Resource Assessment Fields - Unknown Text
+    unknownTextSource: data.unknownTextSource,
+    unknownTextDifficulty: data.unknownTextDifficulty,
+    unknownTextQuality: data.unknownTextQuality,
+    unknownTextFluency: data.unknownTextFluency,
+    unknownTextErrors: data.unknownTextErrors,
+    unknownTextObservation: data.unknownTextObservation,
+    
+    // Resource Context Assessment
+    materialTypes: data.materialTypes,
+    materialLevels: data.materialLevels,
+    readingIndependence: data.readingIndependence,
   };
 }

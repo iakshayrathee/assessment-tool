@@ -462,6 +462,90 @@ def _extract_reading_text(assessments: list) -> str:
         if a.get("comprehensionObservation"):
             lines.append(f"Comprehension Observation: {a['comprehensionObservation']}")
         
+        # Learning Context Assessment (NEW)
+        lines.append("## Learning Context Assessment")
+        if a.get("readingExposureAtHome"):
+            lines.append(f"Reading Exposure at Home: {a['readingExposureAtHome']}")
+        if a.get("readingSupportAtHome"):
+            lines.append(f"Reading Support at Home: {a['readingSupportAtHome']}")
+        if a.get("readingSupportDetails"):
+            lines.append(f"Support Details: {a['readingSupportDetails']}")
+        if a.get("exposureDetails"):
+            lines.append(f"Exposure Details: {a['exposureDetails']}")
+        if a.get("supportDetails"):
+            lines.append(f"Support Details: {a['supportDetails']}")
+        if a.get("typeOfSchooling"):
+            lines.append(f"Type of Schooling: {a['typeOfSchooling']}")
+        if a.get("languageMismatch"):
+            lines.append(f"Language Mismatch: {a['languageMismatch']}")
+        if a.get("previousIntervention"):
+            lines.append(f"Previous Intervention: {a['previousIntervention']}")
+        if a.get("interventionDetails"):
+            lines.append(f"Intervention Details: {a['interventionDetails']}")
+        if a.get("readingMaterialAccess"):
+            lines.append(f"Reading Material Access: {a['readingMaterialAccess']}")
+        
+        # Resources Assessment (NEW)
+        lines.append("## Resources Assessment")
+        
+        # School Text Assessment
+        if a.get("schoolTextGradeLevel") or a.get("schoolTextDifficulty"):
+            lines.append("### School Text Assessment")
+            if a.get("schoolTextGradeLevel"):
+                lines.append(f"School Text Grade Level: {a['schoolTextGradeLevel']}")
+            if a.get("schoolTextDifficulty"):
+                lines.append(f"School Text Difficulty: {a['schoolTextDifficulty']}")
+            if a.get("schoolTextQuality"):
+                lines.append(f"School Text Quality: {a['schoolTextQuality']}")
+            if a.get("schoolTextFluency"):
+                lines.append(f"School Text Fluency: {a['schoolTextFluency']}")
+            if a.get("schoolTextErrors"):
+                lines.append(f"School Text Errors: {a['schoolTextErrors']}")
+            if a.get("schoolTextObservation"):
+                lines.append(f"School Text Observation: {a['schoolTextObservation']}")
+        
+        # Known Text Assessment
+        if a.get("knownTextType") or a.get("knownTextFamiliarity"):
+            lines.append("### Known Text Assessment")
+            if a.get("knownTextType"):
+                lines.append(f"Known Text Type: {a['knownTextType']}")
+            if a.get("knownTextFamiliarity"):
+                lines.append(f"Known Text Familiarity: {a['knownTextFamiliarity']}")
+            if a.get("knownTextDifficulty"):
+                lines.append(f"Known Text Difficulty: {a['knownTextDifficulty']}")
+            if a.get("knownTextQuality"):
+                lines.append(f"Known Text Quality: {a['knownTextQuality']}")
+            if a.get("knownTextFluency"):
+                lines.append(f"Known Text Fluency: {a['knownTextFluency']}")
+            if a.get("knownTextErrors"):
+                lines.append(f"Known Text Errors: {a['knownTextErrors']}")
+            if a.get("knownTextObservation"):
+                lines.append(f"Known Text Observation: {a['knownTextObservation']}")
+        
+        # Unknown Text Assessment
+        if a.get("unknownTextSource") or a.get("unknownTextDifficulty"):
+            lines.append("### Unknown Text Assessment")
+            if a.get("unknownTextSource"):
+                lines.append(f"Unknown Text Source: {a['unknownTextSource']}")
+            if a.get("unknownTextDifficulty"):
+                lines.append(f"Unknown Text Difficulty: {a['unknownTextDifficulty']}")
+            if a.get("unknownTextQuality"):
+                lines.append(f"Unknown Text Quality: {a['unknownTextQuality']}")
+            if a.get("unknownTextFluency"):
+                lines.append(f"Unknown Text Fluency: {a['unknownTextFluency']}")
+            if a.get("unknownTextErrors"):
+                lines.append(f"Unknown Text Errors: {a['unknownTextErrors']}")
+            if a.get("unknownTextObservation"):
+                lines.append(f"Unknown Text Observation: {a['unknownTextObservation']}")
+        
+        # Resource Context
+        if a.get("materialTypes") and isinstance(a.get("materialTypes"), list):
+            lines.append(f"Material Types: {', '.join(a['materialTypes'])}")
+        if a.get("materialLevels") and isinstance(a.get("materialLevels"), list):
+            lines.append(f"Material Levels: {', '.join(a['materialLevels'])}")
+        if a.get("readingIndependence"):
+            lines.append(f"Reading Independence: {a['readingIndependence']}")
+        
         # Battery Test Results (ENHANCED)
         if a.get("batteryTestConducted"):
             lines.append("## Knowledcare Battery Test Results")
@@ -471,8 +555,41 @@ def _extract_reading_text(assessments: list) -> str:
             if a.get("batteryTestReportUrl"):
                 lines.append(f"Battery Test Report Available: Yes")
         
-        # Quantitative Scores (NEW)
-        lines.append("## Quantitative Assessment")
+        # Enhanced Scoring System (NEW)
+        lines.append("## Enhanced Scoring Analysis")
+        
+        # Learning Context Scores
+        if a.get("environmentScore") is not None:
+            lines.append(f"Environment Score: {a['environmentScore']}/7")
+        if a.get("environmentBuffer") is not None:
+            lines.append(f"Environment Buffer: {a['environmentBuffer']} points")
+        if a.get("exposureScore") is not None:
+            lines.append(f"Exposure Score: {a['exposureScore']}/3")
+        if a.get("supportScore") is not None:
+            lines.append(f"Support Score: {a['supportScore']}/2")
+        if a.get("interventionScore") is not None:
+            lines.append(f"Intervention Score: {a['interventionScore']}/2")
+        if a.get("languageRiskScore") is not None:
+            lines.append(f"Language Risk Score: {a['languageRiskScore']}/2")
+        if a.get("materialAccessScore") is not None:
+            lines.append(f"Material Access Score: {a['materialAccessScore']}/2")
+        
+        # Resources Section Scores
+        if a.get("schoolTextScore") is not None:
+            lines.append(f"School Text Score: {a['schoolTextScore']}/100")
+        if a.get("knownTextScore") is not None:
+            lines.append(f"Known Text Score: {a['knownTextScore']}/100")
+        if a.get("unknownTextScore") is not None:
+            lines.append(f"Unknown Text Score: {a['unknownTextScore']}/100")
+        if a.get("finalReadingScore") is not None:
+            lines.append(f"Final Reading Score: {a['finalReadingScore']}/100")
+        if a.get("resourceContextScore") is not None:
+            lines.append(f"Resource Context Score: {a['resourceContextScore']}")
+        if a.get("finalRiskScore") is not None:
+            lines.append(f"Final Risk Score: {a['finalRiskScore']}/100")
+        
+        # Original Quantitative Scores
+        lines.append("## Core Assessment Scores")
         if a.get("decodingScore") is not None:
             lines.append(f"Decoding Score: {a['decodingScore']}/100")
         if a.get("fluencyScore") is not None:

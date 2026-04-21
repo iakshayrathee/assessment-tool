@@ -516,13 +516,26 @@ model ReadingSkillAssessment {
   parentConcern           String?   // Textarea
 
   // ── SECTION 2: READING CONTEXT ─────────────────────────────────────────────
-  readingExposureAtHome   String?   // Daily / Weekly / Rare / None
-  readingSupportAtHome    Boolean?
+  readingExposureAtHome   String?   // Daily / Few times a week / Occasionally / Rarely / Never
+  readingSupportAtHome    String?   // Regular support (daily/weekly) / Occasional support / No support
   readingSupportDetails   String?
+  exposureDetails         String?   // Details about reading exposure
+  supportDetails          String?   // Details about reading support
   typeOfSchooling         String?   // CBSE / ICSE / State / IB / Other
-  languageMismatch        Boolean?  // Home vs School language
-  previousIntervention    Boolean?
+  languageMismatch        String?   // No / Yes - minor difference / Yes - major difference
+  previousIntervention    String?   // None / School-based support / Private tutoring / Therapy / Not sure
   previousInterventionType String?
+  interventionDetails     String?   // Details about intervention
+  readingMaterialAccess   String?   // Books available / Digital content / Very limited access / No access
+
+  // Enhanced Scoring Fields for Learning Context
+  exposureScore           Int?      // 0-3 (Daily=3, Few times/week=2, Occasionally=1, Rare/Never=0)
+  supportScore            Int?      // 0-2 (Regular=2, Occasional=1, None=0)
+  interventionScore       Int?      // 0-2 (Therapy=2, Tutoring=1, None=0)
+  languageRiskScore       Int?      // 0-2 (Major=2, Minor=1, None=0)
+  materialAccessScore     Int?      // 0-2 (Books=2, Digital=1, None=0)
+  environmentScore        Int?      // 0-7 (Exposure + Support + Material Access)
+  environmentBuffer       Int?      // 0, 5, or 15 based on ES
 
   // ── SECTION 3: READING RESOURCES (JSON) ────────────────────────────────────
   // { schoolText: { gradeLevelUsed, difficulty }, knownText: { passageId, accuracyPercent, errorsCount },
@@ -615,9 +628,48 @@ model ReadingSkillAssessment {
   comprehensionScore   Float? // 0-100
   behaviorScore        Float? // 0-100
   overallReadingScore  Float? // 0-100 weighted composite
-  tier                 String? // Tier 1 / Tier 2 / Tier 3
+  
+  // Enhanced Scoring System - Resources Section
+  schoolTextScore      Float? // Section A score calculation
+  knownTextScore       Float? // Section B score calculation  
+  unknownTextScore     Float? // Section C score calculation
+  finalReadingScore    Float? // RS = (School × 0.2) + (Known × 0.3) + (Unknown × 0.5)
+  
+  // Enhanced Scoring System - Final Risk Assessment
+  resourceContextScore Int?      // Resource usage + Level alignment + Independence
+  finalRiskScore       Int?      // FRS = (100 - RS) - Buffer - LR - IF
+  
+  tier                 String? // Tier 1 / Tier 2 / Tier 3 (based on FRS)
   ldRiskFlag           Boolean @default(false)
   ldRiskDetails        String? // e.g., "Dyslexia pattern detected"
+  
+  // Detailed Resource Assessment Fields
+  schoolTextGradeLevel String?   // Grade level used for school text
+  schoolTextDifficulty String?   // Easy / Grade Level / Hard
+  schoolTextQuality    String?   // Excellent / Good / Developing / Needs Support
+  schoolTextFluency    String?   // Fast / On-level / Slow / Very slow
+  schoolTextErrors     String?   // Minimal / Moderate / Frequent
+  schoolTextObservation String?  // Observation details
+  
+  knownTextType        String?   // Textbook / Storybook / Previously practiced / Teacher-provided / Other
+  knownTextFamiliarity String?  // Highly familiar / Somewhat familiar / Memorized
+  knownTextDifficulty  String?   // Easy / Grade Level / Hard
+  knownTextQuality     String?   // Excellent / Good / Developing / Needs Support
+  knownTextFluency     String?   // Fast / On-level / Slow / Very slow
+  knownTextErrors      String?   // Minimal / Moderate / Frequent
+  knownTextObservation String?   // Observation details
+  
+  unknownTextSource    String?   // Textbook (new lesson) / Storybook (unseen) / Teacher-created / External material
+  unknownTextDifficulty String?  // Easy / Grade Level / Hard
+  unknownTextQuality   String?   // Excellent / Good / Developing / Needs Support
+  unknownTextFluency   String?   // Fast / On-level / Slow / Very slow
+  unknownTextErrors    String?   // Minimal / Moderate / Frequent
+  unknownTextObservation String? // Observation details
+  
+  // Resource Context Assessment
+  materialTypes        String[]  // Storybooks, School textbooks, Worksheets, Digital content, Knowledge Material
+  materialLevels       String[]  // Reading level for each material type
+  readingIndependence  String?   // Reads independently / Needs support / Avoids reading
 
   // ── LEGACY COMPATIBILITY ───────────────────────────────────────────────────
   // Old boolean symptom fields preserved for backward compat with existing data

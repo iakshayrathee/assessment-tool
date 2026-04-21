@@ -20,6 +20,7 @@ router.get('/formal/educator/me', controller.getFormalAssessmentsByEducator);
 router.put('/formal/:id', controller.updateFormalAssessment);
 router.put('/formal/:id/complete', controller.completeFormalAssessment);
 router.delete('/formal/:id', controller.deleteFormalAssessment);
+router.get('/formal/debug/list', controller.debugListFormalAssessments);
 
 // Reading Skill Assessments
 router.post('/skill/reading', controller.createReadingAssessment);

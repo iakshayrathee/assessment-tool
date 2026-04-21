@@ -69,6 +69,17 @@ export interface ReadingScoreResult {
     errorFrequencyPercent: number | null;
     dominantErrorType: string | null;
   };
+  // Enhanced scoring fields
+  environmentScore: number | null;
+  environmentBuffer: number | null;
+  schoolTextScore: number | null;
+  knownTextScore: number | null;
+  unknownTextScore: number | null;
+  finalReadingScore: number | null;
+  resourceContextScore: number | null;
+  finalRiskScore: number | null;
+  languageRiskScore: number | null;
+  interventionScore: number | null;
 }
 
 // Normalize a score from a given range to 0-100
@@ -124,7 +135,19 @@ export class ReadingScoreService {
     const unknownTextLevel = classifyLevel(unknownTextAccuracy);
     const finalReadingLevel = this.computeFinalReadingLevel(knownTextLevel, unknownTextLevel);
 
-    const tier = classifyTier(overallReadingScore);
+    // Enhanced scoring calculations
+    const environmentScore = this.computeEnvironmentScore(data);
+    const environmentBuffer = this.computeEnvironmentBuffer(environmentScore);
+    const schoolTextScore = this.computeSectionScore(data.schoolTextQuality, data.schoolTextFluency, data.schoolTextErrors, data.schoolTextDifficulty);
+    const knownTextScore = this.computeSectionScore(data.knownTextQuality, data.knownTextFluency, data.knownTextErrors, data.knownTextDifficulty);
+    const unknownTextScore = this.computeSectionScore(data.unknownTextQuality, data.unknownTextFluency, data.unknownTextErrors, data.unknownTextDifficulty);
+    const finalReadingScore = this.computeFinalReadingScoreRS(schoolTextScore, knownTextScore, unknownTextScore);
+    const resourceContextScore = this.computeResourceContextScore(data.materialTypes, data.materialLevels, data.readingIndependence);
+    const languageRiskScore = this.mapLanguageRiskScore(data.languageMismatch);
+    const interventionScore = this.mapInterventionScore(data.previousIntervention);
+    const finalRiskScore = this.computeFinalRiskScore(finalReadingScore, environmentBuffer, languageRiskScore, interventionScore);
+
+    const tier = this.classifyEnhancedTier(finalRiskScore);
     const { ldRiskFlag, ldRiskDetails } = this.detectLDRisk(data, decodingScore, fluencyScore);
     const errorAnalysisComputed = this.computeErrorAnalysis(data.errorAnalysis);
 
@@ -141,6 +164,17 @@ export class ReadingScoreService {
       ldRiskFlag,
       ldRiskDetails,
       errorAnalysisComputed,
+      // Enhanced scoring fields
+      environmentScore,
+      environmentBuffer,
+      schoolTextScore,
+      knownTextScore,
+      unknownTextScore,
+      finalReadingScore,
+      resourceContextScore,
+      finalRiskScore,
+      languageRiskScore,
+      interventionScore,
     };
   }
 
@@ -385,5 +419,186 @@ export class ReadingScoreService {
       errorFrequencyPercent: count > 0 ? Math.round(totalFreq / count) : null,
       dominantErrorType: dominant,
     };
+  }
+
+  // ===== ENHANCED SCORING METHODS =====
+
+  /**
+   * Environment Score Calculation: ES = Exposure + Support + Material Access
+   */
+  private computeEnvironmentScore(data: any): number | null {
+    const exposure = this.mapExposureScore(data.readingExposureAtHome);
+    const support = this.mapSupportScore(data.readingSupportAtHome);
+    const materials = this.mapMaterialAccessScore(data.readingMaterialAccess);
+    
+    if (exposure === null || support === null || materials === null) return null;
+    return exposure + support + materials;
+  }
+
+  /**
+   * Environment Buffer calculation based on ES ranges
+   */
+  private computeEnvironmentBuffer(environmentScore: number | null): number {
+    if (environmentScore === null) return 0;
+    if (environmentScore <= 2) return 15;
+    if (environmentScore <= 5) return 5;
+    return 0;
+  }
+
+  /**
+   * Section Score Calculation: (Reading Quality × 0.5) + (Fluency × 0.3) + (Error Adjustment) + (Difficulty Adjustment)
+   */
+  private computeSectionScore(quality: string | null | undefined, fluency: string | null | undefined, errors: string | null | undefined, difficulty: string | null | undefined): number | null {
+    if (!quality || !fluency || !errors || !difficulty) return null;
+
+    const qualityScore = this.mapQualityScore(quality);
+    const fluencyScore = this.mapFluencyScore(fluency);
+    const errorPenalty = this.mapErrorPenalty(errors);
+    const difficultyAdjustment = this.mapDifficultyAdjustment(difficulty);
+
+    if (qualityScore === null || fluencyScore === null || errorPenalty === null || difficultyAdjustment === null) return null;
+
+    return (qualityScore * 0.5) + (fluencyScore * 0.3) + errorPenalty + difficultyAdjustment;
+  }
+
+  /**
+   * Final Reading Score: RS = (School × 0.2) + (Known × 0.3) + (Unknown × 0.5)
+   * Special Logic: Unknown Text penalty if << Known Score by 20+ points
+   */
+  private computeFinalReadingScoreRS(schoolScore: number | null, knownScore: number | null, unknownScore: number | null): number | null {
+    if (schoolScore === null || knownScore === null || unknownScore === null) return null;
+
+    let finalScore = (schoolScore * 0.2) + (knownScore * 0.3) + (unknownScore * 0.5);
+
+    // Special Logic: Unknown Text penalty
+    if (unknownScore < knownScore - 20) {
+      finalScore -= 10;
+    }
+
+    return Math.max(0, Math.min(100, finalScore));
+  }
+
+  /**
+   * Resource Context Scoring: Material usage + Level alignment + Independence
+   */
+  private computeResourceContextScore(materialTypes: string[] | null | undefined, materialLevels: string[] | null | undefined, independence: string | null | undefined): number | null {
+    if (!materialTypes || !materialLevels || !independence) return null;
+
+    let score = 0;
+
+    // Material Usage
+    materialTypes.forEach(material => {
+      if (material === 'Storybooks') score += 2;
+      if (material === 'Digital content') score += 1;
+      if (material === 'Knowledge Material') score += 2;
+    });
+
+    // Level Alignment
+    materialLevels.forEach(level => {
+      if (level === 'Below grade level') score += 1;
+      if (level === 'At grade level') score += 2;
+      if (level === 'Above grade level') score += 2;
+    });
+
+    // Reading Independence
+    if (independence === 'Reads independently') score += 2;
+    if (independence === 'Needs support') score += 1;
+    if (independence === 'Avoids reading') score += 0;
+
+    return score;
+  }
+
+  /**
+   * Final Risk Score: FRS = (100 - RS) - Buffer - LR - IF
+   */
+  private computeFinalRiskScore(readingScore: number | null, buffer: number | null, languageRisk: number | null, interventionFlag: number | null): number | null {
+    if (readingScore === null || buffer === null || languageRisk === null || interventionFlag === null) return null;
+
+    const frs = (100 - readingScore) - buffer - languageRisk - interventionFlag;
+    return Math.max(0, Math.min(100, frs));
+  }
+
+  /**
+   * Enhanced Tier Classification based on FRS
+   */
+  private classifyEnhancedTier(finalRiskScore: number | null): string | null {
+    if (finalRiskScore === null) return null;
+    if (finalRiskScore <= 20) return 'Tier 1';
+    if (finalRiskScore <= 40) return 'Tier 2';
+    return 'Tier 3';
+  }
+
+  // ===== MAPPING FUNCTIONS =====
+
+  private mapExposureScore(exposure: string | null | undefined): number | null {
+    if (!exposure) return null;
+    const mapping: Record<string, number> = {
+      'Daily': 3, 'Few times a week': 2, 'Occasionally': 1, 'Rarely': 0, 'Never': 0
+    };
+    return mapping[exposure] ?? null;
+  }
+
+  private mapSupportScore(support: string | null | undefined): number | null {
+    if (!support) return null;
+    const mapping: Record<string, number> = {
+      'Regular support (daily/weekly)': 2, 'Occasional support': 1, 'No support': 0
+    };
+    return mapping[support] ?? null;
+  }
+
+  private mapMaterialAccessScore(access: string | null | undefined): number | null {
+    if (!access) return null;
+    const mapping: Record<string, number> = {
+      'Books available': 2, 'Digital content (videos/apps)': 1, 'Very limited access': 0, 'No access': 0
+    };
+    return mapping[access] ?? null;
+  }
+
+  private mapLanguageRiskScore(mismatch: string | null | undefined): number | null {
+    if (!mismatch) return null;
+    const mapping: Record<string, number> = {
+      'No': 0, 'Yes - minor difference': 1, 'Yes - major difference': 2
+    };
+    return mapping[mismatch] ?? null;
+  }
+
+  private mapInterventionScore(intervention: string | null | undefined): number | null {
+    if (!intervention) return null;
+    const mapping: Record<string, number> = {
+      'None': 0, 'School-based support': 1, 'Private tutoring': 1, 'Therapy (speech / special education)': 2, 'Not sure': 0
+    };
+    return mapping[intervention] ?? null;
+  }
+
+  private mapQualityScore(quality: string | null | undefined): number | null {
+    if (!quality) return null;
+    const mapping: Record<string, number> = {
+      'Excellent': 90, 'Good': 75, 'Developing': 60, 'Needs Support': 40
+    };
+    return mapping[quality] ?? null;
+  }
+
+  private mapFluencyScore(fluency: string | null | undefined): number | null {
+    if (!fluency) return null;
+    const mapping: Record<string, number> = {
+      'Fast': 90, 'On-level': 75, 'Slow': 60, 'Very slow': 40
+    };
+    return mapping[fluency] ?? null;
+  }
+
+  private mapErrorPenalty(errors: string | null | undefined): number | null {
+    if (!errors) return null;
+    const mapping: Record<string, number> = {
+      'Minimal': 0, 'Moderate': -10, 'Frequent': -20
+    };
+    return mapping[errors] ?? null;
+  }
+
+  private mapDifficultyAdjustment(difficulty: string | null | undefined): number | null {
+    if (!difficulty) return null;
+    const mapping: Record<string, number> = {
+      'Easy': -5, 'Grade Level': 0, 'Hard': 5
+    };
+    return mapping[difficulty] ?? null;
   }
 }

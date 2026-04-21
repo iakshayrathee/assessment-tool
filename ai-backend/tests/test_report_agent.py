@@ -90,7 +90,7 @@ def test_extract_reading_text_with_new_fields():
     assert "## Grade Level Analysis" in text
     assert "## Comprehension Analysis" in text
     assert "## Knowledcare Battery Test Results" in text
-    assert "## Quantitative Assessment" in text
+    assert "## Core Assessment Scores" in text
     
     # Check specific content
     assert "Independent: Known Text" in text
@@ -183,6 +183,132 @@ def test_extract_reading_progress_with_data():
     assert "Reassessment Date: 2024-03-15" in text
     assert "Progress Data Available: Yes" in text
     assert "Trend: Upward" in text
+
+
+def test_extract_reading_text_with_learning_context():
+    """Test that new Learning Context fields are properly extracted."""
+    data = [{
+        "readingQ1": "Below grade level",
+        "readingExposureAtHome": "Daily",
+        "readingSupportAtHome": "Regular",
+        "readingSupportDetails": "Parent helps with homework daily",
+        "exposureDetails": "Child reads bedtime stories regularly",
+        "supportDetails": "Parent provides phonics support",
+        "typeOfSchooling": "CBSE",
+        "languageMismatch": "Yes - Hindi at home, English at school",
+        "previousIntervention": "Yes",
+        "interventionDetails": "Received 6 months of reading therapy",
+        "readingMaterialAccess": "Books and digital resources",
+        "environmentScore": 5,
+        "exposureScore": 3,
+        "supportScore": 2,
+        "languageRiskScore": 2,
+        "materialAccessScore": 2,
+    }]
+    text = _extract_reading_text(data)
+    
+    # Check Learning Context section
+    assert "## Learning Context Assessment" in text
+    assert "Reading Exposure at Home: Daily" in text
+    assert "Reading Support at Home: Regular" in text
+    assert "Support Details: Parent helps with homework daily" in text
+    assert "Exposure Details: Child reads bedtime stories regularly" in text
+    assert "Type of Schooling: CBSE" in text
+    assert "Language Mismatch: Yes - Hindi at home, English at school" in text
+    assert "Previous Intervention: Yes" in text
+    assert "Intervention Details: Received 6 months of reading therapy" in text
+    assert "Reading Material Access: Books and digital resources" in text
+    
+    # Check Enhanced Scoring Analysis
+    assert "## Enhanced Scoring Analysis" in text
+    assert "Environment Score: 5/7" in text
+    assert "Exposure Score: 3/3" in text
+    assert "Support Score: 2/2" in text
+    assert "Language Risk Score: 2/2" in text
+    assert "Material Access Score: 2/2" in text
+
+
+def test_extract_reading_text_with_resources_assessment():
+    """Test that new Resources assessment fields are properly extracted."""
+    data = [{
+        "readingQ1": "Below grade level",
+        # School Text Assessment
+        "schoolTextGradeLevel": "Grade 3",
+        "schoolTextDifficulty": "Grade Level",
+        "schoolTextQuality": "Good",
+        "schoolTextFluency": "On-level",
+        "schoolTextErrors": "Minimal",
+        "schoolTextObservation": "Student reads grade-level text with good comprehension",
+        "schoolTextScore": 78.5,
+        
+        # Known Text Assessment
+        "knownTextType": "Previously practiced",
+        "knownTextFamiliarity": "Highly familiar",
+        "knownTextDifficulty": "Easy",
+        "knownTextQuality": "Excellent",
+        "knownTextFluency": "Fast",
+        "knownTextErrors": "Minimal",
+        "knownTextObservation": "Student reads familiar text fluently",
+        "knownTextScore": 92.0,
+        
+        # Unknown Text Assessment
+        "unknownTextSource": "Textbook (new lesson)",
+        "unknownTextDifficulty": "Hard",
+        "unknownTextQuality": "Developing",
+        "unknownTextFluency": "Slow",
+        "unknownTextErrors": "Frequent",
+        "unknownTextObservation": "Student struggles with new, difficult text",
+        "unknownTextScore": 45.0,
+        
+        # Resource Context
+        "materialTypes": ["Textbooks", "Storybooks", "Digital apps"],
+        "materialLevels": ["Grade 1", "Grade 2", "Grade 3"],
+        "readingIndependence": "Needs support",
+        
+        # Enhanced Scores
+        "finalReadingScore": 68.5,
+        "resourceContextScore": 75,
+        "finalRiskScore": 42,
+    }]
+    text = _extract_reading_text(data)
+    
+    # Check Resources Assessment section
+    assert "## Resources Assessment" in text
+    assert "### School Text Assessment" in text
+    assert "School Text Grade Level: Grade 3" in text
+    assert "School Text Difficulty: Grade Level" in text
+    assert "School Text Quality: Good" in text
+    assert "School Text Fluency: On-level" in text
+    assert "School Text Errors: Minimal" in text
+    assert "School Text Observation: Student reads grade-level text with good comprehension" in text
+    
+    assert "### Known Text Assessment" in text
+    assert "Known Text Type: Previously practiced" in text
+    assert "Known Text Familiarity: Highly familiar" in text
+    assert "Known Text Difficulty: Easy" in text
+    assert "Known Text Quality: Excellent" in text
+    assert "Known Text Fluency: Fast" in text
+    assert "Known Text Observation: Student reads familiar text fluently" in text
+    
+    assert "### Unknown Text Assessment" in text
+    assert "Unknown Text Source: Textbook (new lesson)" in text
+    assert "Unknown Text Difficulty: Hard" in text
+    assert "Unknown Text Quality: Developing" in text
+    assert "Unknown Text Fluency: Slow" in text
+    assert "Unknown Text Observation: Student struggles with new, difficult text" in text
+    
+    # Check Resource Context
+    assert "Material Types: Textbooks, Storybooks, Digital apps" in text
+    assert "Material Levels: Grade 1, Grade 2, Grade 3" in text
+    assert "Reading Independence: Needs support" in text
+    
+    # Check Enhanced Scoring
+    assert "School Text Score: 78.5/100" in text
+    assert "Known Text Score: 92.0/100" in text
+    assert "Unknown Text Score: 45.0/100" in text
+    assert "Final Reading Score: 68.5/100" in text
+    assert "Resource Context Score: 75" in text
+    assert "Final Risk Score: 42/100" in text
 
 
 def test_extract_reading_text_handles_json_parsing_errors():

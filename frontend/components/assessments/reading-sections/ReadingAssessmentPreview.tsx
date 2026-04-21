@@ -110,7 +110,7 @@ export function ReadingAssessmentPreview({ data, savedAssessment, studentDetails
       <Section title="1. Basic Info">
         <Field label="Medium of Instruction" value={data.mediumOfInstruction} />
         <Field label="First Language" value={data.firstLanguage} />
-        <Field label="Parent Concern" value={data.parentConcern} />
+        <Field label="Reading Observations (from Parent)" value={data.parentConcern} />
       </Section>
 
       {/* Section 2: Reading Context */}

@@ -61,7 +61,11 @@ export class FormalAssessmentRepository {
   }
 
   async findById(id: string): Promise<FormalAssessment | null> {
-    return this.prisma.formalAssessment.findUnique({
+    console.log('DEBUG: Looking for formal assessment with ID:', id);
+    console.log('DEBUG: ID length:', id.length);
+    console.log('DEBUG: ID type:', typeof id);
+    
+    const result = await this.prisma.formalAssessment.findUnique({
       where: { id },
       include: {
         student: {
@@ -80,6 +84,14 @@ export class FormalAssessmentRepository {
         },
       },
     });
+    
+    console.log('DEBUG: Found assessment:', !!result);
+    if (result) {
+      console.log('DEBUG: Assessment ID matches:', result.id === id);
+      console.log('DEBUG: Result ID:', result.id);
+    }
+    
+    return result;
   }
 
   async findByStudent(studentId: string): Promise<FormalAssessment[]> {
