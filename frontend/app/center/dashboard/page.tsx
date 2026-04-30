@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'motion/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,6 +66,7 @@ interface DashboardData {
 
 export default function CenterDashboard() {
   const { user } = useAuth();
+  const { t } = useTranslation('center');
   const centerId = user?.profile?.id;
   
   // Use React Query hook for caching and automatic refetching
@@ -96,7 +98,7 @@ export default function CenterDashboard() {
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"
           />
-          <p className="text-muted-foreground">Loading dashboard...</p>
+          <p className="text-muted-foreground">{t('dashboard.loading')}</p>
         </motion.div>
       </div>
     );
@@ -112,10 +114,10 @@ export default function CenterDashboard() {
         >
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">
-            {error instanceof Error ? error.message : 'Failed to load dashboard data'}
+            {error instanceof Error ? error.message : t('dashboard.failedToLoad')}
           </p>
           <Button onClick={() => loadDashboardData()}>
-            Try Again
+            {t('dashboard.tryAgain')}
           </Button>
         </motion.div>
       </div>
@@ -124,21 +126,21 @@ export default function CenterDashboard() {
 
   return (
     <PageWrapper
-      title={`${user?.profile?.centerName || 'Center'} Dashboard`}
-      description="Manage your center operations and track progress"
-      breadcrumbs={[{ label: 'Center', href: '/center' }, { label: 'Dashboard' }]}
+      title={t('dashboard.title', { name: user?.profile?.centerName || 'Center' })}
+      description={t('dashboard.subtitle')}
+      breadcrumbs={[{ label: 'Center', href: '/center' }, { label: t('dashboard.breadcrumb') }]}
       actions={
         <div className="flex gap-2">
           <Link href="/center/schools">
             <Button variant="outline">
               <Building className="h-4 w-4 mr-2" />
-              Link School
+              {t('dashboard.linkSchool')}
             </Button>
           </Link>
           <Link href="/center/students">
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Add Student
+              {t('dashboard.addStudent')}
             </Button>
           </Link>
         </div>
@@ -154,9 +156,9 @@ export default function CenterDashboard() {
       >
         {[
           {
-            title: "Total Students",
+            title: t('dashboard.totalStudents'),
             value: dashboardData.overview.totalStudents,
-            description: "Enrolled in center",
+            description: t('dashboard.totalStudentsDesc'),
             icon: Users,
             color: "text-primary",
             bgColor: "bg-primary/10",
@@ -164,9 +166,9 @@ export default function CenterDashboard() {
             changeType: "positive" as const
           },
           {
-            title: "Active Students", 
+            title: t('dashboard.activeStudents'),
             value: dashboardData.overview.activeStudents,
-            description: "Currently receiving services",
+            description: t('dashboard.activeStudentsDesc'),
             icon: CheckCircle,
             color: "text-success",
             bgColor: "bg-success/10",
@@ -174,9 +176,9 @@ export default function CenterDashboard() {
             changeType: "positive" as const
           },
           {
-            title: "Linked Schools",
+            title: t('dashboard.linkedSchools'),
             value: dashboardData.overview.totalSchools,
-            description: "Partner schools",
+            description: t('dashboard.linkedSchoolsDesc'),
             icon: School,
             color: "text-info", 
             bgColor: "bg-info/10",
@@ -184,9 +186,9 @@ export default function CenterDashboard() {
             changeType: "positive" as const
           },
           {
-            title: "Special Educators",
+            title: t('dashboard.specialEducators'),
             value: dashboardData.overview.assignedEducators,
-            description: "Assigned to center",
+            description: t('dashboard.specialEducatorsDesc'),
             icon: UserCheck,
             color: "text-warning",
             bgColor: "bg-warning/10",
@@ -194,9 +196,9 @@ export default function CenterDashboard() {
             changeType: "positive" as const
           },
           {
-            title: "Super Educators",
+            title: t('dashboard.superEducators'),
             value: dashboardData.overview.assignedSuperEducators,
-            description: "Supervising quality",
+            description: t('dashboard.superEducatorsDesc'),
             icon: GraduationCap,
             color: "text-primary",
             bgColor: "bg-indigo-50",
@@ -228,9 +230,9 @@ export default function CenterDashboard() {
       >
         <Tabs defaultValue="students" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="students">Recent Students</TabsTrigger>
-            <TabsTrigger value="schools">Linked Schools</TabsTrigger>
-            <TabsTrigger value="educators">Assigned Educators</TabsTrigger>
+            <TabsTrigger value="students">{t('dashboard.tabRecentStudents')}</TabsTrigger>
+            <TabsTrigger value="schools">{t('dashboard.tabLinkedSchools')}</TabsTrigger>
+            <TabsTrigger value="educators">{t('dashboard.tabAssignedEducators')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="students" className="space-y-6">
@@ -243,10 +245,10 @@ export default function CenterDashboard() {
                 <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/20 dark:to-primary/30">
                   <CardTitle className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-primary" />
-                    Recently Added Students
+                    {t('dashboard.recentlyAdded')}
                   </CardTitle>
                   <CardDescription>
-                    Students recently enrolled in your center
+                    {t('dashboard.recentlyAddedDesc')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -274,7 +276,7 @@ export default function CenterDashboard() {
                             </h3>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <Calendar className="h-3 w-3" />
-                              Added: {new Date(student.createdAt).toLocaleDateString()}
+                              {t('dashboard.added')} {new Date(student.createdAt).toLocaleDateString()}
                             </div>
                           </div>
                         </div>
@@ -294,7 +296,7 @@ export default function CenterDashboard() {
                   <div className="p-6 bg-muted/30 text-center">
                     <Link href="/center/students">
                       <Button variant="outline" className="group">
-                        View All Students
+                        {t('dashboard.viewAllStudents')}
                         <ArrowUpRight className="h-4 w-4 ml-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                       </Button>
                     </Link>
@@ -314,10 +316,10 @@ export default function CenterDashboard() {
                 <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950">
                   <CardTitle className="flex items-center gap-2">
                     <School className="h-5 w-5 text-info" />
-                    Linked Schools
+                    {t('dashboard.linkedSchools')}
                   </CardTitle>
                   <CardDescription>
-                    Schools partnered with your center
+                    {t('dashboard.schoolsPartnered')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -346,7 +348,7 @@ export default function CenterDashboard() {
                                 </h3>
                                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                   <Users className="h-3 w-3" />
-                                  {school.studentCount || school.students?.length || 0} students
+                                  {school.studentCount || school.students?.length || 0} {t('dashboard.students')}
                                 </div>
                               </div>
                             </div>
@@ -355,13 +357,13 @@ export default function CenterDashboard() {
                               <Link href={`/center/schools/${school.id}`} className="flex-1">
                                 <Button variant="outline" size="sm" className="w-full group/btn">
                                   <Eye className="h-3 w-3 mr-1 group-hover/btn:scale-110 transition-transform" />
-                                  Details
+                                  {t('dashboard.details')}
                                 </Button>
                               </Link>
                               <Link href={`/center/schools/${school.id}/students`} className="flex-1">
                                 <Button size="sm" className="w-full group/btn">
                                   <Users className="h-3 w-3 mr-1 group-hover/btn:scale-110 transition-transform" />
-                                  Students
+                                  {t('dashboard.students')}
                                 </Button>
                               </Link>
                             </div>
@@ -380,7 +382,7 @@ export default function CenterDashboard() {
                     <Link href="/center/schools/new">
                       <Button className="group">
                         <Plus className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform" />
-                        Link New School
+                        {t('dashboard.linkNewSchool')}
                       </Button>
                     </Link>
                   </motion.div>
@@ -399,10 +401,10 @@ export default function CenterDashboard() {
                 <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950">
                   <CardTitle className="flex items-center gap-2">
                     <GraduationCap className="h-5 w-5 text-warning" />
-                    Assigned Educators
+                    {t('dashboard.assignedEducatorsTitle')}
                   </CardTitle>
                   <CardDescription>
-                    Educators working at your center
+                    {t('dashboard.assignedEducatorsDesc')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -449,13 +451,13 @@ export default function CenterDashboard() {
                           <Link href={`/center/educators/${educator.id}`}>
                             <Button variant="outline" size="sm" className="group/btn">
                               <Eye className="h-3 w-3 mr-1 group-hover/btn:scale-110 transition-transform" />
-                              Profile
+                              {t('dashboard.profile')}
                             </Button>
                           </Link>
                           <Link href={`/center/educators/${educator.id}/students`}>
                             <Button size="sm" className="group/btn">
                               <Users className="h-3 w-3 mr-1 group-hover/btn:scale-110 transition-transform" />
-                              Students
+                              {t('dashboard.students')}
                             </Button>
                           </Link>
                         </div>
@@ -466,7 +468,7 @@ export default function CenterDashboard() {
                   <div className="p-6 bg-muted/30 text-center">
                     <Link href="/center/educators">
                       <Button variant="outline" className="group">
-                        View All Educators
+                        {t('dashboard.viewAllEducators')}
                         <ArrowUpRight className="h-4 w-4 ml-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                       </Button>
                     </Link>

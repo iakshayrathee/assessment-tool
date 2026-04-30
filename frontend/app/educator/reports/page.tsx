@@ -982,17 +982,25 @@ export default function ReportsPage() {
   const renderSections = (content: string, reportType: string) => {
     const sections = parseReportSections(content || '');
     const config = reportType === 'LESSON_PLAN' ? LESSON_PLAN_SECTIONS : ASSESSMENT_SECTIONS;
+    const fallbackCfg = config[config.length - 1];
 
     if (sections.length > 0) {
       return (
         <div className="space-y-3">
           {sections.map((section, i) => {
-            const cfg = config[i] || config[config.length - 1];
+            // Match by heading text instead of index — handles conditional sections
+            const headingLower = section.heading.toLowerCase();
+            const cfg = config.find(
+              (c) =>
+                headingLower === c.title.toLowerCase() ||
+                headingLower.includes(c.title.toLowerCase()) ||
+                c.title.toLowerCase().includes(headingLower)
+            ) || fallbackCfg;
             return (
               <ReportSection
                 key={i}
                 index={i}
-                title={cfg.title}
+                title={section.heading}
                 content={section.body}
                 bgClass={cfg.bgClass}
                 borderClass={cfg.borderClass}
@@ -1349,6 +1357,12 @@ export default function ReportsPage() {
                   </div>
                 </div>
               </div>
+              {aiPreview.summary && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4">
+                  <h4 className="font-semibold text-sm text-amber-900 mb-1.5">Report Summary</h4>
+                  <p className="text-sm text-amber-800 leading-relaxed">{stripMarkdown(aiPreview.summary).substring(0, 500)}</p>
+                </div>
+              )}
               <ReportStatsBar content={aiPreview.content} />
               {renderSections(aiPreview.content, aiPreview.type || selectedReportType)}
               <div className="bg-muted/40 border rounded-xl p-4 text-center text-xs text-muted-foreground">
@@ -1432,6 +1446,12 @@ export default function ReportsPage() {
                 </div>
               </div>
 
+              {selectedReport.summary && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4">
+                  <h4 className="font-semibold text-sm text-amber-900 mb-1.5">Report Summary</h4>
+                  <p className="text-sm text-amber-800 leading-relaxed">{stripMarkdown(selectedReport.summary).substring(0, 500)}</p>
+                </div>
+              )}
               <ReportStatsBar content={selectedReport.content} />
               {renderSections(selectedReport.content, selectedReport.type || 'ASSESSMENT')}
 

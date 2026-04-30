@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Eye, EyeOff, Mail, Lock, GraduationCap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { motion } from 'motion/react';
 
 export default function LoginPage() {
@@ -14,6 +16,7 @@ export default function LoginPage() {
 
   const { login, isLoggingIn, isAuthenticated, user } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation('auth');
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -46,15 +49,15 @@ export default function LoginPage() {
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = t('emailInvalid');
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('passwordRequired');
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('passwordTooShort');
     }
 
     setErrors(newErrors);
@@ -86,6 +89,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+      {/* Language Switcher - top right */}
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
       <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-8 items-center">
         {/* Left Side - Branding */}
         <motion.div
@@ -155,14 +162,14 @@ export default function LoginPage() {
                   Knowled
                 </h1>
               </div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">Sign In</h2>
-              <p className="text-muted-foreground">Access your dashboard</p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">{t('signIn')}</h2>
+              <p className="text-muted-foreground">{t('signInDesc')}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                  Email Address
+                  {t('emailAddress')}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -173,7 +180,7 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.email ? 'border-destructive/30' : 'border-border'
                       }`}
-                    placeholder="Enter your email"
+                    placeholder={t('emailPlaceholder')}
                   />
                 </div>
                 {errors.email && (
@@ -183,7 +190,7 @@ export default function LoginPage() {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                  Password
+                  {t('password')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -194,7 +201,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.password ? 'border-destructive/30' : 'border-border'
                       }`}
-                    placeholder="Enter your password"
+                    placeholder={t('passwordPlaceholder')}
                   />
                   <button
                     type="button"
@@ -217,10 +224,10 @@ export default function LoginPage() {
                 {isLoggingIn ? (
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Signing In...
+                    {t('signingIn')}
                   </div>
                 ) : (
-                  'Sign In'
+                  t('loginButton')
                 )}
               </button>
             </form>

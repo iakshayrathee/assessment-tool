@@ -1,0 +1,87 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "myProfile": "My Profile",
+    "myStudents": "My Students",
+    "intakeForms": "Intake Forms",
+    "assessments": "Assessments",
+    "remediation": "Remediation",
+    "iepManagement": "IEP Management",
+    "homework": "Homework",
+    "dataBank": "Data Bank",
+    "textToSpeech": "Text-to-Speech",
+    "reports": "Reports",
+    "aiTransparency": "AI Transparency",
+    "overview": "Overview",
+    "userManagement": "User Management",
+    "approvals": "Approvals",
+    "auditLogs": "Audit Logs",
+    "settings": "Settings",
+    "schools": "Schools",
+    "educators": "Educators",
+    "students": "Students",
+    "compliance": "Compliance",
+    "centers": "Centers",
+    "reviews": "Reviews",
+    "flaggedCases": "Flagged Cases",
+    "analytics": "Analytics",
+    "children": "My Children",
+    "documents": "Documents",
+    "concerns": "Concerns",
+    "profile": "Profile",
+    "schoolReports": "School Reports",
+    "notifications": "Notifications"
+  },
+  "navGroups": {
+    "core": "Core",
+    "students": "Students",
+    "learning": "Learning",
+    "resources": "Resources",
+    "management": "Management",
+    "system": "System",
+    "overview": "Overview",
+    "people": "People",
+    "insights": "Insights",
+    "quality": "Quality",
+    "myChildren": "My Children",
+    "communication": "Communication"
+  },
+  "roles": {
+    "SPECIAL_EDUCATOR": "Special Educator",
+    "ADMIN": "Administrator",
+    "CENTER": "Center Manager",
+    "SUPER_SPECIAL_EDUCATOR": "Super Educator",
+    "PARENT": "Parent",
+    "SCHOOL_VIEWER": "School Viewer",
+    "CENTER_ADMIN": "Center Administrator",
+    "SYSTEM_ADMIN": "System Administrator",
+    "SUPER_SPECIAL_EDUCATOR_FULL": "Super Special Educator"
+  },
+  "header": {
+    "searchPlaceholder": "Search...",
+    "searchLabel": "Search",
+    "openMenu": "Open navigation menu",
+    "myAccount": "My Account",
+    "signOut": "Sign out"
+  },
+  "sidebar": {
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "closeSidebar": "Close sidebar"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "noNotifications": "No new notifications",
+    "viewAll": "View all notifications",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
+  },
+  "loading": {
+    "title": "Loading Knowled",
+    "subtitle": "Please wait...",
+    "preparingDashboard": "Preparing your dashboard"
+  }
+}

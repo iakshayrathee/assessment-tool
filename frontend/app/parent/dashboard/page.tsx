@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -81,6 +82,7 @@ interface DashboardData {
 
 export default function ParentDashboard() {
   const { user } = useAuth();
+  const { t } = useTranslation('parent');
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -151,7 +153,7 @@ export default function ParentDashboard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-primary border-t-transparent mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading dashboard...</p>
+          <p className="text-muted-foreground">{t('dashboard.loading')}</p>
         </div>
       </div>
     );
@@ -162,9 +164,9 @@ export default function ParentDashboard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <p className="text-muted-foreground">{error || 'Failed to load dashboard data'}</p>
+          <p className="text-muted-foreground">{error || t('dashboard.failedToLoad')}</p>
           <Button onClick={loadDashboardData} className="mt-4">
-            Try Again
+            {t('dashboard.tryAgain')}
           </Button>
         </div>
       </div>
@@ -173,21 +175,21 @@ export default function ParentDashboard() {
 
   return (
     <PageWrapper
-      title={`Welcome, ${user?.profile?.fullName || 'Parent'}`}
-      description="Track your children's progress and stay connected"
-      breadcrumbs={[{ label: 'Dashboard' }]}
+      title={t('dashboard.title', { name: user?.profile?.fullName || 'Parent' })}
+      description={t('dashboard.subtitle')}
+      breadcrumbs={[{ label: t('dashboard.breadcrumb') }]}
       actions={
         <>
           <Link href="/parent/concerns/new">
             <Button variant="outline">
               <MessageCircle className="h-4 w-4 mr-2" />
-              Submit Concern
+              {t('dashboard.submitConcern')}
             </Button>
           </Link>
           <Link href="/parent/documents/upload">
             <Button>
               <Upload className="h-4 w-4 mr-2" />
-              Upload Document
+              {t('dashboard.uploadDocument')}
             </Button>
           </Link>
         </>
@@ -197,68 +199,68 @@ export default function ParentDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Children</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.children')}</CardTitle>
               <User className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData.overview.totalChildren}</div>
-              <p className="text-xs text-muted-foreground">Enrolled in program</p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.enrolledInProgram')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Goals</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.activeGoals')}</CardTitle>
               <Target className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData.overview.activeGoals}</div>
-              <p className="text-xs text-muted-foreground">Currently in progress</p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.currentlyInProgress')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Achieved Goals</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.achievedGoals')}</CardTitle>
               <CheckCircle className="h-4 w-4 text-success" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData.overview.achievedGoals}</div>
-              <p className="text-xs text-muted-foreground">Successfully completed</p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.successfullyCompleted')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Reports</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.totalReports')}</CardTitle>
               <FileText className="h-4 w-4 text-info" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData.overview.totalReports}</div>
-              <p className="text-xs text-muted-foreground">Available to view</p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.availableToView')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Open Concerns</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.openConcerns')}</CardTitle>
               <AlertCircle className="h-4 w-4 text-warning" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData.overview.openConcerns}</div>
-              <p className="text-xs text-muted-foreground">Awaiting response</p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.awaitingResponse')}</p>
             </CardContent>
           </Card>
 
           <Link href="/parent/homework">
             <Card className="cursor-pointer hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Homework</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('dashboard.homework')}</CardTitle>
                 <ClipboardList className="h-4 w-4 text-warning" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{homeworkStats.pending}</div>
-                <p className="text-xs text-muted-foreground">Pending ({homeworkStats.total} total)</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard.pendingTotal', { total: homeworkStats.total })}</p>
               </CardContent>
             </Card>
           </Link>
@@ -267,9 +269,9 @@ export default function ParentDashboard() {
         {/* Main Content */}
         <Tabs defaultValue="children" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="children">My Children</TabsTrigger>
-            <TabsTrigger value="concerns">Concerns</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="children">{t('dashboard.tabMyChildren')}</TabsTrigger>
+            <TabsTrigger value="concerns">{t('dashboard.tabConcerns')}</TabsTrigger>
+            <TabsTrigger value="documents">{t('dashboard.tabDocuments')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="children" className="space-y-6">
@@ -291,7 +293,7 @@ export default function ParentDashboard() {
                 <CardContent className="space-y-6">
                   {/* Educator Info */}
                   <div className="bg-primary/10 p-4 rounded-lg">
-                    <h4 className="font-semibold text-blue-900 mb-2">Assigned Educator</h4>
+                    <h4 className="font-semibold text-blue-900 mb-2">{t('dashboard.assignedEducator')}</h4>
                     <p className="text-primary">{child.assignedEducator}</p>
                     <p className="text-sm text-primary">{child.educatorPhone}</p>
                     <p className="text-sm text-primary">{child.center}</p>
@@ -300,21 +302,21 @@ export default function ParentDashboard() {
                   {/* Progress Summary */}
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-semibold">Overall Progress</h4>
+                      <h4 className="font-semibold">{t('dashboard.overallProgress')}</h4>
                       <span className="text-sm text-muted-foreground">
                         {child.progressSummary.averageProgress}%
                       </span>
                     </div>
                     <Progress value={child.progressSummary.averageProgress} className="mb-2" />
                     <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>{child.progressSummary.achieved} goals achieved</span>
-                      <span>{child.progressSummary.inProgress} in progress</span>
+                      <span>{child.progressSummary.achieved} {t('dashboard.goalsAchieved')}</span>
+                      <span>{child.progressSummary.inProgress} {t('dashboard.inProgress')}</span>
                     </div>
                   </div>
 
                   {/* Active Goals */}
                   <div>
-                    <h4 className="font-semibold mb-3">Active Goals</h4>
+                    <h4 className="font-semibold mb-3">{t('dashboard.activeGoalsSection')}</h4>
                     <div className="space-y-3">
                       {child.activeGoals.map((goal) => (
                         <div key={goal.id} className="border rounded-lg p-3">
@@ -331,7 +333,7 @@ export default function ParentDashboard() {
                           </div>
                           <Progress value={goal.progressPercent} className="mb-2" />
                           <p className="text-xs text-muted-foreground">
-                            Target: {new Date(goal.targetDate).toLocaleDateString()}
+                            {t('dashboard.target')} {new Date(goal.targetDate).toLocaleDateString()}
                           </p>
                         </div>
                       ))}
@@ -340,7 +342,7 @@ export default function ParentDashboard() {
 
                   {/* Recent Reports */}
                   <div>
-                    <h4 className="font-semibold mb-3">Recent Reports</h4>
+                    <h4 className="font-semibold mb-3">{t('dashboard.recentReports')}</h4>
                     <div className="space-y-2">
                       {child.recentReports.map((report) => (
                         <div key={report.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -358,7 +360,7 @@ export default function ParentDashboard() {
                               {report.type}
                             </Badge>
                             <Link href={`/parent/children/${child.id}/reports/${report.id}`}>
-                              <Button size="sm" variant="outline">View</Button>
+                              <Button size="sm" variant="outline">{t('dashboard.view')}</Button>
                             </Link>
                           </div>
                         </div>
@@ -370,13 +372,13 @@ export default function ParentDashboard() {
                     <Link href={`/parent/children/${child.id}`}>
                       <Button variant="outline">
                         <BookOpen className="h-4 w-4 mr-2" />
-                        View Details
+                        {t('dashboard.viewDetails')}
                       </Button>
                     </Link>
                     <Link href={`/parent/children/${child.id}/reports`}>
                       <Button variant="outline">
                         <FileText className="h-4 w-4 mr-2" />
-                        All Reports
+                        {t('dashboard.allReports')}
                       </Button>
                     </Link>
                   </div>
@@ -388,9 +390,9 @@ export default function ParentDashboard() {
           <TabsContent value="concerns" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Recent Concerns</CardTitle>
+                <CardTitle>{t('dashboard.recentConcerns')}</CardTitle>
                 <CardDescription>
-                  Your submitted concerns and their status
+                  {t('dashboard.recentConcernsDesc')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -400,7 +402,7 @@ export default function ParentDashboard() {
                       <div>
                         <h4 className="font-medium">{concern.title}</h4>
                         <p className="text-sm text-muted-foreground">
-                          Submitted: {new Date(concern.createdAt).toLocaleDateString()}
+                          {t('dashboard.submitted')} {new Date(concern.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                       <Badge variant={concern.status === 'Open' ? 'destructive' : 'default'}>
@@ -411,7 +413,7 @@ export default function ParentDashboard() {
                 </div>
                 <div className="mt-6 text-center">
                   <Link href="/parent/concerns">
-                    <Button variant="outline">View All Concerns</Button>
+                    <Button variant="outline">{t('dashboard.viewAllConcerns')}</Button>
                   </Link>
                 </div>
               </CardContent>
@@ -421,9 +423,9 @@ export default function ParentDashboard() {
           <TabsContent value="documents" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Recent Documents</CardTitle>
+                <CardTitle>{t('dashboard.recentDocuments')}</CardTitle>
                 <CardDescription>
-                  Documents you've uploaded for your children
+                  {t('dashboard.recentDocumentsDesc')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -439,13 +441,13 @@ export default function ParentDashboard() {
                           </p>
                         </div>
                       </div>
-                      <Button size="sm" variant="outline">Download</Button>
+                      <Button size="sm" variant="outline">{t('dashboard.download')}</Button>
                     </div>
                   ))}
                 </div>
                 <div className="mt-6 text-center">
                   <Link href="/parent/documents">
-                    <Button variant="outline">View All Documents</Button>
+                    <Button variant="outline">{t('dashboard.viewAllDocuments')}</Button>
                   </Link>
                 </div>
               </CardContent>

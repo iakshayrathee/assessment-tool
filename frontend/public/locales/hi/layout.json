@@ -1,0 +1,87 @@
+{
+  "nav": {
+    "dashboard": "डैशबोर्ड",
+    "myProfile": "मेरी प्रोफ़ाइल",
+    "myStudents": "मेरे छात्र",
+    "intakeForms": "प्रवेश फॉर्म",
+    "assessments": "मूल्यांकन",
+    "remediation": "उपचारात्मक शिक्षा",
+    "iepManagement": "IEP प्रबंधन",
+    "homework": "गृहकार्य",
+    "dataBank": "डेटा बैंक",
+    "textToSpeech": "टेक्स्ट-टू-स्पीच",
+    "reports": "रिपोर्टें",
+    "aiTransparency": "AI पारदर्शिता",
+    "overview": "अवलोकन",
+    "userManagement": "उपयोगकर्ता प्रबंधन",
+    "approvals": "अनुमोदन",
+    "auditLogs": "ऑडिट लॉग",
+    "settings": "सेटिंग्स",
+    "schools": "विद्यालय",
+    "educators": "शिक्षक",
+    "students": "छात्र",
+    "compliance": "अनुपालन",
+    "centers": "केंद्र",
+    "reviews": "समीक्षाएं",
+    "flaggedCases": "चिह्नित मामले",
+    "analytics": "विश्लेषण",
+    "children": "मेरे बच्चे",
+    "documents": "दस्तावेज़",
+    "concerns": "चिंताएं",
+    "profile": "प्रोफ़ाइल",
+    "schoolReports": "विद्यालय रिपोर्ट",
+    "notifications": "सूचनाएं"
+  },
+  "navGroups": {
+    "core": "मुख्य",
+    "students": "छात्र",
+    "learning": "सीखना",
+    "resources": "संसाधन",
+    "management": "प्रबंधन",
+    "system": "सिस्टम",
+    "overview": "अवलोकन",
+    "people": "लोग",
+    "insights": "अंतर्दृष्टि",
+    "quality": "गुणवत्ता",
+    "myChildren": "मेरे बच्चे",
+    "communication": "संचार"
+  },
+  "roles": {
+    "SPECIAL_EDUCATOR": "विशेष शिक्षक",
+    "ADMIN": "व्यवस्थापक",
+    "CENTER": "केंद्र प्रबंधक",
+    "SUPER_SPECIAL_EDUCATOR": "सुपर शिक्षक",
+    "PARENT": "अभिभावक",
+    "SCHOOL_VIEWER": "विद्यालय दर्शक",
+    "CENTER_ADMIN": "केंद्र व्यवस्थापक",
+    "SYSTEM_ADMIN": "सिस्टम व्यवस्थापक",
+    "SUPER_SPECIAL_EDUCATOR_FULL": "सुपर विशेष शिक्षक"
+  },
+  "header": {
+    "searchPlaceholder": "खोजें...",
+    "searchLabel": "खोज",
+    "openMenu": "नेविगेशन मेनू खोलें",
+    "myAccount": "मेरा खाता",
+    "signOut": "साइन आउट करें"
+  },
+  "sidebar": {
+    "collapseSidebar": "साइडबार संकुचित करें",
+    "expandSidebar": "साइडबार विस्तार करें",
+    "closeSidebar": "साइडबार बंद करें"
+  },
+  "notifications": {
+    "title": "सूचनाएं",
+    "markAllRead": "सभी पढ़ा हुआ चिह्नित करें",
+    "noNotifications": "कोई नई सूचना नहीं",
+    "viewAll": "सभी सूचनाएं देखें",
+    "justNow": "अभी",
+    "minutesAgo": "{{count}} मिनट पहले",
+    "hoursAgo": "{{count}} घंटे पहले",
+    "daysAgo": "{{count}} दिन पहले"
+  },
+  "loading": {
+    "title": "Knowled लोड हो रहा है",
+    "subtitle": "कृपया प्रतीक्षा करें...",
+    "preparingDashboard": "आपका डैशबोर्ड तैयार किया जा रहा है"
+  }
+}

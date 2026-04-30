@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Label } from "@/components/ui/label"
@@ -56,6 +57,7 @@ interface IEPDocument {
 export default function IEPManagementPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useTranslation('educator');
   const { students, isLoading: studentsLoading } = useEducatorStudents();
   
   const [iepDocuments, setIepDocuments] = useState<IEPDocument[]>([]);
@@ -75,9 +77,9 @@ export default function IEPManagementPage() {
     try {
       if (!selectedStudentForAI?.id) return;
       await apiClient.saveAILessonPlan(selectedStudentForAI.id, aiData);
-      toast.success('AI-generated plan saved as a draft.');
+      toast.success(t('iep.aiPlanSaved'));
     } catch (error: any) {
-      toast.error(error.message || 'Failed to save AI-generated plan');
+      toast.error(error.message || t('iep.aiPlanSaveFailed'));
     }
   };
 
@@ -101,7 +103,7 @@ export default function IEPManagementPage() {
         id: doc.id,
         title: doc.title,
         studentId: doc.studentId,
-        studentName: doc.student?.fullName || 'Unknown Student',
+        studentName: doc.student?.fullName || t('iep.unknownStudent'),
         durationMonths: doc.durationMonths,
         startDate: doc.startDate,
         endDate: doc.endDate,
@@ -118,7 +120,7 @@ export default function IEPManagementPage() {
       setIepDocuments(mappedDocuments);
     } catch (error: any) {
       console.error('Failed to load IEP documents:', error);
-      toast.error('Failed to load IEP documents');
+      toast.error(t('iep.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -134,27 +136,27 @@ export default function IEPManagementPage() {
   const handleCreateDocumentSuccess = () => {
     setShowCreateDocumentDialog(false);
     loadIEPDocuments();
-    toast.success('IEP document created successfully!');
+    toast.success(t('iep.documentCreated'));
   };
 
   const handleAddSubjectSuccess = () => {
     setShowAddSubjectDialog(false);
     loadIEPDocuments();
-    toast.success('Subject section added successfully!');
+    toast.success(t('iep.subjectAdded'));
   };
 
   const handleWeeklyPlanSuccess = () => {
     setShowWeeklyPlanDialog(false);
     loadIEPDocuments();
-    toast.success('Weekly plan created successfully!');
+    toast.success(t('iep.weeklyPlanCreated'));
   };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      ACTIVE: { color: 'bg-success/10 text-foreground', label: 'Active' },
-      COMPLETED: { color: 'bg-primary/10 text-primary', label: 'Completed' },
-      DRAFT: { color: 'bg-muted text-foreground', label: 'Draft' },
-      ARCHIVED: { color: 'bg-info/10 text-foreground', label: 'Archived' }
+      ACTIVE: { color: 'bg-success/10 text-foreground', label: t('iep.statusActive') },
+      COMPLETED: { color: 'bg-primary/10 text-primary', label: t('iep.statusCompleted') },
+      DRAFT: { color: 'bg-muted text-foreground', label: t('iep.statusDraft') },
+      ARCHIVED: { color: 'bg-info/10 text-foreground', label: t('iep.statusArchived') }
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.DRAFT;
@@ -182,7 +184,7 @@ export default function IEPManagementPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-primary border-t-transparent mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading IEP documents...</p>
+          <p className="text-muted-foreground">{t('iep.loading')}</p>
         </div>
       </div>
     );
@@ -190,9 +192,9 @@ export default function IEPManagementPage() {
 
   return (
     <PageWrapper
-      title="IEP Management"
-      description="Create and manage Individualized Education Programs"
-      breadcrumbs={[{ label: 'Educator' }, { label: 'IEP Management' }]}
+      title={t('iep.title')}
+      description={t('iep.subtitle')}
+      breadcrumbs={[{ label: t('iep.breadcrumb') }]}
       actions={
         <div className="flex items-center gap-3">
           <Button
@@ -201,11 +203,11 @@ export default function IEPManagementPage() {
             className="flex items-center gap-2"
           >
             <Users className="h-4 w-4" />
-            {selectedStudentForAI ? `AI: ${selectedStudentForAI.fullName}` : 'AI Suggestions'}
+            {selectedStudentForAI ? t('iep.aiSuggestionsFor', { name: selectedStudentForAI.fullName }) : t('iep.aiSuggestions')}
           </Button>
           <Button onClick={() => setShowCreateDocumentDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            New IEP
+            {t('iep.newIEP')}
           </Button>
         </div>
       }
@@ -227,9 +229,9 @@ export default function IEPManagementPage() {
           <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label className="text-sm font-medium mb-2 block">Search</Label>
+                <Label className="text-sm font-medium mb-2 block">{t('iep.search')}</Label>
                 <Input
-                  placeholder="Search by title or student..."
+                  placeholder={t('iep.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full"
@@ -237,17 +239,17 @@ export default function IEPManagementPage() {
               </div>
               
               <div>
-                <Label className="text-sm font-medium mb-2 block">Status</Label>
+                <Label className="text-sm font-medium mb-2 block">{t('iep.statusLabel')}</Label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Filter by status" />
+                    <SelectValue placeholder={t('iep.filterByStatus')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="DRAFT">Draft</SelectItem>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="COMPLETED">Completed</SelectItem>
-                    <SelectItem value="ARCHIVED">Archived</SelectItem>
+                    <SelectItem value="all">{t('iep.allStatuses')}</SelectItem>
+                    <SelectItem value="DRAFT">{t('iep.statusDraft')}</SelectItem>
+                    <SelectItem value="ACTIVE">{t('iep.statusActive')}</SelectItem>
+                    <SelectItem value="COMPLETED">{t('iep.statusCompleted')}</SelectItem>
+                    <SelectItem value="ARCHIVED">{t('iep.statusArchived')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -258,7 +260,7 @@ export default function IEPManagementPage() {
                   setStatusFilter('all');
                 }}>
                   <Filter className="h-4 w-4 mr-2" />
-                  Clear Filters
+                  {t('iep.clearFilters')}
                 </Button>
               </div>
             </div>
@@ -269,16 +271,16 @@ export default function IEPManagementPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>IEP Documents ({filteredDocuments?.length})</span>
+              <span>{t('iep.documentsTitle', { count: filteredDocuments?.length })}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {filteredDocuments?.length === 0 ? (
               <div className="text-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-2">No IEP documents found</p>
+                <p className="text-muted-foreground mb-2">{t('iep.noDocuments')}</p>
                 <p className="text-sm text-muted-foreground">
-                  Create your first IEP document to get started
+                  {t('iep.noDocumentsDesc')}
                 </p>
               </div>
             ) : (
@@ -307,14 +309,14 @@ export default function IEPManagementPage() {
                           
                           <div className="flex items-center gap-2">
                             <Target className="h-4 w-4" />
-                            <span>{document.durationMonths} months</span>
+                            <span>{t('iep.months', { count: document.durationMonths })}</span>
                           </div>
                         </div>
                         
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{document.subjectSections?.length || 0} subject sections</span>
+                          <span>{t('iep.subjectSections', { count: document.subjectSections?.length || 0 })}</span>
                           <span>•</span>
-                          <span>{document.weeklyEvaluations?.length || 0} weekly evaluations</span>
+                          <span>{t('iep.weeklyEvaluations', { count: document.weeklyEvaluations?.length || 0 })}</span>
                         </div>
                       </div>
                       
@@ -328,7 +330,7 @@ export default function IEPManagementPage() {
                           }}
                         >
                           <Eye className="h-4 w-4 mr-1" />
-                          View
+                          {t('iep.view')}
                         </Button>
                         
                         <Button
@@ -340,7 +342,7 @@ export default function IEPManagementPage() {
                           }}
                         >
                           <Plus className="h-4 w-4 mr-1" />
-                          Add Subject
+                          {t('iep.addSubject')}
                         </Button>
                         
                         <Button
@@ -352,7 +354,7 @@ export default function IEPManagementPage() {
                           }}
                         >
                           <Calendar className="h-4 w-4 mr-1" />
-                          Weekly Plan
+                          {t('iep.weeklyPlan')}
                         </Button>
                       </div>
                     </div>
@@ -367,7 +369,7 @@ export default function IEPManagementPage() {
         <Dialog open={showCreateDocumentDialog} onOpenChange={setShowCreateDocumentDialog}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create New IEP Document</DialogTitle>
+              <DialogTitle>{t('iep.dialogCreateTitle')}</DialogTitle>
             </DialogHeader>
             <IEPDocumentForm
               students={students || []}
@@ -382,7 +384,7 @@ export default function IEPManagementPage() {
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                Add Subject Section to {selectedDocument?.title}
+                {t('iep.dialogAddSubjectTitle', { title: selectedDocument?.title })}
               </DialogTitle>
             </DialogHeader>
             {selectedDocument && (
@@ -400,7 +402,7 @@ export default function IEPManagementPage() {
           <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                Create Weekly Lesson Plan for {selectedDocument?.title}
+                {t('iep.dialogWeeklyPlanTitle', { title: selectedDocument?.title })}
               </DialogTitle>
             </DialogHeader>
             {selectedDocument && (
@@ -417,7 +419,7 @@ export default function IEPManagementPage() {
         <Dialog open={showViewDocumentDialog} onOpenChange={setShowViewDocumentDialog}>
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>IEP Document: {selectedDocument?.title}</DialogTitle>
+              <DialogTitle>{t('iep.dialogViewTitle', { title: selectedDocument?.title })}</DialogTitle>
             </DialogHeader>
             {selectedDocument && (
               <IEPDocumentViewer

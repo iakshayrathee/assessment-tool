@@ -14,6 +14,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEducatorStudents } from '@/hooks/useEducator';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,12 +98,13 @@ function ListRowSkeleton() {
 }
 
 function TableSkeleton() {
+  const { t } = useTranslation('educator');
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b">
-            {['Student', 'Grade', 'Status', 'Progress', 'Last Session', ''].map((h) => (
+            {[t('students.tableStudent'), t('students.tableGrade'), t('students.tableStatus'), t('students.tableProgress'), t('students.tableLastSession'), ''].map((h) => (
               <th key={h} className="text-left py-3 px-4 font-medium text-muted-foreground text-xs">
                 {h}
               </th>
@@ -135,6 +137,7 @@ function TableSkeleton() {
 
 /** Card-style list row — best for small rosters (< 15 students) */
 function StudentListRow({ student }: { student: any }) {
+  const { t } = useTranslation('educator');
   const progress = student.progressSummary?.averageProgress || 0;
   const statusCls = STATUS_STYLES[student.status] || STATUS_STYLES.INACTIVE;
 
@@ -150,14 +153,14 @@ function StudentListRow({ student }: { student: any }) {
           </Badge>
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {student.age ? `${student.age} yrs` : '—'}
+          {student.age ? `${student.age} ${t('students.yrs')}` : '—'}
           {student.grade ? ` · ${student.grade}` : ''}
           {student.center?.centerName ? ` · ${student.center.centerName}` : ''}
           {student.school?.name ? ` · ${student.school.name}` : ''}
         </p>
         {student.lastSession && (
           <p className="text-xs text-muted-foreground mt-0.5">
-            Last session: {new Date(student.lastSession).toLocaleDateString()}
+            {t('students.lastSessionLabel', { date: new Date(student.lastSession).toLocaleDateString() })}
           </p>
         )}
       </div>
@@ -165,12 +168,12 @@ function StudentListRow({ student }: { student: any }) {
       {student.progressSummary && (
         <div className="hidden sm:block text-right min-w-[100px]">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="text-muted-foreground">Progress</span>
+            <span className="text-muted-foreground">{t('students.progress')}</span>
             <span className="font-medium tabular-nums">{progress}%</span>
           </div>
           <Progress value={progress} className="h-1.5 w-24 ml-auto" />
           <p className="text-xs text-muted-foreground mt-1">
-            {student.progressSummary.completedGoals}/{student.progressSummary.totalGoals} goals
+            {t('students.goalsProgress', { completed: student.progressSummary.completedGoals, total: student.progressSummary.totalGoals })}
           </p>
         </div>
       )}
@@ -178,7 +181,7 @@ function StudentListRow({ student }: { student: any }) {
       <Link href={`/educator/students/${student.id}`} className="flex-shrink-0">
         <Button variant="outline" size="sm" className="gap-1.5">
           <Eye className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">View</span>
+          <span className="hidden sm:inline">{t('students.view')}</span>
         </Button>
       </Link>
     </div>
@@ -187,6 +190,7 @@ function StudentListRow({ student }: { student: any }) {
 
 /** Compact table row — better for scanning 15+ students */
 function StudentTableRow({ student }: { student: any }) {
+  const { t } = useTranslation('educator');
   const progress = student.progressSummary?.averageProgress || 0;
   const statusCls = STATUS_STYLES[student.status] || STATUS_STYLES.INACTIVE;
 
@@ -214,7 +218,7 @@ function StudentTableRow({ student }: { student: any }) {
             </span>
           </div>
         ) : (
-          <span className="text-xs text-muted-foreground">No data</span>
+          <span className="text-xs text-muted-foreground">{t('students.noData')}</span>
         )}
       </td>
       <td className="py-3 px-4 text-xs text-muted-foreground">
@@ -226,7 +230,7 @@ function StudentTableRow({ student }: { student: any }) {
         <Link href={`/educator/students/${student.id}`}>
           <Button variant="outline" size="sm" className="h-7 gap-1">
             <Eye className="h-3 w-3" />
-            View
+            {t('students.view')}
           </Button>
         </Link>
       </td>
@@ -250,6 +254,7 @@ function PaginationBar({
   total: number;
   onPageChange: (p: number) => void;
 }) {
+  const { t } = useTranslation('educator');
   if (totalPages <= 1) return null;
 
   const start = (currentPage - 1) * PAGE_SIZE + 1;
@@ -258,7 +263,7 @@ function PaginationBar({
   return (
     <div className="flex items-center justify-between mt-4 pt-4 border-t">
       <p className="text-sm text-muted-foreground">
-        Showing {start}–{end} of {total} students
+        {t('students.paginationShowing', { start, end, total })}
       </p>
       <div className="flex items-center gap-1.5">
         <Button
@@ -267,10 +272,10 @@ function PaginationBar({
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
         >
-          Previous
+          {t('students.previous')}
         </Button>
         <span className="text-sm text-muted-foreground px-2">
-          Page {currentPage} of {totalPages}
+          {t('students.pageOf', { current: currentPage, total: totalPages })}
         </span>
         <Button
           variant="outline"
@@ -278,7 +283,7 @@ function PaginationBar({
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage >= totalPages}
         >
-          Next
+          {t('students.next')}
         </Button>
       </div>
     </div>
@@ -290,6 +295,7 @@ function PaginationBar({
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function StudentsPage() {
+  const { t } = useTranslation('educator');
   // ── UI state ──
   const [viewMode, setViewMode] = useState<'list' | 'table'>('list');
   const [currentPage, setCurrentPage] = useState(1);
@@ -344,14 +350,14 @@ export default function StudentsPage() {
 
   return (
     <PageWrapper
-      title="My Students"
-      description="Manage and track progress of your assigned students"
-      breadcrumbs={[{ label: 'Educator' }, { label: 'Students' }]}
+      title={t('students.title')}
+      description={t('students.subtitle')}
+      breadcrumbs={[{ label: t('students.breadcrumb') }]}
       actions={
         <Link href="/educator/students/new">
           <Button size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Register Student
+            {t('students.registerStudent')}
           </Button>
         </Link>
       }
@@ -364,16 +370,16 @@ export default function StudentsPage() {
       */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <StatCard
-          title="Total Students"
+          title={t('students.totalStudentsCard')}
           value={totalPagination?.total ?? 0}
-          description="Assigned to you"
+          description={t('students.assignedToYou')}
           icon={Users}
           variant="primary"
         />
         <StatCard
-          title="Active Students"
+          title={t('students.activeStudentsCard')}
           value={activePagination?.total ?? 0}
-          description="Currently enrolled"
+          description={t('students.currentlyEnrolled')}
           icon={TrendingUp}
           variant="success"
         />
@@ -384,9 +390,9 @@ export default function StudentsPage() {
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <CardTitle className="text-base">Student List</CardTitle>
+              <CardTitle className="text-base">{t('students.studentList')}</CardTitle>
               <CardDescription className="text-xs mt-0.5">
-                View and manage all students assigned to you
+                {t('students.studentListDesc')}
               </CardDescription>
             </div>
 
@@ -418,7 +424,7 @@ export default function StudentsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search students by name..."
+                placeholder={t('students.searchByName')}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-10 h-9"
@@ -429,14 +435,14 @@ export default function StudentsPage() {
               onValueChange={handleStatusChange}
             >
               <SelectTrigger className="w-full sm:w-44 h-9">
-                <SelectValue placeholder="All Status" />
+                <SelectValue placeholder={t('students.allStatus')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="INACTIVE">Inactive</SelectItem>
-                <SelectItem value="GRADUATED">Graduated</SelectItem>
-                <SelectItem value="TRANSFERRED">Transferred</SelectItem>
+                <SelectItem value="all">{t('students.allStatus')}</SelectItem>
+                <SelectItem value="ACTIVE">{t('students.statusActive')}</SelectItem>
+                <SelectItem value="INACTIVE">{t('students.statusInactive')}</SelectItem>
+                <SelectItem value="GRADUATED">{t('students.statusGraduated')}</SelectItem>
+                <SelectItem value="TRANSFERRED">{t('students.statusTransferred')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -458,11 +464,11 @@ export default function StudentsPage() {
           {!isLoading && error && (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
               <AlertCircle className="h-10 w-10 text-muted-foreground" />
-              <p className="font-medium">Failed to load students</p>
-              <p className="text-sm text-muted-foreground">Something went wrong fetching student data.</p>
+              <p className="font-medium">{t('students.failedToLoad')}</p>
+              <p className="text-sm text-muted-foreground">{t('students.failedToLoadDesc')}</p>
               <Button variant="outline" size="sm" onClick={() => void refetch()}>
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Retry
+                {t('students.retry')}
               </Button>
             </div>
           )}
@@ -474,12 +480,12 @@ export default function StudentsPage() {
                 <Users className="h-7 w-7 text-muted-foreground" />
               </div>
               <h3 className="font-semibold">
-                {isFiltered ? 'No students match your filters' : 'No students yet'}
+                {isFiltered ? t('students.noStudentsFiltered') : t('students.noStudentsYet')}
               </h3>
               <p className="text-sm text-muted-foreground max-w-sm">
                 {isFiltered
-                  ? 'Try clearing your search or adjusting the status filter.'
-                  : "You don't have any students assigned yet. Register your first student to get started."}
+                  ? t('students.clearFiltersDesc')
+                  : t('students.noStudentsYetDesc')}
               </p>
               {isFiltered ? (
                 <Button
@@ -490,13 +496,13 @@ export default function StudentsPage() {
                     handleStatusChange('all');
                   }}
                 >
-                  Clear filters
+                  {t('students.clearFilters')}
                 </Button>
               ) : (
                 <Link href="/educator/students/new">
                   <Button size="sm">
                     <Plus className="h-4 w-4 mr-2" />
-                    Register First Student
+                    {t('students.registerFirstStudent')}
                   </Button>
                 </Link>
               )}
@@ -518,7 +524,7 @@ export default function StudentsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    {['Student', 'Grade', 'Status', 'Progress', 'Last Session', ''].map((h) => (
+                    {[t('students.tableStudent'), t('students.tableGrade'), t('students.tableStatus'), t('students.tableProgress'), t('students.tableLastSession'), ''].map((h) => (
                       <th
                         key={h}
                         className="text-left py-3 px-4 font-medium text-muted-foreground text-xs"

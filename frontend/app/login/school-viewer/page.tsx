@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Eye, EyeOff, Mail, Lock, School, ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 
@@ -15,6 +17,7 @@ export default function SchoolViewerLoginPage() {
 
   const { login, isLoggingIn, isAuthenticated, user } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation('auth');
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -32,15 +35,15 @@ export default function SchoolViewerLoginPage() {
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = t('emailInvalid');
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('passwordRequired');
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('passwordTooShort');
     }
 
     setErrors(newErrors);
@@ -63,6 +66,7 @@ export default function SchoolViewerLoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 flex items-center justify-center p-4">
+      <div className="fixed top-4 right-4 z-50"><LanguageSwitcher /></div>
       <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-8 items-center">
         {/* Left Side - School Viewer Branding */}
         <motion.div
@@ -82,29 +86,28 @@ export default function SchoolViewerLoginPage() {
             </div>
 
             <h2 className="text-4xl font-bold text-foreground mb-6">
-              Student Progress
+              {t('studentProgress')}
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-cyan-600">
-                Monitoring Portal
+                {t('monitoringPortal')}
               </span>
             </h2>
 
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              Access comprehensive student progress reports and intervention data
-              for informed educational decision-making at your school.
+              {t('accessComprehensiveReports')}
             </p>
 
             <div className="grid grid-cols-1 gap-4 text-sm">
               <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-foreground mb-2">Student Overview</h3>
-                <p className="text-muted-foreground">View progress summaries for all students receiving special education services</p>
+                <h3 className="font-semibold text-foreground mb-2">{t('studentOverview')}</h3>
+                <p className="text-muted-foreground">{t('viewProgressSummaries')}</p>
               </div>
               <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-foreground mb-2">Intervention Tracking</h3>
-                <p className="text-muted-foreground">Monitor the effectiveness of interventions and support strategies</p>
+                <h3 className="font-semibold text-foreground mb-2">{t('interventionTracking')}</h3>
+                <p className="text-muted-foreground">{t('monitorInterventions')}</p>
               </div>
               <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-foreground mb-2">Data Analytics</h3>
-                <p className="text-muted-foreground">Access detailed analytics and reports for data-driven decisions</p>
+                <h3 className="font-semibold text-foreground mb-2">{t('dataAnalytics')}</h3>
+                <p className="text-muted-foreground">{t('accessDetailedAnalytics')}</p>
               </div>
             </div>
           </div>
@@ -124,7 +127,7 @@ export default function SchoolViewerLoginPage() {
               className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6 transition-colors"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Login Selection
+              {t('backToLogin')}
             </Link>
 
             <div className="text-center mb-8">
@@ -136,14 +139,14 @@ export default function SchoolViewerLoginPage() {
                   School Viewer
                 </h1>
               </div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">School Viewer Portal</h2>
-              <p className="text-muted-foreground">Monitor student progress</p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">{t('loginAs', { role: t('schoolViewerRole') })}</h2>
+              <p className="text-muted-foreground">{t('signInDesc')}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                  Email Address
+                  {t('emailAddress')}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -154,7 +157,7 @@ export default function SchoolViewerLoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors ${errors.email ? 'border-destructive/30' : 'border-border'
                       }`}
-                    placeholder="Enter your email"
+                    placeholder={t('emailPlaceholder')}
                   />
                 </div>
                 {errors.email && (
@@ -164,7 +167,7 @@ export default function SchoolViewerLoginPage() {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                  Password
+                  {t('password')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -175,7 +178,7 @@ export default function SchoolViewerLoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors ${errors.password ? 'border-destructive/30' : 'border-border'
                       }`}
-                    placeholder="Enter your password"
+                    placeholder={t('passwordPlaceholder')}
                   />
                   <button
                     type="button"
@@ -195,7 +198,7 @@ export default function SchoolViewerLoginPage() {
                   href="/forgot-password"
                   className="text-sm text-teal-600 hover:text-teal-700 transition-colors"
                 >
-                  Forgot Password?
+                  {t('forgotPassword')}
                 </Link>
               </div>
 
@@ -207,10 +210,10 @@ export default function SchoolViewerLoginPage() {
                 {isLoggingIn ? (
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Signing In...
+                    {t('signingIn')}
                   </div>
                 ) : (
-                  'Sign In'
+                  t('loginAs', { role: t('schoolViewerRole') })
                 )}
               </button>
             </form>

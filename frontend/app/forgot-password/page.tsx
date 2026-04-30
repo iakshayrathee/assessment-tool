@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
@@ -13,6 +15,7 @@ export default function ForgotPasswordPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { t } = useTranslation('auth');
 
   const validateEmail = (email: string) => {
     return /\S+@\S+\.\S+/.test(email);
@@ -23,12 +26,12 @@ export default function ForgotPasswordPage() {
     setError('');
 
     if (!email) {
-      setError('Email is required');
+      setError(t('emailRequired'));
       return;
     }
 
     if (!validateEmail(email)) {
-      setError('Please enter a valid email address');
+      setError(t('emailInvalid'));
       return;
     }
 
@@ -41,7 +44,7 @@ export default function ForgotPasswordPage() {
       const message =
         error?.response?.data?.error ||
         error?.message ||
-        'An error occurred. Please try again.';
+        t('anErrorOccurred');
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -51,6 +54,7 @@ export default function ForgotPasswordPage() {
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+        <div className="fixed top-4 right-4 z-50"><LanguageSwitcher /></div>
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -64,11 +68,10 @@ export default function ForgotPasswordPage() {
               </div>
             </div>
 
-            <h2 className="text-2xl font-bold text-foreground mb-4">Check Your Email</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-4">{t('resetLinkSent')}</h2>
 
             <p className="text-muted-foreground mb-6">
-              We&apos;ve sent a password reset link to <strong>{email}</strong>.
-              Please check your email and follow the instructions to reset your password.
+              {t('resetLinkSentDesc')}
             </p>
 
             <div className="space-y-4">
@@ -76,7 +79,7 @@ export default function ForgotPasswordPage() {
                 href="/"
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 inline-block text-center"
               >
-                Back to Login
+                {t('backToLogin')}
               </Link>
 
               <button
@@ -86,7 +89,7 @@ export default function ForgotPasswordPage() {
                 }}
                 className="w-full text-muted-foreground hover:text-foreground py-2 transition-colors"
               >
-                Try a different email
+                {t('tryDifferentEmail')}
               </button>
             </div>
           </div>
@@ -97,6 +100,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="fixed top-4 right-4 z-50"><LanguageSwitcher /></div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -110,7 +114,7 @@ export default function ForgotPasswordPage() {
             className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Login
+            {t('backToLogin')}
           </Link>
 
           <div className="text-center mb-8">
@@ -119,16 +123,16 @@ export default function ForgotPasswordPage() {
                 <Mail className="h-8 w-8 text-white" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Forgot Password?</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-2">{t('forgotPasswordTitle')}</h2>
             <p className="text-muted-foreground">
-              Enter your email address and we&apos;ll send you a link to reset your password.
+              {t('forgotPasswordDesc')}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                Email Address
+                {t('emailAddress')}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -137,9 +141,8 @@ export default function ForgotPasswordPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${error ? 'border-destructive/30' : 'border-border'
-                    }`}
-                  placeholder="Enter your email address"
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${error ? 'border-destructive/30' : 'border-border'}`}
+                  placeholder={t('emailPlaceholder')}
                   required
                 />
               </div>
@@ -159,19 +162,19 @@ export default function ForgotPasswordPage() {
               {isSubmitting ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Sending Reset Link...
+                  {t('sendingResetLink')}
                 </div>
               ) : (
-                'Send Reset Link'
+                t('sendResetLink')
               )}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Remember your password?{' '}
+              {t('rememberPassword')}{' '}
               <Link href="/" className="text-primary hover:text-primary font-medium transition-colors">
-                Sign in
+                {t('signIn')}
               </Link>
             </p>
           </div>

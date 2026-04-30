@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import { Inter, Plus_Jakarta_Sans, JetBrains_Mono, Noto_Sans_Devanagari, Noto_Sans_Kannada } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Toaster } from '@/components/ui/toaster';
+import { HtmlLangSync } from '@/components/providers/HtmlLangSync';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -21,6 +22,20 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-jetbrains-mono',
   display: 'swap',
+});
+
+const notoSansDevanagari = Noto_Sans_Devanagari({
+  subsets: ['devanagari'],
+  variable: '--font-devanagari',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+});
+
+const notoSansKannada = Noto_Sans_Kannada({
+  subsets: ['kannada'],
+  variable: '--font-kannada',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -42,8 +57,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable} ${notoSansDevanagari.variable} ${notoSansKannada.variable} font-sans antialiased`}>
         <Providers>
+          <HtmlLangSync />
           <AppLayout>
             {children}
           </AppLayout>

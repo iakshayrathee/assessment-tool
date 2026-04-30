@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,9 +32,9 @@ const getVersionLabel = (version?: number, isFirst?: boolean) => {
   return `Reassessment V${version}`;
 };
 
-
 export default function AssessmentsPage() {
   const { user } = useAuth();
+  const { t } = useTranslation('educator');
 
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [assessmentTab, setAssessmentTab] = useState('formal');
@@ -250,7 +251,7 @@ export default function AssessmentsPage() {
 
     if (assessments.length === 0) {
       return (
-        <p className="text-center text-muted-foreground py-8">No {type} assessments yet</p>
+        <p className="text-center text-muted-foreground py-8">{t('assessments.noAssessmentsYet', { type })}</p>
       );
     }
 
@@ -262,12 +263,12 @@ export default function AssessmentsPage() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Type/Version</TableHead>
-            {type === 'formal' && <TableHead>Assessment Type</TableHead>}
-            {type === 'formal' && <TableHead>Diagnosis</TableHead>}
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead>{t('assessments.tableDate')}</TableHead>
+            <TableHead>{t('assessments.tableTypeVersion')}</TableHead>
+            {type === 'formal' && <TableHead>{t('assessments.tableAssessmentType')}</TableHead>}
+            {type === 'formal' && <TableHead>{t('assessments.tableDiagnosis')}</TableHead>}
+            <TableHead>{t('assessments.tableStatus')}</TableHead>
+            <TableHead className="text-right">{t('assessments.tableActions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -284,12 +285,12 @@ export default function AssessmentsPage() {
               {type === 'formal' && (
                 <>
                   <TableCell>{assessment.assessmentType || 'N/A'}</TableCell>
-                  <TableCell>{assessment.diagnosis || 'Pending'}</TableCell>
+                  <TableCell>{assessment.diagnosis || t('assessments.pending')}</TableCell>
                 </>
               )}
               <TableCell>
                 <Badge variant={assessment.completed ? 'default' : 'secondary'}>
-                  {assessment.completed ? 'Completed' : 'In Progress'}
+                  {assessment.completed ? t('assessments.statusCompleted') : t('assessments.statusInProgress')}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
@@ -300,7 +301,7 @@ export default function AssessmentsPage() {
                     onClick={() => handleViewAssessment(assessment, type)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
-                    View
+                    {t('assessments.view')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -308,7 +309,7 @@ export default function AssessmentsPage() {
                     onClick={() => handleEditAssessment(assessment, type)}
                   >
                     <Pencil className="h-4 w-4 mr-1" />
-                    Edit
+                    {t('assessments.edit')}
                   </Button>
                 </div>
               </TableCell>
@@ -321,9 +322,9 @@ export default function AssessmentsPage() {
 
   return (
     <PageWrapper
-      title="Comprehensive Assessments"
-      description="Formal referrals and detailed skill assessments"
-      breadcrumbs={[{ label: 'Educator' }, { label: 'Assessments' }]}
+      title={t('assessments.title')}
+      description={t('assessments.subtitle')}
+      breadcrumbs={[{ label: t('assessments.breadcrumb') }]}
       actions={
         selectedStudent ? (
           <Button
@@ -348,12 +349,11 @@ export default function AssessmentsPage() {
             className="flex items-center gap-2 px-4 py-2 min-w-[140px]"
           >
             <Users className="h-4 w-4" />
-            Select Student
+            {t('assessments.selectStudent')}
           </Button>
         )
       }
     >
-
       {/* AI Assessment Analysis */}
       {selectedStudent?.id && (
         <AIAssessmentPanel
@@ -367,144 +367,144 @@ export default function AssessmentsPage() {
 
       {selectedStudent?.id ? (
         <Tabs value={assessmentTab} onValueChange={setAssessmentTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="formal">
-                <FileText className="h-4 w-4 mr-2" />
-                Formal Assessments
-              </TabsTrigger>
-              <TabsTrigger value="skill">
-                <BookOpen className="h-4 w-4 mr-2" />
-                Skill Assessments
-              </TabsTrigger>
-            </TabsList>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="formal">
+              <FileText className="h-4 w-4 mr-2" />
+              {t('assessments.tabFormal')}
+            </TabsTrigger>
+            <TabsTrigger value="skill">
+              <BookOpen className="h-4 w-4 mr-2" />
+              {t('assessments.tabSkill')}
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="formal" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Formal Assessment Referrals</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Create referrals for psychological, educational, or specialized assessments ({formalAssessments.length}/{MAX_ASSESSMENTS})
-                      </p>
-                    </div>
-                    <Button onClick={() => handleCreateAssessment('formal')}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Referral
-                    </Button>
+          <TabsContent value="formal" className="mt-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>{t('assessments.formalReferralsTitle')}</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {t('assessments.formalReferralsDesc', { count: formalAssessments.length, max: MAX_ASSESSMENTS })}
+                    </p>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {renderAssessmentTable(formalAssessments, 'formal')}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="skill" className="mt-6">
-              {showSkillAssessment ? (
-                <div>
-                  {showSkillAssessment === 'reading' && (
-                    <ReadingAssessmentWizard
-                      studentId={selectedStudent?.id || ''}
-                      studentGrade={selectedStudent?.grade || ''}
-                      assessmentId={editingAssessment?.type === 'reading' ? editingAssessment?.id : undefined}
-                      initialData={editingAssessment?.type === 'reading' ? editingAssessment : undefined}
-                      mode={editingAssessment?.type === 'reading' ? (editingAssessment?.mode || 'edit') : 'create'}
-                      onSuccess={handleAssessmentSuccess}
-                      onCancel={() => {
-                        setShowSkillAssessment(null);
-                        setEditingAssessment(null);
-                      }}
-                    />
-                  )}
-                  {showSkillAssessment === 'writing' && (
-                    <WritingSkillAssessment
-                      studentId={selectedStudent?.id || ''}
-                      studentGrade={selectedStudent?.grade || ''}
-                      assessmentId={editingAssessment?.type === 'writing' ? editingAssessment?.id : undefined}
-                      initialData={editingAssessment?.type === 'writing' ? editingAssessment : undefined}
-                      mode={editingAssessment?.type === 'writing' ? (editingAssessment?.mode || 'edit') : 'create'}
-                      onSuccess={handleAssessmentSuccess}
-                      onCancel={() => {
-                        setShowSkillAssessment(null);
-                        setEditingAssessment(null);
-                      }}
-                    />
-                  )}
-                  {showSkillAssessment === 'math' && (
-                    <MathSkillAssessment
-                      studentId={selectedStudent?.id || ''}
-                      studentGrade={selectedStudent?.grade || ''}
-                      assessmentId={editingAssessment?.type === 'math' ? editingAssessment?.id : undefined}
-                      initialData={editingAssessment?.type === 'math' ? editingAssessment : undefined}
-                      mode={editingAssessment?.type === 'math' ? (editingAssessment?.mode || 'edit') : 'create'}
-                      onSuccess={handleAssessmentSuccess}
-                      onCancel={() => {
-                        setShowSkillAssessment(null);
-                        setEditingAssessment(null);
-                      }}
-                    />
-                  )}
+                  <Button onClick={() => handleCreateAssessment('formal')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('assessments.newReferral')}
+                  </Button>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2">
-                          <BookOpen className="h-5 w-5 text-primary" />
-                          Reading Assessments ({readingAssessments.length}/{MAX_ASSESSMENTS})
-                        </CardTitle>
-                        <Button onClick={() => handleCreateAssessment('reading')} size="sm">
-                          <Plus className="h-4 w-4 mr-1" />
-                          New
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {renderAssessmentTable(readingAssessments, 'reading')}
-                    </CardContent>
-                  </Card>
+              </CardHeader>
+              <CardContent>
+                {renderAssessmentTable(formalAssessments, 'formal')}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2">
-                          <PenTool className="h-5 w-5 text-success" />
-                          Writing Assessments ({writingAssessments.length}/{MAX_ASSESSMENTS})
-                        </CardTitle>
-                        <Button onClick={() => handleCreateAssessment('writing')} size="sm">
-                          <Plus className="h-4 w-4 mr-1" />
-                          New
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {renderAssessmentTable(writingAssessments, 'writing')}
-                    </CardContent>
-                  </Card>
+          <TabsContent value="skill" className="mt-6">
+            {showSkillAssessment ? (
+              <div>
+                {showSkillAssessment === 'reading' && (
+                  <ReadingAssessmentWizard
+                    studentId={selectedStudent?.id || ''}
+                    studentGrade={selectedStudent?.grade || ''}
+                    assessmentId={editingAssessment?.type === 'reading' ? editingAssessment?.id : undefined}
+                    initialData={editingAssessment?.type === 'reading' ? editingAssessment : undefined}
+                    mode={editingAssessment?.type === 'reading' ? (editingAssessment?.mode || 'edit') : 'create'}
+                    onSuccess={handleAssessmentSuccess}
+                    onCancel={() => {
+                      setShowSkillAssessment(null);
+                      setEditingAssessment(null);
+                    }}
+                  />
+                )}
+                {showSkillAssessment === 'writing' && (
+                  <WritingSkillAssessment
+                    studentId={selectedStudent?.id || ''}
+                    studentGrade={selectedStudent?.grade || ''}
+                    assessmentId={editingAssessment?.type === 'writing' ? editingAssessment?.id : undefined}
+                    initialData={editingAssessment?.type === 'writing' ? editingAssessment : undefined}
+                    mode={editingAssessment?.type === 'writing' ? (editingAssessment?.mode || 'edit') : 'create'}
+                    onSuccess={handleAssessmentSuccess}
+                    onCancel={() => {
+                      setShowSkillAssessment(null);
+                      setEditingAssessment(null);
+                    }}
+                  />
+                )}
+                {showSkillAssessment === 'math' && (
+                  <MathSkillAssessment
+                    studentId={selectedStudent?.id || ''}
+                    studentGrade={selectedStudent?.grade || ''}
+                    assessmentId={editingAssessment?.type === 'math' ? editingAssessment?.id : undefined}
+                    initialData={editingAssessment?.type === 'math' ? editingAssessment : undefined}
+                    mode={editingAssessment?.type === 'math' ? (editingAssessment?.mode || 'edit') : 'create'}
+                    onSuccess={handleAssessmentSuccess}
+                    onCancel={() => {
+                      setShowSkillAssessment(null);
+                      setEditingAssessment(null);
+                    }}
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5 text-primary" />
+                        {t('assessments.readingTitle', { count: readingAssessments.length, max: MAX_ASSESSMENTS })}
+                      </CardTitle>
+                      <Button onClick={() => handleCreateAssessment('reading')} size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        {t('assessments.new')}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderAssessmentTable(readingAssessments, 'reading')}
+                  </CardContent>
+                </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2">
-                          <Calculator className="h-5 w-5 text-info" />
-                          Math Assessments ({mathAssessments.length}/{MAX_ASSESSMENTS})
-                        </CardTitle>
-                        <Button onClick={() => handleCreateAssessment('math')} size="sm">
-                          <Plus className="h-4 w-4 mr-1" />
-                          New
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {renderAssessmentTable(mathAssessments, 'math')}
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <PenTool className="h-5 w-5 text-success" />
+                        {t('assessments.writingTitle', { count: writingAssessments.length, max: MAX_ASSESSMENTS })}
+                      </CardTitle>
+                      <Button onClick={() => handleCreateAssessment('writing')} size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        {t('assessments.new')}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderAssessmentTable(writingAssessments, 'writing')}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <Calculator className="h-5 w-5 text-info" />
+                        {t('assessments.mathTitle', { count: mathAssessments.length, max: MAX_ASSESSMENTS })}
+                      </CardTitle>
+                      <Button onClick={() => handleCreateAssessment('math')} size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        {t('assessments.new')}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderAssessmentTable(mathAssessments, 'math')}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       ) : (
         <Card className="flex-1">
           <CardContent className="py-12">
@@ -512,9 +512,9 @@ export default function AssessmentsPage() {
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                 <Plus className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium text-foreground mb-2">No Student Selected</h3>
+              <h3 className="text-lg font-medium text-foreground mb-2">{t('assessments.noStudentSelected')}</h3>
               <p className="text-muted-foreground">
-                Please select a student from above to begin an assessment
+                {t('assessments.selectStudentPrompt')}
               </p>
             </div>
           </CardContent>
@@ -534,10 +534,10 @@ export default function AssessmentsPage() {
             <DialogHeader>
               <DialogTitle>
                 {editingAssessment?.mode === 'view'
-                  ? 'View Formal Assessment'
+                  ? t('assessments.dialogViewFormal')
                   : editingAssessment
-                    ? 'Edit Formal Assessment'
-                    : 'New Formal Assessment Referral'}
+                    ? t('assessments.dialogEditFormal')
+                    : t('assessments.dialogNewFormal')}
               </DialogTitle>
             </DialogHeader>
           </div>

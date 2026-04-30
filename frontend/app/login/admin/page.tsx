@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Eye, EyeOff, Mail, Lock, Shield, ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 
@@ -15,6 +17,7 @@ export default function AdminLoginPage() {
 
   const { login, isLoggingIn, isAuthenticated, user } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation('auth');
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -32,15 +35,15 @@ export default function AdminLoginPage() {
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = t('emailInvalid');
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('passwordRequired');
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('passwordTooShort');
     }
 
     setErrors(newErrors);
@@ -55,14 +58,9 @@ export default function AdminLoginPage() {
     }
   };
 
-  // const fillDemoCredentials = () => {
-  //   setEmail('admin@knowled.com');
-  //   setPassword('admin123');
-  //   setErrors({});
-  // };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-red-100 to-orange-50 flex items-center justify-center p-4">
+      <div className="fixed top-4 right-4 z-50"><LanguageSwitcher /></div>
       <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-8 items-center">
         {/* Left Side - Admin Branding */}
         <motion.div
@@ -82,29 +80,28 @@ export default function AdminLoginPage() {
             </div>
 
             <h2 className="text-4xl font-bold text-foreground mb-6">
-              System Administration
+              {t('systemAdministration')}
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">
-                Control Center
+                {t('controlCenter')}
               </span>
             </h2>
 
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              Complete system oversight with full access to user management,
-              system configuration, data analytics, and platform administration.
+              {t('completeSystemOversight')}
             </p>
 
             <div className="grid grid-cols-1 gap-4 text-sm">
               <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-foreground mb-2">User Management</h3>
-                <p className="text-muted-foreground">Create, modify, and manage all user accounts across the platform</p>
+                <h3 className="font-semibold text-foreground mb-2">{t('userManagement')}</h3>
+                <p className="text-muted-foreground">{t('createModifyManageUsers')}</p>
               </div>
               <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-foreground mb-2">System Configuration</h3>
-                <p className="text-muted-foreground">Configure platform settings, permissions, and system parameters</p>
+                <h3 className="font-semibold text-foreground mb-2">{t('systemConfiguration')}</h3>
+                <p className="text-muted-foreground">{t('configurePlatformSettings')}</p>
               </div>
               <div className="bg-background/50 backdrop-blur-sm rounded-lg p-4">
-                <h3 className="font-semibold text-foreground mb-2">Data Analytics</h3>
-                <p className="text-muted-foreground">Access comprehensive reports and analytics across all centers</p>
+                <h3 className="font-semibold text-foreground mb-2">{t('dataAnalytics')}</h3>
+                <p className="text-muted-foreground">{t('accessComprehensiveReports')}</p>
               </div>
             </div>
           </div>
@@ -124,7 +121,7 @@ export default function AdminLoginPage() {
               className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6 transition-colors"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Login Selection
+              {t('backToLogin')}
             </Link>
 
             <div className="text-center mb-8">
@@ -136,14 +133,14 @@ export default function AdminLoginPage() {
                   Admin
                 </h1>
               </div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">Admin Sign In</h2>
-              <p className="text-muted-foreground">Access the administration dashboard</p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">{t('loginAs', { role: t('adminRole') })}</h2>
+              <p className="text-muted-foreground">{t('signInDesc')}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                  Email Address
+                  {t('emailAddress')}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -154,7 +151,7 @@ export default function AdminLoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors ${errors.email ? 'border-destructive/30' : 'border-border'
                       }`}
-                    placeholder="Enter your admin email"
+                    placeholder={t('emailPlaceholder')}
                   />
                 </div>
                 {errors.email && (
@@ -164,7 +161,7 @@ export default function AdminLoginPage() {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                  Password
+                  {t('password')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -175,7 +172,7 @@ export default function AdminLoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors ${errors.password ? 'border-destructive/30' : 'border-border'
                       }`}
-                    placeholder="Enter your password"
+                    placeholder={t('passwordPlaceholder')}
                   />
                   <button
                     type="button"
@@ -195,7 +192,7 @@ export default function AdminLoginPage() {
                   href="/forgot-password"
                   className="text-sm text-destructive hover:text-destructive transition-colors"
                 >
-                  Forgot Password?
+                  {t('forgotPassword')}
                 </Link>
               </div>
 
@@ -207,10 +204,10 @@ export default function AdminLoginPage() {
                 {isLoggingIn ? (
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Signing In...
+                    {t('signingIn')}
                   </div>
                 ) : (
-                  'Sign In as Admin'
+                  t('loginAs', { role: t('adminRole') })
                 )}
               </button>
             </form>

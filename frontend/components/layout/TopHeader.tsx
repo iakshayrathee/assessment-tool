@@ -1,8 +1,8 @@
 ﻿'use client';
 
-import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NotificationDropdown } from './NotificationDropdown';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface TopHeaderProps {
   className?: string;
@@ -29,18 +30,12 @@ interface TopHeaderProps {
   onMenuClick?: () => void;
 }
 
-const roleDisplayNames: Record<string, string> = {
-  CENTER: 'Center Administrator',
-  SPECIAL_EDUCATOR: 'Special Educator',
-  ADMIN: 'System Administrator',
-  SUPER_SPECIAL_EDUCATOR: 'Super Special Educator',
-  PARENT: 'Parent',
-  SCHOOL_VIEWER: 'School Viewer'
-};
-
 export function TopHeader({ className, userRole, onMenuClick }: TopHeaderProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation('layout');
+
+  const getRoleDisplayName = (role: string) => t(`roles.${role}`, { defaultValue: role });
 
   const handleLogout = async () => {
     await logout();
@@ -80,7 +75,7 @@ export function TopHeader({ className, userRole, onMenuClick }: TopHeaderProps) 
               size="sm"
               onClick={onMenuClick}
               className="lg:hidden"
-              aria-label="Open navigation menu"
+              aria-label={t('header.openMenu')}
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -97,7 +92,7 @@ export function TopHeader({ className, userRole, onMenuClick }: TopHeaderProps) 
             </div>
             {userRole && (
               <Badge variant="secondary" className="hidden md:flex">
-                {roleDisplayNames[userRole] || userRole}
+                {getRoleDisplayName(userRole)}
               </Badge>
             )}
           </div>
@@ -109,8 +104,8 @@ export function TopHeader({ className, userRole, onMenuClick }: TopHeaderProps) 
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <input
               type="search"
-              placeholder="Search..."
-              aria-label="Search"
+              placeholder={t('header.searchPlaceholder')}
+              aria-label={t('header.searchLabel')}
               className="w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -118,6 +113,8 @@ export function TopHeader({ className, userRole, onMenuClick }: TopHeaderProps) 
 
         {/* Right Section - Notifications + User Menu */}
         <div className="flex items-center gap-3">
+          {/* Language Switcher */}
+          <LanguageSwitcher />
           {/* Notifications */}
           <NotificationDropdown />
 
@@ -136,18 +133,18 @@ export function TopHeader({ className, userRole, onMenuClick }: TopHeaderProps) 
                     {getUserDisplayName()}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {roleDisplayNames[userRole || ''] || 'User'}
+                    {userRole ? getRoleDisplayName(userRole) : 'User'}
                   </span>
                 </div>
                 <ChevronDown className="h-4 w-4 text-muted-foreground hidden md:block" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('header.myAccount')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
-                Sign out
+                {t('header.signOut')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

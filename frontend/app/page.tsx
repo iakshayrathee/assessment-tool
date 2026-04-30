@@ -4,12 +4,15 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 import { Loader2, GraduationCap, Users, BookOpen, Building2, Heart, Eye, Shield } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 
 export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation('auth');
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
@@ -40,8 +43,9 @@ export default function HomePage() {
 
   const userTypes = [
     {
-      title: 'Admin',
-      description: 'Full system access and user management',
+      title: t('adminRole'),
+      description: t('adminDesc'),
+      key: 'admin',
       icon: Shield,
       color: 'from-red-500 to-red-600',
       bgColor: 'bg-destructive/10',
@@ -49,8 +53,9 @@ export default function HomePage() {
       route: '/login/admin'
     },
     {
-      title: 'Super Special Educator',
-      description: 'Monitor and review multiple educators',
+      title: t('superEducatorRole'),
+      description: t('superEducatorDesc'),
+      key: 'super-educator',
       icon: GraduationCap,
       color: 'from-green-500 to-green-600',
       bgColor: 'bg-success/10',
@@ -58,8 +63,9 @@ export default function HomePage() {
       route: '/login/super-special-educator'
     },
     {
-      title: 'Special Educator',
-      description: 'Conduct assessments and create IEPs',
+      title: t('specialEducatorRole'),
+      description: t('specialEducatorDesc'),
+      key: 'special-educator',
       icon: BookOpen,
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-info/10',
@@ -67,8 +73,9 @@ export default function HomePage() {
       route: '/login/special-educator'
     },
     {
-      title: 'Center Manager',
-      description: 'Manage center operations and educators',
+      title: t('centerManagerRole'),
+      description: t('centerManagerDesc'),
+      key: 'center',
       icon: Building2,
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-primary/10',
@@ -76,8 +83,9 @@ export default function HomePage() {
       route: '/login/center'
     },
     {
-      title: 'Parent',
-      description: 'View your child\'s progress and reports',
+      title: t('parentRole'),
+      description: t('parentDesc'),
+      key: 'parent',
       icon: Heart,
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-warning/10',
@@ -85,8 +93,9 @@ export default function HomePage() {
       route: '/login/parent'
     },
     {
-      title: 'School Viewer',
-      description: 'Monitor students from your school',
+      title: t('schoolViewerRole'),
+      description: t('schoolViewerDesc'),
+      key: 'school-viewer',
       icon: Eye,
       color: 'from-indigo-500 to-indigo-600',
       bgColor: 'bg-indigo-50',
@@ -100,8 +109,8 @@ export default function HomePage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-foreground mb-2">Loading Knowled</h2>
-          <p className="text-muted-foreground">Please wait while we prepare your dashboard...</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">{t('loadingKnowled')}</h2>
+          <p className="text-muted-foreground">{t('preparingDashboard')}</p>
         </div>
       </div>
     );
@@ -109,6 +118,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="fixed top-4 right-4 z-50"><LanguageSwitcher /></div>
       <div className=" px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
@@ -116,21 +126,21 @@ export default function HomePage() {
             Welcome to <span className="text-primary">Knowled Dev Server</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Empowering special education through comprehensive assessment and intervention tools
+            {t('empoweringEducation')}
           </p>
         </div>
 
         {/* User Type Selection */}
         <div className="mb-8">
           <h2 className="text-2xl font-semibold text-center text-foreground mb-8">
-            Choose Your Login Type
+            {t('chooseLoginType')}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {userTypes.map((userType, index) => {
+            {userTypes.map((userType) => {
               const IconComponent = userType.icon;
               return (
-                <Link key={userType.title} href={userType.route}>
+                <Link key={userType.key} href={userType.route}>
                   <Card
                     className={`cursor-pointer transition-all duration-300 hover:shadow-lg border-2 hover:border-primary/30 ${userType.bgColor} h-full`}
                   >

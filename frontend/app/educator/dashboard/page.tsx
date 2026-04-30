@@ -52,6 +52,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { useState, useMemo } from 'react';
 import { useAIEducatorInsights } from '@/hooks/useAI';
 
@@ -111,6 +112,7 @@ function WatchlistRow({
   student: any;
   riskInfo?: RiskInfo;
 }) {
+  const { t } = useTranslation('educator', { keyPrefix: 'dashboard.watchlist' });
   const initials =
     student.fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'ST';
   const progress = student.progressSummary?.averageProgress || 0;
@@ -171,7 +173,7 @@ function WatchlistRow({
           variant="ghost"
           size="sm"
           className="h-7 w-7 p-0 opacity-40 group-hover:opacity-100 transition-opacity rounded-md flex-shrink-0"
-          title="View student profile"
+          title={t('viewStudentProfile')}
         >
           <Eye className="h-3.5 w-3.5" />
         </Button>
@@ -194,6 +196,7 @@ function PriorityWatchlist({
   riskMap: Map<string, RiskInfo>;
   isLoading: boolean;
 }) {
+  const { t: tDash } = useTranslation('educator', { keyPrefix: 'dashboard' });
   const prioritized = useMemo(() => {
     return [...students]
       .sort((a, b) => {
@@ -220,12 +223,12 @@ function PriorityWatchlist({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-sm font-semibold">Student Watchlist</CardTitle>
-            <CardDescription className="text-xs">Priority students needing attention</CardDescription>
+            <CardTitle className="text-sm font-semibold">{tDash('watchlist.title')}</CardTitle>
+            <CardDescription className="text-xs">{tDash('watchlist.subtitle')}</CardDescription>
           </div>
           <Link href="/educator/students">
             <Button variant="ghost" size="sm" className="text-xs h-7 gap-1">
-              All students
+              {tDash('watchlist.allStudents')}
               <Eye className="h-3 w-3" />
             </Button>
           </Link>
@@ -248,10 +251,10 @@ function PriorityWatchlist({
         ) : prioritized.length === 0 ? (
           <EmptyState
             icon={Users}
-            title="No students yet"
-            description="Add your first student to get started."
+            title={tDash('watchlist.noStudents')}
+            description={tDash('watchlist.noStudentsDesc')}
             action={{
-              label: 'Add Student',
+              label: tDash('addStudent'),
               onClick: () => (window.location.href = '/educator/students/new'),
             }}
             className="py-6 border-0 bg-transparent"
@@ -270,7 +273,7 @@ function PriorityWatchlist({
             {students.length > 5 && (
               <Link href="/educator/students" className="block mt-1">
                 <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground">
-                  +{students.length - 5} more students
+                  +{students.length - 5} {tDash('moreStudents')}
                 </Button>
               </Link>
             )}
@@ -286,21 +289,22 @@ function PriorityWatchlist({
  * Grouped together in the right sidebar to reduce visual weight.
  */
 function SidebarSummary({ analytics }: { analytics: any }) {
+  const { t: tDash } = useTranslation('educator', { keyPrefix: 'dashboard' });
   const summaryItems = [
     {
-      label: 'Completed Reports',
+      label: tDash('completedReports'),
       value: analytics?.completedReports ?? 0,
       icon: Award,
       color: 'text-emerald-600',
     },
     {
-      label: 'Upcoming Sessions',
+      label: tDash('upcomingSessions'),
       value: analytics?.upcomingSessions ?? 0,
       icon: Calendar,
       color: 'text-blue-600',
     },
     {
-      label: 'Pending Assessments',
+      label: tDash('pendingAssessments'),
       value: analytics?.pendingAssessments ?? 0,
       icon: BookOpen,
       color: 'text-amber-600',
@@ -308,9 +312,9 @@ function SidebarSummary({ analytics }: { analytics: any }) {
   ];
 
   const quickActions = [
-    { href: '/educator/students', icon: Users, label: 'View All Students' },
-    { href: '/educator/reports', icon: FileText, label: 'Generate Report' },
-    { href: '/educator/assessments', icon: ClipboardList, label: 'Start Assessment' },
+    { href: '/educator/students', icon: Users, label: tDash('viewAllStudents') },
+    { href: '/educator/reports', icon: FileText, label: tDash('generateReport') },
+    { href: '/educator/assessments', icon: ClipboardList, label: tDash('startAssessment') },
   ];
 
   return (
@@ -318,7 +322,7 @@ function SidebarSummary({ analytics }: { analytics: any }) {
       {/* Monthly snapshot */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">This Month</CardTitle>
+          <CardTitle className="text-sm font-semibold">{tDash('thisMonth')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1">
           {summaryItems.map(({ label, value, icon: Icon, color }) => (
@@ -339,7 +343,7 @@ function SidebarSummary({ analytics }: { analytics: any }) {
       {/* Quick actions */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Quick Actions</CardTitle>
+          <CardTitle className="text-sm font-semibold">{tDash('quickActions')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1.5">
           {quickActions.map(({ href, icon: Icon, label }) => (
@@ -366,6 +370,7 @@ function SidebarSummary({ analytics }: { analytics: any }) {
 
 export default function EducatorDashboard() {
   const { user } = useAuth();
+  const { t } = useTranslation('educator');
   const [timePeriod, setTimePeriod] = useState<'week' | 'month' | 'quarter'>('month');
   const [aiInsightsEnabled] = useState(true);
 
@@ -440,9 +445,9 @@ export default function EducatorDashboard() {
   if (isLoading) {
     return (
       <PageWrapper
-        title={`Welcome back, ${displayName}`}
-        description="Here's what's happening with your students today"
-        breadcrumbs={[{ label: 'Dashboard' }]}
+        title={t('dashboard.title', { name: displayName })}
+        description={t('dashboard.subtitle')}
+        breadcrumbs={[{ label: t('dashboard.breadcrumb') }]}
       >
         <DashboardSkeleton />
       </PageWrapper>
@@ -453,17 +458,17 @@ export default function EducatorDashboard() {
   if (hasError) {
     return (
       <PageWrapper
-        title="Dashboard"
-        breadcrumbs={[{ label: 'Dashboard' }]}
+        title={t('dashboard.breadcrumb')}
+        breadcrumbs={[{ label: t('dashboard.breadcrumb') }]}
       >
         <Card className="border-destructive/20 bg-destructive/5">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <AlertCircle className="h-8 w-8 text-destructive flex-shrink-0" />
               <div className="flex-1">
-                <h3 className="font-semibold">Failed to load dashboard</h3>
+                <h3 className="font-semibold">{t('dashboard.failedToLoad')}</h3>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  Please try refreshing or contact support if the issue persists.
+                  {t('dashboard.failedToLoadDesc')}
                 </p>
               </div>
               <Button
@@ -485,19 +490,19 @@ export default function EducatorDashboard() {
 
   return (
     <PageWrapper
-      title={`Welcome back, ${displayName}`}
-      description="Here's what's happening with your students today"
-      breadcrumbs={[{ label: 'Dashboard' }]}
+      title={t('dashboard.title', { name: displayName })}
+      description={t('dashboard.subtitle')}
+      breadcrumbs={[{ label: t('dashboard.breadcrumb') }]}
       actions={
         <>
           <Button variant="outline" size="sm" onClick={exportStudentsCSV}>
             <Download className="h-4 w-4 mr-2" />
-            Export CSV
+            {t('dashboard.exportCSV')}
           </Button>
           <Link href="/educator/students/new">
             <Button size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              Add Student
+              {t('dashboard.addStudent')}
             </Button>
           </Link>
         </>
@@ -506,30 +511,30 @@ export default function EducatorDashboard() {
       {/* ── Section 1: Key Metrics ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Students"
+          title={t('dashboard.metrics.totalStudents')}
           value={analytics?.totalStudents ?? 0}
-          description="Active students under your care"
+          description={t('dashboard.metrics.totalStudentsDesc')}
           icon={Users}
           variant="primary"
         />
         <StatCard
-          title="Average Progress"
+          title={t('dashboard.metrics.averageProgress')}
           value={`${analytics?.averageStudentProgress ?? 0}%`}
-          description="Across all remediation plans"
+          description={t('dashboard.metrics.averageProgressDesc')}
           icon={TrendingUp}
           variant="success"
         />
         <StatCard
-          title="Active Plans"
+          title={t('dashboard.metrics.activePlans')}
           value={analytics?.activeIEPGoals ?? 0}
-          description="Goals currently in progress"
+          description={t('dashboard.metrics.activePlansDesc')}
           icon={Target}
           variant="default"
         />
         <StatCard
-          title="Pending Tasks"
+          title={t('dashboard.metrics.pendingTasks')}
           value={analytics?.pendingTasks ?? 0}
-          description="Assessments & homework"
+          description={t('dashboard.metrics.pendingTasksDesc')}
           icon={ClipboardList}
           variant="warning"
         />
@@ -553,8 +558,8 @@ export default function EducatorDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Performance Distribution</CardTitle>
-                <CardDescription className="text-xs">Students by performance tier</CardDescription>
+                <CardTitle className="text-sm font-semibold">{t('dashboard.charts.performanceDistribution')}</CardTitle>
+                <CardDescription className="text-xs">{t('dashboard.charts.performanceDistributionDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {analytics?.performanceDistribution ? (
@@ -562,7 +567,7 @@ export default function EducatorDashboard() {
                 ) : (
                   <EmptyState
                     icon={Target}
-                    title="No data yet"
+                    title={t('dashboard.charts.noData')}
                     className="py-8 border-0 bg-transparent"
                   />
                 )}
@@ -571,8 +576,8 @@ export default function EducatorDashboard() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Domain Performance</CardTitle>
-                <CardDescription className="text-xs">Average across learning domains</CardDescription>
+                <CardTitle className="text-sm font-semibold">{t('dashboard.charts.domainPerformance')}</CardTitle>
+                <CardDescription className="text-xs">{t('dashboard.charts.domainPerformanceDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {analytics?.domainAverages ? (
@@ -580,7 +585,7 @@ export default function EducatorDashboard() {
                 ) : (
                   <EmptyState
                     icon={BookOpen}
-                    title="No data yet"
+                    title={t('dashboard.charts.noData')}
                     className="py-8 border-0 bg-transparent"
                   />
                 )}
@@ -593,8 +598,8 @@ export default function EducatorDashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-sm font-semibold">Progress Trends</CardTitle>
-                  <CardDescription className="text-xs">Track improvement over time</CardDescription>
+                  <CardTitle className="text-sm font-semibold">{t('dashboard.charts.progressTrends')}</CardTitle>
+                  <CardDescription className="text-xs">{t('dashboard.charts.progressTrendsDesc')}</CardDescription>
                 </div>
                 {/* Period selector is part of the chart header — belongs here, not below */}
                 <Select value={timePeriod} onValueChange={(v: any) => setTimePeriod(v)}>
@@ -602,9 +607,9 @@ export default function EducatorDashboard() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="week">Last Week</SelectItem>
-                    <SelectItem value="month">Last Month</SelectItem>
-                    <SelectItem value="quarter">Last Quarter</SelectItem>
+                    <SelectItem value="week">{t('dashboard.charts.lastWeek')}</SelectItem>
+                    <SelectItem value="month">{t('dashboard.charts.lastMonth')}</SelectItem>
+                    <SelectItem value="quarter">{t('dashboard.charts.lastQuarter')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -615,8 +620,8 @@ export default function EducatorDashboard() {
               ) : (
                 <EmptyState
                   icon={TrendingUp}
-                  title="No trend data"
-                  description="Trends appear after students have session history."
+                  title={t('dashboard.charts.noTrendData')}
+                  description={t('dashboard.charts.noTrendDataDesc')}
                   className="py-10 border-0 bg-transparent"
                 />
               )}

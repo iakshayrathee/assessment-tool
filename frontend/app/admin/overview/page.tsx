@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api';
@@ -50,6 +51,7 @@ interface QuickFilter {
 
 export default function GlobalOverviewPage() {
   const { user } = useAuth();
+  const { t } = useTranslation('admin');
   const [stats, setStats] = useState<OverviewStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<QuickFilter>({
@@ -162,18 +164,18 @@ export default function GlobalOverviewPage() {
 
   return (
     <PageWrapper
-      title="Global Overview"
-      description="Comprehensive view of all centers, schools, educators, parents, and students"
-      breadcrumbs={[{ label: 'Overview' }]}
+      title={t('overview.title')}
+      description={t('overview.subtitle')}
+      breadcrumbs={[{ label: t('overview.breadcrumb') }]}
       actions={
         <>
           <Button variant="outline" onClick={loadOverviewData}>
             <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+            {t('overview.refresh')}
           </Button>
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
-            Export Report
+            {t('overview.exportReport')}
           </Button>
         </>
       }
@@ -189,33 +191,33 @@ export default function GlobalOverviewPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-primary" />
-              Quick Filters
+              {t('overview.quickFilters')}
             </CardTitle>
             <CardDescription>
-              Filter data by roles, locations, and status
+              {t('overview.filterDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-4">
               <Select value={filters.role} onValueChange={(value) => setFilters({...filters, role: value})}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="All Roles" />
+                  <SelectValue placeholder={t('overview.allRoles')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="educator">Educators</SelectItem>
-                  <SelectItem value="parent">Parents</SelectItem>
-                  <SelectItem value="center">Centers</SelectItem>
-                  <SelectItem value="school">Schools</SelectItem>
+                  <SelectItem value="all">{t('overview.allRoles')}</SelectItem>
+                  <SelectItem value="educator">{t('overview.totalEducators')}</SelectItem>
+                  <SelectItem value="parent">{t('overview.totalParents')}</SelectItem>
+                  <SelectItem value="center">{t('overview.totalCenters')}</SelectItem>
+                  <SelectItem value="school">{t('overview.totalSchools')}</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={filters.location} onValueChange={(value) => setFilters({...filters, location: value})}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="All Locations" />
+                  <SelectValue placeholder={t('overview.allLocations')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Locations</SelectItem>
+                  <SelectItem value="all">{t('overview.allLocations')}</SelectItem>
                   <SelectItem value="mumbai">Mumbai</SelectItem>
                   <SelectItem value="delhi">Delhi</SelectItem>
                   <SelectItem value="bangalore">Bangalore</SelectItem>
@@ -225,13 +227,13 @@ export default function GlobalOverviewPage() {
 
               <Select value={filters.status} onValueChange={(value) => setFilters({...filters, status: value})}>
                 <SelectTrigger className="w-32">
-                  <SelectValue placeholder="All Status" />
+                  <SelectValue placeholder={t('overview.allStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="all">{t('overview.allStatus')}</SelectItem>
+                  <SelectItem value="active">{t('overview.active')}</SelectItem>
+                  <SelectItem value="inactive">{t('overview.inactive')}</SelectItem>
+                  <SelectItem value="pending">{t('overview.pending')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -247,78 +249,78 @@ export default function GlobalOverviewPage() {
         className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
       >
         <StatCard
-          title="Total Centers"
+          title={t('overview.totalCenters')}
           value={stats?.totalCenters || 0}
           icon={<Building className="h-6 w-6 text-primary" />}
           trend="up"
           trendValue="+12%"
-          description="Active learning centers"
+          description={t('overview.totalCentersDesc')}
           color="blue"
         />
         
         <StatCard
-          title="Total Schools"
+          title={t('overview.totalSchools')}
           value={stats?.totalSchools || 0}
           icon={<School className="h-6 w-6 text-success" />}
           trend="up"
           trendValue="+8%"
-          description="Partner schools"
+          description={t('overview.totalSchoolsDesc')}
           color="green"
         />
         
         <StatCard
-          title="Educators"
+          title={t('overview.totalEducators')}
           value={stats?.totalEducators || 0}
           icon={<GraduationCap className="h-6 w-6 text-info" />}
           trend="up"
           trendValue="+15%"
-          description="Special & Super Special Educators"
+          description={t('overview.totalEducatorsDesc')}
           color="purple"
         />
         
         <StatCard
-          title="Parents"
+          title={t('overview.totalParents')}
           value={stats?.totalParents || 0}
           icon={<Users className="h-6 w-6 text-warning" />}
           trend="up"
           trendValue="+22%"
-          description="Registered parent accounts"
+          description={t('overview.totalParentsDesc')}
           color="orange"
         />
         
         <StatCard
-          title="Students"
+          title={t('overview.totalStudents')}
           value={stats?.totalStudents || 0}
           icon={<UserCheck className="h-6 w-6 text-primary" />}
           trend="up"
           trendValue="+18%"
-          description="Active student profiles"
+          description={t('overview.totalStudentsDesc')}
           color="indigo"
         />
         
         <StatCard
-          title="Active Users"
+          title={t('overview.activeUsers')}
           value={stats?.activeUsers || 0}
           icon={<Activity className="h-6 w-6 text-emerald-600" />}
           trend="up"
           trendValue="+5%"
-          description="Users active this month"
+          description={t('overview.activeUsersDesc')}
           color="emerald"
         />
         
         <StatCard
-          title="Pending Approvals"
+          title={t('overview.pendingApprovals')}
           value={stats?.pendingApprovals || 0}
           icon={<Clock className="h-6 w-6 text-warning" />}
-          description="Awaiting admin review"
+          description={t('overview.pendingApprovalsDesc')}
           color="yellow"
         />
         
         <StatCard
-          title="Recent Activity"
+          title={t('overview.recentActivity')}
           value={stats?.recentActivity || 0}
           icon={<BarChart3 className="h-6 w-6 text-destructive" />}
-          description="Actions in last 24 hours"
+          description={t('overview.recentActivityDesc')}
           color="red"
         />
       </motion.div>
@@ -331,9 +333,9 @@ export default function GlobalOverviewPage() {
       >
         <Card>
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle>{t('overview.quickActions')}</CardTitle>
             <CardDescription>
-              Common administrative tasks and shortcuts
+              {t('overview.quickActionsDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -341,7 +343,7 @@ export default function GlobalOverviewPage() {
               <Button variant="outline" className="h-20 flex-col gap-2" asChild>
                 <a href="/admin/approvals">
                   <Clock className="h-6 w-6" />
-                  <span>Review Approvals</span>
+                  <span>{t('overview.reviewApprovals')}</span>
                   <Badge variant="secondary">{stats?.pendingApprovals}</Badge>
                 </a>
               </Button>
@@ -351,7 +353,7 @@ export default function GlobalOverviewPage() {
               <Button variant="outline" className="h-20 flex-col gap-2" asChild>
                 <a href="/admin/reports">
                   <BarChart3 className="h-6 w-6" />
-                  <span>View Reports</span>
+                  <span>{t('overview.viewReports')}</span>
                 </a>
               </Button>
             </div>

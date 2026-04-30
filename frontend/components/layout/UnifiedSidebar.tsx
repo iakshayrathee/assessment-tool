@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -60,156 +61,149 @@ interface NavigationGroup {
   items: NavigationItem[];
 }
 
-// Role-based navigation configurations (grouped)
-const roleNavigations: Record<string, NavigationGroup[]> = {
-  SPECIAL_EDUCATOR: [
-    {
-      label: 'Core',
-      items: [
-        { title: 'Dashboard', href: '/educator/dashboard', icon: Home },
-        { title: 'My Profile', href: '/educator/profile', icon: User },
-      ],
-    },
-    {
-      label: 'Students',
-      items: [
-        { title: 'My Students', href: '/educator/students', icon: Users },
-        { title: 'Intake Forms', href: '/educator/intake', icon: FileText },
-      ],
-    },
-    {
-      label: 'Learning',
-      items: [
-        { title: 'Assessments', href: '/educator/assessments', icon: Brain },
-        { title: 'Remediation', href: '/educator/lesson-plans-new', icon: Calendar },
-        { title: 'IEP Management', href: '/educator/iep-management', icon: BookOpen },
-        { title: 'Homework', href: '/educator/homework', icon: ClipboardList },
-      ],
-    },
-    {
-      label: 'Resources',
-      items: [
-        { title: 'Data Bank', href: '/educator/data-bank', icon: Database },
-        { title: 'Text-to-Speech', href: '/educator/text-to-speech', icon: Volume2 },
-        { title: 'Reports', href: '/educator/reports', icon: BarChart3 },
-        { title: 'AI Transparency', href: '/educator/ai-transparency', icon: Eye },
-      ],
-    },
-  ],
-  ADMIN: [
-    {
-      label: 'Overview',
-      items: [
-        { title: 'Overview', href: '/admin/overview', icon: TrendingUp },
-      ],
-    },
-    {
-      label: 'Management',
-      items: [
-        { title: 'User Management', href: '/admin/user-management', icon: Users },
-        { title: 'Approvals', href: '/admin/approvals', icon: UserCheck },
-      ],
-    },
-    {
-      label: 'System',
-      items: [
-        { title: 'Reports', href: '/admin/reports', icon: FileText },
-        { title: 'Audit Logs', href: '/admin/audit-logs', icon: Activity },
-        { title: 'Settings', href: '/admin/settings', icon: Settings },
-      ],
-    },
-  ],
-  CENTER: [
-    {
-      label: 'Overview',
-      items: [
-        { title: 'Dashboard', href: '/center/dashboard', icon: LayoutDashboard },
-      ],
-    },
-    {
-      label: 'People',
-      items: [
-        { title: 'Schools', href: '/center/schools', icon: School },
-        { title: 'Educators', href: '/center/educators', icon: GraduationCap },
-        { title: 'Students', href: '/center/students', icon: Users },
-      ],
-    },
-    {
-      label: 'Insights',
-      items: [
-        { title: 'Reports', href: '/center/reports', icon: FileText },
-        { title: 'Compliance', href: '/center/compliance', icon: Shield },
-      ],
-    },
-  ],
-  SUPER_SPECIAL_EDUCATOR: [
-    {
-      label: 'Overview',
-      items: [
-        { title: 'Dashboard', href: '/super-special-educator', icon: LayoutDashboard },
-      ],
-    },
-    {
-      label: 'Management',
-      items: [
-        { title: 'Centers', href: '/super-special-educator/centers', icon: Building2 },
-        { title: 'Educators', href: '/super-special-educator/educators', icon: UserCheck },
-        { title: 'Students', href: '/super-special-educator/students', icon: Users },
-      ],
-    },
-    {
-      label: 'Quality',
-      items: [
-        { title: 'Reviews', href: '/super-special-educator/reviews', icon: FileText },
-        { title: 'Flagged Cases', href: '/super-special-educator/flagged-cases', icon: AlertTriangle },
-        { title: 'Analytics', href: '/super-special-educator/analytics', icon: TrendingUp },
-      ],
-    },
-  ],
-  PARENT: [
-    {
-      label: 'Overview',
-      items: [
-        { title: 'Dashboard', href: '/parent/dashboard', icon: LayoutDashboard },
-      ],
-    },
-    {
-      label: 'My Children',
-      items: [
-        { title: 'My Children', href: '/parent/children', icon: Users },
-        { title: 'Documents', href: '/parent/documents', icon: FileText },
-        { title: 'Homework', href: '/parent/homework', icon: ClipboardList },
-      ],
-    },
-    {
-      label: 'Communication',
-      items: [
-        { title: 'Reports', href: '/parent/reports', icon: BarChart3 },
-        { title: 'Concerns', href: '/parent/concerns', icon: MessageSquare },
-        { title: 'Profile', href: '/parent/profile', icon: User },
-      ],
-    },
-  ],
-  SCHOOL_VIEWER: [
-    {
-      label: 'Overview',
-      items: [
-        { title: 'Dashboard', href: '/school-viewer/dashboard', icon: LayoutDashboard },
-        { title: 'Students', href: '/school-viewer/students', icon: Users },
-        { title: 'School Reports', href: '/school-viewer/school-reports', icon: BarChart3 },
-      ],
-    },
-  ],
-};
-
-const roleDisplayNames: Record<string, string> = {
-  SPECIAL_EDUCATOR: 'Special Educator',
-  ADMIN: 'Administrator',
-  CENTER: 'Center Manager',
-  SUPER_SPECIAL_EDUCATOR: 'Super Educator',
-  PARENT: 'Parent',
-  SCHOOL_VIEWER: 'School Viewer',
-};
+// Role-based navigation configurations (grouped) — built at render time with translations
+function getRoleNavigations(t: (key: string) => string): Record<string, NavigationGroup[]> {
+  return {
+    SPECIAL_EDUCATOR: [
+      {
+        label: t('navGroups.core'),
+        items: [
+          { title: t('nav.dashboard'), href: '/educator/dashboard', icon: Home },
+          { title: t('nav.myProfile'), href: '/educator/profile', icon: User },
+        ],
+      },
+      {
+        label: t('navGroups.students'),
+        items: [
+          { title: t('nav.myStudents'), href: '/educator/students', icon: Users },
+          { title: t('nav.intakeForms'), href: '/educator/intake', icon: FileText },
+        ],
+      },
+      {
+        label: t('navGroups.learning'),
+        items: [
+          { title: t('nav.assessments'), href: '/educator/assessments', icon: Brain },
+          { title: t('nav.remediation'), href: '/educator/lesson-plans-new', icon: Calendar },
+          { title: t('nav.iepManagement'), href: '/educator/iep-management', icon: BookOpen },
+          { title: t('nav.homework'), href: '/educator/homework', icon: ClipboardList },
+        ],
+      },
+      {
+        label: t('navGroups.resources'),
+        items: [
+          { title: t('nav.dataBank'), href: '/educator/data-bank', icon: Database },
+          { title: t('nav.textToSpeech'), href: '/educator/text-to-speech', icon: Volume2 },
+          { title: t('nav.reports'), href: '/educator/reports', icon: BarChart3 },
+          { title: t('nav.aiTransparency'), href: '/educator/ai-transparency', icon: Eye },
+        ],
+      },
+    ],
+    ADMIN: [
+      {
+        label: t('navGroups.overview'),
+        items: [
+          { title: t('nav.overview'), href: '/admin/overview', icon: TrendingUp },
+        ],
+      },
+      {
+        label: t('navGroups.management'),
+        items: [
+          { title: t('nav.userManagement'), href: '/admin/user-management', icon: Users },
+          { title: t('nav.approvals'), href: '/admin/approvals', icon: UserCheck },
+        ],
+      },
+      {
+        label: t('navGroups.system'),
+        items: [
+          { title: t('nav.reports'), href: '/admin/reports', icon: FileText },
+          { title: t('nav.auditLogs'), href: '/admin/audit-logs', icon: Activity },
+          { title: t('nav.settings'), href: '/admin/settings', icon: Settings },
+        ],
+      },
+    ],
+    CENTER: [
+      {
+        label: t('navGroups.overview'),
+        items: [
+          { title: t('nav.dashboard'), href: '/center/dashboard', icon: LayoutDashboard },
+        ],
+      },
+      {
+        label: t('navGroups.people'),
+        items: [
+          { title: t('nav.schools'), href: '/center/schools', icon: School },
+          { title: t('nav.educators'), href: '/center/educators', icon: GraduationCap },
+          { title: t('nav.students'), href: '/center/students', icon: Users },
+        ],
+      },
+      {
+        label: t('navGroups.insights'),
+        items: [
+          { title: t('nav.reports'), href: '/center/reports', icon: FileText },
+          { title: t('nav.compliance'), href: '/center/compliance', icon: Shield },
+        ],
+      },
+    ],
+    SUPER_SPECIAL_EDUCATOR: [
+      {
+        label: t('navGroups.overview'),
+        items: [
+          { title: t('nav.dashboard'), href: '/super-special-educator', icon: LayoutDashboard },
+        ],
+      },
+      {
+        label: t('navGroups.management'),
+        items: [
+          { title: t('nav.centers'), href: '/super-special-educator/centers', icon: Building2 },
+          { title: t('nav.educators'), href: '/super-special-educator/educators', icon: UserCheck },
+          { title: t('nav.students'), href: '/super-special-educator/students', icon: Users },
+        ],
+      },
+      {
+        label: t('navGroups.quality'),
+        items: [
+          { title: t('nav.reviews'), href: '/super-special-educator/reviews', icon: FileText },
+          { title: t('nav.flaggedCases'), href: '/super-special-educator/flagged-cases', icon: AlertTriangle },
+          { title: t('nav.analytics'), href: '/super-special-educator/analytics', icon: TrendingUp },
+        ],
+      },
+    ],
+    PARENT: [
+      {
+        label: t('navGroups.overview'),
+        items: [
+          { title: t('nav.dashboard'), href: '/parent/dashboard', icon: LayoutDashboard },
+        ],
+      },
+      {
+        label: t('navGroups.myChildren'),
+        items: [
+          { title: t('nav.children'), href: '/parent/children', icon: Users },
+          { title: t('nav.documents'), href: '/parent/documents', icon: FileText },
+          { title: t('nav.homework'), href: '/parent/homework', icon: ClipboardList },
+        ],
+      },
+      {
+        label: t('navGroups.communication'),
+        items: [
+          { title: t('nav.reports'), href: '/parent/reports', icon: BarChart3 },
+          { title: t('nav.concerns'), href: '/parent/concerns', icon: MessageSquare },
+          { title: t('nav.profile'), href: '/parent/profile', icon: User },
+        ],
+      },
+    ],
+    SCHOOL_VIEWER: [
+      {
+        label: t('navGroups.overview'),
+        items: [
+          { title: t('nav.dashboard'), href: '/school-viewer/dashboard', icon: LayoutDashboard },
+          { title: t('nav.students'), href: '/school-viewer/students', icon: Users },
+          { title: t('nav.schoolReports'), href: '/school-viewer/school-reports', icon: BarChart3 },
+        ],
+      },
+    ],
+  };
+}
 
 function NavItem({
   item,
@@ -270,6 +264,7 @@ export function UnifiedSidebar({
 }: SidebarProps) {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const pathname = usePathname();
+  const { t } = useTranslation('layout');
 
   const isCollapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
 
@@ -279,8 +274,9 @@ export function UnifiedSidebar({
     else setInternalCollapsed(next);
   };
 
+  const roleNavigations = getRoleNavigations(t);
   const groups = roleNavigations[userRole] ?? roleNavigations.SPECIAL_EDUCATOR;
-  const roleLabel = roleDisplayNames[userRole] ?? userRole;
+  const roleLabel = t(`roles.${userRole}`, { defaultValue: userRole });
   const initials = userName
     .split(' ')
     .map((n) => n[0])
@@ -332,7 +328,7 @@ export function UnifiedSidebar({
               size="sm"
               onClick={handleToggleCollapse}
               className="h-7 w-7 p-0 text-muted-foreground"
-              aria-label="Collapse sidebar"
+              aria-label={t('sidebar.collapseSidebar')}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -341,7 +337,7 @@ export function UnifiedSidebar({
             <button
               onClick={handleToggleCollapse}
               className="absolute -right-3 top-4 hidden md:flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background shadow-sm text-muted-foreground hover:text-foreground"
-              aria-label="Expand sidebar"
+              aria-label={t('sidebar.expandSidebar')}
             >
               <Menu className="h-3 w-3" />
             </button>
@@ -349,7 +345,7 @@ export function UnifiedSidebar({
           <button
             className="md:hidden h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
             onClick={onClose}
-            aria-label="Close sidebar"
+            aria-label={t('sidebar.closeSidebar')}
           >
             <X className="h-4 w-4" />
           </button>
@@ -409,12 +405,12 @@ export function UnifiedSidebar({
                 <TooltipTrigger asChild>
                   <button
                     className="shrink-0 text-muted-foreground hover:text-foreground"
-                    aria-label="Sign out"
+                    aria-label={t('header.signOut')}
                   >
                     <LogOut className="h-4 w-4" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top">Sign out</TooltipContent>
+                <TooltipContent side="top">{t('header.signOut')}</TooltipContent>
               </Tooltip>
             </div>
           )}

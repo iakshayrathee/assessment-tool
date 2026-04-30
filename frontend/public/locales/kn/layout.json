@@ -1,0 +1,87 @@
+{
+  "nav": {
+    "dashboard": "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
+    "myProfile": "ನನ್ನ ಪ್ರೊಫೈಲ್",
+    "myStudents": "ನನ್ನ ವಿದ್ಯಾರ್ಥಿಗಳು",
+    "intakeForms": "ದಾಖಲಾತಿ ನಮೂನೆಗಳು",
+    "assessments": "ಮೌಲ್ಯಮಾಪನಗಳು",
+    "remediation": "ಪರಿಹಾರ ಶಿಕ್ಷಣ",
+    "iepManagement": "IEP ನಿರ್ವಹಣೆ",
+    "homework": "ಮನೆಕೆಲಸ",
+    "dataBank": "ಡೇಟಾ ಬ್ಯಾಂಕ್",
+    "textToSpeech": "ಪಠ್ಯ-ಧ್ವನಿ",
+    "reports": "ವರದಿಗಳು",
+    "aiTransparency": "AI ಪಾರದರ್ಶಕತೆ",
+    "overview": "ಅವಲೋಕನ",
+    "userManagement": "ಬಳಕೆದಾರ ನಿರ್ವಹಣೆ",
+    "approvals": "ಅನುಮೋದನೆಗಳು",
+    "auditLogs": "ಆಡಿಟ್ ದಾಖಲೆಗಳು",
+    "settings": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+    "schools": "ಶಾಲೆಗಳು",
+    "educators": "ಶಿಕ್ಷಕರು",
+    "students": "ವಿದ್ಯಾರ್ಥಿಗಳು",
+    "compliance": "ಅನುಸರಣೆ",
+    "centers": "ಕೇಂದ್ರಗಳು",
+    "reviews": "ವಿಮರ್ಶೆಗಳು",
+    "flaggedCases": "ಗುರುತಿಸಿದ ಪ್ರಕರಣಗಳು",
+    "analytics": "ವಿಶ್ಲೇಷಣೆ",
+    "children": "ನನ್ನ ಮಕ್ಕಳು",
+    "documents": "ದಾಖಲೆಗಳು",
+    "concerns": "ಕಾಳಜಿಗಳು",
+    "profile": "ಪ್ರೊಫೈಲ್",
+    "schoolReports": "ಶಾಲಾ ವರದಿಗಳು",
+    "notifications": "ಅಧಿಸೂಚನೆಗಳು"
+  },
+  "navGroups": {
+    "core": "ಮುಖ್ಯ",
+    "students": "ವಿದ್ಯಾರ್ಥಿಗಳು",
+    "learning": "ಕಲಿಕೆ",
+    "resources": "ಸಂಪನ್ಮೂಲಗಳು",
+    "management": "ನಿರ್ವಹಣೆ",
+    "system": "ವ್ಯವಸ್ಥೆ",
+    "overview": "ಅವಲೋಕನ",
+    "people": "ಜನರು",
+    "insights": "ಒಳನೋಟಗಳು",
+    "quality": "ಗುಣಮಟ್ಟ",
+    "myChildren": "ನನ್ನ ಮಕ್ಕಳು",
+    "communication": "ಸಂವಹನ"
+  },
+  "roles": {
+    "SPECIAL_EDUCATOR": "ವಿಶೇಷ ಶಿಕ್ಷಕ",
+    "ADMIN": "ನಿರ್ವಾಹಕ",
+    "CENTER": "ಕೇಂದ್ರ ನಿರ್ವಾಹಕ",
+    "SUPER_SPECIAL_EDUCATOR": "ಸೂಪರ್ ಶಿಕ್ಷಕ",
+    "PARENT": "ಪಾಲಕ",
+    "SCHOOL_VIEWER": "ಶಾಲಾ ವೀಕ್ಷಕ",
+    "CENTER_ADMIN": "ಕೇಂದ್ರ ನಿರ್ವಾಹಕ",
+    "SYSTEM_ADMIN": "ಸಿಸ್ಟಮ್ ನಿರ್ವಾಹಕ",
+    "SUPER_SPECIAL_EDUCATOR_FULL": "ಸೂಪರ್ ವಿಶೇಷ ಶಿಕ್ಷಕ"
+  },
+  "header": {
+    "searchPlaceholder": "ಹುಡುಕಿ...",
+    "searchLabel": "ಹುಡುಕು",
+    "openMenu": "ನ್ಯಾವಿಗೇಷನ್ ಮೆನು ತೆರೆಯಿರಿ",
+    "myAccount": "ನನ್ನ ಖಾತೆ",
+    "signOut": "ಸೈನ್ ಔಟ್ ಮಾಡಿ"
+  },
+  "sidebar": {
+    "collapseSidebar": "ಸೈಡ್‌ಬಾರ್ ಕುಗ್ಗಿಸಿ",
+    "expandSidebar": "ಸೈಡ್‌ಬಾರ್ ವಿಸ್ತರಿಸಿ",
+    "closeSidebar": "ಸೈಡ್‌ಬಾರ್ ಮುಚ್ಚಿ"
+  },
+  "notifications": {
+    "title": "ಅಧಿಸೂಚನೆಗಳು",
+    "markAllRead": "ಎಲ್ಲಾ ಓದಿದಂತೆ ಗುರುತಿಸಿ",
+    "noNotifications": "ಹೊಸ ಅಧಿಸೂಚನೆಗಳಿಲ್ಲ",
+    "viewAll": "ಎಲ್ಲಾ ಅಧಿಸೂಚನೆಗಳನ್ನು ನೋಡಿ",
+    "justNow": "ಈಗಷ್ಟೇ",
+    "minutesAgo": "{{count}} ನಿಮಿಷ ಹಿಂದೆ",
+    "hoursAgo": "{{count}} ಗಂಟೆ ಹಿಂದೆ",
+    "daysAgo": "{{count}} ದಿನ ಹಿಂದೆ"
+  },
+  "loading": {
+    "title": "Knowled ಲೋಡ್ ಆಗುತ್ತಿದೆ",
+    "subtitle": "ದಯವಿಟ್ಟು ನಿರೀಕ್ಷಿಸಿ...",
+    "preparingDashboard": "ನಿಮ್ಮ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ತಯಾರಿಸಲಾಗುತ್ತಿದೆ"
+  }
+}
