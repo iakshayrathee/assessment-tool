@@ -1952,6 +1952,21 @@ function IntakeFormPageContent() {
                   <span className="sm:hidden">Save</span>
                 </Button>
 
+                {/* AI Profile Button */}
+                {selectedStudentId && (
+                  <Link href={`/educator/intake/ai-profile?studentId=${selectedStudentId}`}>
+                    <Button
+                      id="view-ai-profile-btn"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-md px-3 py-2 h-9 border-violet-500/40 text-violet-600 hover:bg-violet-50 hover:border-violet-500"
+                    >
+                      <Brain className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">AI Profile</span>
+                    </Button>
+                  </Link>
+                )}
+
                 <Button
                   onClick={handleSubmit}
                   size="sm"

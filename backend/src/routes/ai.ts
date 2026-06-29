@@ -425,4 +425,56 @@ router.post('/risk/:studentId/save', async (req: AuthenticatedRequest, res: Resp
   }
 });
 
+
+// ── Intake Intelligence Agent ────────────────────────────────────────────────
+
+/**
+ * POST /api/ai/intake/profile
+ * Generate / update the cumulative AI Intake Profile from multi-tab form data.
+ * Called after each tab's "Save & Continue". Accepts partial data — only tabs
+ * listed in tabs_completed are analysed. Non-blocking from the frontend.
+ *
+ * Body: { referral, demographics, family, prenatal, postnatal, medical, educational, tabs_completed }
+ */
+router.post('/intake/profile', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const {
+      referral     = {},
+      demographics = {},
+      family       = {},
+      prenatal     = {},
+      postnatal    = {},
+      medical      = {},
+      educational  = {},
+      tabs_completed = [],
+      skip_cache   = false,
+    } = req.body || {};
+
+    const result = await aiBackendProxy.generateIntakeProfile({
+      referral,
+      demographics,
+      family,
+      prenatal,
+      postnatal,
+      medical,
+      educational,
+      tabs_completed,
+      skip_cache,
+    });
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    console.error('AI Intake profile error:', error.message);
+    const isUnavailable = error?.isAiUnavailable === true;
+    res.status(isUnavailable ? 503 : 500).json({
+      success: false,
+      error: error.message || 'AI intake profile generation failed',
+      aiUnavailable: isUnavailable,
+    });
+  }
+});
+
 export default router;

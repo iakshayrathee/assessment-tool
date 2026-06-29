@@ -186,6 +186,46 @@ class AIBackendProxyService {
     });
   }
 
+  // ── Intake Intelligence Agent ──────────────────────────────────────────────
+
+  /**
+   * Generate / update the cumulative AI Intake Profile.
+   * Called progressively after each tab save — accepts partial data.
+   * All tab dicts are optional; only tabs_completed are analysed.
+   *
+   * @param data - Object containing any combination of tab data dicts and tabs_completed list.
+   */
+  async generateIntakeProfile(data: {
+    referral?: Record<string, any>;
+    demographics?: Record<string, any>;
+    family?: Record<string, any>;
+    prenatal?: Record<string, any>;
+    postnatal?: Record<string, any>;
+    medical?: Record<string, any>;
+    educational?: Record<string, any>;
+    tabs_completed?: string[];
+    skip_cache?: boolean;
+  }): Promise<any> {
+    return this.withRetry(async () => {
+      try {
+        const { data: responseData } = await this.client.post('/api/intake/profile', {
+          referral:      data.referral      || {},
+          demographics:  data.demographics  || {},
+          family:        data.family        || {},
+          prenatal:      data.prenatal      || {},
+          postnatal:     data.postnatal     || {},
+          medical:       data.medical       || {},
+          educational:   data.educational   || {},
+          tabs_completed: data.tabs_completed || [],
+          skip_cache:    data.skip_cache    || false,
+        });
+        return responseData;
+      } catch (error) {
+        throw this.handleError(error, 'Intake profile generation failed');
+      }
+    });
+  }
+
   // ── Transparency (Debug) ───────────────────────────────────────────────────
 
   /**

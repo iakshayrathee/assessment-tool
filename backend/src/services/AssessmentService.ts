@@ -129,6 +129,7 @@ export class AssessmentService {
     const intakeFormData: any = { studentId: data.studentId };
     
     const intakeFormFields = [
+      // ── Existing fields (backward compatible) ────────────────────────────────
       'address', 'familyIncome', 'familyType', 'digitalResourcesAtHome', 'dailyDigitalUse',
       'enjoysSchool', 'studyAssistant', 'externalAcademicSupport', 'enjoysReading', 'dailyParentChildTime',
       'childType', 'fatherName', 'motherName', 'guardianName', 'pregnancyNormal', 'medicationsDuringPregnancy',
@@ -136,7 +137,39 @@ export class AssessmentService {
       'incubation', 'immunizationDone', 'consanguineousMarriage', 'birthCry', 'delayInNeckStanding',
       'delayInNeckStandingDetails', 'ageOfWalking', 'ageOfTwoWordSpeech', 'healthConcerns', 'epilepticHistory',
       'onMedication', 'medicationDetails', 'asthmaWheezing', 'wearsGlasses', 'visionTestDone', 'hearingTestDone',
-      'attendedPreschool', 'repeatedGrades', 'whichGradeRepeated', 'dominantWritingHand', 'strugglesInLanguages'
+      'attendedPreschool', 'repeatedGrades', 'whichGradeRepeated', 'dominantWritingHand', 'strugglesInLanguages',
+
+      // ── Block A: Referral ─────────────────────────────────────────────────────
+      'referralSource',        // String[] — multi-select
+      'referralAreas',         // String[] — multi-select
+      'durationOfConcern',     // String?
+      'severityOfConcern',     // String?
+
+      // ── Block B: Extended Demographics ───────────────────────────────────────
+      'mediumOfInstruction',          // String?
+      'yearsExposedToInstruction',    // Int?
+      'schoolType',                   // String?
+      'numberOfLanguagesUnderstood',  // Int?
+      'schoolAttendance',             // String?
+
+      // ── Block C: Extended Family History ─────────────────────────────────────
+      'primaryCaregiver',             // String?
+      'childLivesWith',               // String[] — multi-select
+      'numberOfSiblings',             // Int?
+      'birthOrder',                   // String?
+      'familyHistoryOfDifficulties',  // Boolean?
+      'familyHistoryDetails',         // String?
+      'digitalResourceTypes',         // String[] — multi-select
+      'languagesSpokenAtHome',        // String[] — multi-select
+      'parentHelpsWithHomework',      // String?
+      'enjoySchoolRating',            // Int? (1–5)
+      'enjoyReadingRating',           // Int? (1–5)
+      'externalSupportTypes',         // String[] — multi-select
+
+      // ── Block D: AI Intake Profile ────────────────────────────────────────────
+      'intakeAIProfile',       // Json?
+      'intakeAIGeneratedAt',   // DateTime?
+      'intakeAIConfidence',    // String?
     ];
     
     for (const key of intakeFormFields) {

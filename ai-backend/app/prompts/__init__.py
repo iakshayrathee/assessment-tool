@@ -812,3 +812,178 @@ data provided — do NOT output zeros or placeholder numbers.
     }}
   ]
 }}"""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Intake Intelligence Agent Prompts
+# ─────────────────────────────────────────────────────────────────────────────
+
+INTAKE_PROFILE_SYSTEM = """You are an experienced special-education context analyst who helps educators
+understand the background factors that may influence a child's learning before formal assessment begins.
+
+Your role is to synthesise intake form data into a structured, contextual profile that guides
+the educator's clinical reasoning — NOT to produce a diagnosis or clinical finding.
+
+Language standards (strictly enforced):
+- Always use advisory language: "may suggest", "warrants exploration", "should be considered",
+  "could indicate", "is worth noting", "merits attention".
+- NEVER use diagnostic language: "has dyslexia", "is ADHD", "is dyslexic", "diagnosis of".
+- Frame every observation as a contextual factor, not a clinical conclusion.
+- The profile is advisory only — clearly advisory, not a diagnosis.
+
+Output format: a single JSON object with EXACTLY these 7 keys:
+  "child_context_summary", "language_context", "educational_context",
+  "family_home_context", "contextual_factors", "recommended_domains", "missing_information"
+
+Plus one metadata key: "reasoning"
+
+Value types:
+- child_context_summary: string (2-4 sentences)
+- language_context: string (1-3 sentences; omit if no language data)
+- educational_context: string (1-3 sentences; omit if no demographics data)
+- family_home_context: string (1-3 sentences; omit if family tab not completed)
+- contextual_factors: array of strings — one entry per fired flag, written in plain English
+  (e.g. "Language mismatch between home language and instruction language may affect literacy
+  development and should be factored into assessment planning.")
+- recommended_domains: array of strings — assessment domains to prioritise
+  (e.g. ["Reading", "Writing", "Language Processing", "Academic Profile"])
+- missing_information: array of strings — fields not yet provided but important for context
+  (e.g. "Medium of instruction — required to assess potential language mismatch")
+- reasoning: string — 2-3 sentences explaining why the profile was generated the way it was"""
+
+
+def build_intake_profile_prompt(
+    child_context_object: dict,
+    contextual_flags: list[str],
+) -> tuple[str, str]:
+    """Build the (system, user) prompt tuple for the intake profile LLM call.
+
+    Few-shot examples cover all 5 spec test cases plus 2 family-history scenarios.
+    Returns a tuple: (INTAKE_PROFILE_SYSTEM, user_prompt_string)
+    """
+    import json as _json
+
+    flags_str = _json.dumps(contextual_flags, ensure_ascii=False)
+    ctx_str   = _json.dumps(child_context_object, indent=2, ensure_ascii=False, default=str)
+
+    user_prompt = f"""Generate an AI Intake Profile for the following child context.
+
+CHILD CONTEXT OBJECT (assembled from all tabs completed so far):
+{ctx_str}
+
+CONTEXTUAL FLAGS DETECTED (rule-based — do not contradict these):
+{flags_str}
+
+INSTRUCTIONS:
+1. Use only the data provided — do not invent facts.
+2. Sections for tabs not yet completed should be empty strings ("").
+3. If family tab is not completed, family_home_context must be "".
+4. For contextual_factors, write one plain-English sentence per flag in the list above.
+   Do not add flags not present in the list. Do not remove flags that are present.
+5. For recommended_domains, derive from referral areas + any flags. Always include at least
+   the domains directly mentioned in referral_areas.
+6. For missing_information, list every field in child_context_object["missing_information"]
+   plus any other critical fields you observe are absent.
+7. All advisory language — see system prompt constraints.
+
+FEW-SHOT EXAMPLES:
+
+--- Example TC1: Age 6, Grade 1, Kannada→Kannada, School Readiness ---
+Input flags: []
+Input context: age=6, grade=1, mother_tongue=Kannada, instruction_language=Kannada,
+referral_areas=[School Readiness], tabs_completed=[referral, demographics]
+
+Expected output:
+{{
+  "child_context_summary": "A 6-year-old child in Grade 1 has been referred for concerns around school readiness. The child is in the early stages of formal education, and the referral has come from a concerned party. Early contextual data is available from the Referral and Demographics tabs.",
+  "language_context": "The child's home language (Kannada) aligns with the medium of instruction (Kannada). No language mismatch is apparent at this stage.",
+  "educational_context": "The child is in Grade 1, which is consistent with the expected age for entry into formal schooling. School readiness concerns at this stage are not uncommon and warrant structured observation.",
+  "family_home_context": "",
+  "contextual_factors": [],
+  "recommended_domains": ["School Readiness", "Pre-Literacy Skills", "Fine Motor", "Social-Emotional Development"],
+  "missing_information": ["Family history", "Prenatal and birth history", "Medical history", "Educational history details"],
+  "reasoning": "With only Referral and Demographics data available, the profile confidence is LOW. No contextual flags were detected. The recommended domains reflect the referral concern for school readiness."
+}}
+
+--- Example TC2: Age 13, Grade 4, Reading+Writing+Math, Age-Grade Mismatch ---
+Input flags: ["AGE_GRADE_MISMATCH"]
+Input context: age=13, grade=4, referral_areas=[Reading, Writing, Math],
+duration=MORE_THAN_2_YEARS, tabs_completed=[referral, demographics]
+
+Expected output:
+{{
+  "child_context_summary": "A 13-year-old child is currently enrolled in Grade 4, which represents a notable age-grade discrepancy. Concerns have been raised across reading, writing, and mathematics, and have reportedly persisted for more than two years. This profile has LOW confidence as only initial referral and demographic data are available.",
+  "language_context": "Insufficient data to analyse language context at this time.",
+  "educational_context": "The child's age (13 years) relative to Grade 4 placement warrants careful exploration. This discrepancy may reflect grade retention, interrupted schooling, late enrolment, or other educational factors that should be explored during assessment.",
+  "family_home_context": "",
+  "contextual_factors": [
+    "The child's age (13 years) relative to Grade 4 placement is notable and may reflect prior grade retention, gaps in schooling, or other factors that warrant careful exploration during assessment."
+  ],
+  "recommended_domains": ["Reading", "Writing", "Mathematics", "Academic Profile", "Educational History"],
+  "missing_information": ["Medium of instruction", "Mother tongue", "Family history", "Educational history details"],
+  "reasoning": "The AGE_GRADE_MISMATCH flag was detected based on a 9-year age in Grade 4 (expected range 9–11 years). With only Referral and Demographics data, this profile is at LOW confidence. A full educational history should be prioritised."
+}}
+
+--- Example TC3: Age 9, Grade 4, Tamil→English, Attention+Behaviour ---
+Input flags: ["LANGUAGE_MISMATCH"]
+Input context: age=9, grade=4, mother_tongue=Tamil, instruction_language=English,
+referral_areas=[Attention, Behaviour], tabs_completed=[referral, demographics]
+
+Expected output:
+{{
+  "child_context_summary": "A 9-year-old child in Grade 4 has been referred for attention and behaviour-related concerns. The child's home language is Tamil while instruction is delivered in English, introducing a potential language processing consideration.",
+  "language_context": "The child's primary home language (Tamil) differs from the medium of instruction (English). This mismatch may create additional cognitive load during learning tasks and could contribute to observed attention or behaviour concerns. This factor should be considered when interpreting assessment findings.",
+  "educational_context": "The child's age and grade placement are within expected range. Attention and behaviour concerns are the primary referral focus, which may benefit from contextualised exploration.",
+  "family_home_context": "",
+  "contextual_factors": [
+    "The difference between the child's home language (Tamil) and the medium of instruction (English) may contribute to cognitive load and should be considered when interpreting assessment findings."
+  ],
+  "recommended_domains": ["Attention", "Executive Function", "Behaviour", "Language Processing"],
+  "missing_information": ["Family history", "Years exposed to English instruction", "Medical history"],
+  "reasoning": "A LANGUAGE_MISMATCH flag was detected because Tamil and English are different languages. Referral concerns centre on attention and behaviour, which may be compounded by the language context."
+}}
+
+--- Example TC4: Age 10, Grade 5, English→English, Reading+Writing, Multi-Source, 3yr ---
+Input flags: ["MULTI_SOURCE_REFERRAL", "LONG_DURATION_CONCERN"]
+Input context: age=10, grade=5, mother_tongue=English, instruction_language=English,
+referral_source=[Parent, Teacher], referral_areas=[Reading, Writing],
+duration=MORE_THAN_2_YEARS, tabs_completed=[referral, demographics]
+
+Expected output:
+{{
+  "child_context_summary": "A 10-year-old child in Grade 5 has been referred by both a parent and a teacher for concerns around reading and writing, with difficulties reportedly present for more than two years. The multi-source referral and extended duration suggest these concerns have been consistently observed across home and school contexts.",
+  "language_context": "The child's home language and medium of instruction are both English. No language mismatch is apparent, which simplifies the linguistic context for assessment.",
+  "educational_context": "The child's age and Grade 5 placement are consistent. The extended duration of concerns (more than 2 years) across both reading and writing suggests these are not transient difficulties and may warrant comprehensive literacy assessment.",
+  "family_home_context": "",
+  "contextual_factors": [
+    "Both a parent and teacher have independently raised concerns, which strengthens the validity of the referral and suggests these difficulties are observable across home and school environments.",
+    "The difficulties have reportedly been present for more than two years, suggesting persistent rather than situational challenges that warrant thorough assessment."
+  ],
+  "recommended_domains": ["Reading", "Writing", "Phonological Awareness", "Language", "Academic Profile"],
+  "missing_information": ["Family history of learning difficulties", "Medical and developmental history"],
+  "reasoning": "Two flags were detected: MULTI_SOURCE_REFERRAL (parent + teacher) and LONG_DURATION_CONCERN (>2 years). Together these raise the priority of a comprehensive literacy assessment. Profile confidence is LOW pending family and developmental data."
+}}
+
+--- Example TC5: Age 11, Grade 6, Kannada, Reading — missing instruction language ---
+Input flags: []
+Input context: age=11, grade=6, mother_tongue=Kannada, instruction_language=null,
+referral_areas=[Reading], tabs_completed=[referral, demographics],
+missing_information=[medium_of_instruction]
+
+Expected output:
+{{
+  "child_context_summary": "An 11-year-old child in Grade 6 has been referred for reading concerns. Initial demographic and referral data are available, but the medium of instruction has not yet been recorded.",
+  "language_context": "The child's home language is Kannada. The medium of instruction has not been recorded, which means it is not currently possible to assess whether a language mismatch exists. This is a critical field for interpretation.",
+  "educational_context": "The child's age and Grade 6 placement are within expected range. Reading concerns at this level warrant assessment of decoding, fluency, and comprehension relative to grade expectations.",
+  "family_home_context": "",
+  "contextual_factors": [],
+  "recommended_domains": ["Reading", "Language Processing", "Academic Profile"],
+  "missing_information": [
+    "Medium of instruction — required to determine whether a language mismatch between home language (Kannada) and school language may be contributing to reading difficulties."
+  ],
+  "reasoning": "No flags were detected because the medium of instruction is missing and a language mismatch cannot be confirmed. Recording this field is the highest priority for improving profile confidence and accuracy."
+}}
+
+Now generate the profile for the input above. Return a single valid JSON object only."""
+
+    return INTAKE_PROFILE_SYSTEM, user_prompt

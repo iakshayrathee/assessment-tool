@@ -28,6 +28,7 @@ from app.api.risk import router as risk_router
 from app.api.educator import router as educator_router
 from app.api.transparency import router as transparency_router
 from app.api.reading_insights import router as reading_insights_router
+from app.api.intake_intelligence import router as intake_intelligence_router
 
 
 @asynccontextmanager
@@ -87,6 +88,7 @@ app.include_router(risk_router)
 app.include_router(educator_router)
 app.include_router(transparency_router)
 app.include_router(reading_insights_router)
+app.include_router(intake_intelligence_router)
 
 
 @app.get("/health")
@@ -140,6 +142,7 @@ async def root():
             "report": "POST /api/report/generate",
             "risk": "POST /api/risk/analyze",
             "educator": "POST /api/educator/insights",
+            "intake_profile": "POST /api/intake/profile",
             "health": "GET /health",
             "docs": "GET /docs",
         },

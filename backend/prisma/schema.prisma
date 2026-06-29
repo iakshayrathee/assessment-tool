@@ -240,6 +240,7 @@ model Student {
   grade                   String
   motherTongue            String?
   syllabus                String?
+  schoolType              String?  // "MAINSTREAM"|"INCLUSIVE"|"SPECIAL"|"ALTERNATIVE"
   status                  StudentStatus            @default(ACTIVE)
   registrationDate        DateTime                 @default(now())
   createdAt               DateTime                 @default(now())
@@ -431,6 +432,39 @@ model IntakeForm {
   whichGradeRepeated                String?
   dominantWritingHand               String?
   strugglesInLanguages              Boolean?
+
+  // ── BLOCK A: REFERRAL (separate screen before intake form) ──────────────
+  referralSource                    String[]  // ["PARENT","TEACHER","SCHOOL","PEDIATRICIAN","PSYCHOLOGIST","SPECIAL_EDUCATOR"]
+  referralAreas                     String[]  // ["READING","WRITING","MATH","ATTENTION","BEHAVIOUR","SPEECH","SCHOOL_READINESS"]
+  durationOfConcern                 String?   // "LESS_THAN_6_MONTHS"|"6_TO_12_MONTHS"|"1_TO_2_YEARS"|"MORE_THAN_2_YEARS"
+  severityOfConcern                 String?   // "MILD"|"MODERATE"|"SEVERE"
+
+  // ── BLOCK B: EXTENDED DEMOGRAPHICS ─────────────────────────────────
+  mediumOfInstruction               String?   // "English"|"Kannada"|"Hindi"|"Tamil"|"Other"
+  yearsExposedToInstruction         Int?
+  schoolType                        String?   // "MAINSTREAM"|"INCLUSIVE"|"SPECIAL"|"ALTERNATIVE"
+  numberOfLanguagesUnderstood       Int?
+  schoolAttendance                  String?   // "EXCELLENT"|"GOOD"|"AVERAGE"|"POOR"
+
+  // ── BLOCK C: EXTENDED FAMILY HISTORY ──────────────────────────────
+  primaryCaregiver                  String?   // "MOTHER"|"FATHER"|"GRANDPARENT"|"GUARDIAN"|"SHARED"
+  childLivesWith                    String[]  // ["BOTH_PARENTS","MOTHER","FATHER","GRANDPARENTS","GUARDIAN","OTHER"]
+  numberOfSiblings                  Int?
+  birthOrder                        String?   // "FIRST"|"MIDDLE"|"YOUNGEST"|"ONLY"
+  familyHistoryOfDifficulties       Boolean?
+  familyHistoryDetails              String?   // freetext: who and what difficulty
+  digitalResourceTypes              String[]  // ["SMARTPHONE","TABLET","LAPTOP","DESKTOP","INTERNET","EDUCATIONAL_APPS","NONE"]
+  languagesSpokenAtHome             String[]  // ["KANNADA","ENGLISH","HINDI","TAMIL","TELUGU","OTHER"]
+  parentHelpsWithHomework           String?   // "ALWAYS"|"OFTEN"|"SOMETIMES"|"RARELY"|"NEVER"
+  enjoySchoolRating                 Int?      // 1–5 scale (supplements enjoysSchool boolean)
+  enjoyReadingRating                Int?      // 1–5 scale (supplements enjoysReading boolean)
+  externalSupportTypes              String[]  // ["TUITION","SPECIAL_EDUCATION","NONE"]
+
+  // ── BLOCK D: AI INTAKE PROFILE (updated progressively after each tab) ────
+  intakeAIProfile                   Json?     // Cumulative 7-section profile JSON
+  intakeAIGeneratedAt               DateTime? // Timestamp of last generation
+  intakeAIConfidence                String?   // "LOW"|"LOW_MEDIUM"|"MEDIUM"|"MEDIUM_HIGH"|"HIGH"
+
   status                            AssessmentStatus       @default(PENDING)
   completedAt                       DateTime?
   createdAt                         DateTime               @default(now())

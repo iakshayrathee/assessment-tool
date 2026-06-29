@@ -1,0 +1,3 @@
+-- Migration file restored (was missing from directory)
+-- This migration was applied directly and the SQL was not committed.
+-- No-op: schema state is already correct in the database.

@@ -152,3 +152,41 @@ class EducatorIntelligenceState(TypedDict, total=False):
     # Metadata
     prompts: Annotated[list[str], add]
     error: str
+
+
+
+# Progressive enrichment agent — same graph runs after each tab save.
+# All tab dicts are optional (default {}). Confidence rises as more data arrives.
+
+class IntakeIntelligenceState(TypedDict, total=False):
+    # ── Input: data from each tab (passed directly — no DB fetch) ─────────────
+    # Only the tabs that have been completed are non-empty.
+    referral: dict          # areas, source, duration, severity
+    demographics: dict      # age, grade, mother_tongue, instruction_language, etc.
+    family: dict            # family_type, primary_caregiver, languages_at_home, etc.
+    prenatal: dict          # pregnancy_normal, medications, delivery_type, etc.
+    postnatal: dict         # age_of_walking, age_of_speech, etc.
+    medical: dict           # health_concerns, on_medication, epileptic_history, etc.
+    educational: dict       # attended_preschool, repeated_grades, etc.
+    tabs_completed: list    # e.g. ["referral", "demographics", "family"]
+
+    # ── Computed intermediate ──────────────────────────────────────────────────
+    cumulative_context: dict    # assembled ChildContextObject (all tabs merged)
+    contextual_flags: list      # list of fired flag names (rule-based, no LLM)
+
+    # ── Output: 7-section profile ──────────────────────────────────────────────
+    intake_profile: dict        # {
+                                #   child_context_summary: str,
+                                #   language_context: str,
+                                #   educational_context: str,
+                                #   family_home_context: str,      # available after Tab 3
+                                #   contextual_factors: [str],
+                                #   recommended_domains: [str],
+                                #   missing_information: [str],
+                                #   reasoning: str,
+                                #   confidence: str,               # LOW|LOW_MEDIUM|MEDIUM|MEDIUM_HIGH|HIGH
+                                # }
+
+    # ── Metadata ──────────────────────────────────────────────────────────────
+    prompts: Annotated[list[str], add]
+    error: str
