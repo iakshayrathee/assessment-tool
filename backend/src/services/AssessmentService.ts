@@ -25,17 +25,6 @@ export class AssessmentService {
     // Extract student data and update student record if provided
     const studentData = this.extractStudentData(intakeData);
     if (Object.keys(studentData).length > 0) {
-      // If center name is provided instead of center ID, look up the actual center ID
-      if (studentData.centerId && typeof studentData.centerId === 'string' && !studentData.centerId.startsWith('c')) {
-        const center = await this.assessmentRepository.findCenterByName(studentData.centerId);
-        if (center) {
-          studentData.centerId = center.id;
-        } else {
-          // If center not found, remove centerId to avoid foreign key constraint violation
-          delete studentData.centerId;
-        }
-      }
-      
       await this.assessmentRepository.updateStudent(intakeData.studentId, studentData);
     }
 
@@ -58,17 +47,6 @@ export class AssessmentService {
     // Extract student data and update student record if provided
     const studentData = this.extractStudentData(intakeData);
     if (Object.keys(studentData).length > 0) {
-      // If center name is provided instead of center ID, look up the actual center ID
-      if (studentData.centerId && typeof studentData.centerId === 'string' && !studentData.centerId.startsWith('c')) {
-        const center = await this.assessmentRepository.findCenterByName(studentData.centerId);
-        if (center) {
-          studentData.centerId = center.id;
-        } else {
-          // If center not found, remove centerId to avoid foreign key constraint violation
-          delete studentData.centerId;
-        }
-      }
-      
       await this.assessmentRepository.updateStudent(existingIntake.studentId, studentData);
     }
 
@@ -106,7 +84,7 @@ export class AssessmentService {
   // Helper methods for data extraction
   private extractStudentData(data: any): any {
     const studentFields = [
-      'name', 'age', 'gender', 'schoolCenter', 'class', 'motherTongue', 'syllabus',
+      'name', 'age', 'gender', 'class', 'motherTongue', 'syllabus',
       'fullName', 'dateOfBirth', 'grade'
     ];
     
@@ -116,14 +94,8 @@ export class AssessmentService {
         // Map frontend field names to backend field names
         if (key === 'name') studentData.fullName = data[key];
         else if (key === 'class') studentData.grade = data[key];
-        else if (key === 'schoolCenter') studentData.centerId = data[key]; // This might need adjustment
         else studentData[key] = data[key];
       }
-    }
-
-    // Map chronological age display string from frontend
-    if (data.chronologicalAge !== undefined) {
-      studentData.chronologicalAge = data.chronologicalAge;
     }
     
     return studentData;
