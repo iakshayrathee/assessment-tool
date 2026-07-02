@@ -240,7 +240,6 @@ model Student {
   grade                   String
   motherTongue            String?
   syllabus                String?
-  schoolType              String?  // "MAINSTREAM"|"INCLUSIVE"|"SPECIAL"|"ALTERNATIVE"
   status                  StudentStatus            @default(ACTIVE)
   registrationDate        DateTime                 @default(now())
   createdAt               DateTime                 @default(now())
@@ -409,29 +408,86 @@ model IntakeForm {
   miscarriagesAbortions             Boolean?
   fullTermOrPremature               String?
   deliveryType                      String?
-  breastFed                         Boolean?
+  gestationalAge                    String?
+  nicuStay                          String?
+  birthWeight                       String?
+  pregnancyComplications            String[]
+  feedingDifficulties               Boolean?
+  significantIllness                Boolean?
+  significantIllnessDetails         String?
+  breastFed                         String?
+  breastFedDuration                 Int?
   infantJaundice                    Boolean?
+  infantJaundiceTreatment           String?
   incubation                        Boolean?
-  immunizationDone                  Boolean?
-  consanguineousMarriage            Boolean?
+  incubationDays                    Int?
+  incubationReason                  String[]
+  immunizationDone                  String?
+  consanguineousMarriage            String?
   birthCry                          String?
+  birthCryDelayDuration             String?
+  resuscitationRequired             Boolean?
   delayInNeckStanding               Boolean?
   delayInNeckStandingDetails        String?
+  seizuresInfancy                   Boolean?
+  seizuresInfancyDetails            String?
+  visionProblemsEarly               Boolean?
+  hearingProblemsEarly              Boolean?
+  hospitalizationFirstTwoYears      Boolean?
+  hospitalizationFirstTwoYearsReason String?
   ageOfWalking                      Int?
   ageOfTwoWordSpeech                Int?
   healthConcerns                    String?
   epilepticHistory                  Boolean?
+  epilepsyType                      String?
+  epilepsyLastEpisode               String?
+  epilepsyFrequency                 String?
+  epilepsyUnderMedicalCare          Boolean?
   onMedication                      Boolean?
   medicationDetails                 String?
+  medicationName                    String?
+  medicationDosage                  String?
+  medicationFrequency               String?
+  medicationPurpose                 String[]
   asthmaWheezing                    Boolean?
+  asthmaUsesInhaler                 Boolean?
+  asthmaFrequency                   String?
+  asthmaEmergencyPlan               Boolean?
   wearsGlasses                      Boolean?
+  glassesUsage                      String?
   visionTestDone                    Boolean?
+  visionTestResult                  String?
+  visionTestDate                    String?
   hearingTestDone                   Boolean?
+  hearingTestResult                 String?
+  hearingTestDate                   String?
+  sleepDifficulties                 Boolean?
+  sleepDifficultiesDetails          String[]
+  hospitalizationHistory            Boolean?
+  hospitalizationHistoryReason      String?
+  hospitalizationHistoryDate        String?
   attendedPreschool                 Boolean?
   repeatedGrades                    Boolean?
   whichGradeRepeated                String?
   dominantWritingHand               String?
   strugglesInLanguages              Boolean?
+  ageStartedPreschool               Int?
+  yearsPreschool                    Int?
+  reasonForRepeating                String?
+  overallPerformance                String?
+  overallPercentage                 Int?
+  subjectPerformance                Json?
+  subjectMarks                      Json?
+  academicTrend                     String?
+  teacherComments                   String?
+  languageStruggles                 String[]
+  mathStruggles                     String[]
+  homeworkCompletion                String?
+  classroomParticipation            String?
+  attendancePercentage              Int?
+  learningStrengths                 String[]
+  areasSupport                      String[]
+  previousSupport                   String[]
 
   // ── BLOCK A: REFERRAL (separate screen before intake form) ──────────────
   referralSource                    String[]  // ["PARENT","TEACHER","SCHOOL","PEDIATRICIAN","PSYCHOLOGIST","SPECIAL_EDUCATOR"]
@@ -445,6 +501,13 @@ model IntakeForm {
   schoolType                        String?   // "MAINSTREAM"|"INCLUSIVE"|"SPECIAL"|"ALTERNATIVE"
   numberOfLanguagesUnderstood       Int?
   schoolAttendance                  String?   // "EXCELLENT"|"GOOD"|"AVERAGE"|"POOR"
+  // New fields added with demographics expansion
+  city                              String?   // City portion of address
+  state                             String?   // State/province
+  urbanOrRural                      String?   // "Urban"|"Semi-Urban"|"Rural"
+  chronologicalAge                  String?   // Display string: "11 years 3 months"
+  languageSpokenAtHome              String?   // Single-select primary home language
+  previousGradeRetention            String?   // "Yes"|"No"
 
   // ── BLOCK C: EXTENDED FAMILY HISTORY ──────────────────────────────
   primaryCaregiver                  String?   // "MOTHER"|"FATHER"|"GRANDPARENT"|"GUARDIAN"|"SHARED"

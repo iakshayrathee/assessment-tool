@@ -120,6 +120,11 @@ export class AssessmentService {
         else studentData[key] = data[key];
       }
     }
+
+    // Map chronological age display string from frontend
+    if (data.chronologicalAge !== undefined) {
+      studentData.chronologicalAge = data.chronologicalAge;
+    }
     
     return studentData;
   }
@@ -136,8 +141,22 @@ export class AssessmentService {
       'miscarriagesAbortions', 'fullTermOrPremature', 'deliveryType', 'breastFed', 'infantJaundice',
       'incubation', 'immunizationDone', 'consanguineousMarriage', 'birthCry', 'delayInNeckStanding',
       'delayInNeckStandingDetails', 'ageOfWalking', 'ageOfTwoWordSpeech', 'healthConcerns', 'epilepticHistory',
-      'onMedication', 'medicationDetails', 'asthmaWheezing', 'wearsGlasses', 'visionTestDone', 'hearingTestDone',
+      'epilepsyType', 'epilepsyLastEpisode', 'epilepsyFrequency', 'epilepsyUnderMedicalCare',
+      'onMedication', 'medicationDetails', 'medicationName', 'medicationDosage', 'medicationFrequency', 'medicationPurpose',
+      'asthmaWheezing', 'asthmaUsesInhaler', 'asthmaFrequency', 'asthmaEmergencyPlan',
+      'wearsGlasses', 'glassesUsage', 'visionTestDone', 'visionTestResult', 'visionTestDate',
+      'hearingTestDone', 'hearingTestResult', 'hearingTestDate',
+      'sleepDifficulties', 'sleepDifficultiesDetails', 'hospitalizationHistory', 'hospitalizationHistoryReason', 'hospitalizationHistoryDate',
       'attendedPreschool', 'repeatedGrades', 'whichGradeRepeated', 'dominantWritingHand', 'strugglesInLanguages',
+      'ageStartedPreschool', 'yearsPreschool', 'reasonForRepeating', 'overallPerformance', 'overallPercentage',
+      'subjectPerformance', 'subjectMarks', 'academicTrend', 'teacherComments', 'languageStruggles',
+      'mathStruggles', 'homeworkCompletion', 'classroomParticipation', 'attendancePercentage', 'learningStrengths',
+      'areasSupport', 'previousSupport',
+
+      // ── Redesigned Post Natal & Health History ──────────────────────────────
+      'birthCryDelayDuration', 'resuscitationRequired', 'breastFedDuration', 'infantJaundiceTreatment',
+      'incubationDays', 'incubationReason', 'seizuresInfancy', 'seizuresInfancyDetails',
+      'visionProblemsEarly', 'hearingProblemsEarly', 'hospitalizationFirstTwoYears', 'hospitalizationFirstTwoYearsReason',
 
       // ── Block A: Referral ─────────────────────────────────────────────────────
       'referralSource',        // String[] — multi-select
@@ -149,8 +168,15 @@ export class AssessmentService {
       'mediumOfInstruction',          // String?
       'yearsExposedToInstruction',    // Int?
       'schoolType',                   // String?
-      'numberOfLanguagesUnderstood',  // Int?
+      'numberOfLanguagesUnderstood',  // Int? (stored as Int in DB)
       'schoolAttendance',             // String?
+      // New demographic fields
+      'city',                         // String?
+      'state',                        // String?
+      'urbanOrRural',                 // String?
+      'chronologicalAge',             // String? — display string
+      'languageSpokenAtHome',         // String? — single-select primary home language
+      'previousGradeRetention',       // String? — "Yes"|"No"
 
       // ── Block C: Extended Family History ─────────────────────────────────────
       'primaryCaregiver',             // String?
@@ -166,6 +192,15 @@ export class AssessmentService {
       'enjoyReadingRating',           // Int? (1–5)
       'externalSupportTypes',         // String[] — multi-select
 
+      // ── Redesigned Prenatal & Birth History ──────────────────────────
+      'gestationalAge',               // String?
+      'nicuStay',                     // String?
+      'birthWeight',                  // String?
+      'pregnancyComplications',       // String[]
+      'feedingDifficulties',          // Boolean?
+      'significantIllness',           // Boolean?
+      'significantIllnessDetails',    // String?
+
       // ── Block D: AI Intake Profile ────────────────────────────────────────────
       'intakeAIProfile',       // Json?
       'intakeAIGeneratedAt',   // DateTime?
@@ -176,6 +211,103 @@ export class AssessmentService {
       if (data[key] !== undefined) {
         intakeFormData[key] = data[key];
       }
+    }
+
+    // ── Field name aliases: frontend → DB ────────────────────────────────────
+    // Frontend sends yearsExposedToInstructionLanguage; DB column is yearsExposedToInstruction
+    if (data.yearsExposedToInstructionLanguage !== undefined && intakeFormData.yearsExposedToInstruction === undefined) {
+      intakeFormData.yearsExposedToInstruction = data.yearsExposedToInstructionLanguage
+        ? parseInt(data.yearsExposedToInstructionLanguage, 10)
+        : undefined;
+    }
+    // Frontend sends numberOfLanguagesUnderstood as string; DB expects Int
+    if (intakeFormData.numberOfLanguagesUnderstood !== undefined) {
+      intakeFormData.numberOfLanguagesUnderstood = intakeFormData.numberOfLanguagesUnderstood
+        ? parseInt(intakeFormData.numberOfLanguagesUnderstood, 10)
+        : undefined;
+    }
+
+    // Parse numeric fields for Block C safely
+    if (intakeFormData.numberOfSiblings !== undefined && intakeFormData.numberOfSiblings !== null) {
+      intakeFormData.numberOfSiblings = typeof intakeFormData.numberOfSiblings === 'string'
+        ? parseInt(intakeFormData.numberOfSiblings, 10)
+        : (intakeFormData.numberOfSiblings as any);
+    }
+    if (intakeFormData.enjoySchoolRating !== undefined && intakeFormData.enjoySchoolRating !== null) {
+      intakeFormData.enjoySchoolRating = typeof intakeFormData.enjoySchoolRating === 'string'
+        ? parseInt(intakeFormData.enjoySchoolRating, 10)
+        : (intakeFormData.enjoySchoolRating as any);
+    }
+    if (intakeFormData.enjoyReadingRating !== undefined && intakeFormData.enjoyReadingRating !== null) {
+      intakeFormData.enjoyReadingRating = typeof intakeFormData.enjoyReadingRating === 'string'
+        ? parseInt(intakeFormData.enjoyReadingRating, 10)
+        : (intakeFormData.enjoyReadingRating as any);
+    }
+
+    // If childLivesWith is a string, wrap it in an array for PostgreSQL String[] compatibility
+    if (intakeFormData.childLivesWith !== undefined && typeof intakeFormData.childLivesWith === 'string') {
+      intakeFormData.childLivesWith = [intakeFormData.childLivesWith];
+    }
+
+    // If pregnancyComplications is a string, wrap it in an array for PostgreSQL String[] compatibility
+    if (intakeFormData.pregnancyComplications !== undefined && typeof intakeFormData.pregnancyComplications === 'string') {
+      intakeFormData.pregnancyComplications = [intakeFormData.pregnancyComplications];
+    }
+
+    // Parse numeric fields for Redesigned Post Natal
+    if (intakeFormData.breastFedDuration !== undefined && intakeFormData.breastFedDuration !== null) {
+      intakeFormData.breastFedDuration = typeof intakeFormData.breastFedDuration === 'string'
+        ? parseInt(intakeFormData.breastFedDuration, 10)
+        : (intakeFormData.breastFedDuration as any);
+    }
+    if (intakeFormData.incubationDays !== undefined && intakeFormData.incubationDays !== null) {
+      intakeFormData.incubationDays = typeof intakeFormData.incubationDays === 'string'
+        ? parseInt(intakeFormData.incubationDays, 10)
+        : (intakeFormData.incubationDays as any);
+    }
+
+    // Wrap incubationReason in an array if it's a string
+    if (intakeFormData.incubationReason !== undefined && typeof intakeFormData.incubationReason === 'string') {
+      intakeFormData.incubationReason = [intakeFormData.incubationReason];
+    }
+
+    // Parse numeric fields for Educational History
+    if (intakeFormData.ageStartedPreschool !== undefined && intakeFormData.ageStartedPreschool !== null) {
+      intakeFormData.ageStartedPreschool = typeof intakeFormData.ageStartedPreschool === 'string'
+        ? parseInt(intakeFormData.ageStartedPreschool, 10)
+        : (intakeFormData.ageStartedPreschool as any);
+    }
+    if (intakeFormData.yearsPreschool !== undefined && intakeFormData.yearsPreschool !== null) {
+      intakeFormData.yearsPreschool = typeof intakeFormData.yearsPreschool === 'string'
+        ? parseInt(intakeFormData.yearsPreschool, 10)
+        : (intakeFormData.yearsPreschool as any);
+    }
+    if (intakeFormData.overallPercentage !== undefined && intakeFormData.overallPercentage !== null) {
+      intakeFormData.overallPercentage = typeof intakeFormData.overallPercentage === 'string'
+        ? parseInt(intakeFormData.overallPercentage, 10)
+        : (intakeFormData.overallPercentage as any);
+    }
+    if (intakeFormData.attendancePercentage !== undefined && intakeFormData.attendancePercentage !== null) {
+      intakeFormData.attendancePercentage = typeof intakeFormData.attendancePercentage === 'string'
+        ? parseInt(intakeFormData.attendancePercentage, 10)
+        : (intakeFormData.attendancePercentage as any);
+    }
+
+    // Wrap string array fields for Educational History if they are strings
+    if (intakeFormData.languageStruggles !== undefined && typeof intakeFormData.languageStruggles === 'string') {
+      intakeFormData.languageStruggles = [intakeFormData.languageStruggles];
+    }
+    if (intakeFormData.mathStruggles !== undefined && typeof intakeFormData.mathStruggles === 'string') {
+      intakeFormData.mathStruggles = [intakeFormData.mathStruggles];
+    }
+    if (intakeFormData.learningStrengths !== undefined && typeof intakeFormData.learningStrengths === 'string') {
+      intakeFormData.learningStrengths = [intakeFormData.learningStrengths];
+    }
+    if (intakeFormData.areasSupport !== undefined && typeof intakeFormData.areasSupport === 'string') {
+      intakeFormData.areasSupport = [intakeFormData.areasSupport];
+    }
+    if (intakeFormData.previousSupport !== undefined && typeof intakeFormData.previousSupport === 'string') {
+      intakeFormData.previousSupport = [intakeFormData.previousSupport];
     }
     
     return intakeFormData as IntakeFormData;

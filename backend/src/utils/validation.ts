@@ -181,7 +181,19 @@ export class ValidationRules {
       body('ageOfTwoWordSpeech')
         .optional()
         .isInt({ min: 1, max: 60 })
-        .withMessage('Age of two-word speech must be between 1 and 60 months')
+        .withMessage('Age of two-word speech must be between 1 and 60 months'),
+      body('numberOfSiblings')
+        .optional({ nullable: true, checkFalsy: true })
+        .isInt({ min: 0, max: 20 })
+        .withMessage('Number of siblings must be between 0 and 20'),
+      body('enjoySchoolRating')
+        .optional({ nullable: true, checkFalsy: true })
+        .isInt({ min: 1, max: 5 })
+        .withMessage('Enjoy school rating must be between 1 and 5'),
+      body('enjoyReadingRating')
+        .optional({ nullable: true, checkFalsy: true })
+        .isInt({ min: 1, max: 5 })
+        .withMessage('Enjoy reading rating must be between 1 and 5')
     ];
   }
 

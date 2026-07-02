@@ -288,12 +288,33 @@ export interface IntakeForm {
   // Medical History
   healthConcerns?: string;
   epilepticHistory?: boolean;
+  epilepsyType?: string;
+  epilepsyLastEpisode?: string;
+  epilepsyFrequency?: string;
+  epilepsyUnderMedicalCare?: boolean;
   onMedication?: boolean;
   medicationDetails?: string;
+  medicationName?: string;
+  medicationDosage?: string;
+  medicationFrequency?: string;
+  medicationPurpose?: string[];
   asthmaWheezing?: boolean;
+  asthmaUsesInhaler?: boolean;
+  asthmaFrequency?: string;
+  asthmaEmergencyPlan?: boolean;
   wearsGlasses?: boolean;
+  glassesUsage?: string;
   visionTestDone?: boolean;
+  visionTestResult?: string;
+  visionTestDate?: string;
   hearingTestDone?: boolean;
+  hearingTestResult?: string;
+  hearingTestDate?: string;
+  sleepDifficulties?: boolean;
+  sleepDifficultiesDetails?: string[];
+  hospitalizationHistory?: boolean;
+  hospitalizationHistoryReason?: string;
+  hospitalizationHistoryDate?: string;
   
   // Educational History
   attendedPreschool?: boolean;

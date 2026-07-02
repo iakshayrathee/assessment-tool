@@ -831,9 +831,9 @@ Language standards (strictly enforced):
 - Frame every observation as a contextual factor, not a clinical conclusion.
 - The profile is advisory only — clearly advisory, not a diagnosis.
 
-Output format: a single JSON object with EXACTLY these 7 keys:
+Output format: a single JSON object with EXACTLY these 10 keys:
   "child_context_summary", "language_context", "educational_context",
-  "family_home_context", "contextual_factors", "recommended_domains", "missing_information"
+  "family_home_context", "developmental_milestone_context", "medical_history_context", "educational_history_context", "contextual_factors", "recommended_domains", "missing_information"
 
 Plus one metadata key: "reasoning"
 
@@ -842,6 +842,35 @@ Value types:
 - language_context: string (1-3 sentences; omit if no language data)
 - educational_context: string (1-3 sentences; omit if no demographics data)
 - family_home_context: string (1-3 sentences; omit if family tab not completed)
+- developmental_milestone_context: a JSON object summarizing the early developmental progression, neonatal medical history, and milestone attainment without making diagnostic conclusions. If postnatal tab is NOT completed, return this field as an empty JSON object {}. When postnatal tab IS completed, it contains EXACTLY these 5 keys:
+  * "post_natal_summary": string summarizing the post natal and milestone history. NEVER generate a diagnosis or learning disability conclusion (e.g. do NOT say "has dyslexia", "has ADHD", "developmental delay diagnosis"). It should follow these exact guidelines:
+    - If walking, speech, and birth cry are within normal range: "Early developmental milestones appear to have been achieved within expected developmental ranges based on the available information."
+    - If birth cry is delayed and walk/speech milestones are delayed: "Delayed neonatal adaptation and later achievement of motor and language milestones have been reported. These findings contribute to the child's developmental context and should be considered during assessment interpretation."
+    - If jaundice requires treatment (phototherapy/admission): "A history of neonatal jaundice requiring treatment has been reported and forms part of the child's early medical history."
+    - If neck standing is delayed or walking age is delayed: "Early gross motor developmental delays have been reported. Motor development history should be considered alongside current assessment findings."
+    - If milestones like walking age, speech age, or NICU stay are missing/incomplete: "The AI identifies incomplete developmental history and recommends collection of additional milestone information before interpreting developmental progression."
+  * "milestone_summary": a JSON object with lists of bullet points detailing developmental history. Sub-keys can include:
+    - "Motor Development": array of strings (e.g. ["Walking milestone achieved later than expected.", "Delayed neck control reported."])
+    - "Language Development": array of strings (e.g. ["Expressive language milestones developed later than expected."])
+    - "Neonatal History": array of strings (e.g. ["Delayed birth cry.", "Neonatal jaundice.", "NICU admission reported."])
+    - "Health History": array of strings (e.g. ["Immunization completed."])
+  * "context_factors": array of strings listing potential developmental context factors (e.g. ["Delayed early motor milestones.", "Delayed expressive language development.", "Neonatal medical history reported."]).
+  * "missing_information": array of strings listing missing postnatal milestones (e.g. ["Birth weight unavailable.", "Duration of NICU stay not reported.", "Feeding history incomplete.", "Neck standing milestone not specified."]).
+  * "assessment_planning_notes": string advising the educator on assessment planning (e.g. "Assessment findings should be interpreted together with early developmental history. Where delays in motor or language milestones are reported, observations of communication, motor coordination, executive functioning, and classroom performance should be reviewed comprehensively.").
+- medical_history_context: a JSON object summarizing the medical and health background without drawing diagnostic conclusions. If medical tab is NOT completed, return this field as an empty JSON object {}. When medical tab IS completed, it contains EXACTLY these 5 keys:
+  * "medical_history_summary": string summarizing the child's medical and health context (advisory, non-diagnostic). If no medical history is reported (all fields negative/no/empty), return "No significant medical history has been reported based on the available information."
+  * "medical_context_factors": array of strings listing potential health and medical factors (e.g. ["Ongoing medical condition reported.", "Current medication in use.", "Vision correction required."]).
+  * "missing_information": array of strings listing missing medical history details (e.g. ["Medication purpose not provided.", "Vision assessment results unavailable."]).
+  * "assessment_planning_notes": string advising on scheduling and assessment accommodations (e.g. "Medical history should be considered alongside developmental history and assessment findings. Where vision, hearing, neurological, or ongoing health conditions are reported, educators should ensure appropriate accommodations are available during assessment and intervention sessions.").
+  * "educational_accommodations": array of strings containing supportive classroom/assessment recommendations (e.g. ["Prefer larger print materials.", "Seat closer to instructional displays.", "Minimize background noise.", "Face the child while speaking.", "Follow existing medical care plans.", "Schedule assessments when the child is well-rested and medically stable."]). Generated only when relevant information (like vision difficulty, hearing difficulty, epilepsy, asthma, medication) is available, otherwise empty array.
+- educational_history_context: a JSON object summarizing the academic background and history without drawing diagnostic conclusions. If educational tab is NOT completed, return this field as an empty JSON object {}. When educational tab IS completed, it contains EXACTLY these 7 keys:
+  * "educational_summary": string summarizing the child's academic journey, school experiences, classroom performance, teacher observations, learning strengths, academic challenges, and educational progression (advisory, non-diagnostic). NEVER generate a diagnosis or learning disability conclusion (e.g., do NOT say "has dyslexia", "has dyscalculia").
+  * "academic_strengths": array of strings detailing strengths (e.g. ["Good verbal communication.", "Average mathematical reasoning."]).
+  * "academic_support_areas": array of strings detailing areas requiring support (e.g. ["Reading fluency.", "Written task completion."]).
+  * "teacher_observation_summary": string summarizing teacher comments and classroom engagement/participation (advisory, non-diagnostic).
+  * "educational_context_factors": array of strings listing potential context factors (e.g. ["Previous grade repetition.", "Reading difficulties reported."]).
+  * "missing_information": array of strings listing missing educational history details (e.g. ["Subject-wise marks unavailable.", "Attendance information unavailable."]).
+  * "assessment_planning_notes": string advising on scheduling and assessment planning (e.g. "Assessment should include comprehensive evaluation of literacy skills, written expression...").
 - contextual_factors: array of strings — one entry per fired flag, written in plain English
   (e.g. "Language mismatch between home language and instruction language may affect literacy
   development and should be factored into assessment planning.")
@@ -885,6 +914,12 @@ INSTRUCTIONS:
 6. For missing_information, list every field in child_context_object["missing_information"]
    plus any other critical fields you observe are absent.
 7. All advisory language — see system prompt constraints.
+8. Integrate new demographics context (chronological_age, city/state/urban_or_rural, language_spoken_at_home vs instruction_language mismatch/multilingual profile, and previous_grade_retention) when compiling child_context_summary, language_context, and educational_context.
+9. Integrate redesigned Prenatal & Birth History context (full_term_or_premature, gestational_age, nicu_stay, birth_weight, delivery_type, pregnancy_complications, medications_during_pregnancy, specify_medication, miscarriages_abortions, jaundice_after_birth, feeding_difficulties, and significant_illness details) when compiling child_context_summary and context sections. Note that these form part of the child's developmental and medical background layer, not a clinical diagnosis.
+10. When 'postnatal' is in tabs_completed, generate the `developmental_milestone_context` object following the format rules. If 'postnatal' is not in tabs_completed, return `developmental_milestone_context` as an empty object {{}}.
+11. When 'medical' is in tabs_completed, generate the `medical_history_context` object following the format rules. If 'medical' is not in tabs_completed, return `medical_history_context` as an empty object {{}}.
+12. When 'educational' is in tabs_completed, generate the `educational_history_context` object following the format rules. If 'educational' is not in tabs_completed, return `educational_history_context` as an empty object {{}}.
+
 
 FEW-SHOT EXAMPLES:
 
@@ -899,6 +934,8 @@ Expected output:
   "language_context": "The child's home language (Kannada) aligns with the medium of instruction (Kannada). No language mismatch is apparent at this stage.",
   "educational_context": "The child is in Grade 1, which is consistent with the expected age for entry into formal schooling. School readiness concerns at this stage are not uncommon and warrant structured observation.",
   "family_home_context": "",
+  "developmental_milestone_context": {{}},
+  "medical_history_context": {{}},
   "contextual_factors": [],
   "recommended_domains": ["School Readiness", "Pre-Literacy Skills", "Fine Motor", "Social-Emotional Development"],
   "missing_information": ["Family history", "Prenatal and birth history", "Medical history", "Educational history details"],
@@ -916,6 +953,8 @@ Expected output:
   "language_context": "Insufficient data to analyse language context at this time.",
   "educational_context": "The child's age (13 years) relative to Grade 4 placement warrants careful exploration. This discrepancy may reflect grade retention, interrupted schooling, late enrolment, or other educational factors that should be explored during assessment.",
   "family_home_context": "",
+  "developmental_milestone_context": {{}},
+  "medical_history_context": {{}},
   "contextual_factors": [
     "The child's age (13 years) relative to Grade 4 placement is notable and may reflect prior grade retention, gaps in schooling, or other factors that warrant careful exploration during assessment."
   ],
@@ -935,6 +974,8 @@ Expected output:
   "language_context": "The child's primary home language (Tamil) differs from the medium of instruction (English). This mismatch may create additional cognitive load during learning tasks and could contribute to observed attention or behaviour concerns. This factor should be considered when interpreting assessment findings.",
   "educational_context": "The child's age and grade placement are within expected range. Attention and behaviour concerns are the primary referral focus, which may benefit from contextualised exploration.",
   "family_home_context": "",
+  "developmental_milestone_context": {{}},
+  "medical_history_context": {{}},
   "contextual_factors": [
     "The difference between the child's home language (Tamil) and the medium of instruction (English) may contribute to cognitive load and should be considered when interpreting assessment findings."
   ],
@@ -955,6 +996,8 @@ Expected output:
   "language_context": "The child's home language and medium of instruction are both English. No language mismatch is apparent, which simplifies the linguistic context for assessment.",
   "educational_context": "The child's age and Grade 5 placement are consistent. The extended duration of concerns (more than 2 years) across both reading and writing suggests these are not transient difficulties and may warrant comprehensive literacy assessment.",
   "family_home_context": "",
+  "developmental_milestone_context": {{}},
+  "medical_history_context": {{}},
   "contextual_factors": [
     "Both a parent and teacher have independently raised concerns, which strengthens the validity of the referral and suggests these difficulties are observable across home and school environments.",
     "The difficulties have reportedly been present for more than two years, suggesting persistent rather than situational challenges that warrant thorough assessment."
@@ -976,12 +1019,88 @@ Expected output:
   "language_context": "The child's home language is Kannada. The medium of instruction has not been recorded, which means it is not currently possible to assess whether a language mismatch exists. This is a critical field for interpretation.",
   "educational_context": "The child's age and Grade 6 placement are within expected range. Reading concerns at this level warrant assessment of decoding, fluency, and comprehension relative to grade expectations.",
   "family_home_context": "",
+  "developmental_milestone_context": {{}},
+  "medical_history_context": {{}},
   "contextual_factors": [],
   "recommended_domains": ["Reading", "Language Processing", "Academic Profile"],
   "missing_information": [
     "Medium of instruction — required to determine whether a language mismatch between home language (Kannada) and school language may be contributing to reading difficulties."
   ],
   "reasoning": "No flags were detected because the medium of instruction is missing and a language mismatch cannot be confirmed. Recording this field is the highest priority for improving profile confidence and accuracy."
+}}
+
+--- Example TC6: Age 8, Grade 3, English→English, Reading, Epilepsy+Medication ---
+Input flags: ["MEDICAL_FLAG", "VISION_HEARING_FLAG"]
+Input context: age=8, grade=3, mother_tongue=English, instruction_language=English, referral_areas=[Reading], tabs_completed=[referral, demographics, medical]
+
+Expected output:
+{{
+  "child_context_summary": "An 8-year-old child in Grade 3 has been referred for reading concerns. The child has a reported history of epilepsy, receives ongoing medication, and uses vision correction. Medical and demographic data are completed.",
+  "language_context": "The child's home language and medium of instruction are both English, indicating no language mismatch concerns.",
+  "educational_context": "The child is in Grade 3, consistent with typical age expectations. Reading concerns at this stage should be evaluated alongside vision and neurological health context.",
+  "family_home_context": "",
+  "developmental_milestone_context": {{}},
+  "medical_history_context": {{
+    "medical_history_summary": "The child has a reported history of epilepsy (Absence Seizures), which is currently managed under medical care and treated with prescribed medication (Levetiracetam). The child also uses vision correction (glasses for reading), with the latest vision assessment reported as normal.",
+    "medical_context_factors": [
+      "Ongoing medical condition (epilepsy) reported.",
+      "Prescribed daily medication in use.",
+      "Vision correction required for reading tasks."
+    ],
+    "missing_information": [],
+    "assessment_planning_notes": "Educators should plan assessment sessions considering the child's epilepsy history, scheduling when the child is well-rested. Vision correction (glasses) must be worn during all reading and writing tasks.",
+    "educational_accommodations": [
+      "Follow existing medical care plans for epilepsy.",
+      "Schedule assessments when well-rested and medically stable.",
+      "Ensure reading glasses are worn during all visual tasks.",
+      "Prefer larger print materials to reduce visual strain."
+    ]
+  }},
+  "contextual_factors": [
+    "A history of epilepsy and ongoing daily medication have been reported and should be considered during learning activities and assessment scheduling."
+  ],
+  "recommended_domains": ["Reading", "Phonological Awareness", "Visual Processing"],
+  "missing_information": ["Family history", "Prenatal and birth history", "Educational history details"],
+  "reasoning": "A history of epilepsy (Absence Seizures) and daily medication (Levetiracetam) triggers the MEDICAL_FLAG. The child uses glasses for reading, triggering the VISION_HEARING_FLAG. The recommended domains and accommodations focus on visual task supports and epilepsy safety/scheduling."
+}}
+
+--- Example TC7: Age 9, Grade 4, English→English, Reading, Grade Repeated (Grade 2) + Struggles in Language + Slow Reading ---
+Input flags: ["GRADE_RETENTION", "LANGUAGE_STRUGGLE_HISTORY"]
+Input context: age=9, grade=4, mother_tongue=English, instruction_language=English, referral_areas=[Reading, Writing], repeated_grades=true, which_grade_repeated=Grade 2, overall_percentage=61, subject_performance={{reading: Needs Support, mathematics: Average}}, teacher_comments=Slow reading and difficulty completing written work., tabs_completed=[referral, demographics, educational]
+
+Expected output:
+{{
+  "child_context_summary": "A 9-year-old child in Grade 4 has been referred for reading and writing concerns. The child's educational history includes prior grade repetition in Grade 2, and current concerns are noted across language tasks. Demographic, referral, and educational history data are completed.",
+  "language_context": "The child's home language aligns with the medium of instruction. However, concerns regarding reading and writing suggest language acquisition challenges.",
+  "educational_context": "The child is currently in Grade 4 after repeating Grade 2. A history of grade retention indicates persistent academic challenges that should be explored during evaluation.",
+  "family_home_context": "",
+  "developmental_milestone_context": {{}},
+  "medical_history_context": {{}},
+  "educational_history_context": {{
+    "educational_summary": "The child is currently studying in Grade 4 and has previously repeated Grade 2. Academic records indicate overall average performance, with greater difficulties reported in reading and written work than in mathematics. Teacher observations describe slow reading speed and challenges completing written assignments independently.",
+    "academic_strengths": ["Average mathematical reasoning.", "Adequate conceptual understanding in non-language topics."],
+    "academic_support_areas": ["Reading fluency.", "Reading comprehension.", "Written expression.", "Written task completion."],
+    "teacher_observation_summary": "Teacher observations suggest that the child demonstrates appropriate classroom participation but requires additional time to complete reading and written assignments. Attention and motivation appear adequate during structured activities.",
+    "educational_context_factors": [
+      "Previous grade repetition.",
+      "Reading difficulties reported.",
+      "Teacher observations align with literacy concerns.",
+      "Mathematics performance relatively stronger than language-based tasks."
+    ],
+    "missing_information": [
+      "Subject-wise marks unavailable.",
+      "Teacher comments not fully detailed.",
+      "Previous educational support not reported."
+    ],
+    "assessment_planning_notes": "Assessment should include comprehensive evaluation of literacy skills, written expression, reading fluency, reading comprehension, and executive functioning. Existing teacher observations and academic records should be reviewed alongside standardized assessment results to develop an individualized learning plan."
+  }},
+  "contextual_factors": [
+    "A history of grade repetition in Grade 2 is noted in the child's academic record.",
+    "Reported struggles in reading and writing indicate persistent language and literacy-related concerns."
+  ],
+  "recommended_domains": ["Reading Accuracy", "Reading Comprehension", "Written Expression", "Executive Functioning"],
+  "missing_information": ["Family history", "Prenatal and birth history", "Medical history"],
+  "reasoning": "The child has repeated Grade 2 and struggles with reading/writing, triggering the GRADE_RETENTION and LANGUAGE_STRUGGLE_HISTORY flags. The educational_history_context is fully compiled, listing strengths, support areas, and planning notes tailored to literacy concerns."
 }}
 
 Now generate the profile for the input above. Return a single valid JSON object only."""

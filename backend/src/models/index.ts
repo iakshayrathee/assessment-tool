@@ -183,28 +183,68 @@ export interface IntakeFormData {
   miscarriagesAbortions?: boolean;
   fullTermOrPremature?: string;
   deliveryType?: string;
+  gestationalAge?: string;
+  nicuStay?: string;
+  birthWeight?: string;
+  pregnancyComplications?: string[];
+  feedingDifficulties?: boolean;
+  significantIllness?: boolean;
+  significantIllnessDetails?: string;
 
   // Post Natal Factors
-  breastFed?: boolean;
+  breastFed?: string;
+  breastFedDuration?: number;
   infantJaundice?: boolean;
+  infantJaundiceTreatment?: string;
   incubation?: boolean;
-  immunizationDone?: boolean;
-  consanguineousMarriage?: boolean;
+  incubationDays?: number;
+  incubationReason?: string[];
+  immunizationDone?: string;
+  consanguineousMarriage?: string;
   birthCry?: string;
+  birthCryDelayDuration?: string;
+  resuscitationRequired?: boolean;
   delayInNeckStanding?: boolean;
   delayInNeckStandingDetails?: string;
   ageOfWalking?: number;
   ageOfTwoWordSpeech?: number;
+  seizuresInfancy?: boolean;
+  seizuresInfancyDetails?: string;
+  visionProblemsEarly?: boolean;
+  hearingProblemsEarly?: boolean;
+  hospitalizationFirstTwoYears?: boolean;
+  hospitalizationFirstTwoYearsReason?: string;
 
   // Medical History
   healthConcerns?: string;
   epilepticHistory?: boolean;
+  epilepsyType?: string;
+  epilepsyLastEpisode?: string;
+  epilepsyFrequency?: string;
+  epilepsyUnderMedicalCare?: boolean;
   onMedication?: boolean;
   medicationDetails?: string;
+  medicationName?: string;
+  medicationDosage?: string;
+  medicationFrequency?: string;
+  medicationPurpose?: string[];
   asthmaWheezing?: boolean;
+  asthmaUsesInhaler?: boolean;
+  asthmaFrequency?: string;
+  asthmaEmergencyPlan?: boolean;
   wearsGlasses?: boolean;
+  glassesUsage?: string;
   visionTestDone?: boolean;
+  visionTestResult?: string;
+  visionTestDate?: string;
   hearingTestDone?: boolean;
+  hearingTestResult?: string;
+  hearingTestDate?: string;
+  sleepDifficulties?: boolean;
+  sleepDifficultiesDetails?: string[];
+  hospitalizationHistory?: boolean;
+  hospitalizationHistoryReason?: string;
+  hospitalizationHistoryDate?: string;
 
   // Educational History
   attendedPreschool?: boolean;
@@ -212,6 +252,62 @@ export interface IntakeFormData {
   whichGradeRepeated?: string;
   dominantWritingHand?: string;
   strugglesInLanguages?: boolean;
+  ageStartedPreschool?: number;
+  yearsPreschool?: number;
+  reasonForRepeating?: string;
+  overallPerformance?: string;
+  overallPercentage?: number;
+  subjectPerformance?: any;
+  subjectMarks?: any;
+  academicTrend?: string;
+  teacherComments?: string;
+  languageStruggles?: string[];
+  mathStruggles?: string[];
+  homeworkCompletion?: string;
+  classroomParticipation?: string;
+  attendancePercentage?: number;
+  learningStrengths?: string[];
+  areasSupport?: string[];
+  previousSupport?: string[];
+  // Socio Demographic Data — Extended
+  city?: string;
+  state?: string;
+  urbanOrRural?: string;
+  chronologicalAge?: string;
+  languageSpokenAtHome?: string;
+  previousGradeRetention?: string;
+
+  // Referral (Block A)
+  referralSource?: string[];
+  referralAreas?: string[];
+  durationOfConcern?: string;
+  severityOfConcern?: string;
+
+  // Extended Demographics (Block B)
+  mediumOfInstruction?: string;
+  yearsExposedToInstruction?: number;
+  schoolType?: string;
+  numberOfLanguagesUnderstood?: number;
+  schoolAttendance?: string;
+
+  // Extended Family History (Block C)
+  primaryCaregiver?: string;
+  childLivesWith?: string[];
+  numberOfSiblings?: number;
+  birthOrder?: string;
+  familyHistoryOfDifficulties?: boolean;
+  familyHistoryDetails?: string;
+  digitalResourceTypes?: string[];
+  languagesSpokenAtHome?: string[];
+  parentHelpsWithHomework?: string;
+  enjoySchoolRating?: number;
+  enjoyReadingRating?: number;
+  externalSupportTypes?: string[];
+
+  // AI Intake Profile (Block D)
+  intakeAIProfile?: any;
+  intakeAIGeneratedAt?: string;
+  intakeAIConfidence?: string;
 }
 
 export interface AssessmentData {

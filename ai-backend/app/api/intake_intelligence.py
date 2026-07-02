@@ -42,6 +42,9 @@ class IntakeProfileResponse(BaseModel):
     recommended_domains:    list = []
     missing_information:    list = []
     reasoning:              str = ""
+    developmental_milestone_context: dict = {}
+    medical_history_context: dict = {}
+    educational_history_context: dict = {}
 
     # ── Metadata ───────────────────────────────────────────────────────────────
     cumulative_context:  dict = {}
@@ -113,6 +116,8 @@ async def generate_intake_profile(req: IntakeProfileRequest):
             "recommended_domains":   profile.get("recommended_domains", []),
             "missing_information":   profile.get("missing_information", []),
             "reasoning":             profile.get("reasoning", ""),
+            "developmental_milestone_context": profile.get("developmental_milestone_context", {}),
+            "medical_history_context": profile.get("medical_history_context", {}),
             "cumulative_context":    ctx,
             "contextual_flags":      flags,
             "confidence":            profile.get("confidence", ctx.get("confidence", "LOW")),
