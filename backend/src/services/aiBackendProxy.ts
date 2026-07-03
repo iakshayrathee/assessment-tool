@@ -241,14 +241,16 @@ class AIBackendProxyService {
     week_number?: number;
     scope?: string;
   }): Promise<any> {
-    try {
-      const { data } = await this.client.post('/api/transparency/trigger', params, {
-        timeout: 180000, // 3 minutes — transparency calls run the full pipeline
-      });
-      return data;
-    } catch (error) {
-      throw this.handleError(error, 'Transparency trigger failed');
-    }
+    return this.withRetry(async () => {
+      try {
+        const { data } = await this.client.post('/api/transparency/trigger', params, {
+          timeout: 180000, // 3 minutes — transparency calls run the full pipeline
+        });
+        return data;
+      } catch (error) {
+        throw this.handleError(error, 'Transparency trigger failed');
+      }
+    });
   }
 
   // ── Full Pipeline ──────────────────────────────────────────────────────────
@@ -279,24 +281,40 @@ class AIBackendProxyService {
   // ── Retry Helper ───────────────────────────────────────────────────────────
 
   /**
-   * Retries fn once when the AI backend returns a gateway error (502/503),
-   * which covers Render free-tier cold starts that resolve within a few seconds.
+   * Retries fn up to maxAttempts times when the AI backend returns a transient
+   * error (429, 502, 503, 504) with exponential backoff: 5s → 15s → 30s.
+   * 429 covers Render free-tier concurrency limits; 502/503/504 cover cold starts.
    */
-  private async withRetry<T>(fn: () => Promise<T>): Promise<T> {
-    try {
-      return await fn();
-    } catch (err: any) {
-      if (
-        err instanceof AIBackendError &&
-        err.isAiUnavailable &&
-        (err.statusCode === 502 || err.statusCode === 503)
-      ) {
-        console.warn('[AI Backend] Gateway error — retrying once in 3s…');
-        await new Promise(r => setTimeout(r, 3000));
+  private async withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
+    const RETRYABLE = new Set([429, 502, 503, 504]);
+    // Backoff delays (ms): 5s, 15s, 30s
+    const DELAYS = [5000, 15000, 30000];
+
+    let lastErr: any;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
         return await fn();
+      } catch (err: any) {
+        lastErr = err;
+        const isRetryable =
+          err instanceof AIBackendError &&
+          err.isAiUnavailable &&
+          err.statusCode !== undefined &&
+          RETRYABLE.has(err.statusCode);
+
+        if (!isRetryable || attempt === maxAttempts - 1) {
+          throw err;
+        }
+
+        const delay = DELAYS[attempt] ?? 30000;
+        const code = err.statusCode;
+        console.warn(
+          `[AI Backend] HTTP ${code} — retrying in ${delay / 1000}s (attempt ${attempt + 1}/${maxAttempts - 1})…`
+        );
+        await new Promise(r => setTimeout(r, delay));
       }
-      throw err;
     }
+    throw lastErr;
   }
 
   // ── Error Handling ─────────────────────────────────────────────────────────
@@ -313,7 +331,8 @@ class AIBackendProxyService {
           ? 'Service returned HTML (likely a gateway error)'
           : (rawData as any)?.detail
           || (typeof rawData === 'string' ? rawData.slice(0, 300) : JSON.stringify(rawData).slice(0, 300));
-        const isUnavailable = status === 502 || status === 503 || status === 504;
+        // 429 = Render free-tier concurrency cap; treat as transient unavailability
+        const isUnavailable = status === 429 || status === 502 || status === 503 || status === 504;
         const msg = `[AI Backend] ${context}: HTTP ${status} from ${baseURL} — ${detail}`;
         console.error(msg, { status, url: axiosError.config?.url });
         return new AIBackendError(msg, isUnavailable, status);

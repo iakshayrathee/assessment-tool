@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
-import { Users, User, Search, Play, RefreshCw, AlertCircle, Database, Bot, ClipboardList, Info } from 'lucide-react';
+import { Users, User, Search, Play, RefreshCw, AlertCircle, Database, Bot, ClipboardList, Info, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/lib/toast';
@@ -322,6 +322,10 @@ export default function AITransparencyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<any>(null);
+  // Retry countdown state (for 429 rate-limit responses)
+  const [retryCountdown, setRetryCountdown] = useState(0);
+  const retryTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const retryCallbackRef = useRef<(() => void) | null>(null);
 
   // Input fields
   const [studentId, setStudentId] = useState('');
@@ -361,6 +365,14 @@ export default function AITransparencyPage() {
       return;
     }
 
+    // Clear any pending retry
+    if (retryTimerRef.current) {
+      clearInterval(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    setRetryCountdown(0);
+    retryCallbackRef.current = null;
+
     setLoading(true);
     setError('');
     setResult(null);
@@ -388,6 +400,35 @@ export default function AITransparencyPage() {
 
       if (!resp.ok) {
         const errData = await resp.json().catch(() => ({ error: resp.statusText }));
+
+        // 429 — AI backend is rate-limited by Render. Auto-retry after countdown.
+        if (resp.status === 429) {
+          const retryAfterMs = errData.retryAfterMs || 30000;
+          const retrySecs = Math.ceil(retryAfterMs / 1000);
+          setError('');
+          setLoading(false);
+          setRetryCountdown(retrySecs);
+          toast.warning(`AI service is busy — retrying in ${retrySecs}s…`);
+
+          // Store the retry callback
+          retryCallbackRef.current = () => triggerAgent();
+
+          // Countdown timer
+          let remaining = retrySecs;
+          retryTimerRef.current = setInterval(() => {
+            remaining -= 1;
+            setRetryCountdown(remaining);
+            if (remaining <= 0) {
+              clearInterval(retryTimerRef.current!);
+              retryTimerRef.current = null;
+              setRetryCountdown(0);
+              // Auto-retry
+              retryCallbackRef.current?.();
+            }
+          }, 1000);
+          return;
+        }
+
         throw new Error(errData.detail || errData.error || `HTTP ${resp.status}`);
       }
 
@@ -401,6 +442,13 @@ export default function AITransparencyPage() {
       setLoading(false);
     }
   }, [activeTab, studentId, educatorId, weekNumber, reportType, scope, activeAgent]);
+
+  // Cleanup retry timer on unmount
+  useEffect(() => {
+    return () => {
+      if (retryTimerRef.current) clearInterval(retryTimerRef.current);
+    };
+  }, []);
 
   // Extract state (the full LangGraph agent output)
   const agentState = result?.state || {};
@@ -538,13 +586,15 @@ export default function AITransparencyPage() {
 
             <Button
               onClick={triggerAgent}
-              disabled={loading}
+              disabled={loading || retryCountdown > 0}
               className={`h-[42px] px-8 rounded-xl font-bold text-white transition-all shadow-md hover:shadow-lg active:scale-95 ${
-                loading ? 'opacity-50' : 'bg-primary hover:bg-primary'
+                loading || retryCountdown > 0 ? 'opacity-50 cursor-not-allowed' : 'bg-primary hover:bg-primary'
               }`}
             >
               {loading ? (
                 <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Running...</>
+              ) : retryCountdown > 0 ? (
+                <><Clock className="w-4 h-4 mr-2" /> Retry in {retryCountdown}s</>
               ) : (
                 <><Play className="w-4 h-4 mr-2 fill-current" /> Run Agent</>
               )}
@@ -558,6 +608,32 @@ export default function AITransparencyPage() {
             <div className="w-12 h-12 border-4 border-border border-t-blue-600 rounded-full animate-spin mx-auto mb-6" />
             <h3 className="text-xl font-bold text-foreground leading-tight">Executing {activeAgent.label}...</h3>
             <p className="text-muted-foreground mt-2 max-w-md mx-auto">This process runs the full AI agent cycle including database queries, prompt construction, and LLM reasoning. This typically takes 30-90 seconds.</p>
+          </div>
+        )}
+
+        {/* Retry Countdown State (429 rate-limit) */}
+        {retryCountdown > 0 && !loading && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 mb-8 text-center dark:bg-amber-900/10 dark:border-amber-700/30">
+            <div className="w-14 h-14 bg-amber-100 dark:bg-amber-800/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Clock className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+            </div>
+            <h3 className="text-lg font-bold text-amber-800 dark:text-amber-300 mb-1">AI Service is Busy</h3>
+            <p className="text-amber-700 dark:text-amber-400 text-sm mb-4 max-w-sm mx-auto">
+              The AI backend is handling another request (Render free-tier concurrency limit).
+              Auto-retrying in <span className="font-bold text-amber-900 dark:text-amber-200 text-lg">{retryCountdown}s</span>
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (retryTimerRef.current) clearInterval(retryTimerRef.current);
+                retryTimerRef.current = null;
+                setRetryCountdown(0);
+                triggerAgent();
+              }}
+              className="border-amber-400 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300"
+            >
+              <Play className="w-4 h-4 mr-2 fill-current" /> Retry Now
+            </Button>
           </div>
         )}
 

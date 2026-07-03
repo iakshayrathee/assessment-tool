@@ -18,6 +18,26 @@ router.use(AuthUtils.authenticateToken);
 // Resolve User.id → role-specific profile ID (e.g. SpecialEducatorProfile.id)
 router.use(attachProfileId);
 
+/**
+ * Map an AIBackendError to the correct HTTP status for the client:
+ *   429 → 429  (Render free-tier concurrency limit — let client retry)
+ *   502/503/504 → 503  (gateway / cold-start unavailability)
+ *   everything else → 500
+ */
+function aiErrorStatus(error: any): number {
+  if (error?.statusCode === 429) return 429;
+  if (error?.isAiUnavailable === true) return 503;
+  return 500;
+}
+
+function aiErrorMessage(error: any, fallback: string): string {
+  if (error?.statusCode === 429) {
+    return 'The AI service is currently busy — please wait a moment and try again.';
+  }
+  return error?.message || fallback;
+}
+
+
 // ── Assessment Intelligence Agent ────────────────────────────────────────────
 
 /**
@@ -38,11 +58,10 @@ router.get('/assessment/:studentId', async (req: AuthenticatedRequest, res: Resp
     });
   } catch (error: any) {
     console.error('AI Assessment analysis error:', error.message);
-    const isUnavailable = error?.isAiUnavailable === true;
-    res.status(isUnavailable ? 503 : 500).json({
+    res.status(aiErrorStatus(error)).json({
       success: false,
-      error: error.message || 'AI assessment analysis failed',
-      aiUnavailable: isUnavailable,
+      error: aiErrorMessage(error, 'AI assessment analysis failed'),
+      aiUnavailable: error?.isAiUnavailable === true,
     });
   }
 });
@@ -67,11 +86,10 @@ router.post('/iep/:studentId', async (req: AuthenticatedRequest, res: Response) 
     });
   } catch (error: any) {
     console.error('AI IEP generation error:', error.message);
-    const isUnavailable = error?.isAiUnavailable === true;
-    res.status(isUnavailable ? 503 : 500).json({
+    res.status(aiErrorStatus(error)).json({
       success: false,
-      error: error.message || 'AI IEP generation failed',
-      aiUnavailable: isUnavailable,
+      error: aiErrorMessage(error, 'AI IEP generation failed'),
+      aiUnavailable: error?.isAiUnavailable === true,
     });
   }
 });
@@ -235,11 +253,10 @@ router.get('/lesson-plan/:studentId', async (req: AuthenticatedRequest, res: Res
     });
   } catch (error: any) {
     console.error('AI Lesson plan suggestion error:', error.message);
-    const isUnavailable = error?.isAiUnavailable === true;
-    res.status(isUnavailable ? 503 : 500).json({
+    res.status(aiErrorStatus(error)).json({
       success: false,
-      error: error.message || 'AI lesson plan suggestion failed',
-      aiUnavailable: isUnavailable,
+      error: aiErrorMessage(error, 'AI lesson plan suggestion failed'),
+      aiUnavailable: error?.isAiUnavailable === true,
     });
   }
 });
@@ -262,11 +279,10 @@ router.get('/risk/student/:studentId', async (req: AuthenticatedRequest, res: Re
     });
   } catch (error: any) {
     console.error('AI Risk analysis error:', error.message);
-    const isUnavailable = error?.isAiUnavailable === true;
-    res.status(isUnavailable ? 503 : 500).json({
+    res.status(aiErrorStatus(error)).json({
       success: false,
-      error: error.message || 'AI risk analysis failed',
-      aiUnavailable: isUnavailable,
+      error: aiErrorMessage(error, 'AI risk analysis failed'),
+      aiUnavailable: error?.isAiUnavailable === true,
     });
   }
 });
@@ -287,11 +303,10 @@ router.get('/risk/school/:schoolId', async (req: AuthenticatedRequest, res: Resp
     });
   } catch (error: any) {
     console.error('AI School risk analysis error:', error.message);
-    const isUnavailable = error?.isAiUnavailable === true;
-    res.status(isUnavailable ? 503 : 500).json({
+    res.status(aiErrorStatus(error)).json({
       success: false,
-      error: error.message || 'AI school risk analysis failed',
-      aiUnavailable: isUnavailable,
+      error: aiErrorMessage(error, 'AI school risk analysis failed'),
+      aiUnavailable: error?.isAiUnavailable === true,
     });
   }
 });
@@ -321,11 +336,10 @@ router.get('/educator/insights', async (req: AuthenticatedRequest, res: Response
     });
   } catch (error: any) {
     console.error('AI Educator insights error:', error.message);
-    const isUnavailable = error?.isAiUnavailable === true;
-    res.status(isUnavailable ? 503 : 500).json({
+    res.status(aiErrorStatus(error)).json({
       success: false,
-      error: error.message || 'AI educator insights failed',
-      aiUnavailable: isUnavailable,
+      error: aiErrorMessage(error, 'AI educator insights failed'),
+      aiUnavailable: error?.isAiUnavailable === true,
     });
   }
 });
@@ -347,11 +361,11 @@ router.post('/transparency/trigger', async (req: AuthenticatedRequest, res: Resp
     });
   } catch (error: any) {
     console.error('AI Transparency trigger error:', error.message);
-    const isUnavailable = error?.isAiUnavailable === true;
-    res.status(isUnavailable ? 503 : 500).json({
+    res.status(aiErrorStatus(error)).json({
       success: false,
-      error: error.message || 'Transparency trigger failed',
-      aiUnavailable: isUnavailable,
+      error: aiErrorMessage(error, 'Transparency trigger failed'),
+      aiUnavailable: error?.isAiUnavailable === true,
+      retryAfterMs: error?.statusCode === 429 ? 30000 : undefined,
     });
   }
 });
@@ -468,11 +482,10 @@ router.post('/intake/profile', async (req: AuthenticatedRequest, res: Response) 
     });
   } catch (error: any) {
     console.error('AI Intake profile error:', error.message);
-    const isUnavailable = error?.isAiUnavailable === true;
-    res.status(isUnavailable ? 503 : 500).json({
+    res.status(aiErrorStatus(error)).json({
       success: false,
-      error: error.message || 'AI intake profile generation failed',
-      aiUnavailable: isUnavailable,
+      error: aiErrorMessage(error, 'AI intake profile generation failed'),
+      aiUnavailable: error?.isAiUnavailable === true,
     });
   }
 });
