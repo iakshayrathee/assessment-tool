@@ -4185,165 +4185,150 @@ function IntakeFormPageContent() {
     <>
       {/* Sticky Header */}
       <div className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-            {/* Top Row - Navigation and Child Selector */}
-            <div className="flex items-center justify-between lg:justify-start gap-4 flex-1 min-w-0">
-              {/* Child Selector */}
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <span className="text-sm font-medium text-foreground whitespace-nowrap">Child:</span>
-                {selectedStudentId ? (
-                  <div
-                    className="flex items-center gap-4 bg-primary/10 px-4 py-3 rounded-lg border border-primary/20 min-w-[250px] cursor-pointer hover:bg-primary/10 transition-colors"
-                    onClick={() => setShowStudentModal(true)}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-blue-900 text-sm truncate">
-                        {selectedStudentData?.fullName || 'Loading...'}
-                      </p>
-                      <p className="text-xs text-primary">
-                        Grade {selectedStudentData?.grade || 'N/A'}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 flex-shrink-0"
-                      title="Change student"
-                    >
-                      <Users className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
+        <div className="max-w-6xl mx-auto px-4 py-3 space-y-2">
+          {/* Row 1 - Child Selector */}
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-sm font-medium text-foreground whitespace-nowrap flex-shrink-0">Child:</span>
+            {selectedStudentId ? (
+              <div
+                className="flex items-center gap-3 bg-primary/10 px-3 py-2 rounded-lg border border-primary/20 flex-1 min-w-0 max-w-xs cursor-pointer hover:bg-primary/15 transition-colors"
+                onClick={() => setShowStudentModal(true)}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-blue-900 text-sm truncate">
+                    {selectedStudentData?.fullName || 'Loading...'}
+                  </p>
+                  <p className="text-xs text-primary">
+                    Grade {selectedStudentData?.grade || 'N/A'}
+                  </p>
+                </div>
+                <Users className="h-4 w-4 flex-shrink-0 text-primary" />
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setShowStudentModal(true)}
+                className="flex items-center gap-2 px-4 py-2 h-9"
+                disabled={isFormCompleted}
+              >
+                <Users className="h-4 w-4" />
+                Select Student
+              </Button>
+            )}
+          </div>
+
+          {/* Row 2 - Status and Actions */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Status Indicator */}
+            {intakeForm?.status === 'COMPLETED' ? (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-success/10 text-foreground rounded-full text-xs font-medium flex-shrink-0">
+                <CheckCircle className="h-3.5 w-3.5" />
+                Completed
+              </div>
+            ) : hasUnsavedChanges ? (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-warning/10 text-amber-800 rounded-full text-xs font-medium flex-shrink-0">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Unsaved
+              </div>
+            ) : intakeForm ? (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium flex-shrink-0">
+                <Clock className="h-3.5 w-3.5" />
+                In Progress
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium flex-shrink-0">
+                <FileText className="h-3.5 w-3.5" />
+                New Form
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="w-px h-5 bg-border flex-shrink-0" />
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Button
+                onClick={handleSaveDraft}
+                variant="outline"
+                size="sm"
+                className="rounded-md px-3 py-1.5 h-8 text-xs"
+                disabled={!selectedStudentId || isCreating || isUpdating || isFormCompleted}
+              >
+                <Save className="h-3.5 w-3.5 mr-1.5" />
+                Save Draft
+              </Button>
+
+              {/* AI Profile Button */}
+              {selectedStudentId && (
+                <Link href={`/educator/intake/ai-profile?studentId=${selectedStudentId}`}>
                   <Button
+                    id="view-ai-profile-btn"
                     variant="outline"
-                    onClick={() => setShowStudentModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 min-w-[140px]"
-                    disabled={isFormCompleted}
+                    size="sm"
+                    className="rounded-md px-3 py-1.5 h-8 text-xs border-violet-500/40 text-violet-600 hover:bg-violet-50 hover:border-violet-500"
                   >
-                    <Users className="h-4 w-4" />
-                    Select Student
+                    <Brain className="h-3.5 w-3.5 mr-1.5" />
+                    AI Profile
                   </Button>
-                )}
-              </div>
-            </div>
+                </Link>
+              )}
 
-            {/* Bottom Row - Status and Actions */}
-            <div className="flex items-center justify-between lg:justify-end gap-3">
-              {/* Status Indicator */}
-              <div className="flex items-center">
-                {intakeForm?.status === 'COMPLETED' ? (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-success/10 text-foreground rounded-full">
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="text-sm font-medium">Completed</span>
-                  </div>
-                ) : hasUnsavedChanges ? (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-warning/10 text-amber-800 rounded-full">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span className="text-sm font-medium">Unsaved Changes</span>
-                  </div>
-                ) : intakeForm ? (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full">
-                    <Clock className="h-4 w-4" />
-                    <span className="text-sm font-medium">In Progress</span>
-                  </div>
+              <Button
+                onClick={handleSubmit}
+                size="sm"
+                className="rounded-md px-3 py-1.5 h-8 text-xs"
+                disabled={!selectedStudentId || isSubmitting || isFormCompleted || !isFormComplete()}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Clock className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Submitting...
+                  </>
                 ) : (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-muted text-muted-foreground rounded-full">
-                    <FileText className="h-4 w-4" />
-                    <span className="text-sm font-medium">New Form</span>
-                  </div>
+                  <>
+                    <Lock className="h-3.5 w-3.5 mr-1.5" />
+                    Submit & Lock
+                  </>
                 )}
-              </div>
+              </Button>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={handleSaveDraft}
-                  variant="outline"
-                  size="sm"
-                  className="rounded-md px-3 py-2 h-9"
-                  disabled={!selectedStudentId || isCreating || isUpdating || isFormCompleted}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Save Draft</span>
-                  <span className="sm:hidden">Save</span>
-                </Button>
+              <Button
+                onClick={handleDownloadPDF}
+                variant="outline"
+                size="sm"
+                className="rounded-md px-3 py-1.5 h-8 text-xs"
+                disabled={!selectedStudentId}
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                PDF
+              </Button>
 
-                {/* AI Profile Button */}
-                {selectedStudentId && (
-                  <Link href={`/educator/intake/ai-profile?studentId=${selectedStudentId}`}>
-                    <Button
-                      id="view-ai-profile-btn"
-                      variant="outline"
-                      size="sm"
-                      className="rounded-md px-3 py-2 h-9 border-violet-500/40 text-violet-600 hover:bg-violet-50 hover:border-violet-500"
-                    >
-                      <Brain className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">AI Profile</span>
-                    </Button>
-                  </Link>
-                )}
-
-                <Button
-                  onClick={handleSubmit}
-                  size="sm"
-                  className="rounded-md px-3 py-2 h-9"
-                  disabled={!selectedStudentId || isSubmitting || isFormCompleted || !isFormComplete()}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Clock className="h-4 w-4 mr-2 animate-spin" />
-                      <span className="hidden sm:inline">Submitting...</span>
-                      <span className="sm:hidden">...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">Submit & Lock</span>
-                      <span className="sm:hidden">Submit</span>
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  onClick={handleDownloadPDF}
-                  variant="outline"
-                  size="sm"
-                  className="rounded-md px-3 py-2 h-9"
-                  disabled={!selectedStudentId}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">PDF</span>
-                </Button>
-
-                <input
-                  ref={excelInputRef}
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  className="hidden"
-                  onChange={handleExcelUpload}
-                />
-                <Button
-                  onClick={() => excelInputRef.current?.click()}
-                  variant="outline"
-                  size="sm"
-                  className="rounded-md px-3 py-2 h-9"
-                  disabled={isFormCompleted}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Upload Excel</span>
-                  <span className="sm:hidden">Excel</span>
-                </Button>
-                <Button
-                  onClick={() => setShowExcelPreview(true)}
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-md px-1.5 py-2 h-9"
-                  title="View expected Excel format"
-                >
-                  <Info className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </div>
+              <input
+                ref={excelInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                onChange={handleExcelUpload}
+              />
+              <Button
+                onClick={() => excelInputRef.current?.click()}
+                variant="outline"
+                size="sm"
+                className="rounded-md px-3 py-1.5 h-8 text-xs"
+                disabled={isFormCompleted}
+              >
+                <Upload className="h-3.5 w-3.5 mr-1.5" />
+                Upload Excel
+              </Button>
+              <Button
+                onClick={() => setShowExcelPreview(true)}
+                variant="ghost"
+                size="sm"
+                className="rounded-md px-2 py-1.5 h-8"
+                title="View expected Excel format"
+              >
+                <Info className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
             </div>
           </div>
         </div>
