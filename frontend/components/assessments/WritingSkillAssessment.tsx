@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -164,7 +165,27 @@ export function WritingSkillAssessment({
   onSuccess,
   onCancel
 }: WritingSkillAssessmentProps) {
+  const { t } = useTranslation('assessments');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const getOptionLabel = (opt: string) => {
+    const keyMap: Record<string, string> = {
+      'yes': 'yes',
+      'no': 'no',
+      'always': 'always',
+      'sometimes': 'sometimes',
+      'rarely': 'rarely',
+      'never': 'never',
+      'with effort': 'withEffort',
+      'independently': 'independently',
+      'with help': 'withHelp',
+      'not yet': 'notYet',
+      'partially': 'partially'
+    };
+    const cleanOpt = opt.toLowerCase().trim();
+    const key = keyMap[cleanOpt] || cleanOpt;
+    return t(key, opt);
+  };
   const [selectedSymptoms, setSelectedSymptoms] = useState<Record<string, boolean>>(
     initialData ? extractSymptoms(initialData) : {}
   );
@@ -346,10 +367,10 @@ export function WritingSkillAssessment({
       let response;
       if (mode === 'edit' && assessmentId) {
         response = await apiClient.updateWritingSkillAssessment(assessmentId, data);
-        toast.success('Writing skill assessment updated successfully!');
+        toast.success(t('assessmentSaved'));
       } else {
         response = await apiClient.createWritingSkillAssessment(data);
-        toast.success('Writing skill assessment created successfully!');
+        toast.success(t('assessmentSaved'));
       }
 
       // Store the full response data which includes student and specialEducator
@@ -405,24 +426,24 @@ export function WritingSkillAssessment({
       {/* Assessment Questions */}
       <Card>
         <CardHeader>
-          <CardTitle>Writing Assessment Questions</CardTitle>
-          <p className="text-sm text-muted-foreground">Answer the following questions about the student's writing abilities</p>
+          <CardTitle>{t('writingAssessmentQuestions')}</CardTitle>
+          <p className="text-sm text-muted-foreground">{t('selectStudentDesc')}</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {WRITING_QUESTIONS.map((q) => (
             <div key={q.id} className="space-y-2">
-              <Label className="text-sm font-medium">{q.question}</Label>
+              <Label className="text-sm font-medium">{t(q.id, q.question)}</Label>
               <Select
                 value={questionAnswers[q.id] || ''}
                 onValueChange={(value) => setQuestionAnswers(prev => ({ ...prev, [q.id]: value }))}
                 disabled={isViewMode}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select response" />
+                  <SelectValue placeholder={t('selectStudentDesc')} />
                 </SelectTrigger>
                 <SelectContent>
                   {q.options.map((option) => (
-                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                    <SelectItem key={option} value={option}>{getOptionLabel(option)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -868,8 +889,8 @@ export function WritingSkillAssessment({
       {/* Detailed Symptoms */}
       <Card>
         <CardHeader>
-          <CardTitle>Detailed Writing Symptoms</CardTitle>
-          <p className="text-sm text-muted-foreground">Select all symptoms that apply to the student</p>
+          <CardTitle>{t('detailedWritingSymptoms')}</CardTitle>
+          <p className="text-sm text-muted-foreground">{t('selectSymptomsDesc')}</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {Object.entries(WRITING_SYMPTOMS).map(([category, symptoms]) => (
@@ -879,7 +900,7 @@ export function WritingSkillAssessment({
               onOpenChange={() => toggleSection(category)}
             >
               <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-muted/40 rounded-lg hover:bg-muted transition-colors">
-                <span className="font-medium text-left">{category}</span>
+                <span className="font-medium text-left">{t('category.' + category, category)}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">
                     {symptoms.filter(s => selectedSymptoms[s.key]).length} / {symptoms.length}
@@ -907,7 +928,7 @@ export function WritingSkillAssessment({
                         htmlFor={symptom.key}
                         className="text-sm font-normal cursor-pointer"
                       >
-                        {symptom.label}
+                        {t('symptom.' + symptom.key, symptom.label)}
                       </Label>
                     </div>
                   ))}
@@ -917,12 +938,12 @@ export function WritingSkillAssessment({
           ))}
 
           <div className="pt-4">
-            <Label htmlFor="additionalNotes">Additional Notes</Label>
+            <Label htmlFor="additionalNotes">{t('additionalNotes')}</Label>
             <Textarea
               id="additionalNotes"
               value={additionalNotes}
               onChange={(e) => setAdditionalNotes(e.target.value)}
-              placeholder="Add any additional observations or notes..."
+              placeholder={t('additionalNotesPlaceholder')}
               rows={4}
               className="mt-2"
               disabled={isViewMode}
@@ -934,10 +955,10 @@ export function WritingSkillAssessment({
       {!isViewMode && (
         <div className="flex justify-end space-x-4">
           <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
+            {t('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : mode === 'edit' ? 'Update Assessment' : 'Save Assessment'}
+            {isSubmitting ? t('savingAssessment') : mode === 'edit' ? t('updateAssessment') : t('saveAssessment')}
           </Button>
         </div>
       )}
@@ -945,11 +966,11 @@ export function WritingSkillAssessment({
       {isViewMode && (
         <div className="flex justify-end space-x-4">
           <Button type="button" variant="outline" onClick={onCancel}>
-            Close
+            {t('close')}
           </Button>
           <Button onClick={() => setShowPreview(true)}>
             <Eye className="h-4 w-4 mr-2" />
-            View Full Report
+            {t('viewReport')}
           </Button>
         </div>
       )}
@@ -958,9 +979,9 @@ export function WritingSkillAssessment({
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Assessment Preview</DialogTitle>
+            <DialogTitle>{t('writingAssessmentReport')}</DialogTitle>
             <p className="text-sm text-muted-foreground">
-              Your writing assessment has been saved successfully. You can now download it as PDF.
+              {t('assessmentPreview')}
             </p>
           </DialogHeader>
 
@@ -1254,7 +1275,7 @@ export function WritingSkillAssessment({
                 onSuccess?.();
               }
             }}>
-              Close
+              {t('close')}
             </Button>
             <Button
               onClick={downloadPDF}
@@ -1262,7 +1283,7 @@ export function WritingSkillAssessment({
               title={!studentDetails || !educatorDetails ? 'Waiting for student and educator information to load...' : ''}
             >
               <Download className="h-4 w-4 mr-2" />
-              {!studentDetails || !educatorDetails ? 'Loading...' : 'Download PDF'}
+              {!studentDetails || !educatorDetails ? t('loading', { ns: 'educator' }) : t('downloadPDF')}
             </Button>
           </div>
         </DialogContent>

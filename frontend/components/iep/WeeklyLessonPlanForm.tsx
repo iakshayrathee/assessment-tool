@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,28 +30,30 @@ const IEP_SUBJECTS = Object.values(IEPSubject) as [string, ...string[]];
 
 const DAYS_OF_WEEK = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY'] as const;
 
-const activitySchema = z.object({
-  subject: z.enum(IEP_SUBJECTS),
-  testGoalActivity: z.string().min(1, 'Test goal/activity is required'),
-  analysis: z.string().min(1, 'Analysis is required'),
-  assessment: z.string().min(1, 'Assessment is required'),
-  behavioralAttention: z.enum(BEHAVIORAL_ATTENTION_LEVELS),
-  behavioralSittingTolerance: z.enum(BEHAVIORAL_SITTING_TOLERANCE),
-  behavioralTaskCompletion: z.enum(BEHAVIORAL_TASK_COMPLETION),
-});
+const getFormSchema = (t: any) => {
+  const activitySchema = z.object({
+    subject: z.enum(IEP_SUBJECTS),
+    testGoalActivity: z.string().min(1, t('formTestGoalActivityRequired')),
+    analysis: z.string().min(1, t('formAnalysisRequired')),
+    assessment: z.string().min(1, t('formAssessmentRequired')),
+    behavioralAttention: z.enum(BEHAVIORAL_ATTENTION_LEVELS),
+    behavioralSittingTolerance: z.enum(BEHAVIORAL_SITTING_TOLERANCE),
+    behavioralTaskCompletion: z.enum(BEHAVIORAL_TASK_COMPLETION),
+  });
 
-const formSchema = z.object({
-  weekNumber: z.number({
-    required_error: 'Week number is required',
-  }).min(1, 'Week number must be at least 1'),
-  startDate: z.date({
-    required_error: 'Start date is required',
-  }),
-  endDate: z.date({
-    required_error: 'End date is required',
-  }),
-  activities: z.record(z.enum(DAYS_OF_WEEK), activitySchema),
-});
+  return z.object({
+    weekNumber: z.number({
+      required_error: t('formWeekNumberRequired'),
+    }).min(1, t('formWeekNumberMin')),
+    startDate: z.date({
+      required_error: t('formStartDateRequired'),
+    }),
+    endDate: z.date({
+      required_error: t('formEndDateRequired'),
+    }),
+    activities: z.record(z.enum(DAYS_OF_WEEK), activitySchema),
+  });
+};
 
 interface WeeklyLessonPlanFormProps {
   iepDocumentId: string;
@@ -59,7 +62,10 @@ interface WeeklyLessonPlanFormProps {
 }
 
 export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: WeeklyLessonPlanFormProps) {
+  const { t } = useTranslation('iep');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const formSchema = getFormSchema(t);
 
   const loadDemoData = () => {
     const demoActivities = {
@@ -104,9 +110,9 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
     form.setValue('weekNumber', 1);
     form.setValue('startDate', new Date());
     form.setValue('endDate', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
-    form.setValue('activities', demoActivities);
+    form.setValue('activities', demoActivities as any);
     
-    toast.success('Demo data loaded! Review and adjust as needed.');
+    toast.success(t('formDemoSuccess'));
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -178,10 +184,10 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
         endDate: values.endDate.toISOString(),
         activities: activitiesArray,
       });
-      toast.success('Weekly lesson plan created successfully!');
+      toast.success(t('weeklyPlanCreated'));
       onSuccess?.();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create weekly lesson plan');
+      toast.error(error.response?.data?.message || t('loadFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -192,7 +198,7 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Weekly Lesson Plan</CardTitle>
+            <CardTitle>{t('weeklyPlanHeader')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -201,11 +207,11 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                 name="weekNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Week Number</FormLabel>
+                    <FormLabel>{t('formWeekNumber')}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
-                        placeholder="Week number"
+                        placeholder={t('formWeekNumberPlaceholder')}
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                       />
@@ -220,12 +226,12 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                 name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
+                    <FormLabel>{t('formStartDate')}</FormLabel>
                     <FormControl>
                       <ProfessionalDatePicker
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Select start date"
+                        placeholder={t('formSelectStartDate')}
                       />
                     </FormControl>
                     <FormMessage />
@@ -238,12 +244,12 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                 name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End Date</FormLabel>
+                    <FormLabel>{t('formEndDate')}</FormLabel>
                     <FormControl>
                       <ProfessionalDatePicker
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Select end date"
+                        placeholder={t('formSelectEndDate')}
                       />
                     </FormControl>
                     <FormMessage />
@@ -256,7 +262,7 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
               {DAYS_OF_WEEK.map((day) => (
                 <Card key={day} className="p-4">
                   <CardHeader className="p-0 pb-4">
-                    <CardTitle className="text-lg capitalize">{day.toLowerCase()}</CardTitle>
+                    <CardTitle className="text-lg capitalize">{t(day.toLowerCase())}</CardTitle>
                   </CardHeader>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -265,19 +271,19 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                       name={`activities.${day}.subject`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Subject</FormLabel>
+                          <FormLabel>{t('formSubject')}</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select subject" />
+                                <SelectValue placeholder={t('formSelectSubject')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="ORAL_LANGUAGE">Oral Language</SelectItem>
-                              <SelectItem value="READING">Reading</SelectItem>
-                              <SelectItem value="WRITING">Writing</SelectItem>
-                              <SelectItem value="SPELLING">Spelling</SelectItem>
-                              <SelectItem value="MATH">Math</SelectItem>
+                              <SelectItem value="ORAL_LANGUAGE">{t('subjects.ORAL_LANGUAGE')}</SelectItem>
+                              <SelectItem value="READING">{t('subjects.READING')}</SelectItem>
+                              <SelectItem value="WRITING">{t('subjects.WRITING')}</SelectItem>
+                              <SelectItem value="SPELLING">{t('subjects.SPELLING')}</SelectItem>
+                              <SelectItem value="MATH">{t('subjects.MATH')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -290,10 +296,10 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                       name={`activities.${day}.testGoalActivity`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Test Goal/Activity</FormLabel>
+                          <FormLabel>{t('formTestGoalActivity')}</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Description of test goal or activity"
+                              placeholder={t('formTestGoalActivityPlaceholder')}
                               rows={2}
                               {...field}
                             />
@@ -308,10 +314,10 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                       name={`activities.${day}.analysis`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Analysis</FormLabel>
+                          <FormLabel>{t('formAnalysis')}</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Analysis of performance"
+                              placeholder={t('formAnalysisPlaceholder')}
                               rows={2}
                               {...field}
                             />
@@ -326,10 +332,10 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                       name={`activities.${day}.assessment`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Assessment</FormLabel>
+                          <FormLabel>{t('formAssessment')}</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Assessment results"
+                              placeholder={t('formAssessmentPlaceholder')}
                               rows={2}
                               {...field}
                             />
@@ -344,18 +350,18 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                       name={`activities.${day}.behavioralAttention`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Behavioral Attention</FormLabel>
+                          <FormLabel>{t('formBehavioralAttention')}</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select attention level" />
+                                <SelectValue placeholder={t('formSelectAssistance')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="POOR">Poor</SelectItem>
-                              <SelectItem value="FAIR">Fair</SelectItem>
-                              <SelectItem value="GOOD">Good</SelectItem>
-                              <SelectItem value="EXCELLENT">Excellent</SelectItem>
+                              <SelectItem value="POOR">{t('attentionLevels.POOR')}</SelectItem>
+                              <SelectItem value="FAIR">{t('attentionLevels.FAIR')}</SelectItem>
+                              <SelectItem value="GOOD">{t('attentionLevels.GOOD')}</SelectItem>
+                              <SelectItem value="EXCELLENT">{t('attentionLevels.EXCELLENT')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -368,18 +374,18 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                       name={`activities.${day}.behavioralSittingTolerance`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Sitting Tolerance</FormLabel>
+                          <FormLabel>{t('formSittingTolerance')}</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select tolerance level" />
+                                <SelectValue placeholder={t('formSelectAssistance')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="POOR">Poor</SelectItem>
-                              <SelectItem value="FAIR">Fair</SelectItem>
-                              <SelectItem value="GOOD">Good</SelectItem>
-                              <SelectItem value="EXCELLENT">Excellent</SelectItem>
+                              <SelectItem value="POOR">{t('sittingTolerances.POOR')}</SelectItem>
+                              <SelectItem value="FAIR">{t('sittingTolerances.FAIR')}</SelectItem>
+                              <SelectItem value="GOOD">{t('sittingTolerances.GOOD')}</SelectItem>
+                              <SelectItem value="EXCELLENT">{t('sittingTolerances.EXCELLENT')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -392,18 +398,18 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
                       name={`activities.${day}.behavioralTaskCompletion`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Task Completion</FormLabel>
+                          <FormLabel>{t('formTaskCompletion')}</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select completion level" />
+                                <SelectValue placeholder={t('formSelectAssistance')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="COMPLETED_INDEPENDENTLY">Completed Independently</SelectItem>
-                              <SelectItem value="COMPLETED_WITH_ASSISTANCE">Completed with Assistance</SelectItem>
-                              <SelectItem value="PARTIALLY_COMPLETED">Partially Completed</SelectItem>
-                              <SelectItem value="NOT_COMPLETED">Not Completed</SelectItem>
+                              <SelectItem value="COMPLETED_INDEPENDENTLY">{t('taskCompletions.COMPLETED_INDEPENDENTLY')}</SelectItem>
+                              <SelectItem value="COMPLETED_WITH_ASSISTANCE">{t('taskCompletions.COMPLETED_WITH_ASSISTANCE')}</SelectItem>
+                              <SelectItem value="PARTIALLY_COMPLETED">{t('taskCompletions.PARTIALLY_COMPLETED')}</SelectItem>
+                              <SelectItem value="NOT_COMPLETED">{t('taskCompletions.NOT_COMPLETED')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -425,15 +431,15 @@ export function WeeklyLessonPlanForm({ iepDocumentId, onSuccess, onCancel }: Wee
             className="flex items-center gap-2"
           >
             <Sparkles className="h-4 w-4" />
-            Load Demo Data
+            {t('formLoadDemoData')}
           </Button>
           
           <div className="flex space-x-4">
             <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
+              {t('formCancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Weekly Plan'}
+              {isSubmitting ? t('formCreating') : t('formCreateWeeklyPlan')}
             </Button>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import ReactDOMServer from 'react-dom/server';
 import toast from '@/lib/toast';
 import { useIntakeForm } from '@/hooks/useAssessments';
@@ -220,6 +221,7 @@ const TABS: Tab[] = [
 export const dynamic = 'force-dynamic';
 
 function IntakeFormPageContent() {
+  const { t } = useTranslation('educator');
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -4212,7 +4214,7 @@ function IntakeFormPageContent() {
                 disabled={isFormCompleted}
               >
                 <Users className="h-4 w-4" />
-                Select Student
+                {t('intake.selectStudentHeader')}
               </Button>
             )}
           </div>
@@ -4223,22 +4225,22 @@ function IntakeFormPageContent() {
             {intakeForm?.status === 'COMPLETED' ? (
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-success/10 text-foreground rounded-full text-xs font-medium flex-shrink-0">
                 <CheckCircle className="h-3.5 w-3.5" />
-                Completed
+                {t('iep.statusCompleted')}
               </div>
             ) : hasUnsavedChanges ? (
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-warning/10 text-amber-800 rounded-full text-xs font-medium flex-shrink-0">
                 <AlertTriangle className="h-3.5 w-3.5" />
-                Unsaved
+                {t('profile.cancel')}
               </div>
             ) : intakeForm ? (
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium flex-shrink-0">
                 <Clock className="h-3.5 w-3.5" />
-                In Progress
+                {t('educator.sidebar.iepInProgress')}
               </div>
             ) : (
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium flex-shrink-0">
                 <FileText className="h-3.5 w-3.5" />
-                New Form
+                {t('intake.newForm')}
               </div>
             )}
 
@@ -4255,7 +4257,7 @@ function IntakeFormPageContent() {
                 disabled={!selectedStudentId || isCreating || isUpdating || isFormCompleted}
               >
                 <Save className="h-3.5 w-3.5 mr-1.5" />
-                Save Draft
+                {t('lessonPlans.generatePlan')}
               </Button>
 
               {/* AI Profile Button */}
@@ -4282,7 +4284,7 @@ function IntakeFormPageContent() {
                 {isSubmitting ? (
                   <>
                     <Clock className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    Submitting...
+                    {t('intake.saving')}
                   </>
                 ) : (
                   <>
@@ -4342,10 +4344,10 @@ function IntakeFormPageContent() {
             <CardHeader className="text-center pb-4">
               <CardTitle className="flex items-center justify-center gap-3 text-xl text-blue-900">
                 <Users className="h-6 w-6 text-primary" />
-                Select a Student to Begin
+                {t('intake.noStudentSelected')}
               </CardTitle>
               <p className="text-muted-foreground mt-2 text-base">
-                Use the student selector in the top bar to choose a student and create their intake assessment form
+                {t('intake.noStudentSelectedDesc')}
               </p>
             </CardHeader>
             {wasRedirectedFromRegistration && (
@@ -4443,10 +4445,10 @@ function IntakeFormPageContent() {
                                 : 'text-muted-foreground group-hover:text-primary'
                             }
                           `}>
-                            {tab.title}
+                            {t(`intake.${tab.id}`)}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1 max-w-20 leading-tight h-8 flex items-start justify-center">
-                            {tab.description}
+                            {t(`intake.${tab.id === 'demographics' ? 'studentInfoDesc' : tab.id === 'family' ? 'familyBackgroundDesc' : tab.id === 'prenatal' ? 'birthDevelopmentDesc' : tab.id === 'postnatal' ? 'postBirthDesc' : tab.id === 'medical' ? 'healthMedicalDesc' : tab.id === 'educational' ? 'academicBackgroundDesc' : 'reviewSubmitDesc'}`)}
                           </p>
                         </div>
                       </div>
@@ -4461,10 +4463,10 @@ function IntakeFormPageContent() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   {React.createElement(TABS.find(tab => tab.id === activeTab)?.icon || User, { className: "h-5 w-5" })}
-                  {TABS.find(tab => tab.id === activeTab)?.title}
+                  {t(`intake.${TABS.find(tab => tab.id === activeTab)?.id}`)}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  {TABS.find(tab => tab.id === activeTab)?.description}
+                  {t(`intake.${activeTab === 'demographics' ? 'studentInfoDesc' : activeTab === 'family' ? 'familyBackgroundDesc' : activeTab === 'prenatal' ? 'birthDevelopmentDesc' : activeTab === 'postnatal' ? 'postBirthDesc' : activeTab === 'medical' ? 'healthMedicalDesc' : activeTab === 'educational' ? 'academicBackgroundDesc' : 'reviewSubmitDesc'}`)}
                 </p>
               </CardHeader>
               <CardContent>

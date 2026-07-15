@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,23 +27,25 @@ const IEP_SUBJECTS = [
 
 const TEACHER_ASSISTANCE_LEVELS = Object.values(TeacherAssistanceLevel) as [string, ...string[]];
 
-const longTermGoalSchema = z.object({
-  objective: z.string().min(1, 'Objective is required'),
-  durationMonths: z.coerce.number().min(1, 'Duration must be at least 1 month'),
-});
+const getFormSchema = (t: any) => {
+  const longTermGoalSchema = z.object({
+    objective: z.string().min(1, t('formObjectiveRequired')),
+    durationMonths: z.coerce.number().min(1, t('formDurationMin')),
+  });
 
-const shortTermGoalSchema = z.object({
-  objective: z.string().min(1, 'Objective is required'),
-  teacherAssistanceLevel: z.enum(TEACHER_ASSISTANCE_LEVELS),
-});
+  const shortTermGoalSchema = z.object({
+    objective: z.string().min(1, t('formObjectiveRequired')),
+    teacherAssistanceLevel: z.enum(TEACHER_ASSISTANCE_LEVELS),
+  });
 
-const formSchema = z.object({
-  subject: z.enum(IEP_SUBJECTS),
-  presentLevelReceptive: z.string().min(1, 'Receptive skills assessment is required'),
-  presentLevelExpressive: z.string().min(1, 'Expressive skills assessment is required'),
-  longTermGoals: z.array(longTermGoalSchema).min(1, 'At least one long-term goal is required'),
-  shortTermGoals: z.array(shortTermGoalSchema).min(1, 'At least one short-term goal is required'),
-});
+  return z.object({
+    subject: z.enum(IEP_SUBJECTS),
+    presentLevelReceptive: z.string().min(1, t('formPresentLevelReceptiveRequired')),
+    presentLevelExpressive: z.string().min(1, t('formPresentLevelExpressiveRequired')),
+    longTermGoals: z.array(longTermGoalSchema).min(1, t('formLongTermGoalsRequired')),
+    shortTermGoals: z.array(shortTermGoalSchema).min(1, t('formShortTermGoalsRequired')),
+  });
+};
 
 interface IEPSubjectSectionFormProps {
   iepDocumentId: string;
@@ -51,7 +54,10 @@ interface IEPSubjectSectionFormProps {
 }
 
 export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IEPSubjectSectionFormProps) {
+  const { t } = useTranslation('iep');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const formSchema = getFormSchema(t);
 
   const loadDemoData = () => {
     const demoData = {
@@ -84,13 +90,13 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
       ]
     };
 
-    form.setValue('subject', demoData.subject);
+    form.setValue('subject', demoData.subject as any);
     form.setValue('presentLevelReceptive', demoData.presentLevelReceptive);
     form.setValue('presentLevelExpressive', demoData.presentLevelExpressive);
     form.setValue('longTermGoals', demoData.longTermGoals);
     form.setValue('shortTermGoals', demoData.shortTermGoals);
     
-    toast.success('Demo data loaded! Review and adjust as needed.');
+    toast.success(t('formDemoSuccess'));
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -108,14 +114,11 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
     try {
       setIsSubmitting(true);
       
-      // console.log('Frontend - Submitting subject section data:', JSON.stringify(values, null, 2));
-      
       await apiClient.addSubjectSection(iepDocumentId, values);
-      toast.success('Subject section added successfully!');
+      toast.success(t('subjectAdded'));
       onSuccess?.();
     } catch (error: any) {
-      // console.error('Frontend - Error submitting subject section:', error);
-      toast.error(error.response?.data?.message || 'Failed to add subject section');
+      toast.error(error.response?.data?.message || t('loadFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -146,7 +149,7 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Subject Section</CardTitle>
+            <CardTitle>{t('subjectSectionHeader')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -154,19 +157,19 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
               name="subject"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Subject</FormLabel>
+                  <FormLabel>{t('formSubject')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select subject" />
+                        <SelectValue placeholder={t('formSelectSubject')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="ORAL_LANGUAGE">Oral Language</SelectItem>
-                      <SelectItem value="READING">Reading</SelectItem>
-                      <SelectItem value="WRITING">Writing</SelectItem>
-                      <SelectItem value="SPELLING">Spelling</SelectItem>
-                      <SelectItem value="MATH">Math</SelectItem>
+                      <SelectItem value="ORAL_LANGUAGE">{t('subjects.ORAL_LANGUAGE')}</SelectItem>
+                      <SelectItem value="READING">{t('subjects.READING')}</SelectItem>
+                      <SelectItem value="WRITING">{t('subjects.WRITING')}</SelectItem>
+                      <SelectItem value="SPELLING">{t('subjects.SPELLING')}</SelectItem>
+                      <SelectItem value="MATH">{t('subjects.MATH')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -179,10 +182,10 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
               name="presentLevelReceptive"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Present Level - Receptive Skills</FormLabel>
+                  <FormLabel>{t('formPresentLevelReceptive')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe current receptive skills and abilities"
+                      placeholder={t('formPresentLevelReceptivePlaceholder')}
                       rows={3}
                       {...field}
                     />
@@ -197,10 +200,10 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
               name="presentLevelExpressive"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Present Level - Expressive Skills</FormLabel>
+                  <FormLabel>{t('formPresentLevelExpressive')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe current expressive skills and abilities"
+                      placeholder={t('formPresentLevelExpressivePlaceholder')}
                       rows={3}
                       {...field}
                     />
@@ -211,9 +214,9 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
             />
 
             <div>
-              <FormLabel>Long-Term Goals</FormLabel>
+              <FormLabel>{t('formLongTermGoals')}</FormLabel>
               <FormDescription>
-                Measurable objectives with duration in months
+                {t('formLongTermGoalsDesc')}
               </FormDescription>
               
               {form.watch('longTermGoals')?.map((goal, index) => (
@@ -223,10 +226,10 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
                     name={`longTermGoals.${index}.objective`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Objective {index + 1}</FormLabel>
+                        <FormLabel>{t('formObjective')} {index + 1}</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Measurable objective"
+                            placeholder={t('formObjectivePlaceholder')}
                             rows={2}
                             {...field}
                           />
@@ -241,7 +244,7 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
                     name={`longTermGoals.${index}.durationMonths`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Duration (months)</FormLabel>
+                        <FormLabel>{t('formDurationMonths')}</FormLabel>
                         <FormControl>
                           <Input type="number" min="1" {...field} />
                         </FormControl>
@@ -257,21 +260,21 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
                       size="sm"
                       onClick={() => removeLongTermGoal(index)}
                     >
-                      Remove
+                      {t('formRemove')}
                     </Button>
                   </div>
                 </div>
               ))}
 
               <Button type="button" variant="outline" size="sm" onClick={addLongTermGoal}>
-                Add Long-Term Goal
+                {t('formAddLongTermGoal')}
               </Button>
             </div>
 
             <div>
-              <FormLabel>Short-Term Goals</FormLabel>
+              <FormLabel>{t('formShortTermGoals')}</FormLabel>
               <FormDescription>
-                Stepping stones with teacher assistance level
+                {t('formShortTermGoalsDesc')}
               </FormDescription>
               
               {form.watch('shortTermGoals')?.map((goal, index) => (
@@ -281,10 +284,10 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
                     name={`shortTermGoals.${index}.objective`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Objective {index + 1}</FormLabel>
+                        <FormLabel>{t('formObjective')} {index + 1}</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Stepping stone objective"
+                            placeholder={t('formShortTermObjectivePlaceholder')}
                             rows={2}
                             {...field}
                           />
@@ -299,18 +302,18 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
                     name={`shortTermGoals.${index}.teacherAssistanceLevel`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Teacher Assistance</FormLabel>
+                        <FormLabel>{t('formTeacherAssistance')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select assistance level" />
+                              <SelectValue placeholder={t('formSelectAssistance')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="INDEPENDENT">Independent</SelectItem>
-                            <SelectItem value="MINIMAL_ASSISTANCE">Minimal Assistance</SelectItem>
-                            <SelectItem value="MODERATE_ASSISTANCE">Moderate Assistance</SelectItem>
-                            <SelectItem value="MAXIMUM_ASSISTANCE">Maximum Assistance</SelectItem>
+                            <SelectItem value="INDEPENDENT">{t('assistanceLevels.INDEPENDENT')}</SelectItem>
+                            <SelectItem value="MINIMAL_ASSISTANCE">{t('assistanceLevels.MINIMAL_ASSISTANCE')}</SelectItem>
+                            <SelectItem value="MODERATE_ASSISTANCE">{t('assistanceLevels.MODERATE_ASSISTANCE')}</SelectItem>
+                            <SelectItem value="MAXIMUM_ASSISTANCE">{t('assistanceLevels.MAXIMUM_ASSISTANCE')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -325,14 +328,14 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
                       size="sm"
                       onClick={() => removeShortTermGoal(index)}
                     >
-                      Remove
+                      {t('formRemove')}
                     </Button>
                   </div>
                 </div>
               ))}
 
               <Button type="button" variant="outline" size="sm" onClick={addShortTermGoal}>
-                Add Short-Term Goal
+                {t('formAddShortTermGoal')}
               </Button>
             </div>
           </CardContent>
@@ -346,15 +349,15 @@ export function IEPSubjectSectionForm({ iepDocumentId, onSuccess, onCancel }: IE
             className="flex items-center gap-2"
           >
             <Sparkles className="h-4 w-4" />
-            Load Demo Data
+            {t('formLoadDemoData')}
           </Button>
           
           <div className="flex space-x-4">
             <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
+              {t('formCancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add Subject Section'}
+              {isSubmitting ? t('formAdding') : t('formAddSubjectSection')}
             </Button>
           </div>
         </div>

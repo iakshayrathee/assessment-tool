@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, Pencil, FileText, BookOpen, PenTool, Calculator } from 'lucide-react';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface AssessmentCardProps {
     assessment: {
@@ -54,12 +55,14 @@ const getAssessmentColor = (type: string) => {
     }
 };
 
-const getVersionLabel = (version?: number) => {
-    if (!version || version === 1) return 'Initial Assessment';
-    return `Reassessment (Version ${version})`;
-};
-
 export function AssessmentCard({ assessment, onView, onEdit }: AssessmentCardProps) {
+    const { t } = useTranslation(['assessments', 'educator']);
+    
+    const getVersionLabel = (version?: number) => {
+        if (!version || version === 1) return t('initialAssessment', { defaultValue: 'Initial Assessment' });
+        return t('reassessmentVersion', { defaultValue: 'Reassessment (Version {{version}})', version });
+    };
+
     const createdDate = typeof assessment.createdAt === 'string'
         ? new Date(assessment.createdAt)
         : assessment.createdAt;
@@ -80,14 +83,14 @@ export function AssessmentCard({ assessment, onView, onEdit }: AssessmentCardPro
                         </div>
                         <div>
                             <CardTitle className="text-lg">
-                                {assessment.type === 'formal' && (assessment.assessmentType || 'Formal Assessment')}
-                                {assessment.type === 'reading' && 'Reading Assessment'}
-                                {assessment.type === 'writing' && 'Writing Assessment'}
-                                {assessment.type === 'math' && 'Math Assessment'}
+                                {assessment.type === 'formal' && (assessment.assessmentType || t('formalAssessment', { defaultValue: 'Formal Assessment' }))}
+                                {assessment.type === 'reading' && t('readingAssessment', { defaultValue: 'Reading Assessment' })}
+                                {assessment.type === 'writing' && t('writingAssessment', { defaultValue: 'Writing Assessment' })}
+                                {assessment.type === 'math' && t('mathAssessment', { defaultValue: 'Math Assessment' })}
                             </CardTitle>
                             <p className="text-sm text-muted-foreground mt-1">
                                 {format(displayDate, 'MMM dd, yyyy')}
-                                {updatedDate && ' (Updated)'}
+                                {updatedDate && ` (${t('updated', { defaultValue: 'Updated' })})`}
                             </p>
                         </div>
                     </div>
@@ -102,13 +105,13 @@ export function AssessmentCard({ assessment, onView, onEdit }: AssessmentCardPro
                     <div className="space-y-2">
                         {assessment.diagnosis && (
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Diagnosis</p>
+                                <p className="text-xs font-medium text-muted-foreground">{t('diagnosis', { defaultValue: 'Diagnosis' })}</p>
                                 <p className="text-sm text-foreground">{assessment.diagnosis}</p>
                             </div>
                         )}
                         {assessment.keyFindings && (
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Key Findings</p>
+                                <p className="text-xs font-medium text-muted-foreground">{t('keyFindings', { defaultValue: 'Key Findings' })}</p>
                                 <p className="text-sm text-foreground line-clamp-2">{assessment.keyFindings}</p>
                             </div>
                         )}
@@ -120,7 +123,7 @@ export function AssessmentCard({ assessment, onView, onEdit }: AssessmentCardPro
                     <div>
                         {assessment.additionalNotes && (
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Notes</p>
+                                <p className="text-xs font-medium text-muted-foreground">{t('notes', { defaultValue: 'Notes' })}</p>
                                 <p className="text-sm text-foreground line-clamp-2">{assessment.additionalNotes}</p>
                             </div>
                         )}
@@ -136,7 +139,7 @@ export function AssessmentCard({ assessment, onView, onEdit }: AssessmentCardPro
                         className="flex-1"
                     >
                         <Eye className="h-4 w-4 mr-1" />
-                        View
+                        {t('view', { defaultValue: 'View' })}
                     </Button>
                     <Button
                         variant="default"
@@ -145,7 +148,7 @@ export function AssessmentCard({ assessment, onView, onEdit }: AssessmentCardPro
                         className="flex-1"
                     >
                         <Pencil className="h-4 w-4 mr-1" />
-                        Edit
+                        {t('edit', { defaultValue: 'Edit' })}
                     </Button>
                 </div>
             </CardContent>

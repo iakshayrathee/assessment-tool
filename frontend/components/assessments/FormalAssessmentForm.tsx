@@ -1,8 +1,9 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,29 +17,6 @@ import { VersionSelectionDialog } from './VersionSelectionDialog';
 import { apiClient } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { Upload, X } from 'lucide-react';
-
-const ASSESSMENT_TYPES = [
-  'Psychological Assessment',
-  'Educational Assessment',
-  'Speech and Language Assessment',
-  'Occupational Therapy Assessment',
-  'Behavioral Assessment',
-  'Neuropsychological Assessment',
-  'Other'
-];
-
-const DIAGNOSIS_OPTIONS = [
-  'Dyslexia',
-  'Dyscalculia',
-  'Dysgraphia',
-  'ADHD',
-  'Autism Spectrum Disorder',
-  'Specific Learning Disability',
-  'Language Disorder',
-  'Developmental Delay',
-  'Other',
-  'No Diagnosis'
-];
 
 const formSchema = z.object({
   assessmentType: z.string().min(1, 'Assessment type is required'),
@@ -72,12 +50,36 @@ export function FormalAssessmentForm({
   onSuccess,
   onCancel
 }: FormalAssessmentFormProps) {
+  const { t } = useTranslation('assessments');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>(initialData?.uploadedFiles || []);
   const [showVersionDialog, setShowVersionDialog] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<any>(null);
   
   const isViewMode = mode === 'view';
+
+  const ASSESSMENT_TYPES = [
+    { value: 'Psychological Assessment', label: t('psychological') },
+    { value: 'Educational Assessment', label: t('educational') },
+    { value: 'Speech and Language Assessment', label: t('speechLanguage') },
+    { value: 'Occupational Therapy Assessment', label: t('occupational') },
+    { value: 'Behavioral Assessment', label: t('behavioral') },
+    { value: 'Neuropsychological Assessment', label: t('neuropsychological') },
+    { value: 'Other', label: t('other') }
+  ];
+
+  const DIAGNOSIS_OPTIONS = [
+    { value: 'Dyslexia', label: t('dyslexia') },
+    { value: 'Dyscalculia', label: t('dyscalculia') },
+    { value: 'Dysgraphia', label: t('dysgraphia') },
+    { value: 'ADHD', label: t('adhd') },
+    { value: 'Autism Spectrum Disorder', label: t('autism') },
+    { value: 'Specific Learning Disability', label: t('sld') },
+    { value: 'Language Disorder', label: t('languageDisorder') },
+    { value: 'Developmental Delay', label: t('developmentalDelay') },
+    { value: 'Other', label: t('other') },
+    { value: 'No Diagnosis', label: t('noDiagnosis') }
+  ];
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -97,8 +99,6 @@ export function FormalAssessmentForm({
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      // In a real implementation, upload files to server and get URLs
-      // For now, just store file names
       const fileNames = Array.from(files).map(f => f.name);
       setUploadedFiles(prev => [...prev, ...fileNames]);
       toast.success(`${files.length} file(s) uploaded`);
@@ -126,11 +126,9 @@ export function FormalAssessmentForm({
     };
 
     if (mode === 'edit') {
-      // Show version selection dialog for edit mode
       setPendingFormData(data);
       setShowVersionDialog(true);
     } else {
-      // Direct save for create mode
       await saveAssessment(data, 'new-version', 1);
     }
   };
@@ -146,10 +144,10 @@ export function FormalAssessmentForm({
 
       if (mode === 'edit' && assessmentId) {
         await apiClient.updateFormalAssessment(assessmentId, payload);
-        toast.success('Formal assessment updated successfully!');
+        toast.success(t('assessmentSaved'));
       } else {
         await apiClient.createFormalAssessment(payload);
-        toast.success('Formal assessment created successfully!');
+        toast.success(t('assessmentSaved'));
       }
 
       setShowVersionDialog(false);
@@ -174,7 +172,7 @@ export function FormalAssessmentForm({
         {/* Referral Details */}
         <Card>
           <CardHeader>
-            <CardTitle>Referral Details</CardTitle>
+            <CardTitle>{t('referralDetails')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -182,17 +180,17 @@ export function FormalAssessmentForm({
               name="assessmentType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Assessment Type *</FormLabel>
+                  <FormLabel>{t('assessmentType')} *</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isViewMode}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select assessment type" />
+                        <SelectValue placeholder={t('selectAssessmentType')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {ASSESSMENT_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -207,10 +205,10 @@ export function FormalAssessmentForm({
               name="referralReason"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Referral Reason</FormLabel>
+                  <FormLabel>{t('observations')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe the reason for referral..."
+                      placeholder={t('referralReasonPlaceholder')}
                       {...field}
                       rows={3}
                       disabled={isViewMode}
@@ -226,9 +224,9 @@ export function FormalAssessmentForm({
               name="referredBy"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Referred By</FormLabel>
+                  <FormLabel>{t('conductedBy')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Name of person making the referral" {...field} disabled={isViewMode} />
+                    <Input placeholder={t('referredByPlaceholder')} {...field} disabled={isViewMode} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -240,9 +238,9 @@ export function FormalAssessmentForm({
               name="conductedBy"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Conducted By</FormLabel>
+                  <FormLabel>{t('conductedBy')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Name of professional conducting assessment" {...field} disabled={isViewMode} />
+                    <Input placeholder={t('conductedByPlaceholder')} {...field} disabled={isViewMode} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -254,9 +252,9 @@ export function FormalAssessmentForm({
               name="credentials"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Credentials</FormLabel>
+                  <FormLabel>{t('credentials')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Professional credentials (e.g., PhD, M.Ed)" {...field} disabled={isViewMode} />
+                    <Input placeholder={t('credentialsPlaceholder')} {...field} disabled={isViewMode} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -268,9 +266,9 @@ export function FormalAssessmentForm({
               name="clinicName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Clinic Name</FormLabel>
+                  <FormLabel>{t('clinicName')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Name of clinic or institution" {...field} disabled={isViewMode} />
+                    <Input placeholder={t('clinicNamePlaceholder')} {...field} disabled={isViewMode} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -282,12 +280,12 @@ export function FormalAssessmentForm({
               name="assessmentDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Assessment Date</FormLabel>
+                  <FormLabel>{t('date')}</FormLabel>
                   <FormControl>
                     <ProfessionalDatePicker
                       value={field.value || null}
                       onChange={field.onChange}
-                      placeholder="Select assessment date"
+                      placeholder={t('assessmentDatePlaceholder')}
                       disabled={isViewMode}
                     />
                   </FormControl>
@@ -301,7 +299,7 @@ export function FormalAssessmentForm({
         {/* Findings Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>Findings Summary</CardTitle>
+            <CardTitle>{t('findingsSummary')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -309,10 +307,10 @@ export function FormalAssessmentForm({
               name="keyFindings"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Key Findings</FormLabel>
+                  <FormLabel>{t('observations')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Summarize the key findings from the assessment..."
+                      placeholder={t('keyFindingsPlaceholder')}
                       {...field}
                       rows={4}
                       disabled={isViewMode}
@@ -328,17 +326,17 @@ export function FormalAssessmentForm({
               name="diagnosis"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Diagnosis</FormLabel>
+                  <FormLabel>{t('diagnosis')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isViewMode}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select diagnosis" />
+                        <SelectValue placeholder={t('selectDiagnosis')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {DIAGNOSIS_OPTIONS.map((diagnosis) => (
-                        <SelectItem key={diagnosis} value={diagnosis}>
-                          {diagnosis}
+                        <SelectItem key={diagnosis.value} value={diagnosis.value}>
+                          {diagnosis.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -353,10 +351,10 @@ export function FormalAssessmentForm({
               name="recommendations"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Recommendations</FormLabel>
+                  <FormLabel>{t('recommendations')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Provide recommendations based on the assessment..."
+                      placeholder={t('recommendationsPlaceholder')}
                       {...field}
                       rows={4}
                       disabled={isViewMode}
@@ -373,15 +371,15 @@ export function FormalAssessmentForm({
         {!isViewMode && (
           <Card>
             <CardHeader>
-              <CardTitle>Upload Files</CardTitle>
+              <CardTitle>{t('uploadFiles')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="file-upload" className="cursor-pointer">
                   <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
                     <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Click to upload PDF or images</p>
-                    <p className="text-xs text-muted-foreground mt-1">Multiple files supported</p>
+                    <p className="text-sm text-muted-foreground">{t('uploadFilesDesc')}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t('uploadFilesSub')}</p>
                   </div>
                 </Label>
                 <input
@@ -394,32 +392,32 @@ export function FormalAssessmentForm({
                 />
               </div>
 
-            {uploadedFiles.length > 0 && (
-              <div className="space-y-2">
-                <Label>Uploaded Files</Label>
-                {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-muted/40 rounded">
-                    <span className="text-sm">{file}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              {uploadedFiles.length > 0 && (
+                <div className="space-y-2">
+                  <Label>{t('uploadedFiles')}</Label>
+                  {uploadedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-muted/40 rounded">
+                      <span className="text-sm">{file}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
         
         {isViewMode && uploadedFiles.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Uploaded Files</CardTitle>
+              <CardTitle>{t('uploadedFiles')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -435,11 +433,11 @@ export function FormalAssessmentForm({
 
         <div className="flex justify-end space-x-4">
           <Button type="button" variant="outline" onClick={onCancel}>
-            {isViewMode ? 'Close' : 'Cancel'}
+            {isViewMode ? t('close') : t('cancel')}
           </Button>
           {!isViewMode && (
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : mode === 'edit' ? 'Update Assessment' : 'Save Assessment'}
+              {isSubmitting ? t('savingAssessment') : mode === 'edit' ? t('updateAssessment') : t('saveAssessment')}
             </Button>
           )}
         </div>
@@ -458,4 +456,3 @@ export function FormalAssessmentForm({
     </Form>
   );
 }
-

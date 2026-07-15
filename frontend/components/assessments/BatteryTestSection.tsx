@@ -1,9 +1,10 @@
-﻿import React, { useRef } from 'react';
+import React, { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Upload, FileText, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface BatteryTestSectionProps {
     conducted: boolean;
@@ -27,22 +28,26 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
     onReportUpload,
     onReportRemove,
     disabled = false,
-    title = 'Knowledcare Battery Test Results',
-    description = 'Optional: Document battery test results if conducted',
+    title,
+    description,
 }) => {
+    const { t } = useTranslation(['assessments', 'educator']);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const displayTitle = title || t('batteryTestResults', { defaultValue: 'Knowledcare Battery Test Results' });
+    const displayDescription = description !== undefined ? description : t('batteryTestDesc', { defaultValue: 'Optional: Document battery test results if conducted' });
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file && onReportUpload) {
             // Validate file type
             if (file.type !== 'application/pdf') {
-                alert('Please upload a PDF file only');
+                alert(t('alertPDFOnly', { defaultValue: 'Please upload a PDF file only' }));
                 return;
             }
             // Validate file size (max 10MB)
             if (file.size > 10 * 1024 * 1024) {
-                alert('File size must be less than 10MB');
+                alert(t('alertFileSize', { defaultValue: 'File size must be less than 10MB' }));
                 return;
             }
             onReportUpload(file);
@@ -54,10 +59,10 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
             <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                     <FileText className="h-5 w-5 text-primary" />
-                    {title}
+                    {displayTitle}
                 </CardTitle>
-                {description && (
-                    <p className="text-sm text-muted-foreground mt-1">{description}</p>
+                {displayDescription && (
+                    <p className="text-sm text-muted-foreground mt-1">{displayDescription}</p>
                 )}
             </CardHeader>
             <CardContent className="space-y-4">
@@ -75,7 +80,7 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
                         htmlFor="batteryTestConducted"
                         className="text-sm font-medium cursor-pointer"
                     >
-                        Battery Test Conducted
+                        {t('batteryTestConducted', { defaultValue: 'Battery Test Conducted' })}
                     </Label>
                 </div>
 
@@ -85,32 +90,32 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
                         {/* Summary Text Area */}
                         <div>
                             <Label htmlFor="batteryTestSummary">
-                                Test Summary {!disabled && <span className="text-destructive">*</span>}
+                                {t('testSummary', { defaultValue: 'Test Summary' })} {!disabled && <span className="text-destructive">*</span>}
                             </Label>
                             <Textarea
                                 id="batteryTestSummary"
                                 value={summary}
                                 onChange={(e) => onSummaryChange(e.target.value)}
-                                placeholder="Enter battery test results summary, key findings, and observations..."
+                                placeholder={t('testSummaryPlaceholder', { defaultValue: 'Enter battery test results summary, key findings, and observations...' })}
                                 disabled={disabled}
                                 className="mt-1"
                                 rows={4}
                             />
                             <p className="text-xs text-muted-foreground mt-1">
-                                Provide a comprehensive summary of the battery test results
+                                {t('testSummaryHint', { defaultValue: 'Provide a comprehensive summary of the battery test results' })}
                             </p>
                         </div>
 
                         {/* File Upload */}
                         {onReportUpload && (
                             <div>
-                                <Label>Test Report (Optional)</Label>
+                                <Label>{t('testReportOptional', { defaultValue: 'Test Report (Optional)' })}</Label>
                                 <div className="mt-2 space-y-2">
                                     {reportUrl ? (
                                         <div className="flex items-center justify-between p-3 border rounded-lg bg-background">
                                             <div className="flex items-center gap-2">
                                                 <FileText className="h-5 w-5 text-primary" />
-                                                <span className="text-sm font-medium">Report Uploaded</span>
+                                                <span className="text-sm font-medium">{t('reportUploaded', { defaultValue: 'Report Uploaded' })}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <Button
@@ -120,7 +125,7 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
                                                     onClick={() => window.open(reportUrl, '_blank')}
                                                     disabled={disabled}
                                                 >
-                                                    View
+                                                    {t('view', { defaultValue: 'View' })}
                                                 </Button>
                                                 {!disabled && onReportRemove && (
                                                     <Button
@@ -153,10 +158,10 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
                                                 className="w-full flex items-center justify-center gap-2"
                                             >
                                                 <Upload className="h-4 w-4" />
-                                                Upload PDF Report (Max 10MB)
+                                                {t('uploadPDFReport', { defaultValue: 'Upload PDF Report (Max 10MB)' })}
                                             </Button>
                                             <p className="text-xs text-muted-foreground mt-1">
-                                                Upload the battery test report in PDF format
+                                                {t('uploadPDFHint', { defaultValue: 'Upload the battery test report in PDF format' })}
                                             </p>
                                         </div>
                                     )}
@@ -168,7 +173,7 @@ export const BatteryTestSection: React.FC<BatteryTestSectionProps> = ({
 
                 {!conducted && (
                     <p className="text-sm text-muted-foreground italic">
-                        Check "Battery Test Conducted" to add test results
+                        {t('checkBatteryTestToStart', { defaultValue: 'Check "Battery Test Conducted" to add test results' })}
                     </p>
                 )}
             </CardContent>

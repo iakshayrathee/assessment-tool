@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { ReadingAssessmentFormData } from '../ReadingAssessmentWizard';
 
 interface Props {
@@ -28,6 +29,7 @@ interface AIInsightsData {
 }
 
 export function AIInsightsSection({ data, onChange, disabled, assessmentId, studentName, studentGrade }: Props) {
+  const { t } = useTranslation('assessments');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const insights: AIInsightsData = data.aiInsights || {};
@@ -89,7 +91,7 @@ export function AIInsightsSection({ data, onChange, disabled, assessmentId, stud
         aiInsightsStatus: 'AI_DRAFT',
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to generate insights');
+      setError(err.message || t('failedToGenerateInsights', { defaultValue: 'Failed to generate insights' }));
     } finally {
       setIsGenerating(false);
     }
@@ -102,18 +104,17 @@ export function AIInsightsSection({ data, onChange, disabled, assessmentId, stud
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-medium">AI-Powered Insights</h4>
+              <h4 className="font-medium">{t('aiPoweredInsightsTitle', { defaultValue: 'AI-Powered Insights' })}</h4>
               <p className="text-sm text-muted-foreground">
-                Generate diagnosis, recommendations, and intervention plan using AI.
-                All fields are editable after generation.
+                {t('aiPoweredInsightsDesc', { defaultValue: 'Generate diagnosis, recommendations, and intervention plan using AI. All fields are editable after generation.' })}
               </p>
             </div>
             {!disabled && (
               <Button onClick={generateInsights} disabled={isGenerating} variant="outline">
                 {isGenerating ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating...</>
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {t('generating', { defaultValue: 'Generating...' })}</>
                 ) : (
-                  <><Sparkles className="h-4 w-4 mr-2" /> Generate with AI</>
+                  <><Sparkles className="h-4 w-4 mr-2" /> {t('generateWithAI', { defaultValue: 'Generate with AI' })}</>
                 )}
               </Button>
             )}
@@ -128,8 +129,8 @@ export function AIInsightsSection({ data, onChange, disabled, assessmentId, stud
                 data.aiInsightsStatus === 'EDUCATOR_REVIEWED' ? 'bg-green-100 text-green-800' :
                 'bg-gray-100 text-gray-800'
               }`}>
-                {data.aiInsightsStatus === 'AI_DRAFT' ? '🤖 AI Draft' :
-                 data.aiInsightsStatus === 'EDUCATOR_REVIEWED' ? '✅ Educator Reviewed' :
+                {data.aiInsightsStatus === 'AI_DRAFT' ? t('aiDraftBadge', { defaultValue: '🤖 AI Draft' }) :
+                 data.aiInsightsStatus === 'EDUCATOR_REVIEWED' ? t('educatorReviewedBadge', { defaultValue: '✅ Educator Reviewed' }) :
                  data.aiInsightsStatus}
               </span>
             </div>
@@ -140,13 +141,13 @@ export function AIInsightsSection({ data, onChange, disabled, assessmentId, stud
       {/* A. Diagnosis Summary */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">A. Diagnosis Summary</CardTitle>
+          <CardTitle className="text-base">{t('diagnosisSummaryTitle', { defaultValue: 'A. Diagnosis Summary' })}</CardTitle>
         </CardHeader>
         <CardContent>
           <Textarea
             value={insights.diagnosisSummary || ''}
             onChange={(e) => updateInsight('diagnosisSummary', e.target.value)}
-            placeholder="Key issue (e.g., decoding deficit with fluency impact)..."
+            placeholder={t('diagnosisSummaryPlaceholder', { defaultValue: 'Key issue (e.g., decoding deficit with fluency impact)...' })}
             disabled={disabled}
             rows={3}
           />
@@ -156,13 +157,13 @@ export function AIInsightsSection({ data, onChange, disabled, assessmentId, stud
       {/* B. Recommendations */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">B. Recommendations</CardTitle>
+          <CardTitle className="text-base">{t('recommendationsTitle', { defaultValue: 'B. Recommendations' })}</CardTitle>
         </CardHeader>
         <CardContent>
           <Textarea
             value={insights.recommendations || ''}
             onChange={(e) => updateInsight('recommendations', e.target.value)}
-            placeholder="What to focus on (e.g., phonological awareness drills, repeated reading)..."
+            placeholder={t('recommendationsPlaceholder', { defaultValue: 'What to focus on (e.g., phonological awareness drills, repeated reading)...' })}
             disabled={disabled}
             rows={3}
           />
@@ -172,13 +173,13 @@ export function AIInsightsSection({ data, onChange, disabled, assessmentId, stud
       {/* C. Instructional Strategies */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">C. Instructional Strategies</CardTitle>
+          <CardTitle className="text-base">{t('instructionalStrategiesTitle', { defaultValue: 'C. Instructional Strategies' })}</CardTitle>
         </CardHeader>
         <CardContent>
           <Textarea
             value={insights.instructionalStrategies || ''}
             onChange={(e) => updateInsight('instructionalStrategies', e.target.value)}
-            placeholder="Phonics-based / repetition / guided reading / multisensory approach..."
+            placeholder={t('instructionalStrategiesPlaceholder', { defaultValue: 'Phonics-based / repetition / guided reading / multisensory approach...' })}
             disabled={disabled}
             rows={3}
           />
@@ -188,12 +189,12 @@ export function AIInsightsSection({ data, onChange, disabled, assessmentId, stud
       {/* D. Interventions */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">D. Interventions</CardTitle>
+          <CardTitle className="text-base">{t('interventionsTitle', { defaultValue: 'D. Interventions' })}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label>Program Type</Label>
+              <Label>{t('programTypeLabel', { defaultValue: 'Program Type' })}</Label>
               <Input
                 value={insights.interventions?.programType || ''}
                 onChange={(e) => updateNested('interventions', 'programType', e.target.value)}
@@ -203,7 +204,7 @@ export function AIInsightsSection({ data, onChange, disabled, assessmentId, stud
               />
             </div>
             <div>
-              <Label>Frequency</Label>
+              <Label>{t('frequencyLabel', { defaultValue: 'Frequency' })}</Label>
               <Input
                 value={insights.interventions?.frequency || ''}
                 onChange={(e) => updateNested('interventions', 'frequency', e.target.value)}
@@ -219,26 +220,26 @@ export function AIInsightsSection({ data, onChange, disabled, assessmentId, stud
       {/* E. Support Plan */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">E. Support Plan</CardTitle>
+          <CardTitle className="text-base">{t('supportPlanTitle', { defaultValue: 'E. Support Plan' })}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <Label>Classroom Support</Label>
+            <Label>{t('classroomSupportLabel', { defaultValue: 'Classroom Support' })}</Label>
             <Textarea
               value={insights.supportPlan?.classroom || ''}
               onChange={(e) => updateNested('supportPlan', 'classroom', e.target.value)}
-              placeholder="Classroom accommodations and support strategies..."
+              placeholder={t('classroomSupportPlaceholder', { defaultValue: 'Classroom accommodations and support strategies...' })}
               disabled={disabled}
               className="mt-1"
               rows={2}
             />
           </div>
           <div>
-            <Label>Home Plan</Label>
+            <Label>{t('homePlanLabel', { defaultValue: 'Home Plan' })}</Label>
             <Textarea
               value={insights.supportPlan?.home || ''}
               onChange={(e) => updateNested('supportPlan', 'home', e.target.value)}
-              placeholder="Parent-friendly activities and home reading strategies..."
+              placeholder={t('homePlanPlaceholder', { defaultValue: 'Parent-friendly activities and home reading strategies...' })}
               disabled={disabled}
               className="mt-1"
               rows={2}
@@ -250,26 +251,26 @@ export function AIInsightsSection({ data, onChange, disabled, assessmentId, stud
       {/* F. Learning Path */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">F. Learning Path</CardTitle>
+          <CardTitle className="text-base">{t('learningPathTitle', { defaultValue: 'F. Learning Path' })}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <Label>4-Week Goals</Label>
+            <Label>{t('fourWeekGoalsLabel', { defaultValue: '4-Week Goals' })}</Label>
             <Textarea
               value={insights.learningPath?.fourWeekGoals || ''}
               onChange={(e) => updateNested('learningPath', 'fourWeekGoals', e.target.value)}
-              placeholder="Short-term goals for the next 4 weeks..."
+              placeholder={t('fourWeekGoalsPlaceholder', { defaultValue: 'Short-term goals for the next 4 weeks...' })}
               disabled={disabled}
               className="mt-1"
               rows={2}
             />
           </div>
           <div>
-            <Label>3-Month Goals</Label>
+            <Label>{t('threeMonthGoalsLabel', { defaultValue: '3-Month Goals' })}</Label>
             <Textarea
               value={insights.learningPath?.threeMonthGoals || ''}
               onChange={(e) => updateNested('learningPath', 'threeMonthGoals', e.target.value)}
-              placeholder="Medium-term goals for the next 3 months..."
+              placeholder={t('threeMonthGoalsPlaceholder', { defaultValue: 'Medium-term goals for the next 3 months...' })}
               disabled={disabled}
               className="mt-1"
               rows={2}

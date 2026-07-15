@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Download, Eye, ChevronLeft, ChevronRight, Check, Save } from 'lucide-react';
@@ -198,6 +199,7 @@ export function ReadingAssessmentWizard({
   onSuccess,
   onCancel,
 }: ReadingAssessmentWizardProps) {
+  const { t } = useTranslation(['assessments', 'iep']);
   const [currentStep, setCurrentStep] = useState(initialData?.currentStep || 1);
   const [formData, setFormData] = useState<ReadingAssessmentFormData>(
     initialData ? mapInitialData(initialData) : { assessmentDate: new Date().toISOString().split('T')[0] }
@@ -208,6 +210,23 @@ export function ReadingAssessmentWizard({
   const [autoSaveTimer, setAutoSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
   const isViewMode = mode === 'view';
+
+  const STEPS = [
+    { id: 1, title: t('basicInfo'), shortTitle: 'Info' },
+    { id: 2, title: t('readingContext'), shortTitle: 'Context' },
+    { id: 3, title: t('readingResources'), shortTitle: 'Resources' },
+    { id: 4, title: t('readingBehavior'), shortTitle: 'Behavior' },
+    { id: 5, title: t('readingSkills'), shortTitle: 'Skills' },
+    { id: 6, title: t('comprehension'), shortTitle: 'Comp.' },
+    { id: 7, title: t('errorAnalysis'), shortTitle: 'Errors' },
+    { id: 8, title: t('strengths'), shortTitle: 'Strengths' },
+    { id: 9, title: t('challenges'), shortTitle: 'Challenges' },
+    { id: 10, title: t('redFlags'), shortTitle: 'Flags' },
+    { id: 11, title: t('levelClassification'), shortTitle: 'Level' },
+    { id: 12, title: t('gradeLevelMapping'), shortTitle: 'Grade' },
+    { id: 13, title: t('aiInsightsDesc'), shortTitle: 'AI Plan' },
+    { id: 14, title: t('progressTracking'), shortTitle: 'Progress' },
+  ];
 
   const studentDetails = savedAssessment?.student || null;
   const educatorDetails = savedAssessment?.specialEducator || null;
@@ -281,13 +300,13 @@ export function ReadingAssessmentWizard({
       let response;
       if (mode === 'edit' && assessmentId) {
         response = await apiClient.updateReadingSkillAssessment(assessmentId, payload);
-        toast.success('Reading assessment updated successfully!');
+        toast.success(t('assessmentSaved'));
       } else if (savedAssessment?.id) {
         response = await apiClient.updateReadingSkillAssessment(savedAssessment.id, payload);
-        toast.success('Reading assessment saved!');
+        toast.success(t('assessmentSaved'));
       } else {
         response = await apiClient.createReadingSkillAssessment(payload);
-        toast.success('Reading assessment created!');
+        toast.success(t('assessmentSaved'));
       }
 
       setSavedAssessment(response.data || response);
@@ -316,7 +335,7 @@ export function ReadingAssessmentWizard({
       // Then mark complete
       const response = await apiClient.completeReadingSkillAssessment(id);
       setSavedAssessment(response.data || response);
-      toast.success('Reading assessment completed!');
+      toast.success(t('assessmentSubmitted'));
       setShowPreview(true);
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to complete assessment');
@@ -393,9 +412,9 @@ export function ReadingAssessmentWizard({
         <CardContent className="pt-6 pb-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold">
-              Reading Assessment — Step {currentStep} of 14
+              {t('reading')} — {t('page')} {currentStep} {t('of')} 14
             </h2>
-            <span className="text-sm text-muted-foreground">{progress}% Complete</span>
+            <span className="text-sm text-muted-foreground">{progress}% {t('statusCompleted', { ns: 'iep' })}</span>
           </div>
           <Progress value={progress} className="h-2 mb-4" />
 
@@ -428,7 +447,7 @@ export function ReadingAssessmentWizard({
         {!isViewMode && (
           <Button variant="outline" size="sm" onClick={handleSave} disabled={isSubmitting}>
             <Save className="h-3.5 w-3.5 mr-1.5" />
-            {isSubmitting ? 'Saving...' : 'Save Draft'}
+            {isSubmitting ? t('savingAssessment') : t('saveDraft')}
           </Button>
         )}
       </div>
@@ -441,32 +460,32 @@ export function ReadingAssessmentWizard({
         <div>
           {currentStep > 1 && (
             <Button variant="outline" onClick={goPrev}>
-              <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+              <ChevronLeft className="h-4 w-4 mr-1" /> {t('previous')}
             </Button>
           )}
         </div>
 
         <div className="flex gap-3">
           <Button variant="outline" onClick={onCancel}>
-            {isViewMode ? 'Close' : 'Cancel'}
+            {isViewMode ? t('close') : t('cancel')}
           </Button>
 
           {isViewMode && (
             <Button onClick={() => setShowPreview(true)}>
-              <Eye className="h-4 w-4 mr-1" /> View Report
+              <Eye className="h-4 w-4 mr-1" /> {t('viewReport')}
             </Button>
           )}
 
           {!isViewMode && currentStep < 14 && (
             <Button onClick={goNext}>
-              Next <ChevronRight className="h-4 w-4 ml-1" />
+              {t('next')} <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           )}
 
           {!isViewMode && currentStep === 14 && (
             <Button onClick={handleComplete} disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
               <Check className="h-4 w-4 mr-1" />
-              {isSubmitting ? 'Completing...' : 'Complete Assessment'}
+              {isSubmitting ? t('completing') : t('completeAssessment')}
             </Button>
           )}
         </div>
@@ -476,7 +495,7 @@ export function ReadingAssessmentWizard({
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Reading Assessment Report</DialogTitle>
+            <DialogTitle>{t('readingAssessmentReport')}</DialogTitle>
           </DialogHeader>
           <div ref={reportRef}>
             <ReadingAssessmentPreview
@@ -488,10 +507,10 @@ export function ReadingAssessmentWizard({
           </div>
           <div className="flex justify-end space-x-4 pt-4">
             <Button variant="outline" onClick={() => { setShowPreview(false); if (!isViewMode) onSuccess?.(); }}>
-              Close
+              {t('close')}
             </Button>
             <Button onClick={downloadPDF}>
-              <Download className="h-4 w-4 mr-2" /> Download PDF
+              <Download className="h-4 w-4 mr-2" /> {t('downloadPDF')}
             </Button>
           </div>
         </DialogContent>

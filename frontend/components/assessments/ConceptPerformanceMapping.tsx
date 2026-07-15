@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslation } from 'react-i18next';
 import {
     Select,
     SelectContent,
@@ -31,10 +32,12 @@ export const ConceptPerformanceMapping: React.FC<ConceptPerformanceMappingProps>
     disabled = false,
     showErrorPattern = true,
 }) => {
+    const { t } = useTranslation('assessments');
+
     const performanceLevels = [
-        { value: 'Independent', label: 'Independent', color: 'text-success' },
-        { value: 'Instructional', label: 'Instructional', color: 'text-warning' },
-        { value: 'Frustration', label: 'Frustration', color: 'text-destructive' },
+        { value: 'Independent', label: t('independentLevel', { defaultValue: 'Independent' }), color: 'text-success' },
+        { value: 'Instructional', label: t('instructionalLevel', { defaultValue: 'Instructional' }), color: 'text-warning' },
+        { value: 'Frustration', label: t('frustrationLevel', { defaultValue: 'Frustration' }), color: 'text-destructive' },
     ];
 
     const getPerformanceColor = (performance: string) => {
@@ -42,16 +45,21 @@ export const ConceptPerformanceMapping: React.FC<ConceptPerformanceMappingProps>
         return level?.color || 'text-muted-foreground';
     };
 
+    const getPerformanceLabel = (performance: string) => {
+        const level = performanceLevels.find((l) => l.value === performance);
+        return level?.label || performance;
+    };
+
     return (
         <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold">{concept}</CardTitle>
+                <CardTitle className="text-base font-semibold">{t('concept.' + concept, concept)}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 {/* Performance Status Dropdown */}
                 <div>
                     <Label htmlFor={`${concept}-performance`}>
-                        Performance Status {!disabled && <span className="text-destructive">*</span>}
+                        {t('performanceStatus', { defaultValue: 'Performance Status' })} {!disabled && <span className="text-destructive">*</span>}
                     </Label>
                     <Select
                         value={value.performance}
@@ -62,10 +70,10 @@ export const ConceptPerformanceMapping: React.FC<ConceptPerformanceMappingProps>
                             id={`${concept}-performance`}
                             className={`mt-1 ${getPerformanceColor(value.performance)}`}
                         >
-                            <SelectValue placeholder="Select performance level" />
+                            <SelectValue placeholder={t('selectPerformanceLevel', { defaultValue: 'Select performance level' })} />
                         </SelectTrigger>
                         <SelectContent>
-                            {performanceLevels.map((level) => (
+                          {performanceLevels.map((level) => (
                                 <SelectItem key={level.value} value={level.value} className={level.color}>
                                     {level.label}
                                 </SelectItem>
@@ -77,13 +85,13 @@ export const ConceptPerformanceMapping: React.FC<ConceptPerformanceMappingProps>
                 {/* Summary Text Area */}
                 <div>
                     <Label htmlFor={`${concept}-summary`}>
-                        Performance Summary {!disabled && <span className="text-destructive">*</span>}
+                        {t('performanceSummary', { defaultValue: 'Performance Summary' })} {!disabled && <span className="text-destructive">*</span>}
                     </Label>
                     <Textarea
                         id={`${concept}-summary`}
                         value={value.summary}
                         onChange={(e) => onChange({ ...value, summary: e.target.value })}
-                        placeholder={`Describe the student's performance in ${concept}...`}
+                        placeholder={t('describePerformancePlaceholder', { defaultValue: "Describe the student's performance in {{concept}}...", concept: t('concept.' + concept, concept) })}
                         disabled={disabled}
                         className="mt-1"
                         rows={3}
@@ -93,12 +101,12 @@ export const ConceptPerformanceMapping: React.FC<ConceptPerformanceMappingProps>
                 {/* Error Pattern (Optional) */}
                 {showErrorPattern && (
                     <div>
-                        <Label htmlFor={`${concept}-errorPattern`}>Error Pattern (Optional)</Label>
+                        <Label htmlFor={`${concept}-errorPattern`}>{t('errorPatternOptional', { defaultValue: 'Error Pattern (Optional)' })}</Label>
                         <Textarea
                             id={`${concept}-errorPattern`}
                             value={value.errorPattern || ''}
                             onChange={(e) => onChange({ ...value, errorPattern: e.target.value })}
-                            placeholder="Document common error patterns or mistakes..."
+                            placeholder={t('documentErrorsPlaceholder', { defaultValue: 'Document common error patterns or mistakes...' })}
                             disabled={disabled}
                             className="mt-1"
                             rows={2}
@@ -118,7 +126,7 @@ export const ConceptPerformanceMapping: React.FC<ConceptPerformanceMappingProps>
                                 }`}
                         />
                         <span className={getPerformanceColor(value.performance)}>
-                            {value.performance} Level
+                            {getPerformanceLabel(value.performance)} {t('levelIndicator', { defaultValue: 'Level' })}
                         </span>
                     </div>
                 )}
@@ -145,9 +153,10 @@ export const MultiConceptMapping: React.FC<MultiConceptMappingProps> = ({
     disabled = false,
     showErrorPattern = true,
 }) => {
+    const { t } = useTranslation('assessments');
     return (
         <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground border-b pb-2">{title}</h3>
+            <h3 className="text-lg font-semibold text-foreground border-b pb-2">{t('conceptTitle.' + title, title)}</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {concepts.map((concept) => (
                     <ConceptPerformanceMapping

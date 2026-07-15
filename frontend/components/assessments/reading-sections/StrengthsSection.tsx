@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslation } from 'react-i18next';
 import type { ReadingAssessmentFormData } from '../ReadingAssessmentWizard';
 
 interface Props {
@@ -11,20 +12,22 @@ interface Props {
   disabled?: boolean;
 }
 
-const STRENGTH_OPTIONS = [
-  { key: 'strongPhonics', label: 'Strong Phonics' },
-  { key: 'goodMemory', label: 'Good Memory' },
-  { key: 'goodComprehension', label: 'Good Comprehension' },
-  { key: 'expressiveReading', label: 'Expressive Reading' },
-  { key: 'visualLearner', label: 'Visual Learner' },
-  { key: 'auditoryLearner', label: 'Auditory Learner' },
-  { key: 'goodVocabulary', label: 'Good Vocabulary' },
-  { key: 'strongOralLanguage', label: 'Strong Oral Language' },
-  { key: 'motivatedReader', label: 'Motivated Reader' },
-  { key: 'goodAttentionSpan', label: 'Good Attention Span' },
-];
-
 export function StrengthsSection({ data, onChange, disabled }: Props) {
+  const { t } = useTranslation('assessments');
+
+  const STRENGTH_OPTIONS = [
+    { key: 'strongPhonics', label: t('strongPhonics', { defaultValue: 'Strong Phonics' }) },
+    { key: 'goodMemory', label: t('goodMemory', { defaultValue: 'Good Memory' }) },
+    { key: 'goodComprehension', label: t('goodComprehension', { defaultValue: 'Good Comprehension' }) },
+    { key: 'expressiveReading', label: t('expressiveReading', { defaultValue: 'Expressive Reading' }) },
+    { key: 'visualLearner', label: t('visualLearner', { defaultValue: 'Visual Learner' }) },
+    { key: 'auditoryLearner', label: t('auditoryLearner', { defaultValue: 'Auditory Learner' }) },
+    { key: 'goodVocabulary', label: t('goodVocabulary', { defaultValue: 'Good Vocabulary' }) },
+    { key: 'strongOralLanguage', label: t('strongOralLanguage', { defaultValue: 'Strong Oral Language' }) },
+    { key: 'motivatedReader', label: t('motivatedReader', { defaultValue: 'Motivated Reader' }) },
+    { key: 'goodAttentionSpan', label: t('goodAttentionSpan', { defaultValue: 'Good Attention Span' }) },
+  ];
+
   const strengths = data.strengths || { selected: [], educatorNotes: '' };
 
   const toggleStrength = (key: string) => {
@@ -38,8 +41,8 @@ export function StrengthsSection({ data, onChange, disabled }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Multi-select + Notes</CardTitle>
-        <p className="text-sm text-muted-foreground">Identify the student&apos;s reading strengths.</p>
+        <CardTitle className="text-base">{t('multiSelectNotes', { defaultValue: 'Multi-select + Notes' })}</CardTitle>
+        <p className="text-sm text-muted-foreground">{t('identifyStrengthsTitle', { defaultValue: "Identify the student's reading strengths." })}</p>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -58,11 +61,11 @@ export function StrengthsSection({ data, onChange, disabled }: Props) {
         </div>
 
         <div>
-          <Label>Educator Notes</Label>
+          <Label>{t('educatorNotes', { defaultValue: 'Educator Notes' })}</Label>
           <Textarea
             value={strengths.educatorNotes || ''}
             onChange={(e) => onChange({ strengths: { ...strengths, educatorNotes: e.target.value } })}
-            placeholder="Additional observations about the student's strengths..."
+            placeholder={t('strengthsPlaceholder', { defaultValue: "Additional observations about the student's strengths..." })}
             disabled={disabled}
             className="mt-1"
             rows={4}

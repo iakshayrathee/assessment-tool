@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { useTranslation } from 'react-i18next';
 import type { ReadingAssessmentFormData } from '../ReadingAssessmentWizard';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function ProgressTrackingSection({ data, onChange, disabled }: Props) {
+  const { t } = useTranslation('assessments');
   const progress = data.progressTracking || {};
 
   const updateProgress = (field: string, value: any) => {
@@ -33,38 +35,38 @@ export function ProgressTrackingSection({ data, onChange, disabled }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Baseline, Reassessment & Improvement</CardTitle>
+        <CardTitle className="text-base">{t('baselineReassessmentTitle', { defaultValue: 'Baseline, Reassessment & Improvement' })}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Track progress over time. Improvement % is auto-calculated.
+          {t('baselineReassessmentDesc', { defaultValue: 'Track progress over time. Improvement % is auto-calculated.' })}
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Score Tracking */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <Label>Baseline Score</Label>
+            <Label>{t('baselineScoreLabel', { defaultValue: 'Baseline Score' })}</Label>
             <Input
               type="number" min={0} max={100}
               value={progress.baselineScore ?? ''}
               onChange={(e) => updateProgress('baselineScore', e.target.value ? Number(e.target.value) : undefined)}
-              placeholder="Initial score (0-100)"
+              placeholder={t('baselineScorePlaceholder', { defaultValue: 'Initial score (0-100)' })}
               disabled={disabled}
               className="mt-1"
             />
           </div>
           <div>
-            <Label>Current Score</Label>
+            <Label>{t('currentScoreLabel', { defaultValue: 'Current Score' })}</Label>
             <Input
               type="number" min={0} max={100}
               value={progress.currentScore ?? ''}
               onChange={(e) => updateProgress('currentScore', e.target.value ? Number(e.target.value) : undefined)}
-              placeholder="Current score (0-100)"
+              placeholder={t('currentScorePlaceholder', { defaultValue: 'Current score (0-100)' })}
               disabled={disabled}
               className="mt-1"
             />
           </div>
           <div>
-            <Label>Improvement %</Label>
+            <Label>{t('improvementPercentLabel', { defaultValue: 'Improvement %' })}</Label>
             <Input
               value={improvement !== undefined ? `${improvement}%` : ''}
               disabled
@@ -86,9 +88,9 @@ export function ProgressTrackingSection({ data, onChange, disabled }: Props) {
               {improvement > 0 ? '↑' : improvement < 0 ? '↓' : '→'} {Math.abs(improvement)}%
             </p>
             <p className="text-sm mt-1">
-              {improvement > 0 ? 'Improvement from baseline' :
-               improvement < 0 ? 'Regression from baseline' :
-               'No change from baseline'}
+              {improvement > 0 ? t('improvementFromBaseline', { defaultValue: 'Improvement from baseline' }) :
+               improvement < 0 ? t('regressionFromBaseline', { defaultValue: 'Regression from baseline' }) :
+               t('noChangeFromBaseline', { defaultValue: 'No change from baseline' })}
             </p>
           </div>
         )}
@@ -96,18 +98,18 @@ export function ProgressTrackingSection({ data, onChange, disabled }: Props) {
         {/* Session Tracking */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Sessions Completed</Label>
+            <Label>{t('sessionsCompletedLabel', { defaultValue: 'Sessions Completed' })}</Label>
             <Input
               type="number" min={0}
               value={progress.sessionsCompleted ?? ''}
               onChange={(e) => updateProgress('sessionsCompleted', e.target.value ? Number(e.target.value) : undefined)}
-              placeholder="Number of sessions"
+              placeholder={t('sessionsCompletedPlaceholder', { defaultValue: 'Number of sessions' })}
               disabled={disabled}
               className="mt-1"
             />
           </div>
           <div>
-            <Label>Reassessment Date</Label>
+            <Label>{t('reassessmentDateLabel', { defaultValue: 'Reassessment Date' })}</Label>
             <Input
               type="date"
               value={progress.reassessmentDate || ''}

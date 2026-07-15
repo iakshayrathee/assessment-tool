@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,17 +23,17 @@ const DOMAINS = [
   'Reading', 'Writing', 'Math', 'Visual Perception', 'Motor Skills', 'Attention', 'Communication', 'Social Skills'
 ];
 
-const formSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  studentId: z.string().min(1, 'Student is required'),
-  durationMonths: z.coerce.number().min(1, 'Duration must be at least 1 month'),
+const getFormSchema = (t: any) => z.object({
+  title: z.string().min(1, t('formTitleRequired')),
+  studentId: z.string().min(1, t('formStudentRequired')),
+  durationMonths: z.coerce.number().min(1, t('formDurationMin')),
   startDate: z.date({
-    required_error: 'Start date is required',
+    required_error: t('formStartDateRequired'),
   }),
   endDate: z.date({
-    required_error: 'End date is required',
+    required_error: t('formEndDateRequired'),
   }),
-  areasOfRemediation: z.array(z.string()).min(1, 'Select at least one area of remediation'),
+  areasOfRemediation: z.array(z.string()).min(1, t('formAreasRequired')),
   status: z.enum(['DRAFT', 'ACTIVE', 'COMPLETED', 'ARCHIVED']).optional(),
 });
 
@@ -44,9 +45,12 @@ interface IEPDocumentFormProps {
 
 export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFormProps) {
   const { user } = useAuth();
+  const { t } = useTranslation('iep');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAiBanner, setShowAiBanner] = useState(false);
   const aiAppliedRef = useRef(false);
+
+  const formSchema = getFormSchema(t);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -111,7 +115,6 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
     try {
       setIsSubmitting(true);
       
-      // Don't send specialEducatorId - it will be extracted from the authenticated user on the backend
       const documentData = {
         title: values.title,
         studentId: values.studentId,
@@ -123,11 +126,11 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
       };
 
       await apiClient.createIEPDocument(documentData);
-      toast.success('IEP document created successfully!');
+      toast.success(t('formSuccessCreated'));
       onSuccess?.();
     } catch (error: any) {
       console.error('Create IEP error:', error);
-      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to create IEP document');
+      toast.error(error.response?.data?.error || error.response?.data?.message || t('formFailedCreate'));
     } finally {
       setIsSubmitting(false);
     }
@@ -138,7 +141,7 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>IEP Header Information</CardTitle>
+            <CardTitle>{t('formHeaderInfo')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* AI Pre-fill Banner */}
@@ -146,7 +149,7 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
               <div className="flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg px-4 py-2.5">
                 <div className="flex items-center gap-2 text-sm text-indigo-700">
                   <Sparkles className="h-4 w-4" />
-                  <span>Areas pre-filled from AI assessment analysis — all fields are editable</span>
+                  <span>{t('formAiPreFill')}</span>
                 </div>
                 <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-indigo-400 hover:text-primary" onClick={() => setShowAiBanner(false)}>
                   <X className="h-3.5 w-3.5" />
@@ -156,7 +159,7 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
             {watchedStudentId && aiAssessment.isLoading && (
               <div className="flex items-center gap-2 text-sm text-indigo-500 px-1">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Analyzing student data with AI...</span>
+                <span>{t('formAiAnalyzing')}</span>
               </div>
             )}
             <FormField
@@ -164,9 +167,9 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>IEP Title</FormLabel>
+                  <FormLabel>{t('formTitle')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter IEP title" {...field} />
+                    <Input placeholder={t('formTitlePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -178,11 +181,11 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
               name="studentId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Student</FormLabel>
+                  <FormLabel>{t('formStudent')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select student" />
+                        <SelectValue placeholder={t('formSelectStudent')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -203,7 +206,7 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
               name="durationMonths"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Duration (months)</FormLabel>
+                  <FormLabel>{t('formDurationMonths')}</FormLabel>
                   <FormControl>
                     <Input type="number" min="1" {...field} />
                   </FormControl>
@@ -218,12 +221,12 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
                 name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
+                    <FormLabel>{t('formStartDate')}</FormLabel>
                     <FormControl>
                       <ProfessionalDatePicker
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Select start date"
+                        placeholder={t('formSelectStartDate')}
                       />
                     </FormControl>
                     <FormMessage />
@@ -236,12 +239,12 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
                 name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End Date</FormLabel>
+                    <FormLabel>{t('formEndDate')}</FormLabel>
                     <FormControl>
                       <ProfessionalDatePicker
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Select end date"
+                        placeholder={t('formSelectEndDate')}
                       />
                     </FormControl>
                     <FormMessage />
@@ -255,9 +258,9 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
               name="areasOfRemediation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Areas of Remediation</FormLabel>
+                  <FormLabel>{t('formAreasOfRemediation')}</FormLabel>
                   <FormDescription>
-                    Select all areas that require remediation for this student
+                    {t('formAreasOfRemediationDesc')}
                   </FormDescription>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
                     {DOMAINS.map((domain) => (
@@ -277,7 +280,7 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
                           className="h-4 w-4 rounded border-border text-primary focus:ring-blue-500"
                         />
                         <Label htmlFor={domain} className="text-sm font-normal cursor-pointer">
-                          {domain}
+                          {t(`domains.${domain}`)}
                         </Label>
                       </div>
                     ))}
@@ -292,22 +295,22 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Status</FormLabel>
+                  <FormLabel>{t('formStatus')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
+                        <SelectValue placeholder={t('formSelectStatus')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="DRAFT">Draft</SelectItem>
-                      <SelectItem value="ACTIVE">Active</SelectItem>
-                      <SelectItem value="COMPLETED">Completed</SelectItem>
-                      <SelectItem value="ARCHIVED">Archived</SelectItem>
+                      <SelectItem value="DRAFT">{t('formStatusDraft')}</SelectItem>
+                      <SelectItem value="ACTIVE">{t('formStatusActive')}</SelectItem>
+                      <SelectItem value="COMPLETED">{t('formStatusCompleted')}</SelectItem>
+                      <SelectItem value="ARCHIVED">{t('formStatusArchived')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Set to Active when ready to implement
+                    {t('formStatusDesc')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -318,10 +321,10 @@ export function IEPDocumentForm({ students, onSuccess, onCancel }: IEPDocumentFo
 
         <div className="flex justify-end space-x-4">
           <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
+            {t('formCancel')}
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Creating...' : 'Create IEP Document'}
+            {isSubmitting ? t('formCreating') : t('formCreateDocument')}
           </Button>
         </div>
       </form>

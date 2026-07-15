@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,15 +33,42 @@ const getVersionLabel = (version?: number, isFirst?: boolean) => {
   return `Reassessment V${version}`;
 };
 
-export default function AssessmentsPage() {
+function AssessmentsContent() {
   const { user } = useAuth();
   const { t } = useTranslation('educator');
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [assessmentTab, setAssessmentTab] = useState('formal');
   const [showFormalForm, setShowFormalForm] = useState(false);
   const [showSkillAssessment, setShowSkillAssessment] = useState<'reading' | 'writing' | 'math' | null>(null);
   const [showStudentModal, setShowStudentModal] = useState(false);
+
+  const tabParam = searchParams.get('tab');
+  const skillParam = searchParams.get('skill');
+
+  useEffect(() => {
+    if (tabParam && ['formal', 'skill'].includes(tabParam)) {
+      setAssessmentTab(tabParam);
+    }
+    if (skillParam && ['reading', 'writing', 'math'].includes(skillParam)) {
+      setShowSkillAssessment(skillParam as any);
+    } else if (tabParam === 'skill' && !skillParam) {
+      setShowSkillAssessment(null);
+    }
+  }, [tabParam, skillParam]);
+
+  const handleTabChange = (val: string) => {
+    setAssessmentTab(val);
+    router.replace(`/educator/assessments?tab=${val}`);
+  };
+
+  const handleCancelSkill = () => {
+    setShowSkillAssessment(null);
+    setEditingAssessment(null);
+    router.replace('/educator/assessments?tab=skill');
+  };
 
   const [formalAssessments, setFormalAssessments] = useState<any[]>([]);
   const [readingAssessments, setReadingAssessments] = useState<any[]>([]);
@@ -238,6 +266,7 @@ export default function AssessmentsPage() {
     setShowFormalForm(false);
     setShowSkillAssessment(null);
     setEditingAssessment(null);
+    router.replace(`/educator/assessments?tab=${assessmentTab}`);
   };
 
   const renderAssessmentTable = (assessments: any[], type: string) => {
@@ -366,7 +395,7 @@ export default function AssessmentsPage() {
       )}
 
       {selectedStudent?.id ? (
-        <Tabs value={assessmentTab} onValueChange={setAssessmentTab}>
+        <Tabs value={assessmentTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="formal">
               <FileText className="h-4 w-4 mr-2" />
@@ -411,10 +440,7 @@ export default function AssessmentsPage() {
                     initialData={editingAssessment?.type === 'reading' ? editingAssessment : undefined}
                     mode={editingAssessment?.type === 'reading' ? (editingAssessment?.mode || 'edit') : 'create'}
                     onSuccess={handleAssessmentSuccess}
-                    onCancel={() => {
-                      setShowSkillAssessment(null);
-                      setEditingAssessment(null);
-                    }}
+                    onCancel={handleCancelSkill}
                   />
                 )}
                 {showSkillAssessment === 'writing' && (
@@ -425,10 +451,7 @@ export default function AssessmentsPage() {
                     initialData={editingAssessment?.type === 'writing' ? editingAssessment : undefined}
                     mode={editingAssessment?.type === 'writing' ? (editingAssessment?.mode || 'edit') : 'create'}
                     onSuccess={handleAssessmentSuccess}
-                    onCancel={() => {
-                      setShowSkillAssessment(null);
-                      setEditingAssessment(null);
-                    }}
+                    onCancel={handleCancelSkill}
                   />
                 )}
                 {showSkillAssessment === 'math' && (
@@ -439,10 +462,7 @@ export default function AssessmentsPage() {
                     initialData={editingAssessment?.type === 'math' ? editingAssessment : undefined}
                     mode={editingAssessment?.type === 'math' ? (editingAssessment?.mode || 'edit') : 'create'}
                     onSuccess={handleAssessmentSuccess}
-                    onCancel={() => {
-                      setShowSkillAssessment(null);
-                      setEditingAssessment(null);
-                    }}
+                    onCancel={handleCancelSkill}
                   />
                 )}
               </div>
@@ -570,5 +590,17 @@ export default function AssessmentsPage() {
         assessmentTypeName={pendingAssessmentType || ''}
       />
     </PageWrapper>
+  );
+}
+
+export default function AssessmentsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <AssessmentsContent />
+    </Suspense>
   );
 }

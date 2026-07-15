@@ -1,10 +1,11 @@
-﻿import React from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface GradeLevelMapping {
   gradeLevel: string;
@@ -28,9 +29,12 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
   onChange,
   maxMappings = 4,
   disabled = false,
-  title = 'Grade Level Mapping',
+  title,
   showSummaryNote = false,
 }) => {
+  const { t } = useTranslation('assessments');
+  const displayTitle = title || t('gradeLevelMapping', { defaultValue: 'Grade Level Mapping' });
+
   const addMapping = () => {
     if (mappings.length < maxMappings) {
       onChange([
@@ -60,7 +64,7 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{title}</CardTitle>
+          <CardTitle className="text-lg">{displayTitle}</CardTitle>
           {!disabled && mappings.length < maxMappings && (
             <Button
               type="button"
@@ -70,7 +74,7 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
               className="flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
-              Add Grade Level (Max {maxMappings})
+              {t('addGradeLevel', { defaultValue: 'Add Grade Level' })} (Max {maxMappings})
             </Button>
           )}
         </div>
@@ -78,7 +82,7 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
       <CardContent className="space-y-4">
         {mappings.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-4">
-            No grade levels added yet. Click "Add Grade Level" to begin.
+            {t('noGradeLevelsYet', { defaultValue: 'No grade levels added yet. Click "Add Grade Level" to begin.' })}
           </p>
         )}
 
@@ -86,7 +90,9 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
           <Card key={index} className="border-2">
             <CardContent className="pt-4">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-semibold text-sm">Grade Level {index + 1}</h4>
+                <h4 className="font-semibold text-sm">
+                  {t('gradeLevelOrdinal', { defaultValue: 'Grade Level {{count}}', count: index + 1 })}
+                </h4>
                 {!disabled && (
                   <Button
                     type="button"
@@ -102,19 +108,19 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
 
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <Label htmlFor={`gradeLevel-${index}`}>Grade Level *</Label>
+                  <Label htmlFor={`gradeLevel-${index}`}>{t('gradeLevelLabelRequired', { defaultValue: 'Grade Level *' })}</Label>
                   <Input
                     id={`gradeLevel-${index}`}
                     value={mapping.gradeLevel}
                     onChange={(e) => updateMapping(index, 'gradeLevel', e.target.value)}
-                    placeholder="e.g., Grade 2"
+                    placeholder={t('gradeLevelPlaceholder', { defaultValue: 'e.g., Grade 2' })}
                     disabled={disabled}
                     className="mt-1"
                   />
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="text-sm font-semibold">Performance Levels (Select all that apply)</Label>
+                  <Label className="text-sm font-semibold">{t('performanceLevelsLabel', { defaultValue: 'Performance Levels (Select all that apply)' })}</Label>
 
                   <div className="space-y-2 border rounded-md p-3 bg-muted/40">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -125,7 +131,7 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
                         disabled={disabled}
                         className="h-4 w-4"
                       />
-                      <span className="text-sm font-medium">Independent Level</span>
+                      <span className="text-sm font-medium">{t('independentLevel', { defaultValue: 'Independent Level' })}</span>
                     </label>
                   </div>
 
@@ -138,7 +144,7 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
                         disabled={disabled}
                         className="h-4 w-4"
                       />
-                      <span className="text-sm font-medium">Instructional Level</span>
+                      <span className="text-sm font-medium">{t('instructionalLevel', { defaultValue: 'Instructional Level' })}</span>
                     </label>
                   </div>
 
@@ -151,19 +157,19 @@ export const GradeLevelMappingComponent: React.FC<GradeLevelMappingProps> = ({
                         disabled={disabled}
                         className="h-4 w-4"
                       />
-                      <span className="text-sm font-medium">Frustration Level</span>
+                      <span className="text-sm font-medium">{t('frustrationLevel', { defaultValue: 'Frustration Level' })}</span>
                     </label>
                   </div>
                 </div>
 
                 {showSummaryNote && (
                   <div>
-                    <Label htmlFor={`summaryNote-${index}`}>Summary Note (Optional)</Label>
+                    <Label htmlFor={`summaryNote-${index}`}>{t('summaryNoteOptional', { defaultValue: 'Summary Note (Optional)' })}</Label>
                     <Textarea
                       id={`summaryNote-${index}`}
                       value={mapping.summaryNote || ''}
                       onChange={(e) => updateMapping(index, 'summaryNote', e.target.value)}
-                      placeholder="Additional observations for this grade level..."
+                      placeholder={t('summaryNotePlaceholder', { defaultValue: 'Additional observations for this grade level...' })}
                       disabled={disabled}
                       className="mt-1"
                       rows={2}

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -20,6 +20,8 @@ import {
   X,
   User,
   ChevronLeft,
+  ChevronDown,
+  ChevronRight,
   LayoutDashboard,
   GraduationCap,
   School,
@@ -49,11 +51,17 @@ interface SidebarProps {
   onCollapsedChange?: (collapsed: boolean) => void;
 }
 
+interface NavigationSubItem {
+  title: string;
+  href: string;
+}
+
 interface NavigationItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   description?: string;
+  items?: NavigationSubItem[];
 }
 
 interface NavigationGroup {
@@ -82,8 +90,27 @@ function getRoleNavigations(t: (key: string) => string): Record<string, Navigati
       {
         label: t('navGroups.learning'),
         items: [
-          { title: t('nav.assessments'), href: '/educator/assessments', icon: Brain },
-          { title: t('nav.remediation'), href: '/educator/lesson-plans-new', icon: Calendar },
+          {
+            title: t('nav.assessments'),
+            href: '/educator/assessments',
+            icon: Brain,
+            items: [
+              { title: t('nav.assessmentsFormal'), href: '/educator/assessments?tab=formal' },
+              { title: t('nav.assessmentsReading'), href: '/educator/assessments?tab=skill&skill=reading' },
+              { title: t('nav.assessmentsWriting'), href: '/educator/assessments?tab=skill&skill=writing' },
+              { title: t('nav.assessmentsMath'), href: '/educator/assessments?tab=skill&skill=math' },
+            ],
+          },
+          {
+            title: t('nav.remediation'),
+            href: '/educator/lesson-plans-new',
+            icon: Calendar,
+            items: [
+              { title: t('nav.remediationLtp'), href: '/educator/lesson-plans-new?tab=ltp' },
+              { title: t('nav.remediationStp'), href: '/educator/lesson-plans-new?tab=stp' },
+              { title: t('nav.remediationWp'), href: '/educator/lesson-plans-new?tab=wlp' },
+            ],
+          },
           { title: t('nav.iepManagement'), href: '/educator/iep-management', icon: BookOpen },
           { title: t('nav.homework'), href: '/educator/homework', icon: ClipboardList },
         ],
@@ -203,9 +230,7 @@ function getRoleNavigations(t: (key: string) => string): Record<string, Navigati
       },
     ],
   };
-}
-
-function NavItem({
+}function NavItem({
   item,
   isActive,
   isCollapsed,
@@ -214,36 +239,135 @@ function NavItem({
   isActive: boolean;
   isCollapsed: boolean;
 }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Helper to determine if a sub-item is active based on path and search params
+  const isSubItemActive = (subHref: string) => {
+    const [subPath, subQuery] = subHref.split('?');
+    if (pathname !== subPath) return false;
+    if (!subQuery) return true;
+
+    const subParams = new URLSearchParams(subQuery);
+    for (const [key, val] of subParams.entries()) {
+      if (searchParams.get(key) !== val) return false;
+    }
+    return true;
+  };
+
+  const hasSubItems = item.items && item.items.length > 0;
+  const isChildActive = hasSubItems && item.items!.some(sub => isSubItemActive(sub.href));
+
+  // Keep track of expansion state
+  const [isExpanded, setIsExpanded] = useState(isActive || isChildActive);
+
+  // Auto-expand when a child or the parent page becomes active
+  useEffect(() => {
+    if (isActive || isChildActive) {
+      setIsExpanded(true);
+    }
+  }, [isActive, isChildActive]);
+
   const Icon = item.icon;
 
   const content = (
-    <Link
-      href={item.href}
-      className={cn(
-        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-        isActive
-          ? 'bg-primary/10 text-primary'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-        isCollapsed && 'justify-center px-2',
-      )}
-      aria-current={isActive ? 'page' : undefined}
-    >
-      <Icon
-        className={cn(
-          'h-4 w-4 shrink-0',
-          isActive ? 'text-primary' : 'text-muted-foreground',
+    <div className="flex flex-col w-full">
+      <div className="flex items-center justify-between w-full group/nav">
+        <Link
+          href={item.href}
+          className={cn(
+            'flex-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            (isActive && !isChildActive)
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            isCollapsed && 'justify-center px-2',
+          )}
+          aria-current={(isActive && !isChildActive) ? 'page' : undefined}
+        >
+          <Icon
+            className={cn(
+              'h-4 w-4 shrink-0',
+              (isActive || isChildActive) ? 'text-primary' : 'text-muted-foreground',
+            )}
+          />
+          {!isCollapsed && <span className="truncate">{item.title}</span>}
+        </Link>
+
+        {hasSubItems && !isCollapsed && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            className="p-1 mr-1 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+          >
+            {isExpanded ? (
+              <ChevronDown className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5" />
+            )}
+          </button>
         )}
-      />
-      {!isCollapsed && <span className="truncate">{item.title}</span>}
-    </Link>
+      </div>
+
+      {hasSubItems && !isCollapsed && isExpanded && (
+        <div className="mt-1 ml-4 pl-3 border-l border-sidebar-border space-y-1">
+          {item.items!.map((subItem) => {
+            const isSubActive = isSubItemActive(subItem.href);
+            return (
+              <Link
+                key={subItem.href}
+                href={subItem.href}
+                className={cn(
+                  'flex items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                  isSubActive
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                {subItem.title}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 
   if (isCollapsed) {
     return (
       <Tooltip>
-        <TooltipTrigger asChild>{content}</TooltipTrigger>
-        <TooltipContent side="right" sideOffset={8}>
-          {item.title}
+        <TooltipTrigger asChild>
+          <Link
+            href={item.href}
+            className={cn(
+              'flex items-center justify-center gap-3 rounded-lg px-2 py-2 text-sm font-medium transition-colors',
+              (isActive || isChildActive)
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+          >
+            <Icon
+              className={cn(
+                'h-4 w-4 shrink-0',
+                (isActive || isChildActive) ? 'text-primary' : 'text-muted-foreground',
+              )}
+            />
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={8} className="flex flex-col gap-1 p-2">
+          <p className="font-semibold text-xs">{item.title}</p>
+          {hasSubItems && (
+            <div className="border-t border-border mt-1 pt-1 space-y-1">
+              {item.items!.map((subItem) => (
+                <p key={subItem.href} className="text-[10px] text-muted-foreground whitespace-nowrap">
+                  {subItem.title}
+                </p>
+              ))}
+            </div>
+          )}
         </TooltipContent>
       </Tooltip>
     );
@@ -252,6 +376,43 @@ function NavItem({
   return content;
 }
 
+function NavigationList({
+  groups,
+  isCollapsed,
+  pathname,
+}: {
+  groups: NavigationGroup[];
+  isCollapsed: boolean;
+  pathname: string;
+}) {
+  return (
+    <>
+      {groups.map((group) => (
+        <div key={group.label}>
+          {!isCollapsed && (
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+              {group.label}
+            </p>
+          )}
+          <div className="space-y-0.5">
+            {group.items.map((item) => {
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href + '/');
+              return (
+                <NavItem
+                  key={item.href}
+                  item={item}
+                  isActive={isActive}
+                  isCollapsed={isCollapsed}
+                />
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
 export function UnifiedSidebar({
   className,
   userRole = 'SPECIAL_EDUCATOR',
@@ -353,29 +514,15 @@ export function UnifiedSidebar({
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4" aria-label="Main navigation">
-          {groups.map((group) => (
-            <div key={group.label}>
-              {!isCollapsed && (
-                <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-                  {group.label}
-                </p>
-              )}
-              <div className="space-y-0.5">
-                {group.items.map((item) => {
-                  const isActive =
-                    pathname === item.href || pathname.startsWith(item.href + '/');
-                  return (
-                    <NavItem
-                      key={item.href}
-                      item={item}
-                      isActive={isActive}
-                      isCollapsed={isCollapsed}
-                    />
-                  );
-                })}
-              </div>
+          <Suspense fallback={
+            <div className="flex flex-col gap-2 p-2">
+              <div className="h-8 bg-muted/40 animate-pulse rounded" />
+              <div className="h-8 bg-muted/40 animate-pulse rounded" />
+              <div className="h-8 bg-muted/40 animate-pulse rounded" />
             </div>
-          ))}
+          }>
+            <NavigationList groups={groups} isCollapsed={isCollapsed} pathname={pathname} />
+          </Suspense>
         </nav>
 
         {/* User section */}

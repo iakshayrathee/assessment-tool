@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { useTranslation } from 'react-i18next';
 import type { ReadingAssessmentFormData } from '../ReadingAssessmentWizard';
 
 interface Props {
@@ -11,19 +12,20 @@ interface Props {
   disabled?: boolean;
 }
 
-const ERROR_TYPES = [
-  { key: 'substitution', label: 'Substitution', desc: 'Replacing one word with another' },
-  { key: 'omission', label: 'Omission', desc: 'Skipping words or parts of words' },
-  { key: 'insertion', label: 'Insertion', desc: 'Adding extra words' },
-  { key: 'reversal', label: 'Reversal (b/d, p/q)', desc: 'Reversing letters or words' },
-  { key: 'guessing', label: 'Guessing', desc: 'Guessing words from context or pictures' },
-  { key: 'slowDecoding', label: 'Slow Decoding', desc: 'Very slow letter-by-letter reading' },
-  { key: 'repetition', label: 'Repetition', desc: 'Repeating words or phrases' },
-  { key: 'skippingLines', label: 'Skipping Lines', desc: 'Losing track and skipping lines' },
-];
-
 export function ErrorAnalysisSection({ data, onChange, disabled }: Props) {
+  const { t } = useTranslation('assessments');
   const errors = data.errorAnalysis || {};
+
+  const ERROR_TYPES = [
+    { key: 'substitution', label: 'Substitution', display: t('errorSubLabel', { defaultValue: 'Substitution' }), desc: t('errorSubDesc', { defaultValue: 'Replacing one word with another' }) },
+    { key: 'omission', label: 'Omission', display: t('errorOmissionLabel', { defaultValue: 'Omission' }), desc: t('errorOmissionDesc', { defaultValue: 'Skipping words or parts of words' }) },
+    { key: 'insertion', label: 'Insertion', display: t('errorInsertionLabel', { defaultValue: 'Insertion' }), desc: t('errorInsertionDesc', { defaultValue: 'Adding extra words' }) },
+    { key: 'reversal', label: 'Reversal (b/d, p/q)', display: t('errorReversalLabel', { defaultValue: 'Reversal (b/d, p/q)' }), desc: t('errorReversalDesc', { defaultValue: 'Reversing letters or words' }) },
+    { key: 'guessing', label: 'Guessing', display: t('errorGuessingLabel', { defaultValue: 'Guessing' }), desc: t('errorGuessingDesc', { defaultValue: 'Guessing words from context or pictures' }) },
+    { key: 'slowDecoding', label: 'Slow Decoding', display: t('errorSlowDecodingLabel', { defaultValue: 'Slow Decoding' }), desc: t('errorSlowDecodingDesc', { defaultValue: 'Very slow letter-by-letter reading' }) },
+    { key: 'repetition', label: 'Repetition', display: t('errorRepetitionLabel', { defaultValue: 'Repetition' }), desc: t('errorRepetitionDesc', { defaultValue: 'Repeating words or phrases' }) },
+    { key: 'skippingLines', label: 'Skipping Lines', display: t('errorSkippingLinesLabel', { defaultValue: 'Skipping Lines' }), desc: t('errorSkippingLinesDesc', { defaultValue: 'Losing track and skipping lines' }) },
+  ];
 
   const updateError = (key: string, field: string, value: any) => {
     const updated = { ...errors };
@@ -51,16 +53,21 @@ export function ErrorAnalysisSection({ data, onChange, disabled }: Props) {
     onChange({ errorAnalysis: updated });
   };
 
+  const getDominantDisplay = (val: string) => {
+    const matched = ERROR_TYPES.find(o => o.label === val);
+    return matched ? matched.display : val;
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Multi-select + Frequency Count</CardTitle>
+        <CardTitle className="text-base">{t('multiSelectFrequencyCount', { defaultValue: 'Multi-select + Frequency Count' })}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Check each error type observed and estimate its frequency (% of reading attempts).
+          {t('errorAnalysisDesc', { defaultValue: 'Check each error type observed and estimate its frequency (% of reading attempts).' })}
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
-        {ERROR_TYPES.map(({ key, label, desc }) => {
+        {ERROR_TYPES.map(({ key, display, desc }) => {
           const entry = errors[key] || {};
           return (
             <div key={key} className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/30 transition-colors">
@@ -73,13 +80,13 @@ export function ErrorAnalysisSection({ data, onChange, disabled }: Props) {
                   className="h-4 w-4 rounded"
                 />
                 <div>
-                  <span className="text-sm font-medium">{label}</span>
+                  <span className="text-sm font-medium">{display}</span>
                   <p className="text-xs text-muted-foreground">{desc}</p>
                 </div>
               </label>
               {entry.present && (
                 <div className="flex items-center gap-2 min-w-[140px]">
-                  <Label className="text-xs whitespace-nowrap">Freq %</Label>
+                  <Label className="text-xs whitespace-nowrap">{t('freqPercent', { defaultValue: 'Freq %' })}</Label>
                   <Input
                     type="number" min={0} max={100}
                     value={entry.frequency ?? ''}
@@ -97,12 +104,12 @@ export function ErrorAnalysisSection({ data, onChange, disabled }: Props) {
         {errors.dominantErrorType && (
           <div className="mt-4 p-3 bg-primary/10 rounded-lg">
             <p className="text-sm">
-              <span className="font-medium">Dominant Error Type:</span>{' '}
-              <span className="text-primary font-semibold">{errors.dominantErrorType}</span>
+              <span className="font-medium">{t('dominantErrorTypeLabel', { defaultValue: 'Dominant Error Type:' })}</span>{' '}
+              <span className="text-primary font-semibold">{getDominantDisplay(errors.dominantErrorType)}</span>
             </p>
             {errors.errorFrequencyPercent !== undefined && (
               <p className="text-sm mt-1">
-                <span className="font-medium">Average Error Frequency:</span> {errors.errorFrequencyPercent}%
+                <span className="font-medium">{t('averageErrorFrequencyLabel', { defaultValue: 'Average Error Frequency:' })}</span> {errors.errorFrequencyPercent}%
               </p>
             )}
           </div>

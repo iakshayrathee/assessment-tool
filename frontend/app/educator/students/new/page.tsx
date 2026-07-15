@@ -1,7 +1,8 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +47,7 @@ interface StudentFormData {
 export default function NewStudentPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useTranslation('educator');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<StudentFormData>({
     fullName: '',
@@ -86,58 +88,58 @@ export default function NewStudentPage() {
 
     // Required field validation
     if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
+      newErrors.fullName = t('students.fullNameRequired');
     }
 
     if (!formData.dateOfBirth) {
-      newErrors.dateOfBirth = 'Date of birth is required';
+      newErrors.dateOfBirth = t('students.dobRequired');
     } else {
       const age = calculateAge(formData.dateOfBirth);
       if (age < 2 || age > 20) {
-        newErrors.dateOfBirth = 'Age must be between 2 and 20 years';
+        newErrors.dateOfBirth = t('students.ageError');
       }
     }
 
     if (!formData.gender) {
-      newErrors.gender = 'Gender is required';
+      newErrors.gender = t('students.genderRequired');
     }
 
     if (!formData.grade.trim()) {
-      newErrors.grade = 'Grade/Standard is required';
+      newErrors.grade = t('students.gradeRequired');
     }
 
     // Parent/Guardian validation - phone is required for parent user creation
     if (!formData.parentFullName.trim()) {
-      newErrors.parentFullName = 'Parent/Guardian name is required';
+      newErrors.parentFullName = t('students.parentNameRequired');
     }
 
     if (!formData.parentPhone.trim()) {
-      newErrors.parentPhone = 'Phone number is required for parent account creation';
+      newErrors.parentPhone = t('students.phoneRequired');
     } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(formData.parentPhone.replace(/\D/g, ''))) {
-      newErrors.parentPhone = 'Please enter a valid phone number';
+      newErrors.parentPhone = t('students.phoneInvalid');
     }
 
     if (!formData.relationship) {
-      newErrors.relationship = 'Relationship is required';
+      newErrors.relationship = t('students.relationshipRequired');
     }
 
     // School validation - now required
     if (!formData.schoolId) {
-      newErrors.schoolId = 'School selection is required';
+      newErrors.schoolId = t('students.schoolRequired');
     }
 
     // Parent email validation - now required
     if (!formData.parentEmail.trim()) {
-      newErrors.parentEmail = 'Email address is required for parent account';
+      newErrors.parentEmail = t('students.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.parentEmail)) {
-      newErrors.parentEmail = 'Please enter a valid email address';
+      newErrors.parentEmail = t('students.emailInvalid');
     }
 
     // Parent password validation - required
     if (!formData.parentPassword.trim()) {
-      newErrors.parentPassword = 'Password is required for parent account';
+      newErrors.parentPassword = t('students.passwordRequired');
     } else if (formData.parentPassword.length < 6) {
-      newErrors.parentPassword = 'Password must be at least 6 characters long';
+      newErrors.parentPassword = t('students.passwordMin');
     }
 
     setErrors(newErrors);
@@ -158,8 +160,8 @@ export default function NewStudentPage() {
     
     if (!validateForm()) {
       toast({
-        title: "Validation Error",
-        description: "Please fix the errors in the form before submitting.",
+        title: t('students.validationError'),
+        description: t('students.validationErrorDesc'),
         variant: "destructive",
       });
       return;
@@ -190,8 +192,8 @@ export default function NewStudentPage() {
       const response = await apiClient.createStudent(studentData);
       
       toast({
-        title: "Success",
-        description: "Student registered successfully!",
+        title: t('students.successMessage'),
+        description: t('students.successMessage'),
       });
 
       // Redirect to student profile or list
@@ -200,8 +202,8 @@ export default function NewStudentPage() {
     } catch (error: any) {
       console.error('Error creating student:', error);
       toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to register student. Please try again.",
+        title: t('students.errorMessage'),
+        description: error.response?.data?.error || t('students.errorMessage'),
         variant: "destructive",
       });
     } finally {
@@ -220,15 +222,15 @@ export default function NewStudentPage() {
 
   return (
     <PageWrapper
-      title="Register New Student"
-      description="Add a new student with basic details"
-      breadcrumbs={[{ label: 'Educator', href: '/educator' }, { label: 'Students', href: '/educator/students' }, { label: 'New Student' }]}
+      title={t('students.registerNewStudent')}
+      description={t('students.registerDesc')}
+      breadcrumbs={[{ label: t('students.breadcrumb'), href: '/educator/students' }, { label: t('students.registerNewStudent') }]}
       className="max-w-4xl mx-auto"
       actions={
         <Link href="/educator/students">
           <Button variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Students
+            {t('students.backToStudents')}
           </Button>
         </Link>
       }
@@ -245,21 +247,21 @@ export default function NewStudentPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Student Information
+                  {t('students.studentInformation')}
                 </CardTitle>
                 <CardDescription>
-                  Basic details about the student
+                  {t('students.basicDetails')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name *</Label>
+                    <Label htmlFor="fullName">{t('students.fullName')} *</Label>
                     <Input
                       id="fullName"
                       value={formData.fullName}
                       onChange={(e) => handleInputChange('fullName', e.target.value)}
-                      placeholder="Enter student's full name"
+                      placeholder={t('students.fullName')}
                       className={errors.fullName ? 'border-red-500' : ''}
                     />
                     {errors.fullName && (
@@ -272,31 +274,31 @@ export default function NewStudentPage() {
 
                   <div className="space-y-2">
                     <ProfessionalDatePicker
-                      label="Date of Birth"
+                      label={t('students.dateOfBirth')}
                       value={formData.dateOfBirth ? new Date(formData.dateOfBirth) : null}
                       onChange={(date) => handleInputChange('dateOfBirth', date ? date.toISOString().split('T')[0] : '')}
                       error={errors.dateOfBirth}
                       required={true}
-                      placeholder="Select date of birth"
+                      placeholder={t('students.dateOfBirth')}
                       toYear={new Date().getFullYear()}
                     />
                     {formData.dateOfBirth && (
                       <p className="text-sm text-muted-foreground">
-                        Age: {calculateAge(formData.dateOfBirth)} years
+                        {t('students.ageLabel', { age: calculateAge(formData.dateOfBirth) })}
                       </p>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="gender">Gender *</Label>
+                    <Label htmlFor="gender">{t('students.gender')} *</Label>
                     <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
                       <SelectTrigger className={errors.gender ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Select gender" />
+                        <SelectValue placeholder={t('students.selectGender')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="MALE">Male</SelectItem>
-                        <SelectItem value="FEMALE">Female</SelectItem>
-                        <SelectItem value="OTHER">Other</SelectItem>
+                        <SelectItem value="MALE">{t('students.genderMale')}</SelectItem>
+                        <SelectItem value="FEMALE">{t('students.genderFemale')}</SelectItem>
+                        <SelectItem value="OTHER">{t('students.genderOther')}</SelectItem>
                       </SelectContent>
                     </Select>
                     {errors.gender && (
@@ -308,10 +310,10 @@ export default function NewStudentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="grade">Grade/Standard *</Label>
+                    <Label htmlFor="grade">{t('students.grade')} *</Label>
                     <Select value={formData.grade} onValueChange={(value) => handleInputChange('grade', value)}>
                       <SelectTrigger className={errors.grade ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Select grade" />
+                        <SelectValue placeholder={t('students.selectGrade')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Nursery">Nursery</SelectItem>
@@ -341,20 +343,20 @@ export default function NewStudentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="motherTongue">Mother Tongue</Label>
+                    <Label htmlFor="motherTongue">{t('students.motherTongueLabel')}</Label>
                     <Input
                       id="motherTongue"
                       value={formData.motherTongue}
                       onChange={(e) => handleInputChange('motherTongue', e.target.value)}
-                      placeholder="e.g., Hindi, English, Tamil"
+                      placeholder={t('students.motherTonguePlaceholder')}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="syllabus">Syllabus *</Label>
+                    <Label htmlFor="syllabus">{t('students.syllabus')} *</Label>
                     <Select value={formData.syllabus} onValueChange={(value) => handleInputChange('syllabus', value)}>
                       <SelectTrigger className={errors.syllabus ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Select syllabus" />
+                        <SelectValue placeholder={t('students.selectSyllabus')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="CBSE">CBSE</SelectItem>
@@ -385,21 +387,21 @@ export default function NewStudentPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Parent/Guardian Information
+                  {t('students.parentInfo')}
                 </CardTitle>
                 <CardDescription>
-                  Contact details for the student's parent or guardian
+                  {t('students.parentDesc')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="parentFullName">Full Name *</Label>
+                    <Label htmlFor="parentFullName">{t('students.parentName')} *</Label>
                     <Input
                       id="parentFullName"
                       value={formData.parentFullName}
                       onChange={(e) => handleInputChange('parentFullName', e.target.value)}
-                      placeholder="Enter parent/guardian name"
+                      placeholder={t('students.parentName')}
                       className={errors.parentFullName ? 'border-red-500' : ''}
                     />
                     {errors.parentFullName && (
@@ -411,18 +413,18 @@ export default function NewStudentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="relationship">Relationship *</Label>
+                    <Label htmlFor="relationship">{t('students.relationship')} *</Label>
                     <Select value={formData.relationship} onValueChange={(value) => handleInputChange('relationship', value)}>
                       <SelectTrigger className={errors.relationship ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Select relationship" />
+                        <SelectValue placeholder={t('students.selectRelationship')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Parent">Parent</SelectItem>
-                        <SelectItem value="Father">Father</SelectItem>
-                        <SelectItem value="Mother">Mother</SelectItem>
-                        <SelectItem value="Guardian">Guardian</SelectItem>
-                        <SelectItem value="Grandparent">Grandparent</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="Parent">{t('students.relParent')}</SelectItem>
+                        <SelectItem value="Father">{t('students.relFather')}</SelectItem>
+                        <SelectItem value="Mother">{t('students.relMother')}</SelectItem>
+                        <SelectItem value="Guardian">{t('students.relGuardian')}</SelectItem>
+                        <SelectItem value="Grandparent">{t('students.relGrandparent')}</SelectItem>
+                        <SelectItem value="Other">{t('students.relOther')}</SelectItem>
                       </SelectContent>
                     </Select>
                     {errors.relationship && (
@@ -434,12 +436,12 @@ export default function NewStudentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="parentPhone">Phone Number *</Label>
+                    <Label htmlFor="parentPhone">{t('students.phone')} *</Label>
                     <Input
                       id="parentPhone"
                       value={formData.parentPhone}
                       onChange={(e) => handleInputChange('parentPhone', e.target.value)}
-                      placeholder="Enter 10-digit phone number"
+                      placeholder={t('students.phonePlaceholder')}
                       className={errors.parentPhone ? 'border-red-500' : ''}
                     />
                     {errors.parentPhone && (
@@ -451,13 +453,13 @@ export default function NewStudentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="parentEmail">Email Address *</Label>
+                    <Label htmlFor="parentEmail">{t('students.email')} *</Label>
                     <Input
                       id="parentEmail"
                       type="email"
                       value={formData.parentEmail}
                       onChange={(e) => handleInputChange('parentEmail', e.target.value)}
-                      placeholder="Enter email address for parent account"
+                      placeholder={t('students.emailPlaceholder')}
                       className={errors.parentEmail ? 'border-red-500' : ''}
                     />
                     {errors.parentEmail && (
@@ -469,13 +471,13 @@ export default function NewStudentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="parentPassword">Password *</Label>
+                    <Label htmlFor="parentPassword">{t('students.password')} *</Label>
                     <Input
                       id="parentPassword"
                       type="password"
                       value={formData.parentPassword}
                       onChange={(e) => handleInputChange('parentPassword', e.target.value)}
-                      placeholder="Enter password for parent account"
+                      placeholder={t('students.passwordPlaceholder')}
                       className={errors.parentPassword ? 'border-red-500' : ''}
                     />
                     {errors.parentPassword && (
@@ -486,15 +488,13 @@ export default function NewStudentPage() {
                     )}
                   </div>
 
-
-
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="parentAddress">Address</Label>
+                    <Label htmlFor="parentAddress">{t('students.address')}</Label>
                     <Textarea
                       id="parentAddress"
                       value={formData.parentAddress}
                       onChange={(e) => handleInputChange('parentAddress', e.target.value)}
-                      placeholder="Enter complete address (optional)"
+                      placeholder={t('students.addressPlaceholder')}
                       rows={3}
                     />
                   </div>
@@ -513,30 +513,30 @@ export default function NewStudentPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Building className="h-5 w-5" />
-                  Assignment Information
+                  {t('students.assignmentInfo')}
                 </CardTitle>
                 <CardDescription>
-                  Center and school assignment details
+                  {t('students.assignmentDesc')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Assigned Educator</Label>
+                    <Label>{t('students.assignedEducator')}</Label>
                     <div className="p-3 bg-muted/40 rounded-md">
                       <p className="font-medium">{user?.profile?.fullName || 'You'}</p>
-                      <p className="text-sm text-muted-foreground">Auto-assigned to you</p>
+                      <p className="text-sm text-muted-foreground">{t('students.autoAssigned')}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="schoolId">School Name *</Label>
+                  <Label htmlFor="schoolId">{t('students.schoolName')} *</Label>
                   <div className="flex gap-2">
                     <Input
                       id="schoolId"
                       value={selectedSchoolName}
-                      placeholder="Select a school from your assigned centers"
+                      placeholder={t('students.schoolPlaceholder')}
                       readOnly
                       className="flex-1"
                     />
@@ -546,7 +546,7 @@ export default function NewStudentPage() {
                       onClick={() => setIsSchoolModalOpen(true)}
                     >
                       <School className="h-4 w-4 mr-2" />
-                      Select School
+                      {t('students.selectSchoolBtn')}
                     </Button>
                   </div>
                   {errors.schoolId && (
@@ -556,7 +556,7 @@ export default function NewStudentPage() {
                     </p>
                   )}
                   <p className="text-sm text-muted-foreground">
-                    School selection is now required. Choose from your assigned centers.
+                    {t('students.schoolDesc')}
                   </p>
                 </div>
               </CardContent>
@@ -572,19 +572,19 @@ export default function NewStudentPage() {
           >
             <Link href="/educator/students">
               <Button variant="outline" disabled={isSubmitting}>
-                Cancel
+                {t('students.cancel')}
               </Button>
             </Link>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Registering...
+                  {t('students.registering')}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Register Student
+                  {t('students.registerStudentBtn')}
                 </>
               )}
             </Button>

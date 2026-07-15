@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { useTranslation } from 'react-i18next';
 import type { ReadingAssessmentFormData } from '../ReadingAssessmentWizard';
 
 interface Props {
@@ -11,13 +12,15 @@ interface Props {
   disabled?: boolean;
 }
 
-const RED_FLAG_OPTIONS = [
-  { key: 'attentionIssues', label: 'Attention Issues', desc: 'Difficulty sustaining focus during reading tasks' },
-  { key: 'languageProcessingIssues', label: 'Language Processing Issues', desc: 'Trouble understanding or processing spoken/written language' },
-  { key: 'avoidanceBehavior', label: 'Avoidance Behavior', desc: 'Consistently avoids reading tasks or activities' },
-];
-
 export function RedFlagsSection({ data, onChange, disabled }: Props) {
+  const { t } = useTranslation('assessments');
+
+  const RED_FLAG_OPTIONS = [
+    { key: 'attentionIssues', label: t('attentionIssuesLabel', { defaultValue: 'Attention Issues' }), desc: t('attentionIssuesDesc', { defaultValue: 'Difficulty sustaining focus during reading tasks' }) },
+    { key: 'languageProcessingIssues', label: t('langProcessingIssuesLabel', { defaultValue: 'Language Processing Issues' }), desc: t('langProcessingIssuesDesc', { defaultValue: 'Trouble understanding or processing spoken/written language' }) },
+    { key: 'avoidanceBehavior', label: t('avoidanceBehaviorLabel', { defaultValue: 'Avoidance Behavior' }), desc: t('avoidanceBehaviorDesc', { defaultValue: 'Consistently avoids reading tasks or activities' }) },
+  ];
+
   const flags = data.redFlags || { attentionIssues: false, languageProcessingIssues: false, avoidanceBehavior: false, custom: [] };
 
   const toggleFlag = (key: string) => {
@@ -41,9 +44,9 @@ export function RedFlagsSection({ data, onChange, disabled }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Auto + Manual Tagging</CardTitle>
+        <CardTitle className="text-base">{t('autoManualTagging', { defaultValue: 'Auto + Manual Tagging' })}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Flag concerns that may need further investigation. These appear in the report.
+          {t('redFlagsSectionDesc', { defaultValue: 'Flag concerns that may need further investigation. These appear in the report.' })}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -69,10 +72,10 @@ export function RedFlagsSection({ data, onChange, disabled }: Props) {
 
         {/* Custom flags */}
         <div>
-          <Label>Additional Red Flags</Label>
+          <Label>{t('additionalRedFlags', { defaultValue: 'Additional Red Flags' })}</Label>
           <div className="flex gap-2 mt-1">
             <Input
-              placeholder="Type a custom red flag and press Enter..."
+              placeholder={t('customRedFlagPlaceholder', { defaultValue: 'Type a custom red flag and press Enter...' })}
               disabled={disabled}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -100,7 +103,7 @@ export function RedFlagsSection({ data, onChange, disabled }: Props) {
         {activeCount > 0 && (
           <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 rounded-lg">
             <p className="text-sm font-medium text-red-700 dark:text-red-400">
-              ⚠ {activeCount} red flag{activeCount > 1 ? 's' : ''} identified
+              ⚠ {t('redFlagsIdentified', { defaultValue: '{{count}} red flag(s) identified', count: activeCount })}
             </p>
           </div>
         )}

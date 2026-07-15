@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useSpecialEducatorProfile } from "@/hooks/useSpecialEducator";
 import { apiClient } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -130,6 +131,7 @@ interface FormData {
 }
 
 export default function EducatorProfile() {
+  const { t } = useTranslation('educator');
   const { profile, updateProfile, isLoading } = useSpecialEducatorProfile();
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
@@ -531,7 +533,7 @@ export default function EducatorProfile() {
     return (
       <>
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Loading profile...</div>
+          <div className="text-lg">Loading...</div>
         </div>
       </>
     );
@@ -539,16 +541,16 @@ export default function EducatorProfile() {
 
   return (
     <PageWrapper
-      title="My Profile"
-      description="Manage your professional information and preferences"
-      breadcrumbs={[{ label: 'Educator' }, { label: 'Profile' }]}
+      title={t('profile.title')}
+      description={t('profile.subtitle')}
+      breadcrumbs={[{ label: t('profile.breadcrumb') }]}
     >
         {/* Alert Component */}
         {showAlert && (
           <div className="fixed top-4 right-4 z-50 bg-destructive text-white p-4 rounded-lg shadow-lg max-w-md">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <p className="font-semibold">Validation Error</p>
+                <p className="font-semibold">{t('profile.validationError')}</p>
                 <p className="text-sm mt-1">{alertMessage}</p>
               </div>
               <button
@@ -610,15 +612,15 @@ export default function EducatorProfile() {
                     }}
                     className="px-6 py-2"
                   >
-                    ❌ Cancel
+                    ❌ {t('profile.cancel')}
                   </Button>
                   <Button onClick={handleSubmit} className="bg-primary hover:bg-primary px-6 py-2 shadow-md">
-                    💾 Save Changes
+                    💾 {t('profile.saveChanges')}
                   </Button>
                 </>
               ) : (
                 <Button onClick={() => setIsEditing(true)} variant="outline" className="px-6 py-2 shadow-md">
-                  ✏️ Edit Profile
+                  ✏️ {t('profile.editProfile')}
                 </Button>
               )}
             </div>
@@ -629,19 +631,19 @@ export default function EducatorProfile() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
               <TabsList className="grid w-full grid-cols-5 bg-muted p-1 rounded-lg">
                 <TabsTrigger value="personal" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                  👤 Personal
+                  👤 {t('profile.personal')}
                 </TabsTrigger>
                 <TabsTrigger value="education" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                  🎓 Education
+                  🎓 {t('profile.education')}
                 </TabsTrigger>
                 <TabsTrigger value="experience" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                  💼 Experience
+                  💼 {t('profile.experienceTab')}
                 </TabsTrigger>
                 <TabsTrigger value="expertise" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                  🎯 Expertise
+                  🎯 {t('profile.expertise')}
                 </TabsTrigger>
                 <TabsTrigger value="preferences" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                  ⚙️ Preferences
+                  ⚙️ {t('profile.preferences')}
                 </TabsTrigger>
               </TabsList>
 
@@ -649,13 +651,13 @@ export default function EducatorProfile() {
               <TabsContent value="personal" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Personal Information</CardTitle>
-                    <CardDescription>Basic personal details and contact information</CardDescription>
+                    <CardTitle>{t('profile.personalInfo')}</CardTitle>
+                    <CardDescription>{t('profile.personalInfoDesc')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="fullName">Full Name *</Label>
+                        <Label htmlFor="fullName">{t('profile.fullName')} *</Label>
                         <Input
                           id="fullName"
                           value={formData.fullName}
@@ -666,7 +668,7 @@ export default function EducatorProfile() {
                       </div>
 
                       <ProfessionalDatePicker
-                        label="Date of Birth"
+                        label={t('profile.dob')}
                         value={formData.dateOfBirth}
                         onChange={(date) => handleInputChange('dateOfBirth', date)}
                         error={errors.dateOfBirth}
@@ -674,15 +676,15 @@ export default function EducatorProfile() {
                       />
 
                       <div>
-                        <Label htmlFor="gender">Gender *</Label>
+                        <Label htmlFor="gender">{t('profile.gender')} *</Label>
                         <Select key={`gender-${formData.gender}`} value={formData.gender} onValueChange={(value) => handleSelectChange('gender', value)}>
                           <SelectTrigger className={errors.gender ? "border-red-500" : ""}>
-                            <SelectValue placeholder="Select gender" />
+                            <SelectValue placeholder={t('profile.selectGender')} />
                           </SelectTrigger>
                           <SelectContent>
                             {GENDER_OPTIONS.map(option => (
                               <SelectItem key={option.value} value={option.value}>
-                                {option.label}
+                                {option.value === "MALE" ? t("profile.genderMale") : option.value === "FEMALE" ? t("profile.genderFemale") : t("profile.genderOther")}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -691,7 +693,7 @@ export default function EducatorProfile() {
                       </div>
 
                       <div>
-                        <Label htmlFor="phone">Phone Number *</Label>
+                        <Label htmlFor="phone">{t('profile.phone')} *</Label>
                         <Input
                           id="phone"
                           value={formData.phone}
@@ -704,19 +706,19 @@ export default function EducatorProfile() {
                     </div>
 
                     <div>
-                      <Label htmlFor="address">Address</Label>
+                      <Label htmlFor="address">{t('profile.address')}</Label>
                       <Textarea
                         id="address"
                         value={formData.address}
                         onChange={(e) => handleInputChange('address', e.target.value)}
-                        placeholder="Complete address"
+                        placeholder={t('profile.address')}
                         rows={3}
                       />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="primaryLanguage">Primary Language *</Label>
+                        <Label htmlFor="primaryLanguage">{t('profile.primaryLanguage')} *</Label>
                         {formData.primaryLanguage === "Other" ? (
                           <div className="space-y-2">
                             <div className="flex gap-2">
@@ -805,16 +807,16 @@ export default function EducatorProfile() {
               <TabsContent value="education" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>General Education</CardTitle>
-                    <CardDescription>Academic qualifications and educational background</CardDescription>
+                    <CardTitle>{t('profile.generalEducation')}</CardTitle>
+                    <CardDescription>{t('profile.generalEducationDesc')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="highestQualification">Highest Academic Qualification *</Label>
+                        <Label htmlFor="highestQualification">{t('profile.highestQualification')} *</Label>
                         <Select value={formData.highestQualification} onValueChange={(value) => setFormData(prev => ({ ...prev, highestQualification: value }))}>
                           <SelectTrigger className={errors.highestQualification ? "border-red-500" : ""}>
-                            <SelectValue placeholder="Select qualification" />
+                            <SelectValue placeholder={t('profile.selectQualification')} />
                           </SelectTrigger>
                           <SelectContent>
                             {QUALIFICATION_OPTIONS.map(qual => (
@@ -828,7 +830,7 @@ export default function EducatorProfile() {
                       </div>
 
                       <div>
-                        <Label htmlFor="fieldOfStudy">Field of Study *</Label>
+                        <Label htmlFor="fieldOfStudy">{t('profile.fieldOfStudy')} *</Label>
                         <Select
                           value={formData.fieldOfStudy}
                           onValueChange={(value) => {
@@ -841,7 +843,7 @@ export default function EducatorProfile() {
                           }}
                         >
                           <SelectTrigger className={errors.fieldOfStudy ? "border-red-500" : ""}>
-                            <SelectValue placeholder="Select field of study" />
+                            <SelectValue placeholder={t('profile.selectFieldOfStudy')} />
                           </SelectTrigger>
                           <SelectContent>
                             {FIELD_OF_STUDY_OPTIONS.map(field => (
@@ -888,7 +890,7 @@ export default function EducatorProfile() {
                       </div>
 
                       <div>
-                        <Label htmlFor="institutionName">Institution Name *</Label>
+                        <Label htmlFor="institutionName">{t('profile.institutionName')} *</Label>
                         <Input
                           id="institutionName"
                           value={formData.institutionName}
@@ -899,7 +901,7 @@ export default function EducatorProfile() {
                       </div>
 
                       <div>
-                        <Label htmlFor="yearOfGraduation">Year of Graduation *</Label>
+                        <Label htmlFor="yearOfGraduation">{t('profile.yearOfGraduation')} *</Label>
                         <Select value={formData.yearOfGraduation?.toString() || ""} onValueChange={(value) => setFormData(prev => ({ ...prev, yearOfGraduation: parseInt(value) }))}>
                           <SelectTrigger className={errors.yearOfGraduation ? "border-red-500" : ""}>
                             <SelectValue placeholder="Select year" />
@@ -920,12 +922,12 @@ export default function EducatorProfile() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Special Education</CardTitle>
-                    <CardDescription>Special education qualifications and certifications</CardDescription>
+                    <CardTitle>{t('profile.specialEducation')}</CardTitle>
+                    <CardDescription>{t('profile.specialEducationDesc')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>RCI Certification Status *</Label>
+                      <Label>{t('profile.rciCertified')} *</Label>
                       <RadioGroup
                         value={formData.rciCertified.toString()}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, rciCertified: value === "true" }))}
@@ -933,18 +935,18 @@ export default function EducatorProfile() {
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="true" id="rci-yes" />
-                          <Label htmlFor="rci-yes">Certified</Label>
+                          <Label htmlFor="rci-yes">{t('profile.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="false" id="rci-no" />
-                          <Label htmlFor="rci-no">Not Certified</Label>
+                          <Label htmlFor="rci-no">{t('profile.no')}</Label>
                         </div>
                       </RadioGroup>
                     </div>
 
                     {formData.rciCertified && (
                       <ProfessionalDatePicker
-                        label="RCI Validity Date"
+                        label={t('profile.rciValidity')}
                         value={formData.rciValidityDate}
                         onChange={(date) => handleInputChange('rciValidityDate', date)}
                         error={errors.rciValidityDate}
@@ -953,10 +955,10 @@ export default function EducatorProfile() {
                     )}
 
                     <div>
-                      <Label htmlFor="specialEdQualification">Qualification (Special Ed) *</Label>
+                      <Label htmlFor="specialEdQualification">{t('profile.specialEdQual')} *</Label>
                       <Select value={formData.specialEdQualification} onValueChange={(value) => setFormData(prev => ({ ...prev, specialEdQualification: value }))}>
                         <SelectTrigger className={errors.specialEdQualification ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Select special education qualification" />
+                          <SelectValue placeholder={t('profile.specialEdQual')} />
                         </SelectTrigger>
                         <SelectContent>
                           {QUALIFICATION_OPTIONS.map(qual => (
@@ -970,7 +972,7 @@ export default function EducatorProfile() {
                     </div>
 
                     <div>
-                      <Label>Specialization Area *</Label>
+                      <Label>{t('profile.specializationAreas')} *</Label>
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">
                           {formData.specializationAreas.map(area => (
@@ -987,7 +989,7 @@ export default function EducatorProfile() {
                           }}
                         >
                           <SelectTrigger className={errors.specializationAreas ? "border-red-500" : ""}>
-                            <SelectValue placeholder="Add specialization area" />
+                            <SelectValue placeholder={t('profile.specializationAreas')} />
                           </SelectTrigger>
                           <SelectContent>
                             {SPECIALIZATION_AREAS.filter(area => !formData.specializationAreas.includes(area)).map(area => (
@@ -1002,7 +1004,7 @@ export default function EducatorProfile() {
                     </div>
 
                     <div>
-                      <Label>Additional Certifications</Label>
+                      <Label>{t('profile.addCertifications')}</Label>
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">
                           {formData.additionalCertifications.map(cert => (
@@ -1053,16 +1055,16 @@ export default function EducatorProfile() {
               <TabsContent value="experience" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Professional Experience</CardTitle>
-                    <CardDescription>Work experience and professional background</CardDescription>
+                    <CardTitle>{t('profile.professionalExperience')}</CardTitle>
+                    <CardDescription>{t('profile.professionalExperienceDesc')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="yearsOfExperience">Years of Experience (Inclusive Ed.) *</Label>
+                        <Label htmlFor="yearsOfExperience">{t('profile.yearsOfExp')} (Inclusive Ed.) *</Label>
                         <Select value={formData.yearsOfExperience?.toString() || ""} onValueChange={(value) => setFormData(prev => ({ ...prev, yearsOfExperience: parseInt(value) }))}>
                           <SelectTrigger className={errors.yearsOfExperience ? "border-red-500" : ""}>
-                            <SelectValue placeholder="Select years" />
+                            <SelectValue placeholder={t('profile.yearsOfExp')} />
                           </SelectTrigger>
                           <SelectContent>
                             {EXPERIENCE_YEARS.map(year => (
@@ -1076,10 +1078,10 @@ export default function EducatorProfile() {
                       </div>
 
                       <div>
-                        <Label htmlFor="totalYearsOfExperience">Total Years of Experience *</Label>
+                        <Label htmlFor="totalYearsOfExperience">{t('profile.yearsOfExp')} (Total) *</Label>
                         <Select value={formData.totalYearsOfExperience?.toString() || ""} onValueChange={(value) => setFormData(prev => ({ ...prev, totalYearsOfExperience: parseInt(value) }))}>
                           <SelectTrigger className={errors.totalYearsOfExperience ? "border-red-500" : ""}>
-                            <SelectValue placeholder="Select total years" />
+                            <SelectValue placeholder={t('profile.yearsOfExp')} />
                           </SelectTrigger>
                           <SelectContent>
                             {EXPERIENCE_YEARS.map(year => (
@@ -1093,10 +1095,10 @@ export default function EducatorProfile() {
                       </div>
 
                       <div>
-                        <Label htmlFor="maxGroupSize">Max Group Size Handled</Label>
+                        <Label htmlFor="maxGroupSize">{t('profile.maxGroupSize')}</Label>
                         <Select value={formData.maxGroupSize?.toString() || ""} onValueChange={(value) => setFormData(prev => ({ ...prev, maxGroupSize: parseInt(value) }))}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select group size" />
+                            <SelectValue placeholder={t('profile.maxGroupSize')} />
                           </SelectTrigger>
                           <SelectContent>
                             {GROUP_SIZE_OPTIONS.map(size => (
@@ -1110,7 +1112,7 @@ export default function EducatorProfile() {
                     </div>
 
                     <div>
-                      <Label>Experience Type *</Label>
+                      <Label>{t('profile.typesOfExp')} *</Label>
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">
                           {formData.experienceTypes.map(type => (
@@ -1224,7 +1226,7 @@ export default function EducatorProfile() {
                         checked={formData.workingInMultipleCenters}
                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, workingInMultipleCenters: checked }))}
                       />
-                      <Label htmlFor="workingInMultipleCenters">Working in Multiple Centers?</Label>
+                      <Label htmlFor="workingInMultipleCenters">{t('profile.multipleCenters')}</Label>
                     </div>
 
                     {formData.workingInMultipleCenters && (
@@ -1241,14 +1243,14 @@ export default function EducatorProfile() {
               <TabsContent value="expertise" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Areas of Expertise</CardTitle>
+                    <CardTitle>{t('profile.areasOfExpertise')}</CardTitle>
                     <CardDescription>
-                      Your specialized knowledge and skills
+                      {t('profile.areasOfExpertiseDesc')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <MultiSelectWithTags
-                      label="Learning Disability Types You Handle"
+                      label={t('profile.ldTypesHandled')}
                       options={LD_TYPES}
                       selectedValues={formData.ldTypesHandled}
                       onSelectionChange={(values) => setFormData(prev => ({ ...prev, ldTypesHandled: values }))}
@@ -1256,7 +1258,7 @@ export default function EducatorProfile() {
                     />
 
                     <MultiSelectWithTags
-                      label="Grade Levels You Serve"
+                      label={t('profile.gradeLevelsServed')}
                       options={GRADE_LEVELS}
                       selectedValues={formData.gradeLevelsServed}
                       onSelectionChange={(values) => setFormData(prev => ({ ...prev, gradeLevelsServed: values }))}
@@ -1264,7 +1266,7 @@ export default function EducatorProfile() {
                     />
 
                     <div className="space-y-2">
-                      <Label htmlFor="assessmentTools">Assessment Tools You Use</Label>
+                      <Label htmlFor="assessmentTools">{t('profile.assessmentTools')}</Label>
                       <Textarea
                         id="assessmentTools"
                         value={formData.assessmentTools}
@@ -1275,7 +1277,7 @@ export default function EducatorProfile() {
                     </div>
 
                     <MultiSelectWithTags
-                      label="Assistive Technology Proficiency"
+                      label={t('profile.assistiveTech')}
                       options={ASSISTIVE_TECH.map(item => ({ value: item, label: item }))}
                       selectedValues={formData.assistiveTechProficiency}
                       onSelectionChange={(values) => setFormData(prev => ({ ...prev, assistiveTechProficiency: values }))}
@@ -1291,7 +1293,7 @@ export default function EducatorProfile() {
                     />
 
                     <div className="space-y-2">
-                      <Label htmlFor="personalStatement">Personal Statement</Label>
+                      <Label htmlFor="personalStatement">{t('profile.personalStatement')}</Label>
                       <Textarea
                         id="personalStatement"
                         value={formData.personalStatement}
@@ -1308,9 +1310,9 @@ export default function EducatorProfile() {
               <TabsContent value="preferences" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Consent & Agreements</CardTitle>
+                    <CardTitle>{t('profile.consentAgreements')}</CardTitle>
                     <CardDescription>
-                      Please review and agree to the following terms
+                      {t('profile.consentAgreementsDesc')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -1324,7 +1326,7 @@ export default function EducatorProfile() {
                         />
                         <div className="space-y-1">
                           <Label htmlFor="consentToShare" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            Consent to Share Information *
+                            {t('profile.consentToShare')} *
                           </Label>
                           <p className="text-sm text-muted-foreground">
                             I consent to sharing my profile information with relevant centers and administrators for assignment purposes.
@@ -1342,7 +1344,7 @@ export default function EducatorProfile() {
                         />
                         <div className="space-y-1">
                           <Label htmlFor="agreementToPolicies" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            Agreement to Policies *
+                            {t('profile.agreePolicies')} *
                           </Label>
                           <p className="text-sm text-muted-foreground">
                             I agree to abide by the organization's policies, code of conduct, and professional standards.

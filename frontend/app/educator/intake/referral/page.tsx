@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import toast from '@/lib/toast';
 import { useIntakeForm } from '@/hooks/useAssessments';
 import { useStudent } from '@/hooks/useStudents';
@@ -23,41 +24,10 @@ interface ReferralFormData {
   severityOfConcern: string;
 }
 
-const REFERRAL_SOURCES = [
-  { id: 'PARENT',           label: 'Parent / Guardian' },
-  { id: 'TEACHER',          label: 'Teacher' },
-  { id: 'SCHOOL',           label: 'School Administration' },
-  { id: 'PEDIATRICIAN',     label: 'Pediatrician / Doctor' },
-  { id: 'PSYCHOLOGIST',     label: 'Psychologist' },
-  { id: 'SPECIAL_EDUCATOR', label: 'Special Educator' },
-];
-
-const REFERRAL_AREAS = [
-  { id: 'READING',          label: 'Reading' },
-  { id: 'WRITING',          label: 'Writing' },
-  { id: 'MATH',             label: 'Mathematics' },
-  { id: 'ATTENTION',        label: 'Attention / Focus' },
-  { id: 'BEHAVIOUR',        label: 'Behaviour' },
-  { id: 'SPEECH',           label: 'Speech / Language' },
-  { id: 'SCHOOL_READINESS', label: 'School Readiness' },
-];
-
-const DURATION_OPTIONS = [
-  { value: 'LESS_THAN_6_MONTHS', label: 'Less than 6 months' },
-  { value: '6_TO_12_MONTHS',     label: '6 – 12 months' },
-  { value: '1_TO_2_YEARS',       label: '1 – 2 years' },
-  { value: 'MORE_THAN_2_YEARS',  label: 'More than 2 years' },
-];
-
-const SEVERITY_OPTIONS = [
-  { value: 'MILD',     label: 'Mild — minimal impact on day-to-day functioning' },
-  { value: 'MODERATE', label: 'Moderate — noticeable impact on learning and functioning' },
-  { value: 'SEVERE',   label: 'Severe — significant impact requiring immediate support' },
-];
-
 // ── Page Content ───────────────────────────────────────────────────────────────
 
 function ReferralPageContent() {
+  const { t } = useTranslation('educator');
   const searchParams = useSearchParams();
   const router = useRouter();
   const studentId = searchParams.get('studentId') || '';
@@ -72,6 +42,38 @@ function ReferralPageContent() {
     durationOfConcern: '',
     severityOfConcern: '',
   });
+
+  const REFERRAL_SOURCES = [
+    { id: 'PARENT',           label: t('intake.refParent') },
+    { id: 'TEACHER',          label: t('intake.refTeacher') },
+    { id: 'SCHOOL',           label: t('intake.refSchool') },
+    { id: 'PEDIATRICIAN',     label: t('intake.refDoctor') },
+    { id: 'PSYCHOLOGIST',     label: t('intake.refPsychologist') },
+    { id: 'SPECIAL_EDUCATOR', label: t('intake.refSpecialEducator') },
+  ];
+
+  const REFERRAL_AREAS = [
+    { id: 'READING',          label: t('intake.refReading') },
+    { id: 'WRITING',          label: t('intake.refWriting') },
+    { id: 'MATH',             label: t('intake.refMath') },
+    { id: 'ATTENTION',        label: t('intake.refAttention') },
+    { id: 'BEHAVIOUR',        label: t('intake.refBehaviour') },
+    { id: 'SPEECH',           label: t('intake.refSpeech') },
+    { id: 'SCHOOL_READINESS', label: t('intake.refSchoolReadiness') },
+  ];
+
+  const DURATION_OPTIONS = [
+    { value: 'LESS_THAN_6_MONTHS', label: t('intake.durLessThan6Months') },
+    { value: '6_TO_12_MONTHS',     label: t('intake.dur6To12Months') },
+    { value: '1_TO_2_YEARS',       label: t('intake.dur1To2Years') },
+    { value: 'MORE_THAN_2_YEARS',  label: t('intake.durMoreThan2Years') },
+  ];
+
+  const SEVERITY_OPTIONS = [
+    { value: 'MILD',     label: t('intake.sevMild') },
+    { value: 'MODERATE', label: t('intake.sevModerate') },
+    { value: 'SEVERE',   label: t('intake.sevSevere') },
+  ];
 
   // Pre-fill if intake form already has referral data
   useEffect(() => {
@@ -139,16 +141,16 @@ function ReferralPageContent() {
   if (!studentId) {
     return (
       <PageWrapper
-        title="Referral Information"
-        description="Record who referred the child and the areas of concern"
-        breadcrumbs={[{ label: 'Educator' }, { label: 'Intake', href: '/educator/intake' }, { label: 'Referral' }]}
+        title={t('intake.referralInfo')}
+        description={t('intake.referralInfoDesc')}
+        breadcrumbs={[{ label: t('educator.breadcrumb') }, { label: t('intake.title'), href: '/educator/intake' }, { label: t('intake.referralInfo') }]}
       >
         <Card className="max-w-md mx-auto text-center p-8 border-border shadow-sm">
           <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold mb-2">No Student Selected</h2>
-          <p className="text-muted-foreground text-sm mb-6">Please select a student before filling out the referral form.</p>
+          <h2 className="text-lg font-semibold mb-2">{t('intake.noStudentSelected')}</h2>
+          <p className="text-muted-foreground text-sm mb-6">{t('intake.noStudentSelectedDesc')}</p>
           <Link href="/educator/students">
-            <Button variant="outline">Go to Students</Button>
+            <Button variant="outline">{t('intake.goToStudents')}</Button>
           </Link>
         </Card>
       </PageWrapper>
@@ -157,19 +159,19 @@ function ReferralPageContent() {
 
   return (
     <PageWrapper
-      title="Referral Information"
-      description={student ? `Recording referral details for ${student.fullName}` : 'Record who referred the child and the areas of concern'}
+      title={t('intake.referralInfo')}
+      description={student ? `${t('intake.referralInfo')} - ${student.fullName}` : t('intake.referralInfoDesc')}
       breadcrumbs={[
-        { label: 'Educator' },
-        { label: 'Intake', href: `/educator/intake?studentId=${studentId}` },
-        { label: 'Referral' },
+        { label: t('educator.breadcrumb') },
+        { label: t('intake.title'), href: `/educator/intake?studentId=${studentId}` },
+        { label: t('intake.referralInfo') },
       ]}
     >
       <div className="max-w-3xl space-y-6">
 
         {/* Step indicator */}
         <div className="flex items-center gap-2">
-          {['Referral', 'Intake Form', 'AI Profile'].map((step, i) => (
+          {[t('intake.referralInfo'), t('intake.title'), 'AI Profile'].map((step, i) => (
             <React.Fragment key={step}>
               <div className="flex items-center gap-2">
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
@@ -190,8 +192,7 @@ function ReferralPageContent() {
         <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
           <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
           <p className="text-sm text-blue-800">
-            Referral information is the first input to the AI Intake Profile. The profile is advisory only and is
-            not a clinical diagnosis — it helps guide pre-assessment planning.
+            {t('intake.advisoryNotice')}
           </p>
         </div>
 
@@ -201,7 +202,7 @@ function ReferralPageContent() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2 text-foreground">
                 <Users className="w-4 h-4 text-primary" />
-                Who referred the child?
+                {t('intake.whoReferred')}
                 <span className="text-destructive ml-1 text-sm">*</span>
               </CardTitle>
               <p className="text-sm text-muted-foreground">Select all that apply.</p>
@@ -238,7 +239,7 @@ function ReferralPageContent() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2 text-foreground">
                 <Activity className="w-4 h-4 text-primary" />
-                Areas of concern
+                {t('intake.areasOfConcern')}
                 <span className="text-destructive ml-1 text-sm">*</span>
               </CardTitle>
               <p className="text-sm text-muted-foreground">Select all areas where difficulties have been observed.</p>
@@ -280,7 +281,7 @@ function ReferralPageContent() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2 text-foreground">
                 <Clock className="w-4 h-4 text-primary" />
-                Duration of concern
+                {t('intake.durationOfConcern')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -304,7 +305,7 @@ function ReferralPageContent() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2 text-foreground">
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
-                Severity of concern
+                {t('intake.severityOfConcern')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -333,7 +334,7 @@ function ReferralPageContent() {
           className="flex items-center justify-between pt-2 border-t border-border"
         >
           <Link href={studentId ? `/educator/intake?studentId=${studentId}` : '/educator/intake'}>
-            <Button variant="outline">← Back to Intake Form</Button>
+            <Button variant="outline">← {t('intake.backToIntake')}</Button>
           </Link>
           <Button
             id="referral-continue-btn"
@@ -341,7 +342,7 @@ function ReferralPageContent() {
             disabled={isSaving}
             className="gap-2 bg-primary hover:bg-primary/90"
           >
-            {isSaving ? 'Saving…' : 'Continue to Intake Form'}
+            {isSaving ? t('intake.saving') : t('intake.continueToIntake')}
             {!isSaving && <ArrowRight className="w-4 h-4" />}
           </Button>
         </motion.div>
@@ -349,10 +350,6 @@ function ReferralPageContent() {
     </PageWrapper>
   );
 }
-
-// ── Export ─────────────────────────────────────────────────────────────────────
-
-export const dynamic = 'force-dynamic';
 
 export default function ReferralPage() {
   return (

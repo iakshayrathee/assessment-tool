@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -10,6 +10,7 @@ import { Search, Filter, Loader2 } from 'lucide-react';
 import { useEducatorStudents } from '@/hooks/useEducator';
 import { GradeDisplay } from '@/components/ui/GradeDisplay';
 import { GRADE_LIST } from '@/lib/gradeConfig';
+import { useTranslation } from 'react-i18next';
 
 interface StudentSelectionModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export function StudentSelectionModal({
   onSelect,
   selectedStudentId
 }: StudentSelectionModalProps) {
+  const { t } = useTranslation(['assessments', 'educator']);
   const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,10 +74,10 @@ export function StudentSelectionModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Select Student</DialogTitle>
+          <DialogTitle>{t('selectStudent')}</DialogTitle>
           {pagination && (
             <p className="text-sm text-muted-foreground">
-              {pagination.total} active student{pagination.total !== 1 ? 's' : ''} available
+              {pagination.total} {t('activeStudentsAvailable')}
             </p>
           )}
         </DialogHeader>
@@ -85,7 +87,7 @@ export function StudentSelectionModal({
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search students by name..."
+              placeholder={t('searchStudentsPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -96,10 +98,10 @@ export function StudentSelectionModal({
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={gradeFilter} onValueChange={setGradeFilter}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="All Grades" />
+                <SelectValue placeholder={t('allGrades')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Grades</SelectItem>
+                <SelectItem value="all">{t('allGrades')}</SelectItem>
                 {GRADE_LIST.map((grade) => (
                   <SelectItem key={grade} value={grade}>
                     {grade}
@@ -110,7 +112,7 @@ export function StudentSelectionModal({
 
             {(searchTerm || gradeFilter) && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Clear
+                {t('clear')}
               </Button>
             )}
           </div>
@@ -122,20 +124,20 @@ export function StudentSelectionModal({
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
-                <p className="text-muted-foreground">Loading students...</p>
+                <p className="text-muted-foreground">{t('loading', { ns: 'educator' })}</p>
               </div>
             </div>
           ) : filteredStudents.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-2">
                 {searchTerm || gradeFilter
-                  ? 'No students match your search criteria.'
-                  : 'No active students found.'
+                  ? t('noStudents')
+                  : t('noStudents')
                 }
               </p>
               {(searchTerm || gradeFilter) && (
                 <Button variant="outline" size="sm" onClick={clearFilters}>
-                  Clear Filters
+                  {t('clearFilters')}
                 </Button>
               )}
             </div>
@@ -162,7 +164,7 @@ export function StudentSelectionModal({
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-foreground truncate">{fullName}</h3>
                           <p className="text-sm text-muted-foreground">
-                            <GradeDisplay grade={grade} /> • Age {age}
+                            <GradeDisplay grade={grade} /> • {t('ageLabel')} {age}
                           </p>
                           {school && (
                             <p className="text-xs text-muted-foreground mt-1 truncate">{school}</p>
@@ -184,8 +186,8 @@ export function StudentSelectionModal({
         {pagination && pagination.totalPages > 1 && (
           <div className="flex items-center justify-between p-4 border-t bg-muted/40">
             <div className="text-sm text-muted-foreground">
-              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, pagination.total)} of{' '}
-              {pagination.total} students
+              {t('showing')} {((currentPage - 1) * pageSize) + 1} {t('to')} {Math.min(currentPage * pageSize, pagination.total)} {t('of')}{' '}
+              {pagination.total} {t('students')}
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -194,10 +196,10 @@ export function StudentSelectionModal({
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1 || isLoading}
               >
-                Previous
+                {t('previous')}
               </Button>
               <span className="text-sm text-muted-foreground min-w-[100px] text-center">
-                Page {currentPage} of {pagination.totalPages}
+                {t('page')} {currentPage} {t('of')} {pagination.totalPages}
               </span>
               <Button
                 variant="outline"
@@ -205,7 +207,7 @@ export function StudentSelectionModal({
                 onClick={handleNextPage}
                 disabled={currentPage >= pagination.totalPages || isLoading}
               >
-                Next
+                {t('next')}
               </Button>
             </div>
           </div>

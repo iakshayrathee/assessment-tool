@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,8 +47,12 @@ interface Homework {
     createdAt: string;
 }
 
+const PAGE_SIZE = 10;
+const itemsPerPage = 10;
+
 export default function EducatorHomeworkPage() {
     const { toast } = useToast();
+    const { t } = useTranslation('educator');
     const queryClient = useQueryClient();
 
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -65,7 +70,6 @@ export default function EducatorHomeworkPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [gradeFilter, setGradeFilter] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
 
     const [formData, setFormData] = useState({
         studentId: '',
@@ -92,7 +96,6 @@ export default function EducatorHomeworkPage() {
 
     // Assign homework mutation
     const assignHomeworkMutation = useMutation({
-        mutationFn: (homeworkData: any) => apiClient.createHomework(homeworkData),
         onSuccess: async (createdHomework) => {
             // Upload files if any are selected
             if (selectedFiles.length > 0) {
@@ -101,12 +104,12 @@ export default function EducatorHomeworkPage() {
                     await apiClient.uploadHomeworkFiles(createdHomework.id, selectedFiles);
                     toast({
                         title: 'Success',
-                        description: 'Homework assigned and files uploaded successfully!',
+                        description: t('homework.assignedSuccess'),
                     });
                 } catch (error: any) {
                     toast({
                         title: 'Warning',
-                        description: 'Homework assigned but file upload failed: ' + (error.message || 'Unknown error'),
+                        description: t('homework.assignFailed') + ': ' + (error.message || 'Unknown error'),
                         variant: 'destructive'
                     });
                 } finally {
@@ -115,7 +118,7 @@ export default function EducatorHomeworkPage() {
             } else {
                 toast({
                     title: 'Success',
-                    description: 'Homework assigned successfully! Parent has been notified.',
+                    description: t('homework.assignedSuccess'),
                 });
             }
 
@@ -133,10 +136,11 @@ export default function EducatorHomeworkPage() {
                 skillTargeted: ''
             });
         },
+        mutationFn: (homeworkData: any) => apiClient.createHomework(homeworkData),
         onError: (error: any) => {
             toast({
                 title: 'Error',
-                description: error.response?.data?.error || error.message || 'Failed to assign homework',
+                description: error.response?.data?.error || error.message || t('homework.assignFailed'),
                 variant: 'destructive'
             });
         }
@@ -147,8 +151,8 @@ export default function EducatorHomeworkPage() {
 
         if (!formData.dueDate) {
             toast({
-                title: 'Validation Error',
-                description: 'Please select a due date',
+                title: t('students.validationError'),
+                description: t('homework.dueDatePlaceholder'),
                 variant: 'destructive'
             });
             return;
@@ -236,7 +240,7 @@ export default function EducatorHomeworkPage() {
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
                     <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-                    <p className="text-muted-foreground">Loading homework...</p>
+                    <p className="text-muted-foreground">Loading...</p>
                 </div>
             </div>
         );
@@ -244,13 +248,13 @@ export default function EducatorHomeworkPage() {
 
     return (
         <PageWrapper
-            title="Homework Management"
-            description="Assign and track student homework"
-            breadcrumbs={[{ label: 'Educator' }, { label: 'Homework' }]}
+            title={t('homework.title')}
+            description={t('homework.subtitle')}
+            breadcrumbs={[{ label: t('homework.breadcrumb') }]}
             actions={
                 <Button onClick={() => setShowAssignModal(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Assign Homework
+                    {t('homework.assignHomework')}
                 </Button>
             }
         >
@@ -258,17 +262,16 @@ export default function EducatorHomeworkPage() {
             {/* Homework List */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Assigned Homework</CardTitle>
+                    <CardTitle>{t('homework.title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {homework.length === 0 ? (
                         <div className="text-center py-12">
                             <ClipboardList className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                            <h3 className="text-xl font-medium text-foreground mb-2">No homework assigned yet</h3>
-                            <p className="text-muted-foreground mb-6">Start by assigning homework to your students</p>
+                            <h3 className="text-xl font-medium text-foreground mb-2">{t('homework.noHomework')}</h3>
                             <Button onClick={() => setShowAssignModal(true)}>
                                 <Plus className="h-5 w-5 mr-2" />
-                                Assign First Homework
+                                {t('homework.assignHomework')}
                             </Button>
                         </div>
                     ) : (
@@ -277,19 +280,19 @@ export default function EducatorHomeworkPage() {
                                 <thead className="bg-muted/40">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                            Student
+                                            {t('students.tableStudent')}
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                            Title
+                                            {t('homework.homeworkTitle')}
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                            Subject
+                                            {t('homework.subject')}
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                            Due Date
+                                            {t('homework.dueDate')}
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                            Status
+                                            {t('students.tableStatus')}
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                             Actions
@@ -326,7 +329,7 @@ export default function EducatorHomeworkPage() {
                                                     onClick={() => handleViewHomework(hw)}
                                                 >
                                                     <Eye className="h-4 w-4 mr-1" />
-                                                    View
+                                                    {t('students.view')}
                                                 </Button>
                                             </td>
                                         </tr>
@@ -342,13 +345,13 @@ export default function EducatorHomeworkPage() {
             <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Assign Homework</DialogTitle>
+                        <DialogTitle>{t('homework.assignHomework')}</DialogTitle>
                     </DialogHeader>
 
                     <form onSubmit={handleAssignHomework} className="space-y-4">
                         {/* Student Selection */}
                         <div>
-                            <Label>Student *</Label>
+                          <Label>{t('homework.student')} *</Label>
                             <Button
                                 type="button"
                                 variant="outline"
@@ -361,68 +364,68 @@ export default function EducatorHomeworkPage() {
                                         <div className="text-sm text-muted-foreground">Grade {selectedStudent.grade}</div>
                                     </div>
                                 ) : (
-                                    <span className="text-muted-foreground">Click to select a student</span>
+                                    <span className="text-muted-foreground">{t('homework.selectStudentPrompt')}</span>
                                 )}
                             </Button>
                         </div>
 
                         {/* Subject */}
                         <div>
-                            <Label>Subject *</Label>
+                          <Label>{t('homework.subject')} *</Label>
                             <Select
                                 value={formData.subject}
                                 onValueChange={(value) => setFormData({ ...formData, subject: value })}
                             >
                                 <SelectTrigger>
-                                    <SelectValue />
+                                    <SelectValue placeholder={t('homework.selectSubject')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="READING">Reading</SelectItem>
-                                    <SelectItem value="WRITING">Writing</SelectItem>
-                                    <SelectItem value="MATH">Math</SelectItem>
+                                    <SelectItem value="READING">{t('homework.reading')}</SelectItem>
+                                    <SelectItem value="WRITING">{t('homework.writing')}</SelectItem>
+                                    <SelectItem value="MATH">{t('homework.math')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
 
                         {/* Title */}
                         <div>
-                            <Label>Homework Title *</Label>
+                          <Label>{t('homework.homeworkTitle')} *</Label>
                             <Input
                                 required
                                 value={formData.title}
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                placeholder="e.g., CVC practice"
+                                placeholder={t('homework.homeworkTitlePlaceholder')}
                             />
                         </div>
 
                         {/* Instructions */}
                         <div>
-                            <Label>Homework Instructions *</Label>
+                          <Label>{t('homework.instructions')} *</Label>
                             <Textarea
                                 required
                                 value={formData.instructions}
                                 onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
                                 rows={4}
-                                placeholder="Provide clear instructions for the homework"
+                                placeholder={t('homework.instructionsPlaceholder')}
                             />
                         </div>
 
                         {/* Due Date and Estimated Time - Aligned */}
                         <div className="grid grid-cols-2 gap-4">
                             <ProfessionalDatePicker
-                                label="Due Date"
+                                label={t('homework.dueDate')}
                                 value={formData.dueDate}
                                 onChange={(date) => setFormData({ ...formData, dueDate: date })}
                                 required
-                                placeholder="Select due date"
+                                placeholder={t('homework.dueDatePlaceholder')}
                             />
                             <div>
-                                <Label>Estimated Time (minutes)</Label>
+                                <Label>{t('homework.estimatedTime')}</Label>
                                 <Input
                                     type="number"
                                     value={formData.estimatedTime}
                                     onChange={(e) => setFormData({ ...formData, estimatedTime: e.target.value })}
-                                    placeholder="e.g., 30"
+                                    placeholder={t('homework.estimatedTimePlaceholder')}
                                     className="mt-2"
                                 />
                             </div>
@@ -430,28 +433,28 @@ export default function EducatorHomeworkPage() {
 
                         {/* Skill Targeted */}
                         <div>
-                            <Label>Skill Targeted</Label>
+                          <Label>{t('homework.skillTargeted')}</Label>
                             <Input
                                 value={formData.skillTargeted}
                                 onChange={(e) => setFormData({ ...formData, skillTargeted: e.target.value })}
-                                placeholder="e.g., Phonics - CVC words"
+                                placeholder={t('homework.skillTargetedPlaceholder')}
                             />
                         </div>
 
                         {/* Additional Notes */}
                         <div>
-                            <Label>Additional Notes for Parent</Label>
+                          <Label>{t('homework.additionalNotes')}</Label>
                             <Textarea
                                 value={formData.additionalNotes}
                                 onChange={(e) => setFormData({ ...formData, additionalNotes: e.target.value })}
                                 rows={3}
-                                placeholder="Any additional information for the parent"
+                                placeholder={t('homework.additionalNotesPlaceholder')}
                             />
                         </div>
 
                         {/* File Upload */}
                         <div>
-                            <Label>Attach Files (Optional)</Label>
+                          <Label>{t('homework.attachFiles')}</Label>
                             <FileUpload
                                 onFilesSelected={setSelectedFiles}
                                 maxFiles={5}
@@ -469,7 +472,7 @@ export default function EducatorHomeworkPage() {
                                 onClick={() => setShowAssignModal(false)}
                                 className="flex-1"
                             >
-                                Cancel
+                                {t('homework.cancel')}
                             </Button>
                             <Button
                                 type="submit"
@@ -479,10 +482,10 @@ export default function EducatorHomeworkPage() {
                                 {assignHomeworkMutation.isPending || isUploadingFiles ? (
                                     <>
                                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                        {isUploadingFiles ? 'Uploading files...' : 'Assigning...'}
+                                        {isUploadingFiles ? t('homework.uploadingFiles') : t('homework.assigning')}
                                     </>
                                 ) : (
-                                    'Assign Homework'
+                                    t('homework.assignHomeworkBtn')
                                 )}
                             </Button>
                         </div>
@@ -494,7 +497,7 @@ export default function EducatorHomeworkPage() {
             <Dialog open={showStudentModal} onOpenChange={setShowStudentModal}>
                 <DialogContent className="max-w-4xl max-h-[80vh]">
                     <DialogHeader>
-                        <DialogTitle>Select Student</DialogTitle>
+                        <DialogTitle>{t('homework.selectStudentHeader')}</DialogTitle>
                     </DialogHeader>
 
                     {/* Search and Filter */}
@@ -502,7 +505,7 @@ export default function EducatorHomeworkPage() {
                         <div className="flex gap-4">
                             <div className="flex-1">
                                 <Input
-                                    placeholder="Search students by name..."
+                                    placeholder={t('students.searchByName')}
                                     value={searchTerm}
                                     onChange={(e) => {
                                         setSearchTerm(e.target.value);
@@ -547,7 +550,7 @@ export default function EducatorHomeworkPage() {
                                             <div>
                                                 <h3 className="font-medium text-foreground">{student.fullName}</h3>
                                                 <p className="text-sm text-muted-foreground">
-                                                    <GradeDisplay grade={student.grade} /> • Age {student.age}
+                                                    <GradeDisplay grade={student.grade} /> • {t('students.yrs')} {student.age}
                                                 </p>
                                             </div>
                                             {formData.studentId === student.id && (
@@ -573,10 +576,10 @@ export default function EducatorHomeworkPage() {
                                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                         disabled={currentPage === 1}
                                     >
-                                        Previous
+                                        {t('students.previous')}
                                     </Button>
                                     <span className="text-sm text-muted-foreground">
-                                        Page {currentPage} of {totalPages}
+                                        {t('students.pageOf', { current: currentPage, total: totalPages })}
                                     </span>
                                     <Button
                                         variant="outline"
@@ -584,7 +587,7 @@ export default function EducatorHomeworkPage() {
                                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                                         disabled={currentPage === totalPages}
                                     >
-                                        Next
+                                        {t('students.next')}
                                     </Button>
                                 </div>
                             </div>

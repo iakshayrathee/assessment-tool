@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -231,11 +232,26 @@ const wlpFormSchema = z.object({
     outcome: z.string().optional(),
 });
 
-export default function LessonPlansPage() {
+function LessonPlansContent() {
     const { students, loading: studentsLoading } = useEducatorStudents();
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [showStudentModal, setShowStudentModal] = useState(false);
     const [activeTab, setActiveTab] = useState<'hierarchy' | 'ltp' | 'stp' | 'wlp'>('hierarchy');
+
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get('tab');
+
+    useEffect(() => {
+        if (tabParam && ['hierarchy', 'ltp', 'stp', 'wlp'].includes(tabParam)) {
+            setActiveTab(tabParam as any);
+        }
+    }, [tabParam]);
+
+    const handleTabChange = (val: string) => {
+        setActiveTab(val);
+        router.replace(`/educator/lesson-plans-new?tab=${val}`);
+    };
 
     // Data state
     const [ltps, setLtps] = useState<LongTermPlan[]>([]);
@@ -401,7 +417,7 @@ export default function LessonPlansPage() {
                     </div>
 
                     {/* Main Content Tabs */}
-                    <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)}>
+                    <Tabs value={activeTab} onValueChange={handleTabChange}>
                         <TabsList className="grid w-full grid-cols-4">
                             <TabsTrigger value="hierarchy">Hierarchy View</TabsTrigger>
                             <TabsTrigger value="ltp">Long-Term Plans</TabsTrigger>
@@ -508,5 +524,17 @@ export default function LessonPlansPage() {
                 selectedStudentId={selectedStudent?.id || ''}
             />
         </PageWrapper>
+    );
+}
+
+export default function LessonPlansPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        }>
+            <LessonPlansContent />
+        </Suspense>
     );
 }
