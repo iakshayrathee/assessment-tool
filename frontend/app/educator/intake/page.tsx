@@ -208,15 +208,18 @@ interface Student {
   grade: string;
 }
 
-const TABS: Tab[] = [
-  { id: 'demographics', title: 'Demographics', icon: User, description: 'Basic student information' },
-  { id: 'family', title: 'Family History', icon: Home, description: 'Family background and structure' },
-  { id: 'prenatal', title: 'Prenatal & Birth', icon: Baby, description: 'Birth and early development' },
-  { id: 'postnatal', title: 'Post Natal', icon: Heart, description: 'Post-birth development factors' },
-  { id: 'medical', title: 'Medical History', icon: Stethoscope, description: 'Health and medical information' },
-  { id: 'educational', title: 'Educational History', icon: GraduationCap, description: 'Academic background' },
-  { id: 'review', title: 'Review', icon: CheckCircle, description: 'Review and submit' }
-];
+// TABS are defined inside the component so they can use t()
+const TABS_IDS = ['demographics', 'family', 'prenatal', 'postnatal', 'medical', 'educational', 'review'] as const;
+type TabId = typeof TABS_IDS[number];
+const TAB_ICONS: Record<TabId, React.ComponentType<{ className?: string }>> = {
+  demographics: User,
+  family: Home,
+  prenatal: Baby,
+  postnatal: Heart,
+  medical: Stethoscope,
+  educational: GraduationCap,
+  review: CheckCircle,
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -1537,7 +1540,7 @@ function IntakeFormPageContent() {
       case 'educational':
         return !!formData.dominantWritingHand;
       case 'review':
-        return TABS.slice(0, -1).every(tab => isTabCompleted(tab.id));
+        return TABS_IDS.slice(0, -1).every(tabId => isTabCompleted(tabId));
       default:
         return false;
     }
@@ -1559,18 +1562,18 @@ function IntakeFormPageContent() {
             {/* ── Row 1: Name + Date of Birth ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
+                <Label htmlFor="name">{t('intake.name')} <span className="text-destructive">*</span></Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Student's full name"
+                  placeholder={t('intake.name')}
                   required
                   disabled={isFormCompleted}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth <span className="text-destructive">*</span></Label>
+                <Label htmlFor="dateOfBirth">{t('intake.dateOfBirth')} <span className="text-destructive">*</span></Label>
                 <Input
                   id="dateOfBirth"
                   type="date"
@@ -1591,7 +1594,7 @@ function IntakeFormPageContent() {
                 {formData.chronologicalAge && (
                   <p className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded flex items-center gap-1">
                     🎂 <span className="font-medium">{formData.chronologicalAge}</span>
-                    <span className="text-muted-foreground/70">chronological age</span>
+                    <span className="text-muted-foreground/70">{t('intake.chronologicalAgeLabel')}</span>
                   </p>
                 )}
               </div>
@@ -1600,30 +1603,30 @@ function IntakeFormPageContent() {
             {/* ── Row 2: Gender + School/Center ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="gender">Gender <span className="text-destructive">*</span></Label>
+                <Label htmlFor="gender">{t('intake.gender')} <span className="text-destructive">*</span></Label>
                 <Select
                   value={formData.gender}
                   onValueChange={(value) => handleInputChange('gender', value)}
                   disabled={isFormCompleted}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select gender" />
+                    <SelectValue placeholder={t('intake.selectGender')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Male">{t('intake.genderMale')}</SelectItem>
+                    <SelectItem value="Female">{t('intake.genderFemale')}</SelectItem>
+                    <SelectItem value="Other">{t('intake.genderOther')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Used for analytics only</p>
+                <p className="text-xs text-muted-foreground">{t('intake.usedForAnalyticsOnly')}</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="schoolCenter">School / Center <span className="text-destructive">*</span></Label>
+                <Label htmlFor="schoolCenter">{t('intake.schoolCenter')} <span className="text-destructive">*</span></Label>
                 <Input
                   id="schoolCenter"
                   value={formData.schoolCenter}
                   onChange={(e) => handleInputChange('schoolCenter', e.target.value)}
-                  placeholder="School or center name"
+                  placeholder={t('intake.schoolCenter')}
                   required
                   disabled={isFormCompleted}
                 />
@@ -1632,81 +1635,81 @@ function IntakeFormPageContent() {
 
             {/* ── School Type ── */}
             <div className="space-y-2">
-              <Label htmlFor="schoolType">School Type</Label>
+              <Label htmlFor="schoolType">{t('intake.schoolType')}</Label>
               <Select
                 value={formData.schoolType}
                 onValueChange={(value) => handleInputChange('schoolType', value)}
                 disabled={isFormCompleted}
               >
                 <SelectTrigger id="schoolType">
-                  <SelectValue placeholder="Select school type" />
+                  <SelectValue placeholder={t('intake.selectSchoolType')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Mainstream School">Mainstream School</SelectItem>
-                  <SelectItem value="Inclusive School">Inclusive School</SelectItem>
-                  <SelectItem value="Special School">Special School</SelectItem>
-                  <SelectItem value="Alternative School">Alternative School</SelectItem>
+                  <SelectItem value="Mainstream School">{t('intake.mainstreamSchool')}</SelectItem>
+                  <SelectItem value="Inclusive School">{t('intake.inclusiveSchool')}</SelectItem>
+                  <SelectItem value="Special School">{t('intake.specialSchool')}</SelectItem>
+                  <SelectItem value="Alternative School">{t('intake.alternativeSchool')}</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">AI uses for contextual interpretation of referral concerns</p>
+              <p className="text-xs text-muted-foreground">{t('intake.schoolTypeDesc')}</p>
             </div>
 
             {/* ── Address breakdown ── */}
             <div className="space-y-3">
-              <Label>Address</Label>
+              <Label>{t('intake.address')}</Label>
               <Textarea
                 id="address"
                 value={formData.address}
                 onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="Full address"
+                placeholder={t('intake.address')}
                 disabled={isFormCompleted}
               />
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="city">{t('intake.city')}</Label>
                   <Input
                     id="city"
                     value={formData.city}
                     onChange={(e) => handleInputChange('city', e.target.value)}
-                    placeholder="City"
+                    placeholder={t('intake.city')}
                     disabled={isFormCompleted}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="state">State</Label>
+                  <Label htmlFor="state">{t('intake.state')}</Label>
                   <Input
                     id="state"
                     value={formData.state}
                     onChange={(e) => handleInputChange('state', e.target.value)}
-                    placeholder="State"
+                    placeholder={t('intake.state')}
                     disabled={isFormCompleted}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="urbanOrRural">Urban / Rural</Label>
+                  <Label htmlFor="urbanOrRural">{t('intake.urbanOrRural')}</Label>
                   <Select
                     value={formData.urbanOrRural}
                     onValueChange={(value) => handleInputChange('urbanOrRural', value)}
                     disabled={isFormCompleted}
                   >
                     <SelectTrigger id="urbanOrRural">
-                      <SelectValue placeholder="Select area" />
+                      <SelectValue placeholder={t('intake.selectArea')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Urban">Urban</SelectItem>
-                      <SelectItem value="Semi-Urban">Semi-Urban</SelectItem>
-                      <SelectItem value="Rural">Rural</SelectItem>
+                      <SelectItem value="Urban">{t('intake.urban')}</SelectItem>
+                      <SelectItem value="Semi-Urban">{t('intake.semiUrban')}</SelectItem>
+                      <SelectItem value="Rural">{t('intake.rural')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">AI uses for service accessibility, norm comparisons & language context</p>
+              <p className="text-xs text-muted-foreground">{t('intake.addressDesc')}</p>
             </div>
 
             {/* ── Class + Syllabus ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="class">Class <span className="text-destructive">*</span></Label>
+                <Label htmlFor="class">{t('intake.class')} <span className="text-destructive">*</span></Label>
                 <Input
                   id="class"
                   value={formData.class}
@@ -1715,28 +1718,28 @@ function IntakeFormPageContent() {
                   required
                   disabled={isFormCompleted}
                 />
-                <p className="text-xs text-muted-foreground">AI uses for curriculum expectations, grade-level comparisons & gap analysis</p>
+                <p className="text-xs text-muted-foreground">{t('intake.classDesc')}</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="syllabus">Syllabus <span className="text-destructive">*</span></Label>
+                <Label htmlFor="syllabus">{t('intake.syllabus')} <span className="text-destructive">*</span></Label>
                 <Select
                   value={formData.syllabus}
                   onValueChange={(value) => handleInputChange('syllabus', value)}
                   disabled={isFormCompleted}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select syllabus" />
+                    <SelectValue placeholder={t('intake.selectSyllabus')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="CBSE">CBSE</SelectItem>
-                    <SelectItem value="ICSE">ICSE</SelectItem>
-                    <SelectItem value="State Board">State Board</SelectItem>
-                    <SelectItem value="IB">IB</SelectItem>
-                    <SelectItem value="IGCSE">IGCSE</SelectItem>
-                    <SelectItem value="Others">Others</SelectItem>
+                    <SelectItem value="CBSE">{t('intake.cbse')}</SelectItem>
+                    <SelectItem value="ICSE">{t('intake.icse')}</SelectItem>
+                    <SelectItem value="State Board">{t('intake.stateBoard')}</SelectItem>
+                    <SelectItem value="IB">{t('intake.ib')}</SelectItem>
+                    <SelectItem value="IGCSE">{t('intake.igcse')}</SelectItem>
+                    <SelectItem value="Others">{t('intake.others')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">AI uses for grade-level benchmarking across boards</p>
+                <p className="text-xs text-muted-foreground">{t('intake.syllabusDesc')}</p>
               </div>
             </div>
 
@@ -1744,75 +1747,75 @@ function IntakeFormPageContent() {
             <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border/50">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold">Language Profile</span>
+                <span className="text-sm font-semibold">{t('intake.languageProfileTitle')}</span>
               </div>
               <p className="text-xs text-muted-foreground -mt-2">
-                Helps AI distinguish language-exposure issues from true learning difficulties
+                {t('intake.languageProfileDesc')}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="motherTongue">Mother Tongue</Label>
+                  <Label htmlFor="motherTongue">{t('intake.motherTongue')}</Label>
                   <Input
                     id="motherTongue"
                     value={formData.motherTongue}
                     onChange={(e) => handleInputChange('motherTongue', e.target.value)}
-                    placeholder="e.g., Kannada"
+                    placeholder={t('intake.motherTongue')}
                     disabled={isFormCompleted}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="languageSpokenAtHome">Language Spoken at Home</Label>
+                  <Label htmlFor="languageSpokenAtHome">{t('intake.languageSpokenAtHome')}</Label>
                   <Select
                     value={formData.languageSpokenAtHome}
                     onValueChange={(value) => handleInputChange('languageSpokenAtHome', value)}
                     disabled={isFormCompleted}
                   >
                     <SelectTrigger id="languageSpokenAtHome">
-                      <SelectValue placeholder="Select language" />
+                      <SelectValue placeholder={t('intake.selectLanguage')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="English">English</SelectItem>
-                      <SelectItem value="Hindi">Hindi</SelectItem>
-                      <SelectItem value="Kannada">Kannada</SelectItem>
-                      <SelectItem value="Tamil">Tamil</SelectItem>
-                      <SelectItem value="Telugu">Telugu</SelectItem>
-                      <SelectItem value="Malayalam">Malayalam</SelectItem>
-                      <SelectItem value="Marathi">Marathi</SelectItem>
-                      <SelectItem value="Bengali">Bengali</SelectItem>
-                      <SelectItem value="Gujarati">Gujarati</SelectItem>
-                      <SelectItem value="Punjabi">Punjabi</SelectItem>
-                      <SelectItem value="Odia">Odia</SelectItem>
-                      <SelectItem value="Urdu">Urdu</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
+                      <SelectItem value="English">{t('intake.english')}</SelectItem>
+                      <SelectItem value="Hindi">{t('intake.hindi')}</SelectItem>
+                      <SelectItem value="Kannada">{t('intake.kannada')}</SelectItem>
+                      <SelectItem value="Tamil">{t('intake.tamil')}</SelectItem>
+                      <SelectItem value="Telugu">{t('intake.telugu')}</SelectItem>
+                      <SelectItem value="Malayalam">{t('intake.malayalam')}</SelectItem>
+                      <SelectItem value="Marathi">{t('intake.marathi')}</SelectItem>
+                      <SelectItem value="Bengali">{t('intake.bengali')}</SelectItem>
+                      <SelectItem value="Gujarati">{t('intake.gujarati')}</SelectItem>
+                      <SelectItem value="Punjabi">{t('intake.punjabi')}</SelectItem>
+                      <SelectItem value="Odia">{t('intake.odia')}</SelectItem>
+                      <SelectItem value="Urdu">{t('intake.urdu')}</SelectItem>
+                      <SelectItem value="Other">{t('intake.otherLanguage')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="mediumOfInstruction">Medium of Instruction</Label>
+                  <Label htmlFor="mediumOfInstruction">{t('intake.mediumOfInstruction')}</Label>
                   <Select
                     value={formData.mediumOfInstruction}
                     onValueChange={(value) => handleInputChange('mediumOfInstruction', value)}
                     disabled={isFormCompleted}
                   >
                     <SelectTrigger id="mediumOfInstruction">
-                      <SelectValue placeholder="Select medium" />
+                      <SelectValue placeholder={t('intake.selectMedium')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="English">English</SelectItem>
-                      <SelectItem value="Hindi">Hindi</SelectItem>
-                      <SelectItem value="Kannada">Kannada</SelectItem>
-                      <SelectItem value="Tamil">Tamil</SelectItem>
-                      <SelectItem value="Telugu">Telugu</SelectItem>
-                      <SelectItem value="Malayalam">Malayalam</SelectItem>
-                      <SelectItem value="Marathi">Marathi</SelectItem>
-                      <SelectItem value="Bengali">Bengali</SelectItem>
-                      <SelectItem value="Gujarati">Gujarati</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
+                      <SelectItem value="English">{t('intake.english')}</SelectItem>
+                      <SelectItem value="Hindi">{t('intake.hindi')}</SelectItem>
+                      <SelectItem value="Kannada">{t('intake.kannada')}</SelectItem>
+                      <SelectItem value="Tamil">{t('intake.tamil')}</SelectItem>
+                      <SelectItem value="Telugu">{t('intake.telugu')}</SelectItem>
+                      <SelectItem value="Malayalam">{t('intake.malayalam')}</SelectItem>
+                      <SelectItem value="Marathi">{t('intake.marathi')}</SelectItem>
+                      <SelectItem value="Bengali">{t('intake.bengali')}</SelectItem>
+                      <SelectItem value="Gujarati">{t('intake.gujarati')}</SelectItem>
+                      <SelectItem value="Other">{t('intake.otherLanguage')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="yearsExposedToInstructionLanguage">Years Exposed to Instruction Language</Label>
+                  <Label htmlFor="yearsExposedToInstructionLanguage">{t('intake.yearsExposedToInstructionLanguage')}</Label>
                   <Input
                     id="yearsExposedToInstructionLanguage"
                     type="number"
@@ -1826,7 +1829,7 @@ function IntakeFormPageContent() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="numberOfLanguagesUnderstood">Number of Languages Child Understands</Label>
+                <Label htmlFor="numberOfLanguagesUnderstood">{t('intake.numberOfLanguagesUnderstood')}</Label>
                 <Input
                   id="numberOfLanguagesUnderstood"
                   type="number"
@@ -1838,7 +1841,7 @@ function IntakeFormPageContent() {
                   disabled={isFormCompleted}
                   className="max-w-[200px]"
                 />
-                <p className="text-xs text-muted-foreground">AI uses for language complexity profile</p>
+                <p className="text-xs text-muted-foreground">{t('intake.languagesUnderstoodDesc')}</p>
               </div>
             </div>
 
@@ -1846,48 +1849,48 @@ function IntakeFormPageContent() {
             <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border/50">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold">Additional Context</span>
+                <span className="text-sm font-semibold">{t('intake.additionalContextTitle')}</span>
               </div>
-              <p className="text-xs text-muted-foreground -mt-2">Context-only — not used for risk scoring</p>
+              <p className="text-xs text-muted-foreground -mt-2">{t('intake.additionalContextDesc')}</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="childLivesWith">Child Lives With</Label>
+                  <Label htmlFor="childLivesWith">{t('intake.childLivesWith')}</Label>
                   <Select
                     value={formData.childLivesWith}
                     onValueChange={(value) => handleInputChange('childLivesWith', value)}
                     disabled={isFormCompleted}
                   >
                     <SelectTrigger id="childLivesWith">
-                      <SelectValue placeholder="Select option" />
+                      <SelectValue placeholder={t('intake.selectOption')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Both Parents">Both Parents</SelectItem>
-                      <SelectItem value="Mother">Mother</SelectItem>
-                      <SelectItem value="Father">Father</SelectItem>
-                      <SelectItem value="Grandparents">Grandparents</SelectItem>
-                      <SelectItem value="Guardian">Guardian</SelectItem>
+                      <SelectItem value="Both Parents">{t('intake.bothParents')}</SelectItem>
+                      <SelectItem value="Mother">{t('intake.mother')}</SelectItem>
+                      <SelectItem value="Father">{t('intake.father')}</SelectItem>
+                      <SelectItem value="Grandparents">{t('intake.grandparents')}</SelectItem>
+                      <SelectItem value="Guardian">{t('intake.guardian')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="previousGradeRetention">Previous Grade Retention</Label>
+                  <Label htmlFor="previousGradeRetention">{t('intake.previousGradeRetention')}</Label>
                   <Select
                     value={formData.previousGradeRetention}
                     onValueChange={(value) => handleInputChange('previousGradeRetention', value)}
                     disabled={isFormCompleted}
                   >
                     <SelectTrigger id="previousGradeRetention">
-                      <SelectValue placeholder="Select option" />
+                      <SelectValue placeholder={t('intake.selectOption')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Yes">Yes</SelectItem>
                       <SelectItem value="No">No</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">Academic risk indicator</p>
+                  <p className="text-xs text-muted-foreground">{t('intake.gradeRetentionDesc')}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="schoolAttendance">School Attendance</Label>
+                  <Label htmlFor="schoolAttendance">{t('intake.schoolAttendance')}</Label>
                   <Select
                     value={formData.schoolAttendance}
                     onValueChange={(value) => handleInputChange('schoolAttendance', value)}
@@ -4394,23 +4397,23 @@ function IntakeFormPageContent() {
                   <div
                     className="h-full bg-blue-500 transition-all duration-500 ease-in-out"
                     style={{
-                      width: `${(TABS.findIndex(tab => tab.id === activeTab) / (TABS.length - 1)) * 100}%`
+                      width: `${(TABS_IDS.indexOf(activeTab as any) / (TABS_IDS.length - 1)) * 100}%`
                     }}
                   />
                 </div>
 
                 {/* Tab Icons */}
                 <div className="relative z-10 flex justify-between items-center">
-                  {TABS.map((tab, index) => {
-                    const Icon = tab.icon;
-                    const status = getTabStatus(tab.id);
-                    const isActive = activeTab === tab.id;
+                  {TABS_IDS.map((tabId, index) => {
+                    const Icon = TAB_ICONS[tabId];
+                    const status = getTabStatus(tabId);
+                    const isActive = activeTab === tabId;
                     const isCompleted = status === 'completed';
 
                     return (
-                      <div key={tab.id} className="flex flex-col items-center group">
+                      <div key={tabId} className="flex flex-col items-center group">
                         <button
-                          onClick={() => setActiveTab(tab.id)}
+                          onClick={() => setActiveTab(tabId)}
                           className={`
                             relative w-12 h-12 rounded-full border-2 flex items-center justify-center
                             transition-all duration-300 ease-in-out transform hover:scale-110
@@ -4445,10 +4448,10 @@ function IntakeFormPageContent() {
                                 : 'text-muted-foreground group-hover:text-primary'
                             }
                           `}>
-                            {t(`intake.${tab.id}`)}
+                            {t(`intake.${tabId}`)}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1 max-w-20 leading-tight h-8 flex items-start justify-center">
-                            {t(`intake.${tab.id === 'demographics' ? 'studentInfoDesc' : tab.id === 'family' ? 'familyBackgroundDesc' : tab.id === 'prenatal' ? 'birthDevelopmentDesc' : tab.id === 'postnatal' ? 'postBirthDesc' : tab.id === 'medical' ? 'healthMedicalDesc' : tab.id === 'educational' ? 'academicBackgroundDesc' : 'reviewSubmitDesc'}`)}
+                            {t(`intake.${tabId === 'demographics' ? 'studentInfoDesc' : tabId === 'family' ? 'familyBackgroundDesc' : tabId === 'prenatal' ? 'birthDevelopmentDesc' : tabId === 'postnatal' ? 'postBirthDesc' : tabId === 'medical' ? 'healthMedicalDesc' : tabId === 'educational' ? 'academicBackgroundDesc' : 'reviewSubmitDesc'}`)}
                           </p>
                         </div>
                       </div>
@@ -4462,8 +4465,8 @@ function IntakeFormPageContent() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  {React.createElement(TABS.find(tab => tab.id === activeTab)?.icon || User, { className: "h-5 w-5" })}
-                  {t(`intake.${TABS.find(tab => tab.id === activeTab)?.id}`)}
+                  {React.createElement(TAB_ICONS[activeTab as TabId] || User, { className: "h-5 w-5" })}
+                  {t(`intake.${activeTab}`)}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
                   {t(`intake.${activeTab === 'demographics' ? 'studentInfoDesc' : activeTab === 'family' ? 'familyBackgroundDesc' : activeTab === 'prenatal' ? 'birthDevelopmentDesc' : activeTab === 'postnatal' ? 'postBirthDesc' : activeTab === 'medical' ? 'healthMedicalDesc' : activeTab === 'educational' ? 'academicBackgroundDesc' : 'reviewSubmitDesc'}`)}
