@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { BookOpen, PenTool, Calculator, FileText, Plus, Users, Loader2, Eye, Pencil } from 'lucide-react';
 import { FormalAssessmentForm } from '@/components/assessments/FormalAssessmentForm';
 import { ReadingAssessmentWizard } from '@/components/assessments/ReadingAssessmentWizard';
+import { ReadingAssessmentLayout } from '@/components/assessments/reading-v2/ReadingAssessmentLayout';
+import { ReadingComprehensionLayout } from '@/components/assessments/comprehension-v2/ReadingComprehensionLayout';
 import { WritingSkillAssessment } from '@/components/assessments/WritingSkillAssessment';
 import { MathSkillAssessment } from '@/components/assessments/MathSkillAssessment';
 import { StudentSelectionModal } from '@/components/assessments/StudentSelectionModal';
@@ -42,7 +44,7 @@ function AssessmentsContent() {
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [assessmentTab, setAssessmentTab] = useState('formal');
   const [showFormalForm, setShowFormalForm] = useState(false);
-  const [showSkillAssessment, setShowSkillAssessment] = useState<'reading' | 'writing' | 'math' | null>(null);
+  const [showSkillAssessment, setShowSkillAssessment] = useState<'reading' | 'writing' | 'math' | 'comprehension' | null>(null);
   const [showStudentModal, setShowStudentModal] = useState(false);
 
   const tabParam = searchParams.get('tab');
@@ -52,7 +54,7 @@ function AssessmentsContent() {
     if (tabParam && ['formal', 'skill'].includes(tabParam)) {
       setAssessmentTab(tabParam);
     }
-    if (skillParam && ['reading', 'writing', 'math'].includes(skillParam)) {
+    if (skillParam && ['reading', 'writing', 'math', 'comprehension'].includes(skillParam)) {
       setShowSkillAssessment(skillParam as any);
     } else if (tabParam === 'skill' && !skillParam) {
       setShowSkillAssessment(null);
@@ -72,6 +74,7 @@ function AssessmentsContent() {
 
   const [formalAssessments, setFormalAssessments] = useState<any[]>([]);
   const [readingAssessments, setReadingAssessments] = useState<any[]>([]);
+  const [comprehensionAssessments, setComprehensionAssessments] = useState<any[]>([]);
   const [writingAssessments, setWritingAssessments] = useState<any[]>([]);
   const [mathAssessments, setMathAssessments] = useState<any[]>([]);
   const [loadingAssessments, setLoadingAssessments] = useState(false);
@@ -79,7 +82,7 @@ function AssessmentsContent() {
   const [editingAssessment, setEditingAssessment] = useState<any>(null);
 
   const [showMaxWarning, setShowMaxWarning] = useState(false);
-  const [pendingAssessmentType, setPendingAssessmentType] = useState<'formal' | 'reading' | 'writing' | 'math' | null>(null);
+  const [pendingAssessmentType, setPendingAssessmentType] = useState<'formal' | 'reading' | 'writing' | 'math' | 'comprehension' | null>(null);
   const [oldestAssessment, setOldestAssessment] = useState<any>(null);
 
   // AI hook — enabled when student is selected
@@ -123,8 +126,12 @@ function AssessmentsContent() {
       setFormalAssessments(
         results[0].status === 'fulfilled' ? results[0].value || [] : []
       );
+      const allReadingRows: any[] = results[1].status === 'fulfilled' ? results[1].value || [] : [];
       setReadingAssessments(
-        results[1].status === 'fulfilled' ? results[1].value || [] : []
+        allReadingRows.filter((r: any) => (r.progressTracking?.flowType ?? 'READING') === 'READING')
+      );
+      setComprehensionAssessments(
+        allReadingRows.filter((r: any) => r.progressTracking?.flowType === 'READING_COMPREHENSION')
       );
       setWritingAssessments(
         results[2].status === 'fulfilled' ? results[2].value || [] : []
@@ -154,7 +161,7 @@ function AssessmentsContent() {
     }
   };
 
-  const handleCreateAssessment = (type: 'formal' | 'reading' | 'writing' | 'math') => {
+  const handleCreateAssessment = (type: 'formal' | 'reading' | 'writing' | 'math' | 'comprehension') => {
     let assessments: any[] = [];
     let assessmentTypeName = '';
 
@@ -166,6 +173,10 @@ function AssessmentsContent() {
       case 'reading':
         assessments = readingAssessments;
         assessmentTypeName = 'Reading';
+        break;
+      case 'comprehension':
+        assessments = comprehensionAssessments;
+        assessmentTypeName = 'Reading Comprehension';
         break;
       case 'writing':
         assessments = writingAssessments;
@@ -203,6 +214,7 @@ function AssessmentsContent() {
         case 'reading':
         case 'writing':
         case 'math':
+        case 'comprehension':
           await apiClient.deleteFormalAssessment(oldestAssessment.id);
           break;
       }
@@ -217,7 +229,7 @@ function AssessmentsContent() {
     }
   };
 
-  const openAssessmentForm = (type: 'formal' | 'reading' | 'writing' | 'math') => {
+  const openAssessmentForm = (type: 'formal' | 'reading' | 'writing' | 'math' | 'comprehension') => {
     setEditingAssessment(null);
     switch (type) {
       case 'formal':
@@ -226,6 +238,7 @@ function AssessmentsContent() {
       case 'reading':
       case 'writing':
       case 'math':
+      case 'comprehension':
         setShowSkillAssessment(type);
         break;
     }
@@ -241,7 +254,8 @@ function AssessmentsContent() {
       case 'reading':
       case 'writing':
       case 'math':
-        setShowSkillAssessment(type as 'reading' | 'writing' | 'math');
+      case 'comprehension':
+        setShowSkillAssessment(type as 'reading' | 'writing' | 'math' | 'comprehension');
         break;
     }
   };
@@ -256,7 +270,8 @@ function AssessmentsContent() {
       case 'reading':
       case 'writing':
       case 'math':
-        setShowSkillAssessment(type as 'reading' | 'writing' | 'math');
+      case 'comprehension':
+        setShowSkillAssessment(type as 'reading' | 'writing' | 'math' | 'comprehension');
         break;
     }
   };
@@ -433,12 +448,23 @@ function AssessmentsContent() {
             {showSkillAssessment ? (
               <div>
                 {showSkillAssessment === 'reading' && (
-                  <ReadingAssessmentWizard
+                  <ReadingAssessmentLayout
                     studentId={selectedStudent?.id || ''}
                     studentGrade={selectedStudent?.grade || ''}
                     assessmentId={editingAssessment?.type === 'reading' ? editingAssessment?.id : undefined}
                     initialData={editingAssessment?.type === 'reading' ? editingAssessment : undefined}
                     mode={editingAssessment?.type === 'reading' ? (editingAssessment?.mode || 'edit') : 'create'}
+                    onSuccess={handleAssessmentSuccess}
+                    onCancel={handleCancelSkill}
+                  />
+                )}
+                {showSkillAssessment === 'comprehension' && (
+                  <ReadingComprehensionLayout
+                    studentId={selectedStudent?.id || ''}
+                    studentGrade={selectedStudent?.grade || ''}
+                    assessmentId={editingAssessment?.type === 'comprehension' ? editingAssessment?.id : undefined}
+                    initialData={editingAssessment?.type === 'comprehension' ? editingAssessment : undefined}
+                    mode={editingAssessment?.type === 'comprehension' ? (editingAssessment?.mode || 'edit') : 'create'}
                     onSuccess={handleAssessmentSuccess}
                     onCancel={handleCancelSkill}
                   />
@@ -483,6 +509,24 @@ function AssessmentsContent() {
                   </CardHeader>
                   <CardContent>
                     {renderAssessmentTable(readingAssessments, 'reading')}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5 text-blue-500" />
+                        {t('assessments.comprehensionTitle', { count: comprehensionAssessments.length, max: MAX_ASSESSMENTS })}
+                      </CardTitle>
+                      <Button onClick={() => handleCreateAssessment('comprehension')} size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        {t('assessments.new')}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderAssessmentTable(comprehensionAssessments, 'comprehension')}
                   </CardContent>
                 </Card>
 

@@ -97,6 +97,7 @@ function getRoleNavigations(t: (key: string) => string): Record<string, Navigati
             items: [
               { title: t('nav.assessmentsFormal'), href: '/educator/assessments?tab=formal' },
               { title: t('nav.assessmentsReading'), href: '/educator/assessments?tab=skill&skill=reading' },
+              { title: t('nav.assessmentsComprehension'), href: '/educator/assessments?tab=skill&skill=comprehension' },
               { title: t('nav.assessmentsWriting'), href: '/educator/assessments?tab=skill&skill=writing' },
               { title: t('nav.assessmentsMath'), href: '/educator/assessments?tab=skill&skill=math' },
             ],
