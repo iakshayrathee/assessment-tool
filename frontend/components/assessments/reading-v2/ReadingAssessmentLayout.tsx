@@ -12,11 +12,15 @@ import { toast } from '@/lib/toast';
 
 import { AssessmentDetailsTab } from './AssessmentDetailsTab';
 import { AssessmentMaterialTab } from './AssessmentMaterialTab';
+import { ReadingSkillTab } from './ReadingSkillTab';
 import { ReadingBehaviourTab } from './ReadingBehaviourTab';
 import { ReadingStrengthsTab } from './ReadingStrengthsTab';
 import { ReadingAssessmentPreview } from '@/components/assessments/reading-sections/ReadingAssessmentPreview';
 import type { TextSectionData } from './GradeTextSections';
 import type { GradeAttempt } from '@/components/assessments/shared/AttemptHistoryPanel';
+
+const TABS = ['details', 'skill', 'material', 'behaviour', 'strengths'] as const;
+type TabId = typeof TABS[number];
 
 interface Props {
   studentId: string;
@@ -28,13 +32,13 @@ interface Props {
   onCancel?: () => void;
 }
 
-function buildPayload(state: ReturnType<typeof buildInitialState>, studentId: string, tab: string): any {
-  const { details, approach, attempts, functionalGrade, schoolText, knownText, unknownText, battery, behaviour, strengths } = state;
+function buildPayload(state: ReturnType<typeof buildInitialState>, studentId: string, tab: TabId): any {
+  const { details, attempts, functionalGrade, schoolText, knownText, unknownText, battery, behaviour, strengths } = state;
   return {
     studentId,
     assessmentDate: details.assessmentDate,
     functionalGradeLevel: functionalGrade,
-    currentStep: ['details', 'material', 'behaviour', 'strengths'].indexOf(tab) + 1,
+    currentStep: TABS.indexOf(tab) + 1,
     // scalar behaviour fields
     interestInReading: behaviour.interestInReading,
     confidenceLevel: behaviour.confidenceLevel,
@@ -46,7 +50,7 @@ function buildPayload(state: ReturnType<typeof buildInitialState>, studentId: st
     emotionalResponse: behaviour.emotionalResponse,
     motivation: behaviour.motivation,
     behaviorObservations: behaviour.behaviorObservations,
-    // scalar text section fields
+    // scalar text section fields (mirror of current grade attempt into existing scalars)
     schoolTextGradeLevel: schoolText.gradeLevelUsed,
     schoolTextDifficulty: schoolText.difficulty,
     schoolTextQuality: schoolText.accuracy,
@@ -67,7 +71,7 @@ function buildPayload(state: ReturnType<typeof buildInitialState>, studentId: st
     unknownTextErrors: unknownText.errors,
     unknownTextObservation: unknownText.observation,
     // battery scalars
-    batteryTestConducted: !!(battery.observation || battery.performance),
+    batteryTestConducted: !!(battery.observation || battery.performance || battery.reportUrl),
     batteryTestSummary: battery.observation,
     batteryTestReportUrl: battery.reportUrl,
     // JSON columns
@@ -78,27 +82,30 @@ function buildPayload(state: ReturnType<typeof buildInitialState>, studentId: st
         durationMinutes: details.durationMinutes,
         purpose: details.purpose,
       },
-      approach,
+      // approach is now always 'grade' in the Reading Skill tab; 'skill' => knowledge-based
+      approach: 'grade',
       battery: {
         performance: battery.performance,
         remarks: battery.remarks,
+        localFileName: battery.localFileName,
       },
     },
     gradeLevelMappings: { attempts },
     strengths: strengths,
-    redFlags: { behaviour: {
-      behaviours: behaviour.behaviours,
-      distractibility: behaviour.distractibility,
-      impulsivity: behaviour.impulsivity,
-      persistence: behaviour.persistence,
-      overallRating: behaviour.overallRating,
-    }},
+    redFlags: {
+      behaviour: {
+        behaviours: behaviour.behaviours,
+        distractibility: behaviour.distractibility,
+        impulsivity: behaviour.impulsivity,
+        persistence: behaviour.persistence,
+        overallRating: behaviour.overallRating,
+      },
+    },
     progressTracking: { flowType: 'READING' },
   };
 }
 
 function buildInitialState(data?: any) {
-  const pt = data?.progressTracking || {};
   const rr = data?.readingResources || {};
   const gm = data?.gradeLevelMappings || {};
   const rf = data?.redFlags?.behaviour || {};
@@ -106,13 +113,14 @@ function buildInitialState(data?: any) {
 
   return {
     details: {
-      assessmentDate: data?.assessmentDate ? new Date(data.assessmentDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      assessmentDate: data?.assessmentDate
+        ? new Date(data.assessmentDate).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0],
       assessor: rr?.setup?.assessor || '',
       language: rr?.setup?.language || '',
       durationMinutes: rr?.setup?.durationMinutes,
       purpose: rr?.setup?.purpose || '',
     },
-    approach: (rr?.approach || 'grade') as 'grade' | 'skill',
     attempts: (gm?.attempts || []) as GradeAttempt[],
     functionalGrade: data?.functionalGradeLevel || '',
     schoolText: {
@@ -145,6 +153,8 @@ function buildInitialState(data?: any) {
       performance: rr?.battery?.performance || '',
       remarks: rr?.battery?.remarks || '',
       reportUrl: data?.batteryTestReportUrl || '',
+      localFileName: rr?.battery?.localFileName || '',
+      localFileUrl: undefined as string | undefined,
     },
     behaviour: {
       interestInReading: data?.interestInReading as number | undefined,
@@ -180,7 +190,7 @@ export function ReadingAssessmentLayout({
   const { t } = useTranslation(['assessments', 'educator']);
   const isViewMode = mode === 'view';
 
-  const [activeTab, setActiveTab] = useState('details');
+  const [activeTab, setActiveTab] = useState<TabId>('details');
   const [state, setState] = useState(() => buildInitialState(initialData));
   const [savedId, setSavedId] = useState<string | null>(assessmentId || initialData?.id || null);
   const [savedAssessment, setSavedAssessment] = useState<any>(initialData || null);
@@ -280,7 +290,9 @@ export function ReadingAssessmentLayout({
       <Card>
         <CardContent className="pt-4 pb-3 flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <h2 className="text-lg font-semibold">{t('reading', { defaultValue: 'Reading' })} — {t('skillAssessment', { defaultValue: 'Skill Assessment' })}</h2>
+            <h2 className="text-lg font-semibold">
+              {t('reading', { defaultValue: 'Reading' })} — {t('skillAssessment', { defaultValue: 'Skill Assessment' })}
+            </h2>
             {savedId && <p className="text-xs text-muted-foreground">ID: {savedId}</p>}
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -302,15 +314,17 @@ export function ReadingAssessmentLayout({
         </CardContent>
       </Card>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+      {/* 5-tab layout */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)}>
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="details">Assessment Details</TabsTrigger>
-          <TabsTrigger value="material">Assessment Material</TabsTrigger>
+          <TabsTrigger value="skill">Reading Skill</TabsTrigger>
+          <TabsTrigger value="material">Knowled-Based</TabsTrigger>
           <TabsTrigger value="behaviour">Reading Behaviour</TabsTrigger>
           <TabsTrigger value="strengths">Reading Strengths</TabsTrigger>
         </TabsList>
 
+        {/* Tab 1 — Assessment Details */}
         <TabsContent value="details" className="mt-4">
           <AssessmentDetailsTab
             data={state.details}
@@ -320,10 +334,9 @@ export function ReadingAssessmentLayout({
           />
         </TabsContent>
 
-        <TabsContent value="material" className="mt-4">
-          <AssessmentMaterialTab
-            approach={state.approach}
-            onApproachChange={(a) => update('approach', a)}
+        {/* Tab 2 — Reading Skill (Grade-Based iterative flow) */}
+        <TabsContent value="skill" className="mt-4">
+          <ReadingSkillTab
             studentGrade={studentGrade}
             attempts={state.attempts}
             onAttemptsChange={(a) => update('attempts', a)}
@@ -335,10 +348,6 @@ export function ReadingAssessmentLayout({
             onSchoolTextChange={(d) => update('schoolText', d)}
             onKnownTextChange={(d) => update('knownText', d)}
             onUnknownTextChange={(d) => update('unknownText', d)}
-            batteryData={state.battery}
-            onBatteryChange={(d) => update('battery', d)}
-            formData={state.skillData}
-            onFormDataChange={(u) => update('skillData', { ...state.skillData, ...u })}
             onSave={handleSave}
             onFinish={handleFinish}
             disabled={isViewMode}
@@ -346,6 +355,18 @@ export function ReadingAssessmentLayout({
           />
         </TabsContent>
 
+        {/* Tab 3 — Knowledge-Based Assessment + Battery */}
+        <TabsContent value="material" className="mt-4">
+          <AssessmentMaterialTab
+            formData={state.skillData}
+            onFormDataChange={(u) => update('skillData', { ...state.skillData, ...u })}
+            batteryData={state.battery}
+            onBatteryChange={(d) => update('battery', d)}
+            disabled={isViewMode}
+          />
+        </TabsContent>
+
+        {/* Tab 4 — Reading Behaviour */}
         <TabsContent value="behaviour" className="mt-4">
           <ReadingBehaviourTab
             data={state.behaviour}
@@ -354,6 +375,7 @@ export function ReadingAssessmentLayout({
           />
         </TabsContent>
 
+        {/* Tab 5 — Reading Strengths + Finish */}
         <TabsContent value="strengths" className="mt-4">
           <div className="space-y-4">
             <ReadingStrengthsTab
@@ -368,7 +390,9 @@ export function ReadingAssessmentLayout({
                   {t('saveDraft', { defaultValue: 'Save Draft' })}
                 </Button>
                 <Button onClick={handleFinish} disabled={isSaving} className="bg-green-600 hover:bg-green-700">
-                  {isSaving ? t('completing', { defaultValue: 'Completing...' }) : t('completeAssessment', { defaultValue: 'Complete Assessment' })}
+                  {isSaving
+                    ? t('completing', { defaultValue: 'Completing...' })
+                    : t('completeAssessment', { defaultValue: 'Complete Assessment' })}
                 </Button>
               </div>
             )}
@@ -429,7 +453,8 @@ export function ReadingAssessmentLayout({
               {t('close', { defaultValue: 'Close' })}
             </Button>
             <Button onClick={downloadPDF}>
-              <Download className="h-4 w-4 mr-2" /> {t('downloadPDF', { defaultValue: 'Download PDF' })}
+              <Download className="h-4 w-4 mr-2" />
+              {t('downloadPDF', { defaultValue: 'Download PDF' })}
             </Button>
           </div>
         </DialogContent>

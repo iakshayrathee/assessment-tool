@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api';
 import { toast } from '@/lib/toast';
 
-import { ComprehensionSetupTab } from './ComprehensionSetupTab';
+import { ComprehensionSetupTab, type ReadingPrefill } from './ComprehensionSetupTab';
 import { ComprehensionPassageTab } from './ComprehensionPassageTab';
 import { ComprehensionSkillsTab } from './ComprehensionSkillsTab';
 import { ComprehensionBehaviourTab } from './ComprehensionBehaviourTab';
@@ -38,6 +38,8 @@ interface Props {
   mode?: 'create' | 'edit' | 'view';
   onSuccess?: () => void;
   onCancel?: () => void;
+  /** Latest Reading assessment for this student — used to pre-fill setup fields */
+  readingData?: any;
 }
 
 function buildInitialState(data?: any) {
@@ -84,9 +86,24 @@ export function ReadingComprehensionLayout({
   mode = 'create',
   onSuccess,
   onCancel,
+  readingData,
 }: Props) {
   const { t } = useTranslation('assessments');
   const isViewMode = mode === 'view';
+
+  // Build pre-fill from the most recent Reading assessment
+  const readingPrefill: ReadingPrefill | undefined = readingData
+    ? {
+        grade: readingData.currentGrade || studentGrade,
+        language: readingData.readingResources?.setup?.language,
+        assessmentDate: readingData.assessmentDate
+          ? new Date(readingData.assessmentDate).toISOString().split('T')[0]
+          : undefined,
+        functionalGradeLevel: readingData.functionalGradeLevel,
+      }
+    : studentGrade
+    ? { grade: studentGrade }
+    : undefined;
 
   const [activeTab, setActiveTab] = useState('setup');
   const [state, setState] = useState(() => buildInitialState(initialData));
@@ -219,7 +236,12 @@ export function ReadingComprehensionLayout({
         </TabsList>
 
         <TabsContent value="setup" className="mt-4">
-          <ComprehensionSetupTab data={state.setup} onChange={(d) => updateSection('setup', d)} disabled={isViewMode} />
+          <ComprehensionSetupTab
+            data={state.setup}
+            onChange={(d) => updateSection('setup', d)}
+            disabled={isViewMode}
+            prefill={readingPrefill}
+          />
         </TabsContent>
 
         <TabsContent value="passage" className="mt-4">
