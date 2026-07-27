@@ -5,6 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Save } from 'lucide-react';
+import { GradeSelect } from '@/components/ui/GradeSelect';
 
 interface PassageSection {
   gradeLevel?: string;
@@ -20,13 +23,14 @@ interface PassageSection {
 interface Props {
   data: { schoolText?: PassageSection; knownText?: PassageSection; unknownText?: PassageSection };
   onChange: (d: any) => void;
+  onSave?: () => Promise<void>;
+  isSaving?: boolean;
   disabled?: boolean;
 }
 
 const READING_MODES = ['Silent', 'Oral', 'Read Aloud by Educator'];
-const GRADE_OPTIONS = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8'];
-const FAMILIARITY_OPTIONS = ['Highly familiar','Somewhat familiar','Memorized'];
-const SOURCE_OPTIONS = ['Textbook (new lesson)','Storybook (unseen)','Teacher-created','External material'];
+const FAMILIARITY_OPTIONS = ['Highly familiar', 'Somewhat familiar', 'Memorized'];
+const SOURCE_OPTIONS = ['Textbook (new lesson)', 'Storybook (unseen)', 'Teacher-created', 'External material'];
 
 function PassageCard({ title, prefix, data, onChange, disabled }: {
   title: string;
@@ -49,10 +53,13 @@ function PassageCard({ title, prefix, data, onChange, disabled }: {
             <>
               <div>
                 <Label>Grade Level</Label>
-                <Select value={d.gradeLevel || ''} onValueChange={(v) => up('gradeLevel', v)} disabled={disabled}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select grade..." /></SelectTrigger>
-                  <SelectContent>{GRADE_OPTIONS.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
-                </Select>
+                <GradeSelect
+                  value={d.gradeLevel || ''}
+                  onValueChange={(v) => up('gradeLevel', v)}
+                  placeholder="Select grade..."
+                  disabled={disabled}
+                  className="mt-1"
+                />
               </div>
               <div>
                 <Label>Passage Used</Label>
@@ -92,7 +99,7 @@ function PassageCard({ title, prefix, data, onChange, disabled }: {
                 <Select value={d.difficultyLevel || ''} onValueChange={(v) => up('difficultyLevel', v)} disabled={disabled}>
                   <SelectTrigger className="mt-1"><SelectValue placeholder="Select..." /></SelectTrigger>
                   <SelectContent>
-                    {['Easy','Grade Level','Hard'].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+                    {['Easy', 'Grade Level', 'Hard'].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -119,7 +126,7 @@ function PassageCard({ title, prefix, data, onChange, disabled }: {
   );
 }
 
-export function ComprehensionPassageTab({ data, onChange, disabled }: Props) {
+export function ComprehensionPassageTab({ data, onChange, onSave, isSaving, disabled }: Props) {
   return (
     <div className="space-y-4">
       <PassageCard
@@ -143,6 +150,16 @@ export function ComprehensionPassageTab({ data, onChange, disabled }: Props) {
         onChange={(d) => onChange({ ...data, unknownText: d })}
         disabled={disabled}
       />
+
+      {/* Save button for passage tab */}
+      {!disabled && onSave && (
+        <div className="flex justify-end pt-2">
+          <Button variant="outline" onClick={onSave} disabled={isSaving}>
+            <Save className="h-3.5 w-3.5 mr-1.5" />
+            {isSaving ? 'Saving...' : 'Save Passage'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

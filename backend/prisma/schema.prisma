@@ -578,10 +578,10 @@ model FormalAssessment {
   id                String                 @id @default(cuid())
   studentId         String
   specialEducatorId String
-  assessmentType    String // Type of formal assessment
+  assessmentType    String? // Type of formal assessment (optional in simplified form)
   referralReason    String?
-  referralDate      DateTime
-  referredBy        String // Auto-filled from educator
+  referralDate      DateTime?              // Optional — not captured in simplified form
+  referredBy        String? // Auto-filled from educator
   conductedBy       String?
   credentials       String?
   clinicName        String?
@@ -589,7 +589,8 @@ model FormalAssessment {
   keyFindings       String?
   diagnosis         String?
   recommendations   String?
-  uploadedFiles     String[] // Array of file paths/URLs
+  summary           String?               // Free-text summary of key findings (new simplified form)
+  uploadedFiles     String[]              // Array of file paths/URLs (PDF/DOCX)
   status            AssessmentStatus       @default(PENDING)
   completedAt       DateTime?
   createdAt         DateTime               @default(now())
@@ -987,6 +988,65 @@ model WritingSkillAssessment {
 
   // NEW: Creative Writing
   creativeWritingSummary String?
+
+  // Tab 1 – Setup
+  assessmentDate    DateTime?
+  assessor          String?
+  assessmentPurpose String?
+  language          String?
+  gradeLevel        String?
+
+  // Tab 2 – Writing Assessment
+  currentGrade                  String?
+  assessmentTypes               String[] @default([])
+  resultStatus                  String?
+  gradeStepFlow                 String?
+  copyWritingLevels             String[] @default([])
+  copyWritingObservation        String?
+  dictationLevels               String[] @default([])
+  dictationObservation          String?
+  independentWritingLevels      String[] @default([])
+  independentWritingObservation String?
+  functionalWritingLevels       String[] @default([])
+  functionalWritingObservation  String?
+
+  // Tab 3 – Writing Skills
+  skillRatings              Json?
+  primaryStrengths          String?
+  primaryChallenges         String?
+  educatorObservationsNotes String?
+
+  // Tab 4 – Behaviour
+  behaviourItems       Json?
+  behaviourObservation String?
+
+  // Tab 5 – Error Analysis
+  errorItems       Json?
+  errorObservation String?
+
+  // Tab 7 – Strengths
+  strengthItems  Json?
+  strengthsNotes String?
+
+  // Tab 8 – Challenges
+  challengeItems  Json?
+  challengesNotes String?
+
+  // Tab 9 – AI Interpretation
+  aiSummary                 String?
+  aiFunctionalWritingLevel  String?
+  aiGapAnalysis             String?
+  aiWritingProfile          String?
+  aiStrengths               String?
+  aiChallenges              String?
+  aiPrioritySkills          String?
+  aiRecommendedIntervention String?
+
+  // Tab 10 – Progress
+  previousAssessment String?
+  writingGrowth      String?
+  goalAchievement    String?
+  reviewDate         DateTime?
 
   additionalNotes String?
   status          AssessmentStatus       @default(PENDING)

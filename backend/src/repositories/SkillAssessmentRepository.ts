@@ -406,11 +406,31 @@ export class SkillAssessmentRepository {
   }
 
   // Writing Skill Assessment Methods
+  private mapWritingToPrismaFormat(data: Partial<WritingSkillAssessmentData>): any {
+    const prismaData: any = { ...data };
+
+    if (prismaData.assessmentDate && typeof prismaData.assessmentDate === 'string') {
+      prismaData.assessmentDate = new Date(prismaData.assessmentDate);
+    }
+    if (prismaData.reviewDate && typeof prismaData.reviewDate === 'string') {
+      prismaData.reviewDate = new Date(prismaData.reviewDate);
+    }
+
+    Object.keys(prismaData).forEach(key => {
+      if (prismaData[key] === undefined) {
+        delete prismaData[key];
+      }
+    });
+
+    return prismaData;
+  }
+
   async createWritingAssessment(specialEducatorId: string, data: WritingSkillAssessmentData): Promise<WritingSkillAssessment> {
+    const prismaData = this.mapWritingToPrismaFormat(data);
     return this.prisma.writingSkillAssessment.create({
       data: {
         specialEducatorId,
-        ...data,
+        ...prismaData,
       },
       include: {
         student: {
@@ -477,9 +497,10 @@ export class SkillAssessmentRepository {
   }
 
   async updateWritingAssessment(id: string, data: Partial<WritingSkillAssessmentData>): Promise<WritingSkillAssessment> {
+    const prismaData = this.mapWritingToPrismaFormat(data);
     return this.prisma.writingSkillAssessment.update({
       where: { id },
-      data,
+      data: prismaData,
       include: {
         student: {
           select: {

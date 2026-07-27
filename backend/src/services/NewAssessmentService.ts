@@ -22,14 +22,7 @@ export class NewAssessmentService {
       throw new Error('Student ID is required');
     }
 
-    if (!data.assessmentType) {
-      throw new Error('Assessment type is required');
-    }
-
-    if (!data.referralDate) {
-      throw new Error('Referral date is required');
-    }
-
+    // assessmentType and referralDate are now optional (simplified form uses summary + uploadedFiles)
     return await this.formalAssessmentRepository.create(specialEducatorId, data);
   }
 

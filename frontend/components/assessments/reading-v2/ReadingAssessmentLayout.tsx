@@ -4,8 +4,15 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Download, Eye, Save, X } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Download, Eye, Save, X, Lock, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api';
 import { toast } from '@/lib/toast';
@@ -16,10 +23,11 @@ import { ReadingSkillTab } from './ReadingSkillTab';
 import { ReadingBehaviourTab } from './ReadingBehaviourTab';
 import { ReadingStrengthsTab } from './ReadingStrengthsTab';
 import { ReadingAssessmentPreview } from '@/components/assessments/reading-sections/ReadingAssessmentPreview';
+import { CoreReadingSkillsSection } from '@/components/assessments/reading-sections/CoreReadingSkillsSection';
 import type { TextSectionData } from './GradeTextSections';
 import type { GradeAttempt } from '@/components/assessments/shared/AttemptHistoryPanel';
 
-const TABS = ['details', 'skill', 'material', 'behaviour', 'strengths'] as const;
+const TABS = ['details', 'skill', 'knowledge', 'behaviour', 'strengths'] as const;
 type TabId = typeof TABS[number];
 
 interface Props {
@@ -32,14 +40,16 @@ interface Props {
   onCancel?: () => void;
 }
 
-function buildPayload(state: ReturnType<typeof buildInitialState>, studentId: string, tab: TabId): any {
-  const { details, attempts, functionalGrade, schoolText, knownText, unknownText, battery, behaviour, strengths } = state;
+function buildPayload(state: ReturnType<typeof buildInitialState>, studentId: string, tab: TabId, isDraftLocked?: boolean): any {
+  const { details, attempts, functionalGrade, schoolText, knownText, unknownText, battery, behaviour, strengths, skillData } = state;
   return {
     studentId,
     assessmentDate: details.assessmentDate,
     functionalGradeLevel: functionalGrade,
     currentStep: TABS.indexOf(tab) + 1,
-    // scalar behaviour fields
+    // Draft lock: store as IN_PROGRESS status so it survives page reload
+    ...(isDraftLocked ? { status: 'IN_PROGRESS' } : {}),
+    // Behaviour fields
     interestInReading: behaviour.interestInReading,
     confidenceLevel: behaviour.confidenceLevel,
     readingStamina: behaviour.readingStamina,
@@ -50,7 +60,7 @@ function buildPayload(state: ReturnType<typeof buildInitialState>, studentId: st
     emotionalResponse: behaviour.emotionalResponse,
     motivation: behaviour.motivation,
     behaviorObservations: behaviour.behaviorObservations,
-    // scalar text section fields (mirror of current grade attempt into existing scalars)
+    // Text section fields
     schoolTextGradeLevel: schoolText.gradeLevelUsed,
     schoolTextDifficulty: schoolText.difficulty,
     schoolTextQuality: schoolText.accuracy,
@@ -70,10 +80,24 @@ function buildPayload(state: ReturnType<typeof buildInitialState>, studentId: st
     unknownTextFluency: unknownText.fluency,
     unknownTextErrors: unknownText.errors,
     unknownTextObservation: unknownText.observation,
-    // battery scalars
+    // Battery fields (still stored even though battery tab removed from UI)
     batteryTestConducted: !!(battery.observation || battery.performance || battery.reportUrl),
     batteryTestSummary: battery.observation,
     batteryTestReportUrl: battery.reportUrl,
+    // Knowledge-based (Section 5) scalar fields from skillData
+    phonologicalAwareness: skillData.phonologicalAwareness,
+    decodingSkills: skillData.decodingSkills,
+    wordsPerMinute: skillData.wordsPerMinute,
+    fluencyAccuracy: skillData.fluencyAccuracy,
+    fluencyErrorRate: skillData.fluencyErrorRate,
+    hesitationCount: skillData.hesitationCount,
+    sightWordsPercent: skillData.sightWordsPercent,
+    punctuationAwareness: skillData.punctuationAwareness,
+    readingExpression: skillData.readingExpression,
+    pausingCorrectness: skillData.pausingCorrectness,
+    skipsLinesVisual: skillData.skipsLinesVisual,
+    usesFinger: skillData.usesFinger,
+    losesPlace: skillData.losesPlace,
     // JSON columns
     readingResources: {
       setup: {
@@ -82,7 +106,6 @@ function buildPayload(state: ReturnType<typeof buildInitialState>, studentId: st
         durationMinutes: details.durationMinutes,
         purpose: details.purpose,
       },
-      // approach is now always 'grade' in the Reading Skill tab; 'skill' => knowledge-based
       approach: 'grade',
       battery: {
         performance: battery.performance,
@@ -199,6 +222,15 @@ export function ReadingAssessmentLayout({
   const startTimeRef = useRef<number>(Date.now());
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Save Draft warning + lock
+  const [showDraftWarning, setShowDraftWarning] = useState(false);
+  // Restore draft lock from persisted IN_PROGRESS status
+  const [isDraftLocked, setIsDraftLocked] = useState(
+    () => initialData?.status === 'IN_PROGRESS'
+  );
+
+  const isInputDisabled = isViewMode || isDraftLocked;
+
   const update = useCallback(<K extends keyof ReturnType<typeof buildInitialState>>(
     key: K,
     val: any
@@ -206,26 +238,26 @@ export function ReadingAssessmentLayout({
     setState((prev) => ({ ...prev, [key]: val }));
   }, []);
 
-  // Debounced auto-save
+  // Debounced auto-save (skip when locked)
   useEffect(() => {
-    if (isViewMode || !savedId) return;
+    if (isViewMode || isDraftLocked || !savedId) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(async () => {
       try {
-        const payload = buildPayload(state, studentId, activeTab);
+        const payload = buildPayload(state, studentId, activeTab, false);
         await apiClient.updateReadingSkillAssessment(savedId, payload);
       } catch {
         // silent
       }
     }, 2000);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
-  }, [state, activeTab]);
+  }, [state, activeTab, isDraftLocked]);
 
   const handleSave = async () => {
     if (isViewMode) return;
     setIsSaving(true);
     try {
-      const payload = buildPayload(state, studentId, activeTab);
+      const payload = buildPayload(state, studentId, activeTab, isDraftLocked);
       let res;
       if (savedId) {
         res = await apiClient.updateReadingSkillAssessment(savedId, payload);
@@ -242,17 +274,27 @@ export function ReadingAssessmentLayout({
     }
   };
 
+  const handleSaveDraftClick = () => {
+    setShowDraftWarning(true);
+  };
+
+  const handleConfirmSaveDraft = async () => {
+    setShowDraftWarning(false);
+    await handleSave();
+    setIsDraftLocked(true);
+  };
+
   const handleFinish = async () => {
     setIsSaving(true);
     try {
       let id = savedId;
       if (!id) {
-        const payload = buildPayload(state, studentId, 'strengths');
+        const payload = buildPayload(state, studentId, 'strengths', isDraftLocked);
         const res = await apiClient.createReadingSkillAssessment(payload);
         id = res?.id || res?.data?.id;
         setSavedId(id);
       } else {
-        const payload = buildPayload(state, studentId, 'strengths');
+        const payload = buildPayload(state, studentId, 'strengths', isDraftLocked);
         await apiClient.updateReadingSkillAssessment(id, payload);
       }
       const res = await apiClient.completeReadingSkillAssessment(id!);
@@ -294,10 +336,16 @@ export function ReadingAssessmentLayout({
               {t('reading', { defaultValue: 'Reading' })} — {t('skillAssessment', { defaultValue: 'Skill Assessment' })}
             </h2>
             {savedId && <p className="text-xs text-muted-foreground">ID: {savedId}</p>}
+            {isDraftLocked && (
+              <div className="flex items-center gap-1.5 mt-1 text-amber-600">
+                <Lock className="h-3.5 w-3.5" />
+                <span className="text-xs font-medium">Draft saved — locked for editing</span>
+              </div>
+            )}
           </div>
           <div className="flex gap-2 flex-wrap">
-            {!isViewMode && (
-              <Button variant="outline" size="sm" onClick={handleSave} disabled={isSaving}>
+            {!isViewMode && !isDraftLocked && (
+              <Button variant="outline" size="sm" onClick={handleSaveDraftClick} disabled={isSaving}>
                 <Save className="h-3.5 w-3.5 mr-1.5" />
                 {isSaving ? t('savingAssessment', { defaultValue: 'Saving...' }) : t('saveDraft', { defaultValue: 'Save Draft' })}
               </Button>
@@ -314,12 +362,12 @@ export function ReadingAssessmentLayout({
         </CardContent>
       </Card>
 
-      {/* 5-tab layout */}
+      {/* 5-tab layout: Tab 3 is now Knowledge-Based (ABCD, no battery) */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)}>
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="details">Assessment Details</TabsTrigger>
           <TabsTrigger value="skill">Reading Skill</TabsTrigger>
-          <TabsTrigger value="material">Knowled-Based</TabsTrigger>
+          <TabsTrigger value="knowledge">Knowledge-Based</TabsTrigger>
           <TabsTrigger value="behaviour">Reading Behaviour</TabsTrigger>
           <TabsTrigger value="strengths">Reading Strengths</TabsTrigger>
         </TabsList>
@@ -329,7 +377,7 @@ export function ReadingAssessmentLayout({
           <AssessmentDetailsTab
             data={state.details}
             onChange={(v) => update('details', { ...state.details, ...v })}
-            disabled={isViewMode}
+            disabled={isInputDisabled}
             startTime={startTimeRef.current}
           />
         </TabsContent>
@@ -350,20 +398,30 @@ export function ReadingAssessmentLayout({
             onUnknownTextChange={(d) => update('unknownText', d)}
             onSave={handleSave}
             onFinish={handleFinish}
-            disabled={isViewMode}
+            disabled={isInputDisabled}
             isSaving={isSaving}
           />
         </TabsContent>
 
-        {/* Tab 3 — Knowledge-Based Assessment + Battery */}
-        <TabsContent value="material" className="mt-4">
-          <AssessmentMaterialTab
-            formData={state.skillData}
-            onFormDataChange={(u) => update('skillData', { ...state.skillData, ...u })}
-            batteryData={state.battery}
-            onBatteryChange={(d) => update('battery', d)}
-            disabled={isViewMode}
-          />
+        {/* Tab 3 — Knowledge-Based Assessment (ABCD skills, no battery test) */}
+        <TabsContent value="knowledge" className="mt-4">
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="pt-4 pb-2">
+                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                  Knowledge-Based Assessment
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Developmental skill areas — not tied to a specific grade level.
+                </p>
+              </CardContent>
+            </Card>
+            <CoreReadingSkillsSection
+              data={state.skillData}
+              onChange={(u) => update('skillData', { ...state.skillData, ...u })}
+              disabled={isInputDisabled}
+            />
+          </div>
         </TabsContent>
 
         {/* Tab 4 — Reading Behaviour */}
@@ -371,7 +429,7 @@ export function ReadingAssessmentLayout({
           <ReadingBehaviourTab
             data={state.behaviour}
             onChange={(d) => update('behaviour', d)}
-            disabled={isViewMode}
+            disabled={isInputDisabled}
           />
         </TabsContent>
 
@@ -381,11 +439,11 @@ export function ReadingAssessmentLayout({
             <ReadingStrengthsTab
               data={state.strengths}
               onChange={(d) => update('strengths', d)}
-              disabled={isViewMode}
+              disabled={isInputDisabled}
             />
-            {!isViewMode && (
+            {!isViewMode && !isDraftLocked && (
               <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={handleSave} disabled={isSaving}>
+                <Button variant="outline" onClick={handleSaveDraftClick} disabled={isSaving}>
                   <Save className="h-3.5 w-3.5 mr-1.5" />
                   {t('saveDraft', { defaultValue: 'Save Draft' })}
                 </Button>
@@ -396,9 +454,48 @@ export function ReadingAssessmentLayout({
                 </Button>
               </div>
             )}
+            {isDraftLocked && !isViewMode && (
+              <div className="flex justify-end pt-2">
+                <Button onClick={handleFinish} disabled={isSaving} className="bg-green-600 hover:bg-green-700">
+                  {isSaving
+                    ? t('completing', { defaultValue: 'Completing...' })
+                    : t('completeAssessment', { defaultValue: 'Complete Assessment' })}
+                </Button>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Save Draft Warning Dialog */}
+      <Dialog open={showDraftWarning} onOpenChange={setShowDraftWarning}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Save Draft?
+            </DialogTitle>
+            <DialogDescription className="pt-2 space-y-2">
+              <p>
+                Saving as a draft will <strong>lock this assessment for further editing</strong>.
+              </p>
+              <p>
+                You will still be able to complete and submit it, but no fields can be changed after saving.
+              </p>
+              <p>Are you sure you want to proceed?</p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowDraftWarning(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmSaveDraft} disabled={isSaving} className="bg-amber-600 hover:bg-amber-700">
+              <Lock className="h-4 w-4 mr-1.5" />
+              {isSaving ? 'Saving...' : 'Save & Lock Draft'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Preview Modal */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>

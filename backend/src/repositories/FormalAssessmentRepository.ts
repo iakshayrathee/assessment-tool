@@ -2,10 +2,14 @@ import { PrismaClient, FormalAssessment, AssessmentStatus } from '@prisma/client
 
 export interface FormalAssessmentData {
   studentId: string;
-  assessmentType: string;
+  // Simplified form fields (new)
+  summary?: string;
+  uploadedFiles?: string[];
+  // Legacy / full-form fields (kept for backward compatibility)
+  assessmentType?: string;
   referralReason?: string;
-  referralDate: Date | string;
-  referredBy: string;
+  referralDate?: Date | string;
+  referredBy?: string;
   conductedBy?: string;
   credentials?: string;
   clinicName?: string;
@@ -13,7 +17,6 @@ export interface FormalAssessmentData {
   keyFindings?: string;
   diagnosis?: string;
   recommendations?: string;
-  uploadedFiles?: string[];
 }
 
 export class FormalAssessmentRepository {
@@ -24,23 +27,28 @@ export class FormalAssessmentRepository {
   }
 
   async create(specialEducatorId: string, data: FormalAssessmentData): Promise<FormalAssessment> {
+    // Note: assessmentType, referralDate, referredBy were made nullable via migration.
+    // Cast to `any` until `prisma generate` reflects the updated schema.
+    const createData: any = {
+      specialEducatorId,
+      studentId: data.studentId,
+      summary: data.summary,
+      assessmentType: data.assessmentType,
+      referralReason: data.referralReason,
+      referralDate: data.referralDate ? new Date(data.referralDate) : null,
+      referredBy: data.referredBy,
+      conductedBy: data.conductedBy,
+      credentials: data.credentials,
+      clinicName: data.clinicName,
+      assessmentDate: data.assessmentDate ? new Date(data.assessmentDate) : undefined,
+      keyFindings: data.keyFindings,
+      diagnosis: data.diagnosis,
+      recommendations: data.recommendations,
+      uploadedFiles: data.uploadedFiles || [],
+    };
+
     return this.prisma.formalAssessment.create({
-      data: {
-        specialEducatorId,
-        studentId: data.studentId,
-        assessmentType: data.assessmentType,
-        referralReason: data.referralReason,
-        referralDate: new Date(data.referralDate),
-        referredBy: data.referredBy,
-        conductedBy: data.conductedBy,
-        credentials: data.credentials,
-        clinicName: data.clinicName,
-        assessmentDate: data.assessmentDate ? new Date(data.assessmentDate) : undefined,
-        keyFindings: data.keyFindings,
-        diagnosis: data.diagnosis,
-        recommendations: data.recommendations,
-        uploadedFiles: data.uploadedFiles || [],
-      },
+      data: createData,
       include: {
         student: {
           select: {
@@ -61,11 +69,7 @@ export class FormalAssessmentRepository {
   }
 
   async findById(id: string): Promise<FormalAssessment | null> {
-    console.log('DEBUG: Looking for formal assessment with ID:', id);
-    console.log('DEBUG: ID length:', id.length);
-    console.log('DEBUG: ID type:', typeof id);
-    
-    const result = await this.prisma.formalAssessment.findUnique({
+    return this.prisma.formalAssessment.findUnique({
       where: { id },
       include: {
         student: {
@@ -84,14 +88,6 @@ export class FormalAssessmentRepository {
         },
       },
     });
-    
-    console.log('DEBUG: Found assessment:', !!result);
-    if (result) {
-      console.log('DEBUG: Assessment ID matches:', result.id === id);
-      console.log('DEBUG: Result ID:', result.id);
-    }
-    
-    return result;
   }
 
   async findByStudent(studentId: string): Promise<FormalAssessment[]> {
@@ -119,7 +115,7 @@ export class FormalAssessmentRepository {
 
   async findByEducator(specialEducatorId: string, page: number = 1, limit: number = 10): Promise<{ assessments: FormalAssessment[]; total: number }> {
     const skip = (page - 1) * limit;
-    
+
     const [assessments, total] = await Promise.all([
       this.prisma.formalAssessment.findMany({
         where: { specialEducatorId },
@@ -153,14 +149,19 @@ export class FormalAssessmentRepository {
 
   async update(id: string, data: Partial<FormalAssessmentData>): Promise<FormalAssessment> {
     const updateData: any = { ...data };
-    
+
     if (data.referralDate) {
       updateData.referralDate = new Date(data.referralDate);
     }
-    
+
     if (data.assessmentDate) {
       updateData.assessmentDate = new Date(data.assessmentDate);
     }
+
+    // Remove undefined values
+    Object.keys(updateData).forEach((k) => {
+      if (updateData[k] === undefined) delete updateData[k];
+    });
 
     return this.prisma.formalAssessment.update({
       where: { id },
@@ -216,4 +217,3 @@ export class FormalAssessmentRepository {
     });
   }
 }
-

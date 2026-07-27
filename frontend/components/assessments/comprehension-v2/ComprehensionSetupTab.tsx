@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { GradeSelect } from '@/components/ui/GradeSelect';
 
 const ASSESSMENT_TYPES = [
   { value: 'Grade-Based Assessment', label: 'Grade-Based Assessment' },
@@ -20,11 +21,6 @@ const PURPOSE_OPTIONS = [
   'Diagnostic',
   'Progress Monitoring',
   'Reassessment',
-];
-
-const GRADE_OPTIONS = [
-  'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5',
-  'Grade 6', 'Grade 7', 'Grade 8',
 ];
 
 /** Pre-fill values sourced from an existing Reading assessment */
@@ -100,16 +96,13 @@ export function ComprehensionSetupTab({ data, onChange, disabled, prefill }: Pro
                 <span className="ml-2 text-xs text-blue-600">(pre-filled: {prefill.grade})</span>
               )}
             </Label>
-            <Select
+            <GradeSelect
               value={data.grade || prefill?.grade || ''}
               onValueChange={(v) => up('grade', v)}
+              placeholder="Select grade..."
               disabled={disabled}
-            >
-              <SelectTrigger className="mt-1"><SelectValue placeholder="Select grade..." /></SelectTrigger>
-              <SelectContent>
-                {GRADE_OPTIONS.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-              </SelectContent>
-            </Select>
+              className="mt-1"
+            />
           </div>
 
           <div>
